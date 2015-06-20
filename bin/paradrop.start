@@ -1,0 +1,6 @@
+#!/bin/bash
+#wrapper script that starts paradrop inside dependancies virtualenv
+
+echo "Attempting to start paradrop"
+
+bin/pddependancies.pex paradrop/paradrop/paradrop.py
