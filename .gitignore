@@ -67,3 +67,7 @@ paradrop/dist
 paradrop/build
 paradrop/paradrop.egg-info/
 paradrop/*.snap
+
+docs/_build
+docs/_static
+docs/_templates
