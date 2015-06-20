@@ -21,7 +21,7 @@ then
     echo -e "  up\n\t starts a local snappy virtual machine"
     echo -e "  down\n\t closes a local snappy virtual machine"
     echo -e "  connect\n\t connects to a local snappy virtual machine"
-    
+
     exit
 fi
 
@@ -64,7 +64,7 @@ build() {
 
     #we don't want to bundle pex (for size reasons) and paradrop (since pex needs a little help in 
     # finding the package thats out of the scope of this script)
-    echo -e "${COLOR}Building dependencies." && tput sgr0
+    echo -e "${COLOR}Building dependencies" && tput sgr0
     pex -r <(pip freeze | grep -v 'pex' | grep -v 'paradrop') -o bin/pddependancies.pex
 }
 
@@ -120,6 +120,7 @@ install() {
     fi
 
     rm *.snap
+    
     #build the snap using snappy dev tools and extract the name of the snap
     snappy build .
     SNAP=$(ls | grep ".snap")
