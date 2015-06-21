@@ -2,7 +2,7 @@
 
 #used to differentiate our output from other. Other output is still shown 
 # in the case of errors
-COLOR='\033[01;33m'
+COLOR='\033[01;33m' 
 
 #Show help if no args passed
 if [ $# -lt 1 ]
