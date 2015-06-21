@@ -60,8 +60,6 @@ build() {
     pip install pex
     pip install -e ./paradrop
 
-    rm -rf paradrop/paradrop.egg-info
-
     #we don't want to bundle pex (for size reasons) and paradrop (since pex needs a little help in 
     # finding the package thats out of the scope of this script)
     echo -e "${COLOR}Building dependencies" && tput sgr0
@@ -73,6 +71,7 @@ clean() {
 
     rm -rf buildenv/env
     rm bin/pddependancies.pex
+    rm -rf paradrop/paradrop.egg-info
     rm *.snap
 }
 

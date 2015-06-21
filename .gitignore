@@ -71,3 +71,5 @@ paradrop/*.snap
 docs/_build
 docs/_static
 docs/_templates
+
+bin/*.pex

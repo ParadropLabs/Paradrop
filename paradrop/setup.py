@@ -10,7 +10,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'paradrop=paradrop.paradrop:main',
+            'paradrop=paradrop:main',
         ],
     },
 )

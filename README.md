@@ -1,6 +1,6 @@
 # Paradrop
 
-[![Documentation Status](https://readthedocs.org/projects/paradrop/badge/?version=latest)](https://readthedocs.org/projects/paradrop/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/paradrop/badge/?version=latest)](http://paradrop.readthedocs.org/en/master/)
 
 
 Virtualized wireless routers. 

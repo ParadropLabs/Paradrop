@@ -1,29 +1,29 @@
 from flask import Flask
 
-def run():
+import frontend
+
+def main():
+    """This function does something.
+
+    :param name: The name to use. 
+    :type name: str. 
+    :param state: Current state to be in. 
+    :type state: bool. 
+    :returns: int -- the return code. 
+    :raises: AttributeError, KeyError
+    """ 
     app = Flask(__name__)
 
     @app.route('/')
     def hello_world():
         return 'hello world!'
 
-    #assign to eth0 dynamically (or run it )
+    #assign to eth0 dynamically (or run it on 80)
     # app.run('10.0.2.15', port = 7777)
 
     #running locally
     #TODO: determine if running locally or on snappy 
     app.run(port = 7777)
 
-def main():
-    #I have a haunting feeling this is not the correct way of doing things
-    print 'Starting Main'
-    run()
-
 if __name__ == "__main__":
     main()
-
-'''
-To be clear, this works with pex. Install this package and run the following:
-sudo pex flask spack -o out.pex -e spack:main
-
-'''
