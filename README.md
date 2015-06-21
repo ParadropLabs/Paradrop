@@ -11,6 +11,12 @@ Work in progress. For now, assume everything here is subject to change.
 ## Installation
 Getting started with paradrop.
 
+Compiling documentation
+```
+pip install sphinx sphinx-autobuild sphinx-rtd-build
+cd docs
+make html
+```
 ### Snappy
 [Snappy](https://developer.ubuntu.com/en/snappy/) is an Ubuntu release focusing on low-overhead for a large set of platforms. These instructions are for getting a Snappy instance up and running using 'kvm'. 
 

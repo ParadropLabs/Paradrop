@@ -6,6 +6,8 @@
 Welcome to paradrop's documentation!
 ====================================
 
+stuff
+
 Contents:
 
 .. toctree::
