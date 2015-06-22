@@ -2,6 +2,7 @@ name: paradrop
 version: 0.0.1
 vendor: Paradrop Labs <snappy-devel@lists.ubuntu.com>
 icon: meta/hello.png
+frameworks: docker
 binaries:
  - name: bin/start
    caps: 

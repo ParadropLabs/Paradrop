@@ -16,10 +16,3 @@ paradrop.paradrop module
 
 .. automodule:: paradrop.paradrop
     :members:
-
-
-Module contents
----------------
-
-.. automodule:: paradrop
-    :members:
