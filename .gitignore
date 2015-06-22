@@ -73,3 +73,6 @@ docs/_static
 docs/_templates
 
 bin/*.pex
+*.img
+*.swp
+*.pyc

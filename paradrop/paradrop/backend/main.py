@@ -2,6 +2,7 @@
 Core module. Contains the entry point into Paradrop and establishes all other modules.
 Does not implement any behavior itself.
 '''
+
 import sys, argparse, signal
 
 # Need to fully import the output module so we can toggle verbose mode at runtime
@@ -9,7 +10,7 @@ from lib.utils import output
 
 from lib import settings
 from lib.utils.output import out, logPrefix
-from backend.pdfcd import server
+from pdfcd import server
 
 
 #################################################################################################################
@@ -63,7 +64,7 @@ def main():
     # Setup args if called directly (testing)
     p = setupArgParse()
     args = p.parse_args()
-    
+    out.asdf('asdf')
     # Check for settings to overwrite
     settings.updateSettings(args.settings)
     
