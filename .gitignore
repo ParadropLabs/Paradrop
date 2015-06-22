@@ -76,3 +76,5 @@ bin/*.pex
 *.img
 *.swp
 *.pyc
+
+.DS_STORE

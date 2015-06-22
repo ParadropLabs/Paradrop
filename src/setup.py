@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="paradrop",
     version="0.1",
-    author="Damouse",
+    author="Paradrop Labs",
     description="Paradrop wireless virtualization",
     install_requires=['twisted'],
     packages=find_packages(),
