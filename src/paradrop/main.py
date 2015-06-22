@@ -5,11 +5,11 @@ Does not implement any behavior itself.
 import sys, argparse, signal
 
 # Need to fully import the output module so we can toggle verbose mode at runtime
-from lib.utils import output
+from paradrop.lib.utils import output
 
-from lib import settings
-from lib.utils.output import out, logPrefix
-from backend.pdfcd import server
+from paradrop.lib import settings
+from paradrop.lib.utils.output import out, logPrefix
+from paradrop.backend.pdfcd import server
 
 
 #################################################################################################################
