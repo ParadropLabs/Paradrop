@@ -1,0 +1,3 @@
+'''
+Testing package documetation
+'''

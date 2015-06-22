@@ -9,6 +9,8 @@ paradrop.frontend.stuff module
 
 .. automodule:: paradrop.frontend.stuff
     :members:
+    :undoc-members:
+    :show-inheritance:
 
 
 Module contents
@@ -16,3 +18,5 @@ Module contents
 
 .. automodule:: paradrop.frontend
     :members:
+    :undoc-members:
+    :show-inheritance:

@@ -6,22 +6,19 @@
 Paradrop
 ====================================
 
-Contents:
+TL;DR
+-----
+
+Get started coding right away with the :doc:`quickstart`.
+
+
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
-   overview
    installation
    developing for paradrop
-   modules
+   api/modules
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+.. include:: overview.rst
