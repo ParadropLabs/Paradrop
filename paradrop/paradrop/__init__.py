@@ -1,2 +1,0 @@
-
-from .paradrop import main

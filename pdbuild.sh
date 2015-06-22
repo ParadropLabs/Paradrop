@@ -58,7 +58,7 @@ build() {
 
     tput sgr0
     pip install pex
-    pip install -e ./paradrop
+    pip install -e ./src
 
     #we don't want to bundle pex (for size reasons) and paradrop (since pex needs a little help in 
     # finding the package thats out of the scope of this script)
@@ -74,7 +74,7 @@ clean() {
 
     rm -rf buildenv/env
     rm bin/pddependancies.pex
-    rm -rf paradrop/paradrop.egg-info
+    rm -rf src/paradrop.egg-info
     rm *.snap
 }
 
