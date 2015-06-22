@@ -21,7 +21,7 @@ import shlex
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 path = os.path.abspath('../paradrop/paradrop')
 print path
-sys.path.insert(0, os.path.abspath('../paradrop/'))
+sys.path.insert(0, os.path.abspath('../src/'))
 
 # -- General configuration ------------------------------------------------
 
