@@ -1,9 +1,9 @@
-# Import ParaDrop related stuff
-from lib.utils.output import out, logPrefix
-from lib.utils.pdutils import json2str, str2json, timeint, urlDecodeMe
 
-from lib.api.pdrest import APIDecorator
-from lib.api import pdapi
+from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.pdutils import json2str, str2json, timeint, urlDecodeMe
+
+from paradrop.lib.api.pdrest import APIDecorator
+from paradrop.lib.api import pdapi
 
 
 #########################################################################################################################
