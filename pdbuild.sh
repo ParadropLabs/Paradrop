@@ -63,7 +63,10 @@ build() {
     #we don't want to bundle pex (for size reasons) and paradrop (since pex needs a little help in 
     # finding the package thats out of the scope of this script)
     echo -e "${COLOR}Building dependencies" && tput sgr0
-    pex -r <(pip freeze | grep -v 'pex' | grep -v 'paradrop') -o bin/pddependancies.pex
+
+    #also-- we can get away without saving the requirements just fine, but readthedocs needs them
+    pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
+    pex -r docs/requirements.txt -o bin/pddependancies.pex
 }
 
 clean() {
