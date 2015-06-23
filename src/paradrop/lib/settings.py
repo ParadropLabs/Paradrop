@@ -34,6 +34,11 @@ import os, re, sys
 PDFCD_PORT = 14321
 PDFCD_HEADER_VALUE = "*"
 
+#
+# fc
+#
+FC_BOUNCE_UPDATE = None
+
 
 
 

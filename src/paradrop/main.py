@@ -11,7 +11,7 @@ from paradrop.lib.utils import output
 
 from paradrop.lib import settings
 from paradrop.lib.utils.output import logPrefix
-from paradrop.backend.pdfcd import server
+from paradrop.backend import pdfcd
 
 
 ##########################################################################
@@ -84,7 +84,7 @@ def main():
     out.info('-- {} Test\n'.format(logPrefix()))
 
     # Now setup the RESTful API server for Paradrop
-    server.setup(args)
+    pdfcd.server.setup(args)
 
 if __name__ == "__main__":
     main()

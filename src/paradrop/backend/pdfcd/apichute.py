@@ -5,42 +5,38 @@ from paradrop.lib.utils.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.lib.api.pdrest import APIDecorator
 from paradrop.lib.api import pdapi
 
-
-#########################################################################################################################
-# DB API AP module
-#########################################################################################################################
-
 class ChuteAPI:
+    """
+    The Chute API submodule.
+    This class handles all API calls related to actionable items that directly effect chutes.
+    """
 
     def __init__(self, rest):
         self.rest = rest
         self.rest.register('POST', '^/v1/chute/create$', self.POST_createChute)
 
-    @APIDecorator(requiredArgs=["sessionToken"])
-    def POST_createChute(self, apiPackage):
+    @APIDecorator(requiredArgs=["test"])
+    def POST_createChute(self, apiPkg):
         """
            Description:
                Get the network config of all chutes under an AP  from the vnet_network table
            Arguments:
                POST request:
-                  @sessionToken
-                  @apid
+                  @test
            Returns:
-               On success:
-                  List of:
-                      * radioid: INT
-                      * isprimary: 0/1
-                      * config: JSON
-               On failure: A string explain the reason of failure
+               On success: SUCCESS object
+               On failure: FAILURE object
         """
-        #token, apid = pdutils.explode(apiPackage.inputArgs, "sessionToken", "apid")
 
         out.info('-- {} Creating chute...\n'.format(logPrefix()))
 
         # TODO implement
-        result = dict(success=True, message='Successfully launched chute')
+        
+        # For now fake out a create chute message
+        self.rest.configurer.updateList(updateClass='CHUTE', updateType='create',
+            tok=str(timeint()), name='TheName', config='Stuff and Things',
+            pkg=apiPkg, func=self.rest.complete)
 
-        if(result is None):
-            apiPackage.setFailure(errType=pdapi.ERR_BADAUTH, countFailure=False)
-        else:
-            apiPackage.setSuccess(json2str(result))
+        # Tell our system we aren't done yet (the configurer will deal with closing the connection)
+        apiPkg.setNotDoneYet()
+

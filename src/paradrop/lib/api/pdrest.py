@@ -8,6 +8,11 @@ from twisted.web.resource import Resource
 from twisted.web.resource import NoResource
 #DFW: I think this is old: from twisted.web.error import NoResource
 from zope.interface.advice import addClassAdvisor
+from twisted.web.server import NOT_DONE_YET
+
+from paradrop.lib.utils.output import logPrefix
+from paradrop.lib.utils.pdutils import str2json, explode
+from paradrop.lib import settings
 
 def method_factory_factory(method):
     def factory(regex):
@@ -96,6 +101,42 @@ class APIResource(Resource):
         else:
             return r
 
+class APIPackage():
+    """
+    This is a class that wrap up the input and return value of API
+    The input arguments will be in the inputArgs as a dict
+    Result is True means the API return success
+    Result is False means the API return failure
+    Result is None means the API return NOT_YET_DONE
+    """
+    def __init__(self, request):
+        self.request = request
+        # input values to the API
+        self.inputArgs = {}
+        # Return values from API
+        self.result = True
+        # On success
+        self.returnVal = None
+        # On failure
+        self.errType = None
+        self.errMsg = None
+        self.countFailure = True
+        # On NOT_YET_DONE
+
+
+    def setSuccess(self, returnVal):
+        self.result = True
+        self.returnVal = returnVal
+
+    def setFailure(self, errType, errMsg=None, countFailure=True):
+        self.result = False
+        self.errType = errType
+        self.errMsg = errMsg
+        self.countFailure = countFailure
+
+    def setNotDoneYet(self):
+        self.result = None
+
 def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[]):
     """
         The decorator for the API functions to make the API functions focus on their job.
@@ -119,19 +160,18 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
                 * More permissions: such as Vnet Owner, Group Owner
     """
     def realDecorator(func):
-        def wrapper(theSelf, request, **args):
-            tictoc = theSelf.perf.tic()
-            ip = getIP(request)
+        def wrapper(theSelf, request, *args, **kwargs):
+            tictoc = 0 # theSelf.perf.tic()
+            ip = '0.0.0.0' # TODO getIP(request)
             out.verbose('-- %s HTTP request from IP %s\n' % (logPrefix(), ip))
-            request.setHeader('Access-Control-Allow-Origin', settings.DBAPI_HEADER_VALUE)
-
+            request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)
             
-            apiPackage = APIPackage()
+            apiPackage = APIPackage(request)
             # Extract required arguments
             if(requiredArgs or optionalArgs):
                 body = str2json(request.content.read())
             if(requiredArgs):
-                required = pdutils.explode(body, *requiredArgs)
+                required = explode(body, *requiredArgs)
                 for idx, arg in enumerate(requiredArgs):
                     # Check if required arg exist
                     if(required[idx] is None):
@@ -141,78 +181,21 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
             
             # Extract optional arguments
             if(optionalArgs):
-                optional = pdutils.explode(body, *optionalArgs)
+                optional = explode(body, *optionalArgs)
                 for idx, arg in enumerate(optionalArgs):
                     if(optional[idx]):
                         apiPackage.inputArgs[arg] = optional[idx]
 
-            # Determine which failureDict to use based on the function name
-            # Kaichen: Here we have an assumption that the signin function in Auth module is the only 
-            #          function that use uname as key and use the signinFailures as the failure dict.
-            #          Other APIs use ip as key and use clientFailure as the failure dict.
-            if(func.__name__ == "POST_signin"):
-                failureKey = apiPackage.inputArgs.get("username")
-                failureDict = theSelf.signinFailures
-            else:
-                failureKey = ip
-                failureDict = theSelf.rest.clientFailures
-
-            token = apiPackage.inputArgs.get("sessionToken", None)
-            # Do the preprocess
-            res = theSelf.rest.preprocess(request, (ip, token, failureKey, failureDict), tictoc)
-            if(res):
-                return res
-
-            # Get the devid and put it into apiPackage if token exist            
-            devid = None
-
-            if(token):
-                devid = theSelf.rest.userCache.getDevidFromToken(token)
-                if(devid is None):
-                    return theSelf.rest.failprocess(ip, request, (failureKey, failureDict), 'Bad Token: %s', (tictoc, None), pdapi.ERR_BADAUTH)
-                apiPackage.inputArgs["devid"] = devid
-
-            # Find the real apid if the apid is an ap name
-            apid = apiPackage.inputArgs.get("apid", None)
-            if(apid and not pdutils.isGuid(apid)):
-                apid = pddb.getApidByName(theSelf.dbh, apid)
-                if(apid is None):
-                    out.err("!! %s Bad apid: %s\n" % (logPrefix(ip), apid))
-                    return theSelf.rest.failprocess(ip, request, (ip, theSelf.rest.clientFailures), 'Bad apid: %s', (tictoc, None),pdapi.getResponse(pdapi.ERR_BADAUTH))
-                else:
-                    apiPackage.inputArgs['apid'] = apid
-
-            # Check admin 
-            if(admin):
-                user = self.rest.userCache.getUserFromToken(token)
-                if(user['admin'] != 1):
-                    return self.rest.failprocess(ip, request, (failureKey, failureDict), "Unauthorized: %s", (tictoc, devid), pdapi.ERR_BADAUTH)
-
-            # Bypass permission check for the testingAdmin user
-            if(devid != settings.DBAPI_ADMIN_DEVID):            
-                # Check permission
-                if(permission):
-                    chuteid = apiPackage.inputArgs.get("chuteid", None)
-                    apid = apiPackage.inputArgs.get("apid", None)
-                    # AP owner
-                    if(permission == "AP Owner" and not pddb.checkAPDevPermissions(theSelf.dbh, devid, apid)):
-                        out.err("!! %s Developer %s doesn't permission to AP: %s\n" % (logPrefix(ip), devid, apid))
-                        return theSelf.rest.failprocess(ip, request, (ip, theSelf.rest.clientFailures), "Developer has no permission to AP:%s" % apid + " %s", (tictoc, None), pdapi.ERR_BADAUTH)
-                    # chute owner
-                    elif(permission == "Chute Owner" and not pddb.isDevChuteOwner(theSelf.dbh, devid, chuteid)):
-                        out.err("!! %s Developer %s has no permission on chute %s\n" % (logPrefix(ip), devid, chuteid))
-                        return theSelf.rest.failprocess(ip, request, (ip, theSelf.rest.clientFailures), "Developer has no permission on chute" + chuteid+  ": %s", (tictoc, devid), pdapi.ERR_BADAUTH)
-                    elif(permission != "Chute Owner" and permission != "AP Owner"):
-                        out.err("!! Bad usage of api decorator, invalid permission\n")
-
-            # Call the real API function
-            apiPackage.inputArgs['request'] = request
-            func(theSelf, apiPackage, **args)
+            #######################################################################################
+            # Make the real function call
+            #######################################################################################
+            func(theSelf, apiPackage, *args, **kwargs)
+            
             # NOT_DONE_YET
             if(apiPackage.result is None):
                 return NOT_DONE_YET
             # SUCCESS
-            elif(apiPackage.result):
+            elif(apiPackage.result is True):
                 theSelf.rest.postprocess(request, failureKey, failureDict, (tictoc, ip, devid))
                 return apiPackage.returnVal
             # FAILURE

@@ -17,21 +17,61 @@ from paradrop.lib.api import pdapi
 from paradrop.lib.api import pdrest
 from paradrop.lib import settings
 
-from paradrop.backend.pdfcd import apiutils
-from paradrop.backend.pdfcd import apichute
+from paradrop.backend import fc
+
+# Import local refs to pdfcd utilities
+from . import apiutils
+from . import apichute
 
 
-###########################################################################################################################
-# API Callbacks
-###########################################################################################################################
+
 class ParadropAPIServer(pdrest.APIResource):
+    """
+    The main API server module.
+
+    This sets up all of the submodules which should contain different types of RESTful API calls.
+    """
 
     def __init__(self, lclreactor):
         pdrest.APIResource.__init__(self)
         self.reactor = lclreactor
 
+        # Establish the configurer which is the launch point for all chute related endeavors
+        self.configurer = fc.configurer.PDConfigurer(None, lclreactor)
+
         # Allow each module to register their API calls
         apichute.ChuteAPI(self)
+
+    def _complete(self, update):
+        """
+        THREADED:call from event thread
+        All API operations require some work to happen outside of the API module, therefore 
+        when a request comes in we tell it to wait a minute (a NOT_DONE_YET return) and then
+        later on we use the reference we have to the request from @update to write the response
+        back to the user and close the connection.
+        
+        :param name: update
+        :param type: UpdateObject
+        """
+        # Wrap in a try-catch, if the connection is closed by the client before
+        # we have a chance to write out our results then this below will result
+        # in an exception being raised
+        try:
+            update.pkg.request.write(json2str(update.result))
+            update.pkg.request.finish()
+        
+        # TODO don't catch all exceptions here
+        except Exception as e:
+            pass
+
+    def complete(self, update):
+        """
+        Kicks off the properly threaded call to complete the API call that was passed
+        to PDConfigurer. Since the PDConfigurer module has its own thread that runs outside
+        of the main event loop, we have to call back into the event system properly in order
+        to keep any issues of concurrency at bay.
+        """
+        self.reactor.callFromThread(self._complete, update)
 
     def preprocess(self, request, checkThresh, tictoc):
         """
@@ -67,7 +107,7 @@ class ParadropAPIServer(pdrest.APIResource):
                     else:
                         usage = (tictoc, None)
                     self.failprocess(ip, request, (ip, self.clientFailures), None, usage, pdapi.getResponse(pdapi.ERR_THRESHOLD))
-                    duration = self.perf.toc(tictoc)
+                    duration = 0 # self.perf.toc(tictoc)
                     # Log the info of this call
                     # TODO self.usageTracker.addTrackInfo(ip, 'Null', request.path, self.usageTracker.FAIL_THRESH, duration, request.content.getvalue())
 
@@ -85,7 +125,7 @@ class ParadropAPIServer(pdrest.APIResource):
         request.setResponseCode(*pdapi.getResponse(pdapi.OK))
         if(logUsage):
             tictoc, ip, devid = logUsage
-            duration = self.perf.toc(tictoc)
+            duration = 0 #self.perf.toc(tictoc)
             # when devid is none, we log "Null" into the database
             if(devid is None):
                 devid = "Null"
@@ -129,7 +169,7 @@ class ParadropAPIServer(pdrest.APIResource):
 
             if(devid is None):
                 devid = "Null"
-            duration = self.perf.toc(tictoc)
+            duration = 0 # self.perf.toc(tictoc)
             # Log the info of this call
             # TODO self.usageTracker.addTrackInfo(ip, devid , request.path, self.usageTracker.FAIL_AUTH, duration, request.content.getvalue())
 
@@ -149,9 +189,14 @@ class ParadropAPIServer(pdrest.APIResource):
                 return errorStmt % ("%s attempts remaining" % remaining)
         if(errorStmt):
             return errorStmt % ("Null")
-
+    
+        
+    
     @pdrest.GET('^/v1/test')
     def GET_test(self, request):
+        """
+        A Simple test method to ping if the API server is working properly.
+        """
         request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)
         ip = apiutils.getIP(request)
         out.info('-- %s Test called (%s)\n' % (logPrefix(), ip))
@@ -160,6 +205,9 @@ class ParadropAPIServer(pdrest.APIResource):
 
     @pdrest.ALL('^/')
     def default(self, request):
+        """
+        A dummy catch for all API calls that are not caught by any other module.
+        """
         ip = apiutils.getIP(request)
         uri = request.uri
         method = request.method
@@ -179,6 +227,10 @@ class ParadropAPIServer(pdrest.APIResource):
 # Main function
 ###############################################################################
 def setup(args=None):
+    """
+    This is the main setup function to establish the TCP listening logic for
+    the API server. This code also takes into account development or unit test mode.
+    """
 
     # Setup API server
     api = ParadropAPIServer(reactor)

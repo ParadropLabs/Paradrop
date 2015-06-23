@@ -260,6 +260,7 @@ class Output():
 # Create a standard out module to be used if no one overrides it
 out = Output(
     header=Stdout(Colors.HEADER),
+    testing=Stdout(Colors.PERF),
     verbose=FakeOutput(),
     info=Stdout(Colors.INFO),
     perf=Stdout(Colors.PERF),

@@ -8,7 +8,7 @@ lib.utils.output.
 Helper for formatting output from Paradrop.
 """
 
-import time
+import time, json, urllib
 
 timeflt = lambda: time.time()
 timeint = lambda: int(time.time())
@@ -120,3 +120,33 @@ def str2json(s):
         t = [convertUnicode(i) for i in t]
     # Make sure to still decode any strings
     return urlDecodeMe(t)
+
+class dict2obj(object):
+    def __init__(self, aDict=None, **kwargs):
+        if(aDict is not None):
+            aDict.update(kwargs)
+        else:
+            self.__dict__.update(kwargs)
+
+def explode(pkt, *args):
+    """This function takes a dict object and explodes it into the tuple requested.
+
+        It returns None for any value it doesn't find.
+
+        The only error it throws is if args is not defined.
+
+        Example:
+            pkt = {'a':0, 'b':1}
+            0, 1, None = pdcomm.explode(pkt, 'a', 'b', 'c')
+    """
+    if(not args):
+        raise PDError('EXPLODE', 'args must be provided')
+
+    # If there is an error make sure to return a tuple of the proper length
+    if(not isinstance(pkt, dict)):
+        return tuple([None] * len(args))
+
+    # Now just step through the args and pop off everything from the packet
+    # If a key is missing, the pkt.get(a, None) returns None rather than raising an Exception
+    return tuple([pkt.get(a, None) for a in args])
+
