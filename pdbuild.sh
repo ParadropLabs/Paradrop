@@ -144,6 +144,10 @@ setup() {
     if [ ! -f buildenv/ubuntu-15.04-snappy-amd64-generic.img ]; then
         echo -e "${COLOR}Downloading Snappy image." && tput sgr0
 
+        if ! [ -d "./buildenv" ]; then
+            mkdir buildenv
+        fi
+
         #cd because the -p flag to wget acted up 
         cd buildenv
         wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz 

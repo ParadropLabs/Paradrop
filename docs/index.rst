@@ -9,16 +9,14 @@ Paradrop
 TL;DR
 -----
 
-Get started coding right away with the :doc:`quickstart`.
-
-
+Get started coding right away with the :doc:`quickstart`. 
 
 .. toctree::
    :maxdepth: 2
    :hidden:
 
-   installation
-   developing for paradrop
+   chutes
+   development
    api/modules
 
 .. include:: overview.rst

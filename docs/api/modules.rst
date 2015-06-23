@@ -8,14 +8,15 @@ Subpackages
 
     paradrop.backend
     paradrop.frontend
+    paradrop.lib
 
 Submodules
 ----------
 
-paradrop.paradrop module
-------------------------
+paradrop.main module
+--------------------
 
-.. automodule:: paradrop.paradrop
+.. automodule:: paradrop.main
     :members:
     :undoc-members:
     :show-inheritance:

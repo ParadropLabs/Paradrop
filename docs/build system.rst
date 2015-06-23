@@ -26,10 +26,12 @@ Download and unzip a snappy image::
 
 
 Launch the snappy image using kvm::
+
     kvm -m 512 -redir :8090::80 -redir :8022::22 ubuntu-15.04-snappy-amd64-generic.img
 
 
 Connect to local instance using ssh::
+
     ssh -p 8022 ubuntu@localhost
 
 
@@ -41,55 +43,42 @@ Snappy is a closed system (by design!). Arbitrary program installation is not al
 - ``virtualenv`` is a tool that creates encapsulated environments in which python packages can be installed. 
 - ``pex`` can compress python packages into a zip file that can be executed by any python interpreter.
 
+Dependancies for paradrop are packaged with the final snap as a pex file created by freezing a virtualenv. These are the steps needed to do this:
+
+1. ``venv.pex`` is packaged with paradrop source code. This is a pex that contains only the virtualenv package. This file bootstraps virtualenv so it does not need to be installed on the local system. 
+2. A new virtual environment is created under ``/buildenv/env`` by calling ``venv.pex ./buildenv/env``
+3. The environment is activated with ``source ./buildenv/env/bin/activate``. Any python package installations will now be placed here. 
+4. Paradrop is installed with ``pip install -e .``. This installs paradrop in the virtual as well as all dependancies. Dependancies are listed in ``src/setup.py``. You must add depedencies here in order to include new python packages with paradrop. 
+5. Dependancies are saved into ``bin/pddepedencies.pex`` with the command ``pex -r docs/requirements.txt -o bin/pddepedencies.pex``. Note: requirements are written out to the file in step 4. This is done so that the ``paradrop`` dependancy is not included in the pex, since pex won't know how to look for it! The command used to do this is ``pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt``.
+
+At this point you can run paradrop by activating the virtualenv (step #3) and then simply calling ``paradrop``. Note that the bundled dependancies pex does not affect locally running paradrop instances-- its used in the next section.
 
 
 Installing paradrop
 --------------------
+All programs installed on snappy are called ``snaps``. Snappy development tools are required to build snaps::
+
+    sudo add-apt-repository ppa:snappy-dev/tools
+    sudo apt-get update
+    sudo apt-get install snappy-tools bzr
+
+To build a snap::
+
+    snappy build .
+
+Push a snap to a running instance of snappy::
+
+    snappy-remote --url=ssh://localhost:8022 install SNAPNAME
 
 
 Creating chutes
 --------------------
 
+In progress.
 
-
-
-### Virtualenv
-(Note: not using virtualenv for pex configuration later, but it makes things easier.)
-virtualenv is a tool that allows developers to manage environments, dependancies and more for python programs. In this case its used both as a management tool and a packageing tool (along with pex.)
-
-We may choose to go with this as part of the build process since it doesn't require building the python package, but perhaps not. 
-
-To load the current virtualenv, use 
-    source [envdir]/bin/activate
-
-To deactivate, use
-    deactivate
-
-To install something like twisted be sure to have python developer tools already installed:
-    sudo apt-get install python-dev
 
 ## Contributing
 All contributions must follow [PEP8](https://www.python.org/dev/peps/pep-0008/) and have relevant tests. Please document as needed. 
-
-## Miscellanious Help
-
-
-### Paradrop
-Paradrop is packaged as a python package. This means you can install it on a local system without needing to interact with snappy. Be warned-- the package on its own assumes that docker and Open vSwitch are installed, and may fail if these components are not already installed!
-
-
-
-
-Build a Snap and push it to a running snappy instance. Make sure you're in the directory you're trying to build before attempting these steps. This example loads one the sample snappy apps. 
-```
-snappy build .
-snappy-remote --url=ssh://localhost:8022 install ./hello-world_1.0.17_all.snap
-```
-
-Snaps with binaries must have those binaries explicitly called. Those with services are automatically started. This example again uses the sample 'hello-world' shipped with the snappy examples repository.
-```
-hello-world.echo
-```
 
 Compiling documentation
 ```

@@ -1,21 +1,21 @@
-paradrop package
-================
+paradrop.lib package
+====================
 
 Subpackages
 -----------
 
 .. toctree::
 
-    paradrop.backend
-    paradrop.frontend
+    paradrop.lib.api
+    paradrop.lib.utils
 
 Submodules
 ----------
 
-paradrop.paradrop module
-------------------------
+paradrop.lib.settings module
+----------------------------
 
-.. automodule:: paradrop.paradrop
+.. automodule:: paradrop.lib.settings
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ paradrop.paradrop module
 Module contents
 ---------------
 
-.. automodule:: paradrop
+.. automodule:: paradrop.lib
     :members:
     :undoc-members:
     :show-inheritance:
