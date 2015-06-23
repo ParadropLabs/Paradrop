@@ -29,3 +29,28 @@ To create the documentation locally, run::
     python -m SimpleHTTPServer 9999
 
 Open your web browser of choice and point it to http://localhost:9999/_build/html/index.html.
+
+
+Testing
+-------
+
+As mentioned above, all testing is automatically run by travis-ci, a continuous integration service. 
+
+To manually run tests, install nosetest::
+
+    pip install nose
+
+Run all tests::
+
+    nosetests
+
+Well thats easy. How does nose detect tests? All tests live in the ``tests/`` directory. Nose adheres to a simple principle: anything marked with ``test`` in its name is most likely a test. When writing tests, make sure all functions begin with ``test``.
+
+Coverage analysis detects how much of the code is used by a test suite. If the result of the coverage is less than 100%, someone slacked. Install coveralls::
+
+    pip install coveralls
+
+Run tests with coverage analysis::
+
+    nosetests --with-coverage --cover-package=paradrop
+

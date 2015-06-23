@@ -11,7 +11,7 @@ Contains the classes required to establish a RESTful API server using Twisted.
 from twisted.web.server import Site
 from twisted.internet import reactor
 
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import logPrefix
 from paradrop.lib.utils.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
 from paradrop.lib.api import pdrest
@@ -25,13 +25,13 @@ from paradrop.backend.pdfcd import apichute
 # API Callbacks
 ###########################################################################################################################
 class ParadropAPIServer(pdrest.APIResource):
+
     def __init__(self, lclreactor):
         pdrest.APIResource.__init__(self)
         self.reactor = lclreactor
 
         # Allow each module to register their API calls
         apichute.ChuteAPI(self)
-
 
     def preprocess(self, request, checkThresh, tictoc):
         """
@@ -48,9 +48,9 @@ class ParadropAPIServer(pdrest.APIResource):
                 str: if threshold is met
                 None: if ok
         """
+
         if(checkThresh):
             ip, token, key, failureDict = checkThresh
-
 
             # Check if IP is in whitelist
             ipaddr = apiutils.unpackIPAddr(ip)
@@ -68,13 +68,13 @@ class ParadropAPIServer(pdrest.APIResource):
                         usage = (tictoc, None)
                     self.failprocess(ip, request, (ip, self.clientFailures), None, usage, pdapi.getResponse(pdapi.ERR_THRESHOLD))
                     duration = self.perf.toc(tictoc)
-                    # Log the info of this call    
+                    # Log the info of this call
                     # TODO self.usageTracker.addTrackInfo(ip, 'Null', request.path, self.usageTracker.FAIL_THRESH, duration, request.content.getvalue())
 
                     return "Threshold Met!"
         # Otherwise everything is ok
         return None
-    
+
     def postprocess(self, request, key, failureDict, logUsage):
         """
             If the client is successful in their request, we should:
@@ -122,7 +122,7 @@ class ParadropAPIServer(pdrest.APIResource):
             request.setResponseCode(*pdapi.getResponse(errType, ""))
         else:
             request.setResponseCode(*pdapi.getResponse(errType))
-        
+
         headers = request.received_headers
         if(logUsage is not None):
             tictoc, devid = logUsage
@@ -130,9 +130,9 @@ class ParadropAPIServer(pdrest.APIResource):
             if(devid is None):
                 devid = "Null"
             duration = self.perf.toc(tictoc)
-            # Log the info of this call    
+            # Log the info of this call
             # TODO self.usageTracker.addTrackInfo(ip, devid , request.path, self.usageTracker.FAIL_AUTH, duration, request.content.getvalue())
-        
+
         if(logFailure is not None):
             key, failureDict = logFailure
             # update the accessInfo
@@ -140,7 +140,7 @@ class ParadropAPIServer(pdrest.APIResource):
                 failureDict[key].update(ip, headers, time)
             else:
                 failureDict[key] = AccessInfo(ip, headers, time)
-        
+
             attempts = failureDict[key].attempts
             out.warn('** %s Failure access recorded: %s Attempts: %d\n' % (logPrefix(), key, attempts))
 
@@ -150,8 +150,6 @@ class ParadropAPIServer(pdrest.APIResource):
         if(errorStmt):
             return errorStmt % ("Null")
 
-
-
     @pdrest.GET('^/v1/test')
     def GET_test(self, request):
         request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)
@@ -159,7 +157,7 @@ class ParadropAPIServer(pdrest.APIResource):
         out.info('-- %s Test called (%s)\n' % (logPrefix(), ip))
         request.setResponseCode(*pdapi.getResponse(pdapi.OK))
         return "SUCCESS\n"
-    
+
     @pdrest.ALL('^/')
     def default(self, request):
         ip = apiutils.getIP(request)
@@ -167,26 +165,25 @@ class ParadropAPIServer(pdrest.APIResource):
         method = request.method
         # Get data about who done it
         out.err("!! %s Default caught API call (%s => %s:%s)\n" % (logPrefix(), ip, method, uri))
-        
+
         # Someone might be trying something bad, track their IP
         res = self.preprocess(request, (ip, None, ip, self.defaultFailures), tictoc)
         if(res):
             return res
-        
+
         self.failprocess(ip, request, (ip, self.defaultFailures), None, (tictoc, None), pdapi.ERR_BADMETHOD)
         return ""
-        
 
-       
+
 ###############################################################################
 # Main function
 ###############################################################################
 def setup(args=None):
-    
+
     # Setup API server
     api = ParadropAPIServer(reactor)
     site = Site(api, timeout=None)
-    
+
     # Development mode
     if(args and args.development):
         thePort = settings.PDFCD_PORT + 10000
@@ -195,16 +192,15 @@ def setup(args=None):
         site.displayTracebacks = True
     elif(args and args.unittest):
         thePort = settings.DBAPI_PORT + 20000
-        out.info('-- %s Running under unittest mode\n' % (logPrefix())) 
+        out.info('-- %s Running under unittest mode\n' % (logPrefix()))
         site.displayTracebacks = True
     else:
         thePort = settings.PDFCD_PORT
         site.displayTracebacks = False
-        
+
     # Setup the port we listen on
     out.info('-- %s Establishing API server, port: %d\n' % (logPrefix(), thePort))
     reactor.listenTCP(thePort, site)
 
     # Never return from here
     reactor.run()
-       

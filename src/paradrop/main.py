@@ -2,32 +2,37 @@
 Core module. Contains the entry point into Paradrop and establishes all other modules.
 Does not implement any behavior itself.
 '''
-import sys, argparse, signal
 
-# Need to fully import the output module so we can toggle verbose mode at runtime
+import argparse
+import signal
+
+# Don't import this ever again.
 from paradrop.lib.utils import output
 
 from paradrop.lib import settings
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import logPrefix
 from paradrop.backend.pdfcd import server
 
 
-#################################################################################################################
+##########################################################################
 # Support Functions
-#################################################################################################################
+##########################################################################
 def setupArgParse():
     """
     Sets up arguments if backend is called directly for testing.
     """
-    p = argparse.ArgumentParser(description='Paradrop API server running on client')
+    p = argparse.ArgumentParser(
+        description='Paradrop API server running on client')
     p.add_argument('-s', '--settings', help='Overwrite settings, format is "KEY:VALUE"',
-        action='append', type=str, default=[])
+                   action='append', type=str, default=[])
     p.add_argument('--development', help='Enable the development environment variables',
-        action='store_true')
-    p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
+                   action='store_true')
+    p.add_argument(
+        '--unittest', help="Run the server in unittest mode", action='store_true')
     p.add_argument('--verbose', '-v', help='Enable verbose',
-        action='store_true')
+                   action='store_true')
     return p
+
 
 def caughtSIGUSR1(signum, frame):
     """
@@ -42,9 +47,12 @@ def caughtSIGUSR1(signum, frame):
         output.verbose = False
         output.out.verbose = PD.FakeOutput()
 
-#################################################################################################################
+
+##########################################################################
 # Main Function
-#################################################################################################################
+##########################################################################
+
+
 def main():
     """
     This function does something. Right now what its doing is demonstrating
@@ -57,19 +65,20 @@ def main():
     :returns: int -- the return code.
     :raises: AttributeError, KeyError
     """
+
     # Setup the signal handler for verbose
     signal.signal(signal.SIGUSR1, caughtSIGUSR1)
-    
+
     # Setup args if called directly (testing)
     p = setupArgParse()
     args = p.parse_args()
-    
+
     # Check for settings to overwrite
     settings.updateSettings(args.settings)
-    
+
     if(args.verbose):
         caughtSIGUSR1(signal.SIGUSR1, None)
-    
+
     # Before we setup anything make sure we have generated a UUID for our instance
     # TODO
     out.info('-- {} Test\n'.format(logPrefix()))

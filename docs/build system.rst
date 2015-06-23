@@ -71,24 +71,3 @@ Push a snap to a running instance of snappy::
     snappy-remote --url=ssh://localhost:8022 install SNAPNAME
 
 
-Creating chutes
---------------------
-
-In progress.
-
-
-## Contributing
-All contributions must follow [PEP8](https://www.python.org/dev/peps/pep-0008/) and have relevant tests. Please document as needed. 
-
-Compiling documentation
-```
-pip install sphinx sphinx-autobuild sphinx-rtd-build
-cd docs
-make html
-```
-
-sphinx-apidoc -f -o docs paradrop/paradrop/
-
-
-
-
