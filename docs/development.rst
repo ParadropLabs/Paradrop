@@ -10,5 +10,6 @@ Contents:
 
    quickstart
    build system
+   apparmor
    doctests
 
