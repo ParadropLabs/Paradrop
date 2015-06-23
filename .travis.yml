@@ -5,3 +5,6 @@ python:
 install: "pip install -r docs/requirements.txt"
 # command to run tests
 script: nosetests
+notifications:
+  email: false
+  slack: paradrop:atIom5TrGkzIsHBdTgP5w8Tq
