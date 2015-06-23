@@ -11,7 +11,7 @@ Contains the classes required to establish a RESTful API server using Twisted.
 from twisted.web.server import Site
 from twisted.internet import reactor
 
-from paradrop.lib.utils.output import logPrefix
+from paradrop.lib.utils.output import logPrefix, out
 from paradrop.lib.utils.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
 from paradrop.lib.api import pdrest
@@ -24,8 +24,8 @@ from . import apiutils
 from . import apichute
 
 
-
 class ParadropAPIServer(pdrest.APIResource):
+
     """
     The main API server module.
 
@@ -49,7 +49,7 @@ class ParadropAPIServer(pdrest.APIResource):
         when a request comes in we tell it to wait a minute (a NOT_DONE_YET return) and then
         later on we use the reference we have to the request from @update to write the response
         back to the user and close the connection.
-        
+
         :param name: update
         :param type: UpdateObject
         """
@@ -59,7 +59,7 @@ class ParadropAPIServer(pdrest.APIResource):
         try:
             update.pkg.request.write(json2str(update.result))
             update.pkg.request.finish()
-        
+
         # TODO don't catch all exceptions here
         except Exception as e:
             pass
@@ -107,7 +107,7 @@ class ParadropAPIServer(pdrest.APIResource):
                     else:
                         usage = (tictoc, None)
                     self.failprocess(ip, request, (ip, self.clientFailures), None, usage, pdapi.getResponse(pdapi.ERR_THRESHOLD))
-                    duration = 0 # self.perf.toc(tictoc)
+                    duration = 0  # self.perf.toc(tictoc)
                     # Log the info of this call
                     # TODO self.usageTracker.addTrackInfo(ip, 'Null', request.path, self.usageTracker.FAIL_THRESH, duration, request.content.getvalue())
 
@@ -125,7 +125,7 @@ class ParadropAPIServer(pdrest.APIResource):
         request.setResponseCode(*pdapi.getResponse(pdapi.OK))
         if(logUsage):
             tictoc, ip, devid = logUsage
-            duration = 0 #self.perf.toc(tictoc)
+            duration = 0  # self.perf.toc(tictoc)
             # when devid is none, we log "Null" into the database
             if(devid is None):
                 devid = "Null"
@@ -169,7 +169,7 @@ class ParadropAPIServer(pdrest.APIResource):
 
             if(devid is None):
                 devid = "Null"
-            duration = 0 # self.perf.toc(tictoc)
+            duration = 0  # self.perf.toc(tictoc)
             # Log the info of this call
             # TODO self.usageTracker.addTrackInfo(ip, devid , request.path, self.usageTracker.FAIL_AUTH, duration, request.content.getvalue())
 
@@ -189,9 +189,7 @@ class ParadropAPIServer(pdrest.APIResource):
                 return errorStmt % ("%s attempts remaining" % remaining)
         if(errorStmt):
             return errorStmt % ("Null")
-    
-        
-    
+
     @pdrest.GET('^/v1/test')
     def GET_test(self, request):
         """

@@ -270,9 +270,3 @@ out = Output(
     security=Stderr(Colors.SECURITY),
     fatal=Stderr(Colors.FATAL)
 )
-
-# Export out to the global namespace. Don't ever do this.
-builtin = sys.modules['__builtin__'].__dict__
-
-if not 'out' in builtin:
-    builtin['out'] = out

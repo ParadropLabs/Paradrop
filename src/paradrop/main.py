@@ -6,7 +6,6 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-# Don't import this ever again.
 from paradrop.lib.utils import output
 
 from paradrop.lib import settings
@@ -81,7 +80,7 @@ def main():
 
     # Before we setup anything make sure we have generated a UUID for our instance
     # TODO
-    out.info('-- {} Test\n'.format(logPrefix()))
+    output.out.info('-- {} Test\n'.format(logPrefix()))
 
     # Now setup the RESTful API server for Paradrop
     pdfcd.server.setup(args)
