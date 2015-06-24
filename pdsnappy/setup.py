@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="paradrop",
+    name="pdsnappy",
     version="0.1",
     author="Paradrop Labs",
     description="Paradrop wireless virtualization",
@@ -10,7 +10,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'paradrop=paradrop.main:main',
+            'pdsnappy=paradrop:main',
         ],
     },
 )

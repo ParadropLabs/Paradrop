@@ -57,45 +57,41 @@ build() {
     echo -e "${COLOR}Installing paradrop" && tput sgr0
 
     pip install pex
-    pip install -e ./src
-
-    #we don't want to bundle pex (for size reasons) and paradrop (since pex needs a little help in 
-    # finding the package thats out of the scope of this script)
-    echo -e "${COLOR}Building dependencies" && tput sgr0
+    pip install -e ./pdsnappy
 
     #also-- we can get away without saving the requirements just fine, but readthedocs needs them
-    pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
-    pex -r docs/requirements.txt -o bin/pddependancies.pex
+    pip freeze | grep -v 'pex' | grep -v 'pdsnappy' > docs/requirements.txt
+    # pex -r docs/requirements.txt -o snap/bin/pd.pex -m paradrop.main:main -f buildenv/dist
+
+    #the above is somewhat redundant now, but meh
+    cd buildenv
+    python ../pdsnappy/setup.py bdist_egg -d .
+    cd ..
+
+    echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
+    pex pdsnappy -o snap/bin/pd.pex -m paradrop:main -f buildenv/
+    rm -rf *.egg-info
 }
 
 clean() {
     echo "Cleaning build directories"
 
     rm -rf buildenv/env
-    rm bin/pddependancies.pex
-    rm -rf src/paradrop.egg-info
+    # rm -rf src/paradrop.egg-info
+    rm snap/bin/pd.pex
     rm *.snap
 }
 
 run() {
     echo -e "${COLOR}Starting Paradrop" && tput sgr0
 
-    if ! [ -d "./buildenv/env" ]
-        then
-        echo "Build directories do not exist. Have you built yet?"
-        echo -e "\t$0 build"
+    if [ ! -f snap/bin/pd.pex ]; then
+        echo "Dependency pex not found! Have you built the dependencies yet?"
+        echo -e "\t$ $0 build"
         exit
     fi
 
-    #problem with this is we may not be able to interact directly with the running instance since
-    # it thinks its in a venv. May be ok, but not sure. Alternatively could activate the venv
-    # for the script caller, but since this has unintended consequences its less useful
-    source buildenv/env/bin/activate
-    paradrop
-
-    #check for docker and ovs? If running locally will have to install them here
-
-    #TODO: pass remaining args to paradrop
+    snap/bin/pd.pex
 }
 
 install() {
@@ -123,7 +119,7 @@ install() {
     rm *.snap
     
     #build the snap using snappy dev tools and extract the name of the snap
-    snappy build .
+    snappy build snap
     SNAP=$(ls | grep ".snap")
 
     echo -e "${COLOR}Installing snap" && tput sgr0

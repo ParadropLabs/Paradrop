@@ -80,3 +80,5 @@ bin/*.pex
 .DS_STORE
 
 *.xz
+
+snap/bin/*
