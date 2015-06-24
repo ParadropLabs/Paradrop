@@ -56,7 +56,6 @@ build() {
 
     echo -e "${COLOR}Installing paradrop" && tput sgr0
 
-    tput sgr0
     pip install pex
     pip install -e ./src
 

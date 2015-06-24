@@ -1,6 +1,0 @@
-#!/bin/sh
-
-#this is a static start of the paradrop "service, " but runs it locally.
-#used for testing the service without, you know, running the service
-
-bin/pddependancies.pex paradrop/paradrop/paradrop.py
