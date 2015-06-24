@@ -19,7 +19,7 @@ class UpdateObject(object):
         self.result = None
     
     def __str__(self):
-        return "<UpdateChute :: {} - {} @ {}>".format(self.name, self.updateType, self.tok)
+        return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
 
     def complete(self, **kwargs):
         """

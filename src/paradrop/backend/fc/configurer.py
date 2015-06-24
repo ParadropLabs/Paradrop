@@ -5,7 +5,7 @@
 
 import time, threading
 
-from paradrop.lib.utils.output import logPrefix
+from paradrop.lib.utils.output import out, logPrefix
 from paradrop.lib.utils.pdutils import timeint, str2json
 
 from paradrop.lib import settings

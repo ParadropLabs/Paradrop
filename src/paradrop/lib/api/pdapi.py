@@ -1,6 +1,5 @@
 import random, math
 
-
 class PDAPIError(Exception):
     """
         Exception class related to ParaDrop API calls.
