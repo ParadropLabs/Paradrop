@@ -34,7 +34,7 @@ class ChuteAPI:
         
         # For now fake out a create chute message
         self.rest.configurer.updateList(updateClass='CHUTE', updateType='create',
-            tok=str(timeint()), name='TheName', config='Stuff and Things',
+            tok=timeint(), name='TheName', config='Stuff and Things',
             pkg=apiPkg, func=self.rest.complete)
 
         # Tell our system we aren't done yet (the configurer will deal with closing the connection)

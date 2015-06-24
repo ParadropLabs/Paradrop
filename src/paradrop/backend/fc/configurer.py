@@ -101,9 +101,7 @@ class PDConfigurer:
                     continue
                 # TESTING end
 
-                # TODO add commands to perform the action
-                
-                update.complete(success=True, message="TEST")
+                update.execute()
 
             except Exception as e:
                 out.exception(logPrefix(), e, True)

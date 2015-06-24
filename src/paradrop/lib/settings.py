@@ -28,6 +28,8 @@
 
 import os, re, sys
 
+DEBUG_MODE = False
+
 #
 # pdfcd
 #
