@@ -12,10 +12,9 @@ binaries:
 #    start: bin/start
 #    start: bin/stop
 #    description: Paradrop main daemon
-#    caps:
-#    - networking
-#    - network-service
-
+#    security-policy:
+#       apparmor: meta/pd.apparmor
+#       seccomp: meta/pd.seccomp
 # services:
 #   - name: paradrop
 #     description: Paradrop service
