@@ -1,3 +1,3 @@
-Hello world example
+Paradrop
 
-This is a simple hello world example.
+This is paradrop.

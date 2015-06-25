@@ -72,7 +72,7 @@ docs/_build
 docs/_static
 docs/_templates
 
-bin/*.pex
+snap/bin/*.pex
 *.img
 *.swp
 *.pyc
@@ -80,5 +80,3 @@ bin/*.pex
 .DS_STORE
 
 *.xz
-
-snap/bin/*

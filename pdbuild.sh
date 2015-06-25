@@ -69,7 +69,7 @@ build() {
     cd ..
 
     echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
-    pex paradrop -o snap/bin/pd.pex -m paradrop:main -f buildenv/
+    pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
     rm -rf *.egg-info
 }
 
@@ -78,23 +78,23 @@ clean() {
 
     rm -rf buildenv
     # rm -rf src/paradrop.egg-info
-    rm snap/bin/pd.pex
+    rm snap/bin/pd
 }
 
 run() {
     echo -e "${COLOR}Starting Paradrop" && tput sgr0
 
-    if [ ! -f snap/bin/pd.pex ]; then
+    if [ ! -f snap/bin/pd ]; then
         echo "Dependency pex not found! Have you built the dependencies yet?"
         echo -e "\t$ $0 build"
         exit
     fi
 
-    snap/bin/pd.pex
+    snap/bin/pd
 }
 
 install() {
-    if [ ! -f snap/bin/pd.pex ]; then
+    if [ ! -f snap/bin/pd ]; then
         echo "Dependency pex not found! Have you built the dependencies yet?"
         echo -e "\t$ $0 build"
         exit
@@ -181,6 +181,7 @@ connect() {
     if [ ! -f buildenv/pid.txt ]; then
         echo "No Snappy virtual machine running. Try:"
         echo -e "$0 up"
+        exit
     fi
 
     echo -e "${COLOR} Connecting to virtual machine. user: ubuntu password: ubuntu" && tput sgr0
