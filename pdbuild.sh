@@ -30,11 +30,11 @@ fi
 # Utils
 ###
 killvm() {
-    if [ -f buildenv/pid.txt ]; then
+    if [ -f pid.txt ]; then
         echo -e "${COLOR}Killing snappy virtual machine" && tput sgr0
-        KVM="$(cat buildenv/pid.txt)"
+        KVM="$(cat pid.txt)"
         kill "${KVM}"
-        rm buildenv/pid.txt
+        rm pid.txt
     else
         echo -e "${COLOR}Snappy virtual machine is not running" && tput sgr0
     fi
@@ -155,7 +155,7 @@ setup() {
 }
 
 up() {
-    if [ -f buildenv/pid.txt ]; then
+    if [ -f pid.txt ]; then
         echo "Snappy virtual machine is already running. If you believe this to be an error, try:"
         echo -e "$0 down"
         exit
@@ -170,7 +170,7 @@ up() {
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
     kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 -redir :9999::14321 snappy-vm.img &
-    echo $! > buildenv/pid.txt
+    echo $! > pid.txt
 }
 
 down() {
@@ -178,7 +178,7 @@ down() {
 }
 
 connect() {
-    if [ ! -f buildenv/pid.txt ]; then
+    if [ ! -f pid.txt ]; then
         echo "No Snappy virtual machine running. Try:"
         echo -e "$0 up"
         exit

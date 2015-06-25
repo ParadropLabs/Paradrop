@@ -3,8 +3,8 @@
 #can pass arguments along here
 bin/pd
 
-sleep 2
-while [ -e /var/run/pd.pid ]
-do
-    sleep 2
-done
+# sleep 2
+# while [ -e /var/run/pd.pid ]
+# do
+#     sleep 2
+# done

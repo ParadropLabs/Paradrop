@@ -80,3 +80,4 @@ snap/bin/*.pex
 .DS_STORE
 
 *.xz
+pid.txt
