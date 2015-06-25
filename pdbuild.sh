@@ -60,7 +60,7 @@ build() {
     pip install -e ./paradrop
 
     #also-- we can get away without saving the requirements just fine, but readthedocs needs them
-    pip freeze | grep -v 'pex' | grep -v 'pdsnappy' > docs/requirements.txt
+    pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
     # pex -r docs/requirements.txt -o snap/bin/pd.pex -m paradrop.main:main -f buildenv/dist
 
     #the above is somewhat redundant now, but meh
