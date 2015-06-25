@@ -8,7 +8,7 @@ icon: meta/hello.png
 #       apparmor: meta/pd.apparmor
 #       seccomp: meta/pd.seccomp
 
-#TODO: Let the service start 
+
 services:
  - name: pd
    start: bin/pd
