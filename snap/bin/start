@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# NOTE: This script is not currently being used!
+# Snappy does not allow this to be set as a service. Based on the docker code 
+# (at the bottom of this file) it expects the script to live on. 
+# To fix: have script save pid, uncomment the code below, and write the stop
+# script
+
 #can pass arguments along here
 bin/pd
 
