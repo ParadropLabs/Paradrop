@@ -76,10 +76,9 @@ build() {
 clean() {
     echo "Cleaning build directories"
 
-    rm -rf buildenv/env
+    rm -rf buildenv
     # rm -rf src/paradrop.egg-info
     rm snap/bin/pd.pex
-    rm *.snap
 }
 
 run() {
@@ -139,11 +138,9 @@ setup() {
         fi
 
         #cd because the -p flag to wget acted up 
-        cd buildenv
         wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz 
         unxz ubuntu-15.04-snappy-amd64-generic.img.xz
         rm -rf releases.ubuntu.com
-        cd ..
     fi
 
     if ! type "snappy" > /dev/null; then
@@ -163,7 +160,7 @@ up() {
         exit
     fi
 
-    if [ ! -f buildenv/ubuntu-15.04-snappy-amd64-generic.img ]; then
+    if [ ! -f ubuntu-15.04-snappy-amd64-generic.img ]; then
         echo "Snappy image not found. Try:"
         echo -e "\t$0 setup"
         exit
@@ -171,7 +168,7 @@ up() {
 
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
-    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 -redir :9999::14321 buildenv/ubuntu-15.04-snappy-amd64-generic.img &
+    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 -redir :9999::14321 ubuntu-15.04-snappy-amd64-generic.img &
     echo $! > buildenv/pid.txt
 }
 
