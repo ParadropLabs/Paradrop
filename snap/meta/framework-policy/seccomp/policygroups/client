@@ -1,0 +1,12 @@
+# Description: Can access the docker socket and use docker as client
+# Usage: reserved
+
+# Allow to run the docker binary to communicate with the docker service. This
+# introduces a security risk since full access to the privileged socket grants
+# privileged access to the system. Once this is resolved, this policy group
+# may be moved to 'common'.
+
+socket
+setsockopt
+bind
+capget

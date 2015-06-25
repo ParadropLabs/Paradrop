@@ -1,0 +1,5 @@
+#
+# seccomp confinement for docker daemon
+#
+# TODO: finetune this
+@unrestricted

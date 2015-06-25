@@ -1,0 +1,5 @@
+#
+# seccomp confinement for docker-privilege
+#
+# TODO: finetune this
+@unrestricted

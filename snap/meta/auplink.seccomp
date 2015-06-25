@@ -1,0 +1,4 @@
+# FIXME: adjust to what it needs
+security-template: unconfined
+policy-vendor: ubuntu-core
+policy-version: 15.04

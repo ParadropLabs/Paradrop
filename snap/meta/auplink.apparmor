@@ -1,0 +1,8 @@
+{
+  "template": "default",
+  "policy_groups": [
+    "networking"
+  ],
+  "policy_vendor": "ubuntu-core",
+  "policy_version": 15.04
+}
