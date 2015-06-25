@@ -57,7 +57,7 @@ build() {
     echo -e "${COLOR}Installing paradrop" && tput sgr0
 
     pip install pex
-    pip install -e ./pdsnappy
+    pip install -e ./paradrop
 
     #also-- we can get away without saving the requirements just fine, but readthedocs needs them
     pip freeze | grep -v 'pex' | grep -v 'pdsnappy' > docs/requirements.txt
@@ -65,11 +65,11 @@ build() {
 
     #the above is somewhat redundant now, but meh
     cd buildenv
-    python ../pdsnappy/setup.py bdist_egg -d .
+    python ../paradrop/setup.py bdist_egg -d .
     cd ..
 
     echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
-    pex pdsnappy -o snap/bin/pd.pex -m paradrop:main -f buildenv/
+    pex paradrop -o snap/bin/pd.pex -m paradrop:main -f buildenv/
     rm -rf *.egg-info
 }
 
@@ -95,7 +95,7 @@ run() {
 }
 
 install() {
-    if [ ! -f bin/pddependancies.pex ]; then
+    if [ ! -f snap/bin/pd.pex ]; then
         echo "Dependency pex not found! Have you built the dependencies yet?"
         echo -e "\t$ $0 build"
         exit
@@ -110,13 +110,7 @@ install() {
 
     echo -e "${COLOR}Building snap" && tput sgr0
 
-    if [ ! -f bin/pddependancies.pex ]; then
-        echo "Dependency pex not found! Have you built the dependencies yet?"
-        echo -e "\t$ $0 build"
-        exit
-    fi
-
-    rm *.snap
+    
     
     #build the snap using snappy dev tools and extract the name of the snap
     snappy build snap
@@ -124,7 +118,8 @@ install() {
 
     echo -e "${COLOR}Installing snap" && tput sgr0
     snappy-remote --url=ssh://localhost:8022 install "${SNAP}"
-
+    rm *.snap
+    
     exit
 }
 
@@ -176,7 +171,7 @@ up() {
 
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
-    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 buildenv/ubuntu-15.04-snappy-amd64-generic.img &
+    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 -redir :9999::14321 buildenv/ubuntu-15.04-snappy-amd64-generic.img &
     echo $! > buildenv/pid.txt
 }
 
