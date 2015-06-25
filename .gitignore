@@ -72,7 +72,7 @@ docs/_build
 docs/_static
 docs/_templates
 
-snap/bin/*.pex
+snap/bin/pd
 *.img
 *.swp
 *.pyc

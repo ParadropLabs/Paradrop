@@ -2,18 +2,20 @@ name: paradrop
 version: 0.1.0
 vendor: Paradrop Labs <snappy-devel@lists.ubuntu.com>
 icon: meta/hello.png
-# binaries:
-#  - name: bin/pd
-#    security-policy:
-#       apparmor: meta/pd.apparmor
-#       seccomp: meta/pd.seccomp
-services:
- - name: pd
-   start: bin/pd
-   description: Paradrop main daemon
+binaries:
+ - name: bin/pd
    security-policy:
       apparmor: meta/pd.apparmor
       seccomp: meta/pd.seccomp
+
+#TODO: Let the service start 
+# services:
+#  - name: pd
+#    start: bin/pd
+#    description: Paradrop main daemon
+#    security-policy:
+#       apparmor: meta/pd.apparmor
+#       seccomp: meta/pd.seccomp
 # services:
 #   - name: paradrop
 #     description: Paradrop service

@@ -130,17 +130,16 @@ setup() {
     fi
 
     #check for image only download if it does not already exist
-    if [ ! -f buildenv/ubuntu-15.04-snappy-amd64-generic.img ]; then
+    if [ ! -f snappy-vm.img ]; then
         echo -e "${COLOR}Downloading Snappy image." && tput sgr0
 
         if ! [ -d "./buildenv" ]; then
             mkdir buildenv
         fi
 
-        #cd because the -p flag to wget acted up 
         wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz 
         unxz ubuntu-15.04-snappy-amd64-generic.img.xz
-        mv snappy-vm.img
+        mv ubuntu-15.04-snappy-amd64-generic.img snappy-vm.img
         rm -rf releases.ubuntu.com
     fi
 
@@ -161,7 +160,7 @@ up() {
         exit
     fi
 
-    if [ ! -f ubuntu-15.04-snappy-amd64-generic.img ]; then
+    if [ ! -f snappy-vm.img ]; then
         echo "Snappy image not found. Try:"
         echo -e "\t$0 setup"
         exit
