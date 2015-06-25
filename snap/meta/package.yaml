@@ -3,18 +3,18 @@ version: 0.1.0
 vendor: Paradrop Labs <snappy-devel@lists.ubuntu.com>
 icon: meta/hello.png
 binaries:
- - name: bin/start
+ - name: bin/pd.pex
    security-policy:
       apparmor: meta/pd.apparmor
       seccomp: meta/pd.seccomp
-services:
- - name: pd.pex
-   start: bin/start
-   start: bin/stop
-   description: Paradrop main daemon
-   caps:
-   - networking
-   - network-service
+# services:
+#  - name: pd.pex
+#    start: bin/start
+#    start: bin/stop
+#    description: Paradrop main daemon
+#    caps:
+#    - networking
+#    - network-service
 
 # services:
 #   - name: paradrop
