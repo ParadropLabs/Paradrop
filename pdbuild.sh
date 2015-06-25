@@ -140,6 +140,7 @@ setup() {
         #cd because the -p flag to wget acted up 
         wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz 
         unxz ubuntu-15.04-snappy-amd64-generic.img.xz
+        mv snappy-vm.img
         rm -rf releases.ubuntu.com
     fi
 
@@ -168,7 +169,7 @@ up() {
 
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
-    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 -redir :9999::14321 ubuntu-15.04-snappy-amd64-generic.img &
+    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 -redir :9999::14321 snappy-vm.img &
     echo $! > buildenv/pid.txt
 }
 
