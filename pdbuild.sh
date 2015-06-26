@@ -70,6 +70,7 @@ build() {
 
     echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
     pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
+    pex paradrop -o snap/bin/pdconfd -m paradrop:run_pdconfd -f buildenv
     rm -rf *.egg-info
 }
 
