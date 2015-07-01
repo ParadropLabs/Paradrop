@@ -12,6 +12,13 @@ frameworks:
 #       apparmor: meta/pd.apparmor
 #       seccomp: meta/pd.seccomp
 
+binaries:
+ - name: bin/dnsmasq
+   description: DHCP server
+   security-policy:
+       apparmor: meta/dnsmasq.apparmor
+       seccomp: meta/dnsmasq.seccomp
+
 services:
  - name: pd
    start: bin/pd

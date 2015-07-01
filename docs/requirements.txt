@@ -1,3 +1,4 @@
+ipaddress==1.0.7
 six==1.9.0
 Twisted==15.2.1
 txdbus==1.0.11

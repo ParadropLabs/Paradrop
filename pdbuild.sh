@@ -40,6 +40,15 @@ killvm() {
     fi
 }
 
+build_dnsmasq() {
+    test -d third-party || mkdir third-party
+    test -d third-party/dnsmasq || git clone git://thekelleys.org.uk/dnsmasq.git third-party/dnsmasq
+    pushd third-party/dnsmasq
+    LDFLAGS=-static make
+    popd
+    cp third-party/dnsmasq/src/dnsmasq snap/bin/
+}
+
 ###
 # Operations
 ###
@@ -72,6 +81,8 @@ build() {
     pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
     pex paradrop -o snap/bin/pdconfd -m paradrop:run_pdconfd -f buildenv
     rm -rf *.egg-info
+
+    build_dnsmasq
 }
 
 clean() {

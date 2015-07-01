@@ -27,14 +27,24 @@
   #
   # ABOVE: boilerplate copied from
   # https://wiki.ubuntu.com/SecurityTeam/Specifications/SnappyConfinement
-  # 
-  # BELOW: rules for pdconfd
+  #
+  # BELOW: rules specific to dnsmasq
+  #
+  # If you install apparmor-profiles on Ubuntu, it comes with a file,
+  # "/etc/apparmor.d/usr.sbin.dnsmasq", I used that to find the necessary
+  # permissions for dnsmasq.
   #
 
-  # /usr/bin/env is required to load our Python script.
-  # Python needs to access a bunch of stuff (devices, /tmp, /usr/local/lib, etc.),
-  # so the easiest thing to do is give it unconfined access with rux.
-  /usr/bin/env rix,
-  /usr/bin/python2.7 rux,
-  /apps/bin/dnsmasq rPx,
+  capability net_bind_service,
+  capability setgid,
+  capability setuid,
+  capability dac_override,
+  capability net_admin,         # for DHCP server
+  capability net_raw,           # for DHCP server ping checks
+  network inet raw,
+
+  # Give dnsmasq access to a few files that it needs.
+  /tmp/dnsmasq-*.conf r,
+  /tmp/dnsmasq-*.leases rw,
+  /tmp/dnsmasq-*.pid w,
 }
