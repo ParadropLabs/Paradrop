@@ -5,7 +5,7 @@ I know this is confusing naming, this is a temp fix
 from setuptools import setup, find_packages
 
 setup(
-    name="pdtools",
+    name="paradrop",
     version="0.1",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
