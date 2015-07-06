@@ -1,16 +1,16 @@
-"""
-Paradrop build tools.
+"""Paradrop build tools.
 
 Usage:
     paradrop install <chute-directory> <host> <port>
-    paradrop pdinstall <host> <port>
+    paradrop snapinstall <host> <port>
     paradrop (-h | --help)
     paradrop --version
-
 Options:
     -h --help     Show this screen.
     --version     Show version.
 """
+
+
 
 from docopt import docopt
 
