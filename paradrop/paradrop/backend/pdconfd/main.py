@@ -20,7 +20,7 @@ from txdbus.interface import DBusInterface, Method
 
 import sys
 
-from config import loadConfig
+from config import ConfigManager
 
 service_name="com.paradrop.config"
 service_path="/"
@@ -35,14 +35,15 @@ class ConfigService(objects.DBusObject):
 
     def __init__(self):
         super(ConfigService, self).__init__(service_path)
+        self.configManager = ConfigManager()
 
     def dbus_Reload(self, name):
         print("Asked to reload {}.".format(name))
-        return loadConfig(name)
+        return self.configManager.loadConfig(name)
 
     def dbus_ReloadAll(self):
         print("Asked to reload configuration files.")
-        return loadConfig()
+        return self.configManager.loadConfig()
 
     def dbus_Test(self):
         return "D-Bus is working!"

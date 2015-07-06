@@ -8,10 +8,34 @@ from paradrop.internal.utils.uci import OpenWrtConfig
 CONFIG_DIR = "/etc/config"
 
 class ConfigObject(object):
+    nextId = 0
     typename = None
     options = []
 
+    def __init__(self):
+        self.id = ConfigObject.nextId
+        ConfigObject.nextId += 1
+
+        self.name = None
+
+        self.dependents = set()
+
+    def __hash__(self):
+        return hash(self.getTypeAndName())
+
+    def addDependent(self, dep):
+        self.dependents.add(dep)
+
     def commands(self, allConfigs):
+        return []
+
+    def getTypeAndName(self):
+        """
+        Return tuple (section type, section name).
+        """
+        return (self.typename, self.name)
+
+    def undoCommands(self, allConfigs):
         return []
 
     def optionsMatch(self, other):
@@ -79,6 +103,7 @@ class ConfigDhcp(ConfigObject):
     def commands(self, allConfigs):
         # Look up the interface - may fail.
         interface = allConfigs[("interface", self.interface)]
+        interface.addDependent(self)
 
         network = ipaddress.IPv4Network(u"{}/{}".format(
             interface.ipaddr, interface.netmask), strict=False)
@@ -114,12 +139,19 @@ class ConfigDhcp(ConfigObject):
                 outputFile.write("dhcp-leasefile={}\n".format(leaseFile))
             cmd = ["dnsmasq", "-C", outputPath]
         else:
-            cmd = ["/apps/bin/dnsmasq", 
+            cmd = ["/apps/paradrop/current/bin/dnsmasq",
                     "--interface={}".format(interface.ifname),
                     "--dhcp-range={},{},{}".format(str(firstAddress), str(lastAddress), self.leasetime),
                     "--dhcp-leasefile={}".format(leaseFile),
                     "--pid-file={}".format(pidFile)]
 
+        self.pidFile = pidFile
+        return [cmd]
+
+    def undoCommands(self, allConfigs):
+        with open(self.pidFile, "r") as inputFile:
+            pid = inputFile.read().strip()
+        cmd = ["kill", pid]
         return [cmd]
 
 class ConfigInterface(ConfigObject):
@@ -162,21 +194,28 @@ class ConfigZone(ConfigObject):
         {"name": "output", "type": str, "required": False, "default": "DROP"}
     ]
 
-    def commands(self, allConfigs):
+    def __commands(self, allConfigs, action):
         commands = list()
 
         if self.network is not None:
             for networkName in self.network:
                 # Look up the interface - may fail.
                 interface = allConfigs[("interface", networkName)]
+                interface.addDependent(self)
 
                 cmd = ["iptables", "--table", "nat",
-                        "--insert", "POSTROUTING",
+                        action, "POSTROUTING",
                         "--out-interface", interface.ifname,
                         "--jump", "MASQUERADE"]
                 commands.append(cmd) 
 
         return commands
+
+    def commands(self, allConfigs):
+        return self.__commands(allConfigs, "--insert")
+
+    def undoCommands(self, allConfigs):
+        return self.__commands(allConfigs, "--delete")
 
 # Map of type names to the classes that handle them.
 configTypeMap = dict()
@@ -213,54 +252,94 @@ def findConfigFiles(search=None):
 
     return files
 
-nextSectionId = 0
-def loadConfig(search=None, execute=True):
-    files = findConfigFiles(search)
+class ConfigManager(object):
+    def __init__(self):
+        self.currentConfig = dict()
+        self.nextSectionId = 0
 
-    # Map (type, name) -> config
-    allConfigs = dict()
+    def loadConfig(self, search=None, execute=True):
+        files = findConfigFiles(search)
 
-    newConfigs = list()
-    commands = list()
+        # Map (type, name) -> config
+        allConfigs = dict(self.currentConfig)
 
-    # First, parse all of the new configuration files.  There may be
-    # dependencies across files, so we read them all in first.
-    for fn in files:
-        print("Trying file {}".format(fn))
-        uci = OpenWrtConfig(fn)
-        config = uci.readConfig()
+        # Manage sets of configuration sections.
+        # newConfigs: completely new or new versions of existing sections.
+        # affectedConfigs: sections that are affected due to dependency changing.
+        # undoConfigs: old sections that need to be undone before proceeding.
+        newConfigs = set()
+        affectedConfigs = set()
+        undoConfigs = set()
 
-        if config is None:
-            print("Error reading file.")
-            continue
+        # Final list of commands to execute.
+        commands = list()
 
-        for section, options in config:
-            if "name" in section:
-                name = section['name']
-            elif "name" in options:
-                name = options['name']
-            else:
-                name = "section{:04d}".format(nextSectionId)
-                nextSectionId += 1
+        # First, parse all of the new configuration files.  There may be
+        # dependencies across files, so we read them all in first.
+        for fn in files:
+            print("Trying file {}".format(fn))
+            uci = OpenWrtConfig(fn)
+            config = uci.readConfig()
 
-            cls = configTypeMap[section['type']]
-            obj = cls.build(fn, name, options)
-            newConfigs.append(obj)
-            allConfigs[(cls.typename, name)] = obj
+            if config is None:
+                print("Error reading file.")
+                continue
 
-    # Generate list of commands to implement configuration.
-    for config in newConfigs:
-        commands.extend(config.commands(allConfigs))
+            for section, options in config:
+                if "name" in section:
+                    name = section['name']
+                elif "name" in options:
+                    name = options['name']
+                else:
+                    name = "section{:04d}".format(self.nextSectionId)
+                    self.nextSectionId += 1
 
-    # Finally, execute the commands.
-    for cmd in commands:
-        print("Command: {}".format(" ".join(cmd)))
-        if execute:
-            result = subprocess.call(cmd)
-            print("Result: {}".format(result))
+                cls = configTypeMap[section['type']]
+                obj = cls.build(fn, name, options)
+                key = obj.getTypeAndName()
 
-    return True
+                # Check if the section already exists in identical form
+                # in our current configuration.
+                matches = False
+                if key in self.currentConfig:
+                    oldobj = self.currentConfig[key]
+                    if obj.optionsMatch(oldobj):
+                        matches = True
+                    else:
+                        # Old section will need to be undone appropriately.
+                        undoConfigs.add(oldobj)
+
+                        # Keep track of sections that may be affected by this
+                        # one's change.
+                        affectedConfigs.update(oldobj.dependents)
+
+                # If it did not exist or is different, add it to our queue
+                # of sections to execute.
+                if not matches:
+                    newConfigs.add(obj)
+                    allConfigs[(cls.typename, name)] = obj
+
+        # Generate list of commands to implement configuration.
+        for config in affectedConfigs:
+            commands.extend(config.undoCommands(self.currentConfig))
+        for config in undoConfigs:
+            commands.extend(config.undoCommands(self.currentConfig))
+        for config in newConfigs:
+            commands.extend(config.commands(allConfigs))
+        for config in affectedConfigs:
+            commands.extend(config.commands(allConfigs))
+
+        # Finally, execute the commands.
+        for cmd in commands:
+            print("Command: {}".format(" ".join(cmd)))
+            if execute:
+                result = subprocess.call(cmd)
+                print("Result: {}".format(result))
+
+        self.currentConfig = allConfigs
+        return True
 
 if __name__=="__main__":
-    loadConfig(execute=False)
+    manager = ConfigManager()
+    manager.loadConfig(execute=False)
 
