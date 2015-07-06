@@ -1,23 +1,42 @@
 ###################################################################
-# Copyright 2013-2014 All Rights Reserved
+# Copyright 2013-2015 All Rights Reserved
 # Authors: The Paradrop Team
 ###################################################################
 
-import sys
+from paradrop.lib.utils.output import out, logPrefix
+from paradrop.backend.exc import plangraph
 
-from lib.paradrop import *
-from lib.paradrop.chute import Chute
-from lib.paradrop import chute
+def generatePlans(update):
+    """
+        This function looks at a diff of the current Chute (in @chuteStor) and the @newChute,
+        then adds Plan() calls to make the Chute match the @newChute.
 
-from lib.internal.utils import uci
-from lib.internal.utils import security
-from lib.internal.fc import networkmanager
-from lib.internal.utils import lxc as virt
-from lib.internal.utils import coap
-from lib.internal.utils import openwrt as osenv
-from lib.internal.exc import plangraph
-from lib.internal.fc.fcerror import PDFCError
-from lib.internal.fc.chutestorage import ChuteStorage
+        Returns:
+            True: abort the plan generation process
+    """
+    out.header("== %s %r\n" % (logPrefix(), update))
+    
+    # Make sure we need to create this chute (does it already exist)
+    # TODO
+
+    return None
+
+###########################################################################################################
+## Integrate from below
+
+# from lib.paradrop import *
+# from lib.paradrop.chute import Chute
+# from lib.paradrop import chute
+# 
+# from lib.internal.utils import uci
+# from lib.internal.utils import security
+# from lib.internal.fc import networkmanager
+# from lib.internal.utils import lxc as virt
+# from lib.internal.utils import coap
+# from lib.internal.utils import openwrt as osenv
+# from lib.internal.exc import plangraph
+# from lib.internal.fc.fcerror import PDFCError
+# from lib.internal.fc.chutestorage import ChuteStorage
 
 #
 # Function called by the execution planner

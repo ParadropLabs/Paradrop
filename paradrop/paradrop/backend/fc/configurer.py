@@ -89,7 +89,7 @@ class PDConfigurer:
                 continue
             
             try:
-                # Take the object and ID the update type
+                # Take the object and identify the update type
                 update = updateObject.parse(updateObj)
                 out.info('-- %s Performing update %s\n' % (logPrefix(), update))
 
@@ -101,6 +101,7 @@ class PDConfigurer:
                     continue
                 # TESTING end
 
+                # Based on each update type execute could be different
                 update.execute()
 
             except Exception as e:

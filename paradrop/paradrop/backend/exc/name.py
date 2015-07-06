@@ -17,7 +17,8 @@ def generatePlans(update):
     """
     out.header("== %s %r\n" % (logPrefix(), update))
     
-    # Make sure we need to create this chute (does it already exist)
+    # When chutes had their own partitions we provided we would choose which one, set it up
+    # and mount it using this module, is this required still?
     # TODO
 
     return None
