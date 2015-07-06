@@ -9,18 +9,72 @@ CONFIG_DIR = "/etc/config"
 
 class ConfigObject(object):
     typename = None
-    required = []
+    options = []
 
     def commands(self, allConfigs):
         return []
 
-    def missingOptions(self, data):
-        missing = [x for x in self.required if x not in data]
-        return missing
+    def optionsMatch(self, other):
+        """
+        Test equality of config sections by comparing option values.
+        """
+        if not isinstance(other, self.__class__):
+            return False
+        for opdef in self.options:
+            if getattr(self, opdef['name']) != getattr(other, opdef['name']):
+                return False
+        return True
+
+    @classmethod
+    def build(cls, source, name, options):
+        """
+        Build a config object instance from the UCI section.
+
+        Arguments:
+        source -- file containing this configuration section
+        name -- name of the configuration section
+        options -- dictionary of options loaded from the section
+        """
+        obj = cls()
+        obj.source = source
+        obj.name = name
+
+        for opdef in cls.options:
+            found = False
+
+            if opdef['type'] == list:
+                if "list" in options and opdef['name'] in options['list']:
+                    value = options['list'][opdef['name']]
+                    found = True
+            elif opdef['type'] == bool:
+                if opdef['name'] in options:
+                    value = options[opdef['name']] != '0'
+                    found = True
+            else:
+                if opdef['name'] in options:
+                    value = opdef['type'](options[opdef['name']])
+                    found = True
+
+            if not found:
+                if opdef['required']:
+                    raise Exception("Missing required option {} in {}:{}:{}".format(
+                        opdef['name'], source, cls.typename, name))
+                else:
+                    value = opdef['default']
+
+            setattr(obj, opdef['name'], value)
+
+        return obj
 
 class ConfigDhcp(ConfigObject):
     typename = "dhcp"
-    required = ["interface", "leasetime", "limit", "start"]
+
+    options = [
+        {"name": "interface", "type": str, "required": True, "default": None},
+        {"name": "leasetime", "type": str, "required": True, "default": "12h"},
+        {"name": "limit", "type": int, "required": True, "default": 150},
+        {"name": "start", "type": int, "required": True, "default": 100}
+    ]
 
     def commands(self, allConfigs):
         # Look up the interface - may fail.
@@ -68,20 +122,16 @@ class ConfigDhcp(ConfigObject):
 
         return [cmd]
 
-    @classmethod
-    def build(cls, source, name, options):
-        dhcp = cls()
-        dhcp.source = source
-        dhcp.name = name
-        dhcp.interface = options['interface']
-        dhcp.leasetime = options['leasetime']
-        dhcp.limit = int(options['limit'])
-        dhcp.start = int(options['start'])
-        return dhcp
-
 class ConfigInterface(ConfigObject):
     typename = "interface"
-    required = ["proto", "ifname"]
+
+    options = [
+        {"name": "proto", "type": str, "required": True, "default": None},
+        {"name": "ifname", "type": str, "required": True, "default": None},
+        {"name": "enabled", "type": bool, "required": False, "default": True},
+        {"name": "ipaddr", "type": str, "required": False, "default": None},
+        {"name": "netmask", "type": str, "required": False, "default": None}
+    ]
 
     def commands(self, allConfigs):
         commands = list()
@@ -100,25 +150,17 @@ class ConfigInterface(ConfigObject):
 
         return commands
 
-    @classmethod
-    def build(cls, source, name, options):
-        interface = cls()
-        interface.source = source
-        interface.name = name
-        interface.proto = options['proto']
-        interface.ifname = options['ifname']
-        if interface.proto == "static":
-            interface.required.extend(["ipaddr", "netmask"])
-            interface.ipaddr = options['ipaddr']
-            interface.netmask = options['netmask']
-        interface.enabled = True
-        if "enabled" in options:
-            interface.enabled = (options['enabled'] != '0')
-        return interface
-
 class ConfigZone(ConfigObject):
     typename = "zone"
-    required = ["name"]
+
+    options = [
+        {"name": "name", "type": str, "required": True, "default": None},
+        {"name": "network", "type": list, "required": False, "default": None},
+        {"name": "masq", "type": bool, "required": False, "default": False},
+        {"name": "input", "type": str, "required": False, "default": "DROP"},
+        {"name": "forward", "type": str, "required": False, "default": "DROP"},
+        {"name": "output", "type": str, "required": False, "default": "DROP"}
+    ]
 
     def commands(self, allConfigs):
         commands = list()
@@ -136,22 +178,10 @@ class ConfigZone(ConfigObject):
 
         return commands
 
-    @classmethod
-    def build(cls, source, name, options):
-        zone = cls()
-        zone.source = source
-        zone.name = name
-
-        zone.masq = False
-        if "masq" in options:
-            zone.masq = (options['masq'] != '0')
-
-        zone.network = None
-        if "list" in options:
-            if "network" in options['list']:
-                zone.network = options['list']['network']
-
-        return zone
+# Map of type names to the classes that handle them.
+configTypeMap = dict()
+for cls in ConfigObject.__subclasses__():
+    configTypeMap[cls.typename] = cls
 
 def findConfigFiles(search=None):
     """
@@ -213,18 +243,10 @@ def loadConfig(search=None, execute=True):
                 name = "section{:04d}".format(nextSectionId)
                 nextSectionId += 1
 
-            if section['type'] == "interface":
-                interface = ConfigInterface.build(fn, name, options)
-                allConfigs[(section['type'], name)] = interface
-                newConfigs.append(interface)
-            elif section['type'] == "dhcp":
-                dhcp = ConfigDhcp.build(fn, name, options)
-                allConfigs[(section['type'], name)] = dhcp
-                newConfigs.append(dhcp)
-            elif section['type'] == "zone":
-                zone = ConfigZone.build(fn, name, options)
-                allConfigs[(section['type'], name)] = zone
-                newConfigs.append(zone)
+            cls = configTypeMap[section['type']]
+            obj = cls.build(fn, name, options)
+            newConfigs.append(obj)
+            allConfigs[(cls.typename, name)] = obj
 
     # Generate list of commands to implement configuration.
     for config in newConfigs:
