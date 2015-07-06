@@ -9,7 +9,7 @@ setup(
     version="0.1",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
-    install_requires=[],
+    install_requires=['docopt', 'requests'],
     packages=find_packages(),
 
     entry_points={

@@ -68,6 +68,8 @@ paradrop/build
 paradrop/paradrop.egg-info/
 paradrop/*.snap
 
+pdtools/build
+
 docs/_build
 docs/_static
 docs/_templates
