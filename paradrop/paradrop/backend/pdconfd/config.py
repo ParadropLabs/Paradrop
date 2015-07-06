@@ -116,6 +116,43 @@ class ConfigInterface(ConfigObject):
             interface.enabled = (options['enabled'] != '0')
         return interface
 
+class ConfigZone(ConfigObject):
+    typename = "zone"
+    required = ["name"]
+
+    def commands(self, allConfigs):
+        commands = list()
+
+        if self.network is not None:
+            for networkName in self.network:
+                # Look up the interface - may fail.
+                interface = allConfigs[("interface", networkName)]
+
+                cmd = ["iptables", "--table", "nat",
+                        "--insert", "POSTROUTING",
+                        "--out-interface", interface.ifname,
+                        "--jump", "MASQUERADE"]
+                commands.append(cmd) 
+
+        return commands
+
+    @classmethod
+    def build(cls, source, name, options):
+        zone = cls()
+        zone.source = source
+        zone.name = name
+
+        zone.masq = False
+        if "masq" in options:
+            zone.masq = (options['masq'] != '0')
+
+        zone.network = None
+        if "list" in options:
+            if "network" in options['list']:
+                zone.network = options['list']['network']
+
+        return zone
+
 def findConfigFiles(search=None):
     """
     Look for and return a list of configuration files.  
@@ -146,7 +183,8 @@ def findConfigFiles(search=None):
 
     return files
 
-def loadConfig(search=None):
+nextSectionId = 0
+def loadConfig(search=None, execute=True):
     files = findConfigFiles(search)
 
     # Map (type, name) -> config
@@ -167,14 +205,26 @@ def loadConfig(search=None):
             continue
 
         for section, options in config:
+            if "name" in section:
+                name = section['name']
+            elif "name" in options:
+                name = options['name']
+            else:
+                name = "section{:04d}".format(nextSectionId)
+                nextSectionId += 1
+
             if section['type'] == "interface":
-                interface = ConfigInterface.build(fn, section['name'], options)
-                allConfigs[(section['type'], section['name'])] = interface
+                interface = ConfigInterface.build(fn, name, options)
+                allConfigs[(section['type'], name)] = interface
                 newConfigs.append(interface)
             elif section['type'] == "dhcp":
-                dhcp = ConfigDhcp.build(fn, section['name'], options)
-                allConfigs[(section['type'], section['name'])] = dhcp
+                dhcp = ConfigDhcp.build(fn, name, options)
+                allConfigs[(section['type'], name)] = dhcp
                 newConfigs.append(dhcp)
+            elif section['type'] == "zone":
+                zone = ConfigZone.build(fn, name, options)
+                allConfigs[(section['type'], name)] = zone
+                newConfigs.append(zone)
 
     # Generate list of commands to implement configuration.
     for config in newConfigs:
@@ -183,11 +233,12 @@ def loadConfig(search=None):
     # Finally, execute the commands.
     for cmd in commands:
         print("Command: {}".format(" ".join(cmd)))
-        result = subprocess.call(cmd)
-        print("Result: {}".format(result))
+        if execute:
+            result = subprocess.call(cmd)
+            print("Result: {}".format(result))
 
     return True
 
 if __name__=="__main__":
-    loadConfig()
+    loadConfig(execute=False)
 

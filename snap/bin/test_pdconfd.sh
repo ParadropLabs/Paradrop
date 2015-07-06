@@ -8,11 +8,23 @@ else
     echo "Generating configuration file ${config_file}..."
 
     cat >$config_file <<EOF
+config interface wan
+    option proto 'dhcp'
+    option ifname 'eth0'
+
 config interface lan
     option proto 'static'
     option ipaddr '192.168.32.1'
     option netmask '255.255.255.0'
     option ifname 'eth1'
+
+config zone
+    option name 'wan'
+    option masq '1'
+    option output 'ACCEPT'
+    option forward 'REJECT'
+    option input 'ACCEPT'
+    list network 'wan'
 
 config dhcp lan
     option interface 'lan'
