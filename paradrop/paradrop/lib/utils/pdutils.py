@@ -128,6 +128,57 @@ class dict2obj(object):
         else:
             self.__dict__.update(kwargs)
 
+def check(pkt, pktType, keyMatches=None, **valMatches):
+    """This function takes an object that was expected to come from a packet (after it has been JSONized)
+        and compares it against the arg requirements so you don't have to have 10 if() statements to look for keys in a dict, etc..
+        
+        Args:
+            @pkt             : object to look at
+            @pktType         : object type expected (dict, list, etc..)
+            @keyMatches      : a list of minimum keys found in parent level of dict, expected to be an array
+            @valMatches      : a dict of key:value pairs expected to be found in the parent level of dict
+                              the value can be data (like 5) OR a type (like this value must be a @list@).
+        Returns:
+            None if everything matches, otherwise it returns a string as to why it failed."""
+    #First check that the pkt type is equal to the input type
+    if(type(pkt) is not pktType):
+        return 'expected %s' % str(pktType)
+
+    if(keyMatches):
+        # Convert the keys to a set
+        keyMatches = set(keyMatches)
+        #The keyMatches is expected to be an array of the minimum keys we want to see in the pkt if the type is dict
+        if(type(pkt) is dict):
+            if(not keyMatches.issubset(pkt.keys())):
+                return 'missing, "%s"' % ', '.join(list(keyMatches - set(pkt.keys())))
+        else:
+            return None
+
+    #Finally for anything in the valMatches find those values
+    if(valMatches):
+        # Pull out the dict object from the "valMatches" key
+        if('valMatches' in valMatches.keys()):
+            matchObj = valMatches['valMatches']
+        else:
+            matchObj = valMatches
+
+        for k, v in matchObj.iteritems():
+            #Check for the key
+            if(k not in pkt.keys()):
+                return 'key missing "%s"' % k
+
+            #See how we should be comparing it:
+            if(type(v) is type):
+                if(type(pkt[k]) is not v):
+                    return 'key "%s", bad value type, "%s", expected "%s"' % (k, type(pkt[k]), v)
+
+            else:
+                #If key exists check value
+                if(v != pkt[k]):
+                    return 'key "%s", bad value data, "%s", expected "%s"' % (k, pkt[k], v)
+
+    return None
+
 def explode(pkt, *args):
     """This function takes a dict object and explodes it into the tuple requested.
 
