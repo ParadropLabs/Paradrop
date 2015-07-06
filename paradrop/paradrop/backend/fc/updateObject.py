@@ -69,6 +69,7 @@ class UpdateObject(object):
         """
         # Generate the plans we need to setup the chute
         if(exc.executionplan.generatePlans(self)):
+            out.warn('** %s Failed to generate plans\n' % logPrefix())
             self.complete(success=False, message=self.failure)
             return
         
@@ -90,13 +91,13 @@ class UpdateChute(UpdateObject):
     """
     
     updateModuleList = [
-        exc.name
-        #exc.state,
-        #exc.runtime,
-        #exc.files,
-        #exc.struct,
-        #exc.resource,
-        #exc.traffic
+        exc.name,
+        exc.state,
+        exc.runtime,
+        exc.files,
+        exc.struct,
+        exc.resource,
+        exc.traffic
     ]
     
     def __init__(self, obj):
