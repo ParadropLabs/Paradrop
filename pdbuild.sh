@@ -14,7 +14,7 @@ then
 
     echo "Usage:"
     echo -e "  build\n\t build and package dependencies, install paradrop locally"
-    echo -e "  clean\n\t remove virtual environment, clean packages"
+    # echo -e "  clean\n\t remove virtual environment, clean packages"
     echo -e "  run\n\t run paradrop locally"
     echo -e "  install \n\t compile snap and install on local snappy virtual machine."
     echo -e "  setup\n\t prepares environment for local snappy testing"
@@ -48,6 +48,12 @@ killvm() {
 # package to be installed on a local system. After creating the environment, installs 
 # paradrop and its dependancies, then bundles them into a pex and sets it in the bin directory
 build() {
+    echo "Cleaning build directories"
+
+    rm -rf buildenv
+    rm -rf paradrop/paradrop.egg-info
+    rm snap/bin/pd
+
     echo -e "${COLOR}Loading and building python dependencies"
     echo -e "${COLOR}Bootstrapping environment" && tput sgr0
 
@@ -83,7 +89,7 @@ clean() {
     echo "Cleaning build directories"
 
     rm -rf buildenv
-    # rm -rf src/paradrop.egg-info
+    rm -rf paradrop/paradrop.egg-info
     rm snap/bin/pd
 }
 
@@ -199,7 +205,7 @@ connect() {
 
 case "$1" in
     "build") build;;
-    "clean") clean;;
+    # "clean") clean;;
     "run") run;;
     "install") install;;
     "setup") setup;;
