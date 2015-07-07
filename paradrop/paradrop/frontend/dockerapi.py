@@ -2,9 +2,22 @@ import docker
 from docker import Client
 import json
 
+"""
+This is simply an example call showing how one might use the dockerapi.launchApp function
+
+Use this url as location of Dockerfile and src and extract zip to working dir.
+
+https://github.com/nphyatt/docker-test/archive/master.zip
+
+"""
+
+# cId = dockerapi.launchApp(path='/home/owner/paradrop/docker-test/', name='nick/test', restart_policy={"MaximumRetryCount": 0, "Name": "always"}, port_bindings={80: 9000})
+
+
 ##########################################################################
 # docker-py wrapper functions
 ##########################################################################
+
 
 def launchApp(path=None, name=None, port_bindings=None, restart_policy=None, fileobj=None):
     """
@@ -26,24 +39,28 @@ def launchApp(path=None, name=None, port_bindings=None, restart_policy=None, fil
     """
     c = Client(base_url='unix://var/run/docker.sock')
     name += ":latest"
+
     for line in c.build(fileobj=fileobj, rm=True, tag=name, path=path):
         for key, value in json.loads(line).iteritems():
-            if (key == "stream"): 
+            if (key == "stream"):
                 print value,
             elif (isinstance(value, dict)):
                 continue
             else:
                 print value
+
     container = c.create_container(
-        image=name, 
+        image=name,
         host_config=docker.utils.create_host_config(
-            port_bindings = port_bindings,
-            restart_policy = restart_policy
+            port_bindings=port_bindings,
+            restart_policy=restart_policy
         )
     )
+
     print(str(container.get('Id')))
     c.start(container.get('Id'))
     return str(container.get('Id'))
+
 
 def stopAndRmData(cId, name):
     """
