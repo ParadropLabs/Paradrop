@@ -53,6 +53,10 @@ def caughtSIGUSR1(signum, frame):
 
 
 def main():
+    print ''
+    print 'WRONG'
+    print ''
+
     """
     This function does something. Right now what its doing is demonstrating
     a docstring with sphinxy additions.

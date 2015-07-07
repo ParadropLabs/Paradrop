@@ -56,21 +56,28 @@ build() {
     rm snap/bin/pd
 
     echo -e "${COLOR}Loading and building python dependencies"
-    echo -e "${COLOR}Bootstrapping environment" && tput sgr0
+    # echo -e "${COLOR}Bootstrapping environment" && tput sgr0
 
-    ./venv.pex buildenv/env
-    source buildenv/env/bin/activate
+    # ./venv.pex buildenv/env
+    # source buildenv/env/bin/activate
 
     echo -e "${COLOR}Installing paradrop" && tput sgr0
 
-    pip install pex
-    pip install -e ./paradrop
+    if ! type "pex" > /dev/null; then
+        echo 'Please install pex. Try:'
+        echo "pip install pex"
+        exit
+    fi
+
+    # pip install pex
+    # pip install -e ./paradrop
 
     #also-- we can get away without saving the requirements just fine, but readthedocs needs them
-    pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
+    # pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
     # pex -r docs/requirements.txt -o snap/bin/pd.pex -m paradrop.main:main -f buildenv/dist
 
-    deactivate 
+    # pip and bdist doesn't play well together. Turn off the virtualenv.
+    # deactivate 
 
     #the above is somewhat redundant now, but meh
     cd paradrop
@@ -123,8 +130,6 @@ install() {
     fi
 
     echo -e "${COLOR}Building snap" && tput sgr0
-
-    
     
     #build the snap using snappy dev tools and extract the name of the snap
     snappy build snap
