@@ -55,6 +55,12 @@ class UpdateObject(object):
     def __str__(self):
         return "<Update({}) :: {}>".format(self.updateClass, self.name)
 
+    def saveState(self):
+        """
+            Function should be overwritten for each UpdateObject subtype
+        """
+        pass
+    
     def complete(self, **kwargs):
         """
             Signal to the API server that any action we need to perform is complete and the API 
@@ -100,6 +106,7 @@ class UpdateObject(object):
                 ## Getting here means the abort system thinks it wasn't able to get the system
                 ## back into the state it was in prior to this update.
                 ###################################################################################
+                out.err('!! %s TODO: What do we do when we fail during abort?\n' % logPrefix())
                 pass
             
             # Report the failure back to the user
@@ -107,7 +114,7 @@ class UpdateObject(object):
             return
 
         # Now save the new state if we are all ok
-        self.chuteStor.saveChute(self.new)
+        self.saveState()
 
         # Respond to the API server to let them know the result
         self.complete(success=True, message='Chute {} {} success'.format(
@@ -132,8 +139,21 @@ class UpdateChute(UpdateObject):
         # TODO : do this better
         if(obj.get('updateType', None) == "create"):
             obj['state'] = chute.STATE_RUNNING
+        elif(obj.get('updateType', None) == "delete"):
+            obj['state'] = chute.STATE_STOPPED
         
         super(UpdateChute, self).__init__(obj)
+    
+    def saveState(self):
+        """
+            For chutes specifically we need to change the chuteStor object to reflect
+            the new state of the system after a chute update. Perform that update here.
+        """
+        if(self.updateType == "delete"):
+            self.chuteStor.deleteChute(self.new)
+        else:
+            self.chuteStor.saveChute(self.new)
+
 
 
 

@@ -77,7 +77,7 @@ class ChuteStorage(PDStorage):
     #
     def attrSaveable(self):
         """Returns True if we should save the ChuteList, otherwise False."""
-        return (type(ChuteStorage.chuteList) == dict and len(ChuteStorage.chuteList) > 0)
+        return (type(ChuteStorage.chuteList) == dict)
 
 
 if(__name__ == '__main__'):
