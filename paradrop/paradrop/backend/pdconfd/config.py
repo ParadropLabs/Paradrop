@@ -50,7 +50,7 @@ class ConfigObject(object):
         return True
 
     @classmethod
-    def build(cls, source, name, options):
+    def build(cls, manager, source, name, options):
         """
         Build a config object instance from the UCI section.
 
@@ -60,6 +60,7 @@ class ConfigObject(object):
         options -- dictionary of options loaded from the section
         """
         obj = cls()
+        obj.manager = manager
         obj.source = source
         obj.name = name
 
@@ -137,7 +138,8 @@ class ConfigDhcp(ConfigObject):
                 outputFile.write("dhcp-range={},{},{}\n".format(
                     str(firstAddress), str(lastAddress), self.leasetime))
                 outputFile.write("dhcp-leasefile={}\n".format(leaseFile))
-            cmd = ["dnsmasq", "-C", outputPath]
+            cmd = ["dnsmasq", "--conf-file={}".format(outputPath),
+                    "--pid-file={}".format(pidFile)]
         else:
             cmd = ["/apps/paradrop/current/bin/dnsmasq",
                     "--interface={}".format(interface.ifname),
@@ -194,10 +196,10 @@ class ConfigZone(ConfigObject):
         {"name": "output", "type": str, "required": False, "default": "DROP"}
     ]
 
-    def __commands(self, allConfigs, action):
+    def __commands_iptables(self, allConfigs, action):
         commands = list()
 
-        if self.network is not None:
+        if self.masq and self.network is not None:
             for networkName in self.network:
                 # Look up the interface - may fail.
                 interface = allConfigs[("interface", networkName)]
@@ -206,16 +208,36 @@ class ConfigZone(ConfigObject):
                 cmd = ["iptables", "--table", "nat",
                         action, "POSTROUTING",
                         "--out-interface", interface.ifname,
-                        "--jump", "MASQUERADE"]
+                        "--jump", "MASQUERADE",
+                        "--match", "comment", "--comment", 
+                        "pdconfd {} {}".format(self.typename, self.name)]
                 commands.append(cmd) 
 
         return commands
 
     def commands(self, allConfigs):
-        return self.__commands(allConfigs, "--insert")
+        commands = self.__commands_iptables(allConfigs, "--insert")
+
+        if self.masq:
+            self.manager.forwardingCount += 1
+            if self.manager.forwardingCount == 1:
+                cmd = ["sysctl", "--write",
+                        "net.ipv4.conf.all.forwarding=1"]
+                commands.append(cmd)
+        
+        return commands
 
     def undoCommands(self, allConfigs):
-        return self.__commands(allConfigs, "--delete")
+        commands = self.__commands_iptables(allConfigs, "--delete")
+
+        if self.masq:
+            self.manager.forwardingCount -= 1
+            if self.manager.forwardingCount == 0:
+                cmd = ["sysctl", "--write",
+                        "net.ipv4.conf.all.forwarding=0"]
+                commands.append(cmd)
+
+        return commands
 
 # Map of type names to the classes that handle them.
 configTypeMap = dict()
@@ -256,6 +278,11 @@ class ConfigManager(object):
     def __init__(self):
         self.currentConfig = dict()
         self.nextSectionId = 0
+
+        # Number of objects requiring IP forwarding.
+        # If >0, we need to enable system-wide.
+        # If ==0, we can probably disable.
+        self.forwardingCount = 0
 
     def loadConfig(self, search=None, execute=True):
         """
@@ -317,7 +344,7 @@ class ConfigManager(object):
                     self.nextSectionId += 1
 
                 cls = configTypeMap[section['type']]
-                obj = cls.build(fn, name, options)
+                obj = cls.build(self, fn, name, options)
                 key = obj.getTypeAndName()
 
                 # Check if the section already exists in identical form
