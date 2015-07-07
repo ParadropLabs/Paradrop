@@ -12,6 +12,8 @@ from paradrop.backend.fc import chutestorage
 from paradrop.lib import settings
 from paradrop.lib import chute
 
+UPDATE_SPECIFIC_ARGS = ["pkg", "func"]
+
 class UpdateObject(object):
     """
     The base UpdateObject class, covers a few basic methods but otherwise all the intelligence
@@ -43,7 +45,7 @@ class UpdateObject(object):
         # Grab a reference to our storage system
         self.chuteStor = chutestorage.ChuteStorage()
         # Explicitly define a reference to the new data object
-        self.new = chute.Chute(obj)
+        self.new = chute.Chute(obj, strip=UPDATE_SPECIFIC_ARGS)
         # Grab the old version if it exists
         self.old = self.chuteStor.getChute(self.name)
     
@@ -88,10 +90,24 @@ class UpdateObject(object):
         exc.executionplan.aggregatePlans(self)
 
         # Execute on those plans
-        exc.executionplan.executePlans(self)
-        # TODO
+        if(exc.executionplan.executePlans(self)):
+            # Getting here means we need to abort what we did
+            res = exc.executionplan.abortPlans(self)
+            
+            # Did aborting also fail? This is bad!
+            if(res):
+                ###################################################################################
+                ## Getting here means the abort system thinks it wasn't able to get the system
+                ## back into the state it was in prior to this update.
+                ###################################################################################
+                pass
+            
+            # Report the failure back to the user
+            self.complete(success=False, message=self.failure)
+            return
 
         # Now save the new state if we are all ok
+        self.chuteStor.saveChute(self.new)
 
         # Respond to the API server to let them know the result
         self.complete(success=True, message='Chute {} {} success'.format(

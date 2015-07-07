@@ -60,7 +60,7 @@ class PDStorage:
             
             try:
                 # Now we have the string in @data, jsonize it
-                tmp = json.loads(data, object_hook=convertUnicode)
+                tmp = json.loads(data, object_hook=pdutils.convertUnicode)
                 
                 # JSON should contain a hash and a payload of the data
                 resp = pdutils.check(tmp, dict, valMatches={'hash':int, 'payload':str})

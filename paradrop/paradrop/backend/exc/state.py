@@ -25,7 +25,6 @@ def generatePlans(update):
         
         # If we are now running then everything has to be setup for the first time
         if(update.new.state == chute.STATE_RUNNING):
-            print('added start')
             update.plans.addPlans(plangraph.STATE_CALL_START, (virt.startChute,))
         
         # Check if the state is invalid, we should return bad things in this case (don't do anything)

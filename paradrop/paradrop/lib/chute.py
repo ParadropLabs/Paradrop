@@ -15,13 +15,21 @@ class Chute(object):
     """
         Wrapper class for Chute objects.
     """
-    def __init__(self, descriptor):
+    def __init__(self, descriptor, strip=None):
         # Set these first so we don't have to worry about it later
         self.name = None
         self.state = None
-        
+
         self._cache = {}
-        self.__dict__.update(descriptor)
+        
+        # See if we need to rm anything from descriptor since we grab the whole thing
+        if(strip):
+            d = descriptor
+            for s in strip:
+                d.pop(s, None)
+            self.__dict__.update(d)
+        else:
+            self.__dict__.update(descriptor)
         
     def __repr__(self):
         return "<Chute %s - %s>" % (self.name, self.state)
@@ -33,7 +41,7 @@ class Chute(object):
     def fullDump(self):
         """Return a dump of EVERYTHING in this chute including all API data and all internal cache data."""
         d = self.__dict__
-        d['cache'] = d.pop('_cache')
+        d['cache'] = d.pop('_cache', dict())
         return d
 
     def isValid(self):

@@ -6,7 +6,7 @@
 import sys, json, copy, base64
 
 from paradrop.lib.utils.output import out, logPrefix
-from paradrop.lib.utils.pdutils import timeint, str2json
+from paradrop.lib.utils import pdutils
 from paradrop.lib.utils import pdos
 from paradrop.lib import settings
 
@@ -58,19 +58,14 @@ class ChuteStorage(PDStorage):
         """
         # check if there is a version of the chute already
         oldch = ChuteStorage.chuteList.get(ch.name, None)
-        if(oldch):
+        if(oldch != None):
             newch = copy.deepcopy(oldch)
             # we should merge these chutes so we don't lose any data
-            # First set the regular data
-            for k,v in ch.getAPIDataFormat().iteritems():
-                setattr(newch, k, v)
-            # Now deal with cache separately
-            for k,v in ch._cache.iteritems():
-                newch._cache[k] = v
-            # this allows us to keep what WAS there, replace any duplicates with new stuff without loosing anything too
-            ChuteStorage.chuteList[ch.name] = newch
+            oldch.__dict__.update(ch.__dict__)
+            # TODO: do we need to deal with cache separate? Old code we did
         else:
             ChuteStorage.chuteList[ch.name] = ch
+        
         self.saveToDisk()
     
     def clearChuteStorage(self):
@@ -89,7 +84,7 @@ class ChuteStorage(PDStorage):
             Raises Exception if name missing from Chute.
             Returns dict[name] = Chute
             """
-        pyld = json.loads(base64.b64decode(pyld), object_hook=convertUnicode)
+        pyld = json.loads(base64.b64decode(pyld), object_hook=pdutils.convertUnicode)
         d = {}
         for p in pyld:
             c = Chute(p)
