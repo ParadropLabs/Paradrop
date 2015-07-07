@@ -8,6 +8,7 @@ way to interpret the results through a set of basic actionable functions.
 '''
 
 from paradrop.backend import exc
+from paradrop.backend.fc import chutestorage
 from paradrop.lib import settings
 
 class UpdateObject(object):
@@ -35,6 +36,7 @@ class UpdateObject(object):
         self.failure = None
         # Use a temporary planmap for each chute
         self.plans = exc.plangraph.PlanMap(self.name)
+        self.chuteStor = chutestorage.ChuteStorage()
     
     def __str__(self):
         return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
