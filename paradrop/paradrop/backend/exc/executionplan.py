@@ -73,15 +73,19 @@ def executePlans(update):
             break
         
         # Explode tuple otherwise
-        ch, func, args = p
+        func, args = p
             
+        # We are in a try-except block so if func isn't callable that will catch it
         try:
-            # We are in a try-except block so if func isn't callable that will catch it
+            out.verbose('   %s Calling %s\n' % (logPrefix(), func))
+            #
+            # Call the function from the execution plan
+            #
             skipme = func(args)
         
-        except Exception as e2:
-            out.err('!! %s Exception executing plan %r: %s\n%s\n' % (logPrefix(), update.plans, str(e2), traceback.format_exc()))
-            update.responses.append({'exception': str(e2), 'traceback': traceback.format_exc()})
+        except Exception as e:
+            out.exception(logPrefix(), e, True, plans=update.plans)
+            update.responses.append({'exception': str(e), 'traceback': traceback.format_exc()})
             return True
             
         # The functions we call here can return other functions, if they do these are functions that should
@@ -120,7 +124,7 @@ def abortPlans(update):
                 break
             
             # Explode tuple otherwise
-            ch, func, args = p
+            func, args = p
             
             # We are in a try-except block so if func isn't callable that will catch it
             func(args)

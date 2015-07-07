@@ -5,6 +5,9 @@
 
 from paradrop.lib.utils.output import out, logPrefix
 from paradrop.backend.exc import plangraph
+from paradrop.lib import chute
+
+from paradrop.lib.utils import docker as virt
 
 def generatePlans(update):
     """
@@ -14,10 +17,22 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.header("== %s %r\n" % (logPrefix(), update))
+    out.verbose("   %s %r\n" % (logPrefix(), update))
     
-    # Make sure we need to create this chute (does it already exist)
-    # TODO
+    # If this chute is new (no old version)
+    if(update.old is None):
+        out.verbose('   %s new chute\n' % logPrefix())
+        
+        # If we are now running then everything has to be setup for the first time
+        if(update.new.state == chute.STATE_RUNNING):
+            print('added start')
+            update.plans.addPlans(plangraph.STATE_CALL_START, (virt.startChute,))
+        
+        # Check if the state is invalid, we should return bad things in this case (don't do anything)
+        elif(update.new.state == chute.STATE_INVALID):
+            if(settings.DEBUG_MODE):
+                update.responses.append('Chute state is invalid')
+            return True
 
     return None
 

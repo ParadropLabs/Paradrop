@@ -21,13 +21,13 @@ class Chute(object):
         self.state = None
         
         self._cache = {}
-        self.__dict__.update(obj)
+        self.__dict__.update(descriptor)
         
     def __repr__(self):
         return "<Chute %s - %s>" % (self.name, self.state)
     
     def __str__(self):
-        s = "Chute:%s\n" % (self.name)
+        s = "Chute:%s" % (self.name)
         return s
 
     def fullDump(self):
