@@ -77,27 +77,8 @@ class ChuteStorage(PDStorage):
     #
     def attrSaveable(self):
         """Returns True if we should save the ChuteList, otherwise False."""
-        return (type(ChuteStorage.chuteList) == dict)
+        return (type(ChuteStorage.chuteList) == dict and len(ChuteStorage.chuteList) > 0)
 
-    def importAttr(self, pyld):
-        """Takes an array of dicts that represent Chutes and converts them into a list of Chute objects.
-            Raises Exception if name missing from Chute.
-            Returns dict[name] = Chute
-            """
-        pyld = json.loads(base64.b64decode(pyld), object_hook=pdutils.convertUnicode)
-        d = {}
-        for p in pyld:
-            c = Chute(p)
-            if(c.name == ""):
-                raise Exception('importChuteList', 'Missing name from Chute object')
-            d[c.name] = c
-
-        #print("importChuteList\n%s" % d)
-        return d
-    
-    def exportAttr(self, cl):
-        """Takes a chutelist (dict of Chute objects) and returns a string representing an array of chutes in API Data format."""
-        return base64.b64encode(json.dumps([c.fullDump() for c in ChuteStorage.chuteList.values()]))
 
 if(__name__ == '__main__'):
     def usage():

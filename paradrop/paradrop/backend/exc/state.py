@@ -32,6 +32,10 @@ def generatePlans(update):
             if(settings.DEBUG_MODE):
                 update.responses.append('Chute state is invalid')
             return True
+    
+    # Not a new chute
+    else:
+        pass
 
     return None
 

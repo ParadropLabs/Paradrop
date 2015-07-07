@@ -3,7 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-import json, os
+import pickle
 
 from paradrop.lib.utils.output import out, logPrefix
 from paradrop.lib.utils import pdutils
@@ -48,46 +48,13 @@ class PDStorage:
             out.info('-- %s Loading from disk\n' % logPrefix())
             data = ""
             try:
-                with pdos.open(self.filename, 'r') as fd:
-                    while(True):
-                        line = fd.readline().rstrip().rstrip('\n')
-                        if(not line):
-                            break
-                        data += line
+                pyld = pickle.load(pdos.open(self.filename, 'rb'))
+                setattr(self, self.importantAttr, self.importAttr(pyld))
+                return True
             except Exception as e:
                 out.err('!! %s Error loading from disk: %s\n' % (logPrefix(), str(e)))
                 deleteFile = True
-            
-            try:
-                # Now we have the string in @data, jsonize it
-                tmp = json.loads(data, object_hook=pdutils.convertUnicode)
-                
-                # JSON should contain a hash and a payload of the data
-                resp = pdutils.check(tmp, dict, valMatches={'hash':int, 'payload':str})
-                if(resp):
-                    out.err('!! %s Error: %s\n' % (logPrefix(), resp))
-                    deleteFile = True
-                
-                # Verify the hash
-                else:
-                    theHash = tmp['hash']
-                    pyld = tmp['payload']
-                    tmpHash = hash(pyld)
-                    
-                    if(theHash != tmpHash):
-                        out.err("!! %s Hashes don't match\n" % (logPrefix()))
-                        deleteFile = True
-                    else:
-                        out.verbose('-- %s Loaded from file successfully.\n' % logPrefix())
-                        # Set the attr here
-                        setattr(self, self.importantAttr, self.importAttr(pyld))
-                        return True
 
-            # if we get any error JSONizing it we should really delete it b/c its corrupt
-            except Exception as e:
-                out.err('!! %s Error JSON.loads: %s\n' % (logPrefix(), str(e)))
-                deleteFile = True
-            
             # Delete the file
             if(deleteFile):
                 try:
@@ -106,30 +73,12 @@ class PDStorage:
             return
 
         # Get whatever the data is
-        theAttr = getattr(self, self.importantAttr)
-        
-        # Do prep work first so the file is open as little as possible
-        pyld = self.exportAttr(theAttr)
-        if(not isinstance(pyld, str)):
-            out.err('!! %s Unable to hash attr, must be str type\n' % (logPrefix()))
-            return
-        tmpHash = hash(pyld)
-            
-        tmpJson = {'hash': tmpHash, 'payload': pyld}
+        pyld = self.exportAttr(getattr(self, self.importantAttr))
         
         # Write the file to disk, truncate if it exists
         try:
-            # Make last char newline, easier to read and write out
-            output = json.dumps(tmpJson) + "\n"
-            fd = pdos.open(self.filename, 'w')
-            fd.write(output)
-            
-            # Make sure to flush it to disk (you need both of these calls)
-            fd.flush()
-            os.fsync(fd.fileno())
-
-            # Close the file
-            fd.close()
+            pickle.dump(pyld, pdos.open(self.filename, 'wb'))
+            pdos.syncFS()
             
         except Exception as e:
             out.err('!! %s Error writing to disk %s\n' % (logPrefix(), str(e)))
@@ -139,9 +88,9 @@ class PDStorage:
         return False
     
     def importAttr(self, pyld):
-        """THIS SHOULD BE OVERRIDEN BY THE IMPLEMENTER."""
+        """By default do nothing, but expect that this function could be overwritten"""
         return pyld
     
     def exportAttr(self, data):
-        """THIS SHOULD BE OVERRIDEN BY THE IMPLEMENTER."""
+        """By default do nothing, but expect that this function could be overwritten"""
         return data

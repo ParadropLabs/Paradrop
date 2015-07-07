@@ -49,10 +49,10 @@ class UpdateObject(object):
         # Grab the old version if it exists
         self.old = self.chuteStor.getChute(self.name)
     
-    def __str__(self):
+    def __repr__(self):
         return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
     
-    def __repr__(self):
+    def __str__(self):
         return "<Update({}) :: {}>".format(self.updateClass, self.name)
 
     def complete(self, **kwargs):
