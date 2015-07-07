@@ -16,8 +16,7 @@ class ConfigObject(object):
         self.id = ConfigObject.nextId
         ConfigObject.nextId += 1
 
-        self.name = None
-
+        self.name = "section-{:08x}".format(self.id)
         self.dependents = set()
 
     def __hash__(self):
@@ -57,12 +56,15 @@ class ConfigObject(object):
         Arguments:
         source -- file containing this configuration section
         name -- name of the configuration section
+                If None, a unique name will be generated. 
         options -- dictionary of options loaded from the section
         """
         obj = cls()
         obj.manager = manager
         obj.source = source
-        obj.name = name
+
+        if name is not None:
+            obj.name = name
 
         for opdef in cls.options:
             found = False
@@ -70,6 +72,18 @@ class ConfigObject(object):
             if opdef['type'] == list:
                 if "list" in options and opdef['name'] in options['list']:
                     value = options['list'][opdef['name']]
+                    found = True
+                elif opdef['name'] in options:
+                    # Sometimes we expect a list but get a single value instead.
+                    # Example:
+                    #   ...
+                    #   option network 'lan'
+                    #   ...
+                    # instead of
+                    #   ...
+                    #   list network 'lan'
+                    #   ...
+                    value = [options[opdef['name']]]
                     found = True
             elif opdef['type'] == bool:
                 if opdef['name'] in options:
@@ -184,6 +198,114 @@ class ConfigInterface(ConfigObject):
 
         return commands
 
+class ConfigRedirect(ConfigObject):
+    typename = "redirect"
+
+    options = [
+        {"name": "src", "type": str, "required": False, "default": None},
+        {"name": "src_ip", "type": str, "required": False, "default": None},
+        {"name": "src_dip", "type": str, "required": False, "default": None},
+        {"name": "src_port", "type": str, "required": False, "default": None},
+        {"name": "src_dport", "type": str, "required": False, "default": None},
+        {"name": "proto", "type": str, "required": True, "default": "tcpudp"},
+        {"name": "dest", "type": str, "required": False, "default": None},
+        {"name": "dest_ip", "type": str, "required": False, "default": None},
+        {"name": "dest_port", "type": str, "required": False, "default": None},
+        {"name": "target", "type": str, "required": False, "default": "DNAT"}
+    ]
+
+    def __commands_dnat(self, allConfigs, action):
+        """
+        Generate DNAT iptables rules.
+        """
+        commands = list()
+
+        src_zone = allConfigs[("zone", self.src)]
+        src_zone.addDependent(self)
+
+        # Special cases: 
+        # None->skip protocol and port arguments,
+        # tcpudp->[tcp, udp]
+        if self.proto is None:
+            protocols = [None]
+        elif self.proto == "tcpudp":
+            protocols = ["tcp", "udp"]
+        else:
+            protocols = [self.proto]
+
+        for interface in src_zone.interfaces(allConfigs):
+            for proto in protocols:
+                cmd = ["iptables", "--table", "nat",
+                        action, "PREROUTING",
+                        "--in-interface", interface.ifname]
+
+                if self.src_ip is not None:
+                    cmd.extend(["--source", self.src_ip])
+                if self.src_dip is not None:
+                    cmd.extend(["--destination", self.src_dip])
+                if proto is not None:
+                    cmd.extend(["--proto", proto])
+                    if self.src_port is not None:
+                        cmd.extend(["--sport", self.src_port])
+                    if self.src_dport is not None:
+                        cmd.extend(["--dport", self.src_dport])
+
+                if self.dest_ip is not None:
+                    if self.dest_port is not None:
+                        cmd.extend(["--jump", "DNAT", "--to-destination",
+                            "{}:{}".format(self.dest_ip, self.dest_port)])
+                    else:
+                        cmd.extend(["--jump", "DNAT", "--to-destination", self.dest_ip])
+                elif self.dest_port is not None:
+                    cmd.extend(["--jump", "REDIRECT", "--to-port", self.dest_port])
+
+                cmd.extend(["--match", "comment", "--comment",
+                    "pdconfd {} {}".format(self.typename, self.name)])
+
+                commands.append(cmd)
+
+        return commands
+
+    def __commands_snat(self, allConfigs, action):
+        """
+        Generate SNAT iptables rules.
+        """
+        commands = list()
+        # TODO: implement SNAT rules
+        return commands
+
+    def commands(self, allConfigs):
+        if self.target == "DNAT":
+            commands = self.__commands_dnat(allConfigs, "--insert")
+        elif self.target == "SNAT":
+            commands = self.__commands_snat(allConfigs, "--insert")
+        else:
+            commands = list()
+
+        self.manager.forwardingCount += 1
+        if self.manager.forwardingCount == 1:
+            cmd = ["sysctl", "--write",
+                    "net.ipv4.conf.all.forwarding=1"]
+            commands.append(cmd)
+        
+        return commands
+
+    def undoCommands(self, allConfigs):
+        if self.target == "DNAT":
+            commands = self.__commands_dnat(allConfigs, "--delete")
+        elif self.target == "SNAT":
+            commands = self.__commands_snat(allConfigs, "--delete")
+        else:
+            commands = list()
+
+        self.manager.forwardingCount -= 1
+        if self.manager.forwardingCount == 0:
+            cmd = ["sysctl", "--write",
+                    "net.ipv4.conf.all.forwarding=0"]
+            commands.append(cmd)
+
+        return commands
+
 class ConfigZone(ConfigObject):
     typename = "zone"
 
@@ -196,15 +318,22 @@ class ConfigZone(ConfigObject):
         {"name": "output", "type": str, "required": False, "default": "DROP"}
     ]
 
-    def __commands_iptables(self, allConfigs, action):
-        commands = list()
-
-        if self.masq and self.network is not None:
+    def interfaces(self, allConfigs):
+        """
+        List of interfaces in this zone (generator).
+        """
+        if self.network is not None:
             for networkName in self.network:
                 # Look up the interface - may fail.
                 interface = allConfigs[("interface", networkName)]
                 interface.addDependent(self)
+                yield interface
 
+    def __commands_iptables(self, allConfigs, action):
+        commands = list()
+
+        if self.masq:
+            for interface in self.interfaces(allConfigs):
                 cmd = ["iptables", "--table", "nat",
                         action, "POSTROUTING",
                         "--out-interface", interface.ifname,
@@ -335,15 +464,21 @@ class ConfigManager(object):
                 continue
 
             for section, options in config:
+                # Sections differ in where they put the name, if they have one.
                 if "name" in section:
                     name = section['name']
                 elif "name" in options:
                     name = options['name']
                 else:
-                    name = "section{:04d}".format(self.nextSectionId)
-                    self.nextSectionId += 1
+                    name = None
 
-                cls = configTypeMap[section['type']]
+                try:
+                    cls = configTypeMap[section['type']]
+                except:
+                    print("Warning: unsupported section type {} in {}".format(
+                        section['type'], fn))
+                    continue
+
                 obj = cls.build(self, fn, name, options)
                 key = obj.getTypeAndName()
 

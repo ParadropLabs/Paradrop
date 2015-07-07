@@ -26,6 +26,14 @@ config zone
     option input 'ACCEPT'
     list network 'wan'
 
+config redirect
+    option src 'wan'
+    option src_dport '50505'
+    option proto 'tcpudp'
+    option dest 'lan'
+    option dest_ip '192.168.32.2'
+    option dest_port '22'
+
 config dhcp lan
     option interface 'lan'
     option start '100'
