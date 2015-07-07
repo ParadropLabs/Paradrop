@@ -30,7 +30,8 @@ class ConfigService(objects.DBusObject):
         DBusInterface(service_name, 
             Method("Reload", arguments="s", returns="b"),
             Method("ReloadAll", returns="b"),
-            Method("Test", returns="s"))
+            Method("Test", returns="s"),
+            Method("UnloadAll", returns="b"))
     ]
 
     def __init__(self):
@@ -47,6 +48,10 @@ class ConfigService(objects.DBusObject):
 
     def dbus_Test(self):
         return "D-Bus is working!"
+
+    def dbus_UnloadAll(self):
+        print("Asked to unload configuration.")
+        return self.configManager.unload()
 
 @defer.inlineCallbacks
 def listen():

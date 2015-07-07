@@ -258,6 +258,28 @@ class ConfigManager(object):
         self.nextSectionId = 0
 
     def loadConfig(self, search=None, execute=True):
+        """
+        Load configuration files and apply changes to the system.
+
+        We process the configuration files in sections.  Each section
+        corresponds to an interface, firewall rule, DHCP server instance, etc.
+        Each time we reload configuration files after the initial time, we
+        check for changes against the current configuration.  Here is the
+        decision tree for handling differences in the newly loaded
+        configuration vs. the existing configuration:
+
+        Section exists in current config (by type and name)?
+         - No -> Add section, apply changes, and stop.
+         - Yes -> Continue.
+        Section is identical to the one in the current config (by option values)?
+         - No -> Revert current section, mark any affected dependents, 
+                 add new section, apply changes, and stop.
+         - Yes -> Continue.
+        Section has not changed but one of its dependencies has?
+         - No -> Stop.
+         - Yes -> Revert current section, mark any affected dependents,
+                  add new section, apply changes, and stop.
+        """
         files = findConfigFiles(search)
 
         # Map (type, name) -> config
@@ -337,6 +359,21 @@ class ConfigManager(object):
                 print("Result: {}".format(result))
 
         self.currentConfig = allConfigs
+        return True
+
+    def unload(self, execute=True):
+        commands = list()
+
+        for config in self.currentConfig.values():
+            commands.extend(config.undoCommands(self.currentConfig))
+
+        for cmd in commands:
+            print("Command: {}".format(" ".join(cmd)))
+            if execute:
+                result = subprocess.call(cmd)
+                print("Result: {}".format(result))
+
+        self.currentConfig = dict()
         return True
 
 if __name__=="__main__":
