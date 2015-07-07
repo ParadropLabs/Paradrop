@@ -129,7 +129,6 @@ class UpdateChute(UpdateObject):
         exc.name,
         exc.state,
         exc.runtime,
-        exc.files,
         exc.struct,
         exc.resource,
         exc.traffic

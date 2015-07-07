@@ -81,10 +81,12 @@ def executePlans(update):
             #
             # Call the function from the execution plan
             #
-            skipme = func(args)
+            # args may be empty, but we don't want to pass in a tuple if we don't need to
+            # so this below explodes the args so if @args is (), then what is passed is @update
+            skipme = func(*(args + (update, )))
         
         except Exception as e:
-            out.exception(logPrefix(), e, True, plans=update.plans)
+            out.exception(logPrefix(), e, True, plans=str(update.plans))
             update.responses.append({'exception': str(e), 'traceback': traceback.format_exc()})
             return True
             
@@ -127,7 +129,7 @@ def abortPlans(update):
             
         # We are in a try-except block so if func isn't callable that will catch it
         try:
-            func(args)
+            func(*(args + (update, )))
             
             # If the func is called without exception then clear the @sameError flag for the next function call
             sameError = False

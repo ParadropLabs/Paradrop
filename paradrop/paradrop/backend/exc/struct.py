@@ -6,6 +6,8 @@
 from paradrop.lib.utils.output import out, logPrefix
 from paradrop.backend.exc import plangraph
 
+from paradrop.lib import config
+
 def generatePlans(update):
     """
         This function looks at a diff of the current Chute (in @chuteStor) and the @newChute,
@@ -14,98 +16,47 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.header("== %s %r\n" % (logPrefix(), update))
-    
-    # Make sure we need to create this chute (does it already exist)
-    # TODO
-
+    out.verbose("   %s %r\n" % (logPrefix(), update))
     return None
-
-###########################################################################################################
-## Integrate from below
-
-# from lib.paradrop import *
-# from lib.paradrop.chute import Chute
-# from lib.paradrop import chute
-# 
-# from lib.internal.utils import uci
-# from lib.internal.utils import security
-# from lib.internal.fc import networkmanager
-# from lib.internal.utils import lxc as virt
-# from lib.internal.utils import coap
-# from lib.internal.utils import openwrt as osenv
-# from lib.internal.exc import plangraph
-# from lib.internal.fc.fcerror import PDFCError
-# from lib.internal.fc.chutestorage import ChuteStorage
-
-#
-# Function called by the execution planner
-#
-def generateStructPlan(chuteStor, clickHandler, ofHandler, newChute, chutePlan):
-    """
-        This function looks at a diff of the current Chute (in @chuteStor) and the @newChute, then adds Plan() calls
-        to make the Chute match the @newChute.
-
-        Returns:
-            None  : means continue to pass this chute update to the rest of the chain.
-            True  : means stop updating, but its ok (no errors or anything)
-            str   : means stop updating, but some error occured (contained in the string)
-    """
-    new = newChute
-    old = chuteStor.getChute(newChute.guid)
-    out.header("-- %s Generating Struct Plan: %r\n" % (logPrefix(), new))
-    #print("New chute: %s" % new.dumpCache())
-    #print("Old chute: %s" % old.dumpCache())
-                
-    # First need to check security of the stuff they have changed
-    # chutePlan.addPlans(new, plangraph.STRUCT_SECURITY_CHECK, (security.checkStruct, (chuteStor, new)))  
-
+    
     # Save current network configuration into chute cache (key: 'networkInterfaces')
-    chutePlan.addPlans(new, plangraph.STRUCT_GET_INT_NETWORK, (new.getNetworkConfig, chuteStor))
+    update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK, (config.network.getNetworkConfig, chuteStor))
 
     # Setup changes to push into OS config files (key: 'osNetworkConfig')
-    chutePlan.addPlans(new, plangraph.STRUCT_GET_OS_NETWORK, (new.getOSNetworkConfig, None))  
+    update.plans.addPlans(plangraph.STRUCT_GET_OS_NETWORK, (config.network.getOSNetworkConfig, None))  
     
     # Setup changes to push into OS config files (key: 'osWirelessConfig')
-    chutePlan.addPlans(new, plangraph.STRUCT_GET_OS_WIRELESS, (new.getOSWirelessConfig, None))  
+    update.plans.addPlans(plangraph.STRUCT_GET_OS_WIRELESS, (config.wifi.getOSWirelessConfig, None))  
     
     # Setup changes into virt configuration file (key: 'virtNetworkConfig')
-    chutePlan.addPlans(new, plangraph.STRUCT_GET_VIRT_NETWORK, (new.getVirtNetworkConfig, None))
+    update.plans.addPlans(plangraph.STRUCT_GET_VIRT_NETWORK, (config.network.getVirtNetworkConfig, None))
     
-    # Push changes into OS config files
-    todoPlan = (new.setOSNetworkConfig, old)
-    abtPlan = (new.resetOSNetworkConfig, None)
-    chutePlan.addPlans(new, plangraph.STRUCT_SET_OS_NETWORK, todoPlan, abtPlan)
+    # Changes for networking
+    todoPlan = (config.network.setOSNetworkConfig, )
+    abtPlan = (config.osconfig.revertConfig, 'network')
+    update.plans.addPlans(plangraph.STRUCT_SET_OS_NETWORK, todoPlan, abtPlan)
     
-    todoPlan = (new.setOSWirelessConfig, old)
-    abtPlan = (new.resetOSWirelessConfig, None)
-    chutePlan.addPlans(new, plangraph.STRUCT_SET_OS_WIRELESS, todoPlan, abtPlan)
+    # Changes for wifi
+    todoPlan = (config.wifi.setOSWirelessConfig, )
+    abtPlan = (config.osconfig.revertConfig, 'wireless')
+    update.plans.addPlans(plangraph.STRUCT_SET_OS_WIRELESS, todoPlan, abtPlan)
 
     # Now deal with reloading the network
-    todoPlan = (osenv.reloadNetwork, (clickHandler, ofHandler, chuteStor, new, False))
+    todoPlan = (config.configservice.reloadNetwork, )
     # If we need to abort, we first need to undo the OS Network config changes we made, so the abort plan is a list here
-    abtPlan = [(new.resetOSWirelessConfig, None), (new.resetOSNetworkConfig, None), (osenv.reloadNetwork, (clickHandler, ofHandler, chuteStor, new, True))]
-    chutePlan.addPlans(new, plangraph.STRUCT_RELOAD_NETWORK, todoPlan, abtPlan)
-   
-    if (new.apptype == 'virtnet'):
-        # If the user specifies DHCP then we need to generate the config and store it to disk
-        chutePlan.addPlans(new, plangraph.DHCP_GET_VIRT_RULES, (new.getDHCPConfig, chuteStor))
-
-        chutePlan.addPlans(new, plangraph.DHCP_SET_VIRT_RULES, (new.setDHCPConfig, old))
-
-
-        # Once all changes are made into UCI system, reload the wshaper daemon
-        todoPlan = (osenv.reloadDHCP, (chuteStor, new, False)) 
-        abtPlan = [(new.resetDHCPConfig, None), (osenv.reloadDHCP, (chuteStor, new, True))]
-        chutePlan.addPlans(new, plangraph.DHCP_RELOAD, todoPlan, abtPlan)
-
+    abtPlan = [(config.osconfig.revertConfig, 'wireless'),
+                (config.osconfig.revertConfig, 'network'),
+                (config.configservice.reloadNetwork, )]
+    
+    update.plans.addPlans(plangraph.STRUCT_RELOAD_NETWORK, todoPlan, abtPlan)
+    
     # Now deal with reloading wifi, NOTE that reloadNetwork does a wifi call too, so we only expect wifi to be
     # called in cases when network was NOT called, this is required to deal with issues of when the developer changes
     # wifi settings only (like SSID) but no network settings
-    todoPlan = (osenv.reloadWireless, (clickHandler, chuteStor, new, True))
+    todoPlan = (config.configservice.reloadWireless, )
     # If we need to abort, we first need to undo the OS Wireless config changes we made, so the abort plan is a list here
-    abtPlan = [(new.resetOSWirelessConfig, None), (osenv.reloadWireless, (clickHandler, chuteStor, new, False))]
-    chutePlan.addPlans(new, plangraph.STRUCT_RELOAD_WIFI, todoPlan, abtPlan)
+    abtPlan = [(config.osconfig.revertConfig, 'wireless'), (config.configservice.reloadWireless, )]
+    update.plans.addPlans(plangraph.STRUCT_RELOAD_WIFI, todoPlan, abtPlan)
 
-    chutePlan.addPlans(new, plangraph.COAP_CHANGE_PROCESSES, (coap.startNewClickProcess, (new, chuteStor, clickHandler)))
     return None
+

@@ -28,9 +28,9 @@ RESOURCE_GET_VIRT_MEM           = 16
 RESOURCE_GET_OS_CONFIG          = 17
 TRAFFIC_GET_OS_FIREWALL         = 18
 TRAFFIC_GET_DEVELOPER_FIREWALL  = 19
-DHCP_GET_VIRT_RULES             = 22
-RUNTIME_GET_VIRT_SCRIPT         = 20
+RUNTIME_GET_VIRT_PREAMBLE       = 20
 RUNTIME_GET_VIRT_DHCP           = 21
+DHCP_GET_VIRT_RULES             = 22
 
 ###############################################################################
 # Write Configuration Data

@@ -39,7 +39,7 @@ class ChuteStorage(PDStorage):
         """Save our attr however we want (as class variable for all to see)"""
         ChuteStorage.chuteList = attr
     
-    def getAttr(self, attr):
+    def getAttr(self):
         """Get our attr (as class variable for all to see)"""
         return ChuteStorage.chuteList
 
