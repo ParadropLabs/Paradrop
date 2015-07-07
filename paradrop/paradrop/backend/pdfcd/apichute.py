@@ -5,7 +5,11 @@ from paradrop.lib.utils.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.lib.api.pdrest import APIDecorator
 from paradrop.lib.api import pdapi
 
+from paradrop.dock import deployment
+
 import wget
+import os
+import zipfile
 
 
 class ChuteAPI:
@@ -38,14 +42,16 @@ class ChuteAPI:
 
         # download and install the chute with docker
         # TODO: handle errors that arise from docker. Make this async
-        print apiPkg.inputArgs['url']
-        path = downloadChute(apiPkg.inputArgs['url'])
-        installChute(path)
-        startDockerContainer(path)
+
+        name = 'testchute'
+
+        path = downloadChute(apiPkg.inputArgs['url'], name)
+        installChute(path, name)
+        startDockerContainer(path, name)
 
         # For now fake out a create chute message
         self.rest.configurer.updateList(updateClass='CHUTE', updateType='create',
-                                        tok=timeint(), name='TheName', config='Stuff and Things',
+                                        tok=timeint(), name=name, config='Stuff and Things',
                                         pkg=apiPkg, func=self.rest.complete)
 
         # Tell our system we aren't done yet (the configurer will deal with
@@ -57,19 +63,45 @@ class ChuteAPI:
 # I do not belong here. Find me a home, please.
 #########
 
+def downloadChute(url, name):
+    '''
+    Downloads a chute as a zip from the provided URL, unzips it, 
+    removes the zip, and returns the path to the contents of the chute.
 
-def downloadChute(url):
-    # output = os.environ['TMPDIR']
+    This method blocks on both wget and zipfile. It must be made asynchronous.
+    '''
 
-    # local testing
-    output = os.getcwd() + '/buildenv'
+    outPath = os.path.dirname(os.getcwd()) + '/buildenv/inbound/'  # local testing
+    # outPath = os.environ['TMPDIR']
+    zipPath = outPath + name + '.zip'
+    chutePath = outPath + name
 
-    wget.download(url, out=output + '/inbound')
+    if not os.path.exists(outPath):
+        os.makedirs(outPath)
+
+    wget.download(url, out=zipPath)
+
+    # unzip contents
+    zipped = zipfile.ZipFile(zipPath)
+    zipped.extractall(path=chutePath)
+    zipped.close()
+    os.remove(zipPath)
+
+    return chutePath + '/' + os.listdir(chutePath)[0]
 
 
-def installChute(path):
+def installChute(path, name):
+    '''
+    Parse config file, make necesary changes to the system-- any and all paradrop-related config.
+    '''
     pass
 
 
-def startDockerContainer(path):
-    pass
+def startDockerContainer(path, name):
+    '''
+    Start the docker container given a directory containing the application.
+
+    Blocks badly. Needs to be fixed.
+    '''
+    deployment.launchApp(path=path, name=name, restart_policy={"MaximumRetryCount": 0, "Name": "always"},
+                         port_bindings={7777: 9777})

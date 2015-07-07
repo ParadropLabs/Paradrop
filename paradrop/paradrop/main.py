@@ -53,10 +53,6 @@ def caughtSIGUSR1(signum, frame):
 
 
 def main():
-    print ''
-    print 'WRONG'
-    print ''
-
     """
     This function does something. Right now what its doing is demonstrating
     a docstring with sphinxy additions.
@@ -85,7 +81,7 @@ def main():
 
     # Before we setup anything make sure we have generated a UUID for our instance
     # TODO
-    output.out.info('-- {} Testee\n'.format(logPrefix()))
+    output.out.info('-- {} Teste\n'.format(logPrefix()))
 
     # Now setup the RESTful API server for Paradrop
     pdfcd.server.setup(args)

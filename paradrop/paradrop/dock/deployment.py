@@ -1,17 +1,14 @@
+'''
+Deploying images onto docker.
+
+Sample usage:
+launchApp(path='/home/owner/paradrop/docker-test/', name='nick/test', restart_policy={"MaximumRetryCount": 0, "Name": "always"}, port_bindings={80: 9000})
+
+'''
+
 import docker
-from docker import Client
+from docker import Client as dockerclient
 import json
-
-"""
-This is simply an example call showing how one might use the dockerapi.launchApp function
-
-Use this url as location of Dockerfile and src and extract zip to working dir.
-
-https://github.com/nphyatt/docker-test/archive/master.zip
-
-"""
-
-# cId = dockerapi.launchApp(path='/home/owner/paradrop/docker-test/', name='nick/test', restart_policy={"MaximumRetryCount": 0, "Name": "always"}, port_bindings={80: 9000})
 
 
 ##########################################################################
@@ -37,7 +34,7 @@ def launchApp(path=None, name=None, port_bindings=None, restart_policy=None, fil
     :type restart_policy: dict.
     :returns: (str) The Id for the running container.
     """
-    c = Client(base_url='unix://var/run/docker.sock')
+    c = dockerclient(base_url='unix://var/run/docker.sock')
     name += ":latest"
 
     for line in c.build(fileobj=fileobj, rm=True, tag=name, path=path):
@@ -72,7 +69,7 @@ def stopAndRmData(cId, name):
     :type name: str.
     :returns: None
     """
-    c = Client(base_url='unix://var/run/docker.sock')
+    c = dockerclient(base_url='unix://var/run/docker.sock')
     name += ":latest"
     c.stop(container=cId)
     c.remove_container(container=cId)
