@@ -80,7 +80,7 @@ def main():
 
     # Before we setup anything make sure we have generated a UUID for our instance
     # TODO
-    output.out.info('-- {} Test\n'.format(logPrefix()))
+    output.out.info('-- {} Testee\n'.format(logPrefix()))
 
     # Now setup the RESTful API server for Paradrop
     pdfcd.server.setup(args)

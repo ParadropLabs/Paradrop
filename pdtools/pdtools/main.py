@@ -27,19 +27,30 @@ def main():
         installChute(args['<host>'], args['<port>'], args['<chute-directory>'])
 
     if args['snap-install']:
-        pass
+        print 'Not implemented. Sorry, love.'
+
 
 def installChute(host, port, directory):
     '''
-    Testing method. Take a local chute and load it onto pd
+    Testing method. Take a git url from github and load it onto snappy-pd. 
     '''
+
     print 'Installing chute'
-    
-    path = os.abspath(directory)
+
+    # path = os.abspath(directory)
+
+    # The project directory can either be cloned to the backend or installed locally,
+    # doesn't matter which one-- we still have to stream the files over
+
+    params = {'url': directory}
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/create', params=params)
+    print r.text
+
+    print 'Finished installing chute'
 
 
 def installParadrop():
-    ''' Testing method. Install paradrop, snappy, etc onto something '''
+    ''' Testing method. Install paradrop, snappy, etc onto SD card '''
     pass
 
 if __name__ == '__main__':

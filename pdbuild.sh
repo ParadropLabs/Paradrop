@@ -69,6 +69,12 @@ build() {
     cd ..
 
     echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
+    
+    #Unexpected, but it doesn't like trying to overrite the existing pex
+    if [ -f snap/bin/pd ]; then
+        rm snap/bin/pd
+    fi
+
     pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
     rm -rf *.egg-info
 }
