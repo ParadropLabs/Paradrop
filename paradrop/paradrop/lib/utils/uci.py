@@ -108,7 +108,7 @@ def singleConfigMatches(a, b):
     return isMatch(c1, c2) and isMatch(o1, o2)
 
 
-class OpenWrtConfig:
+class UCIConfig:
     """
         Wrapper around the UCI configuration files.
             These files are found under /etc/config/*, and are used by OpenWrt to keep track of

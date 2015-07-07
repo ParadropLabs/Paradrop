@@ -17,19 +17,18 @@ def generatePlans(update):
             True: abort the plan generation process
     """
     out.verbose("   %s %r\n" % (logPrefix(), update))
-    return None
     
     # Save current network configuration into chute cache (key: 'networkInterfaces')
-    update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK, (config.network.getNetworkConfig, chuteStor))
+    update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK, (config.network.getNetworkConfig, ))
 
     # Setup changes to push into OS config files (key: 'osNetworkConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_OS_NETWORK, (config.network.getOSNetworkConfig, None))  
+    update.plans.addPlans(plangraph.STRUCT_GET_OS_NETWORK, (config.network.getOSNetworkConfig, ))  
     
     # Setup changes to push into OS config files (key: 'osWirelessConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_OS_WIRELESS, (config.wifi.getOSWirelessConfig, None))  
+    update.plans.addPlans(plangraph.STRUCT_GET_OS_WIRELESS, (config.wifi.getOSWirelessConfig, ))  
     
     # Setup changes into virt configuration file (key: 'virtNetworkConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_VIRT_NETWORK, (config.network.getVirtNetworkConfig, None))
+    update.plans.addPlans(plangraph.STRUCT_GET_VIRT_NETWORK, (config.network.getVirtNetworkConfig, ))
     
     # Changes for networking
     todoPlan = (config.network.setOSNetworkConfig, )

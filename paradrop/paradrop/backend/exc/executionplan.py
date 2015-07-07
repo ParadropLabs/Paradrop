@@ -83,7 +83,7 @@ def executePlans(update):
             #
             # args may be empty, but we don't want to pass in a tuple if we don't need to
             # so this below explodes the args so if @args is (), then what is passed is @update
-            skipme = func(*(args + (update, )))
+            skipme = func(*((update, ) + args))
         
         except Exception as e:
             out.exception(logPrefix(), e, True, plans=str(update.plans))
@@ -129,7 +129,7 @@ def abortPlans(update):
             
         # We are in a try-except block so if func isn't callable that will catch it
         try:
-            func(*(args + (update, )))
+            func(*((update, ) + args))
             
             # If the func is called without exception then clear the @sameError flag for the next function call
             sameError = False
