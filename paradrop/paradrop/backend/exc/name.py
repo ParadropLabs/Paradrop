@@ -15,7 +15,7 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.header("== %s %r\n" % (logPrefix(), update))
+    out.verbose("   %s %r\n" % (logPrefix(), update))
     
     # When chutes had their own partitions we provided we would choose which one, set it up
     # and mount it using this module, is this required still?

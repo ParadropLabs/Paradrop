@@ -20,19 +20,18 @@ class PDStorage:
         
         This is done by providing a reactor so a "LoopingCall" can be utilized to save to disk.
         
-        @importantAttr is used as the attribute which should be saved.
-        
-        The implementer is expected to override 3 functions in order to implement this class:
+        The implementer can override functions in order to implement this class:
+            getAttr() : Get the attr we need to save to disk
+            setAttr() : Set the attr we got from disk
             importAttr(): Takes a payload and returns the properly formatted data
             exportAttr(): Takes the data and returns a payload
             attrSaveable(): Returns True if we should save this attr
     """
 
-    def __init__(self, filename, importantAttr, reactor, saveTimer):
+    def __init__(self, filename, reactor, saveTimer):
         self.filename = filename
         self.reactor = reactor
         self.saveTimer = saveTimer
-        self.importantAttr = importantAttr
 
         # Setup looping call to keep chute list perisistant only if reactor present
         if(self.reactor):
@@ -40,7 +39,7 @@ class PDStorage:
             self.repeater.start(self.saveTimer)
 
     def loadFromDisk(self):
-        """Attempts to load the importantAttr from disk.
+        """Attempts to load the data from disk.
             Returns True if success, False otherwise."""
         
         if(pdos.exists(self.filename)):
@@ -49,7 +48,7 @@ class PDStorage:
             data = ""
             try:
                 pyld = pickle.load(pdos.open(self.filename, 'rb'))
-                setattr(self, self.importantAttr, self.importAttr(pyld))
+                self.setAttr(self.importAttr(pyld))
                 return True
             except Exception as e:
                 out.err('!! %s Error loading from disk: %s\n' % (logPrefix(), str(e)))
@@ -65,7 +64,7 @@ class PDStorage:
         return False
             
     def saveToDisk(self):
-        """Saves the importantAttr to disk."""
+        """Saves the data to disk."""
         out.info('-- %s Saving to disk (%s)\n' % (logPrefix(), self.filename))
         
         # Make sure they want to save
@@ -73,7 +72,7 @@ class PDStorage:
             return
 
         # Get whatever the data is
-        pyld = self.exportAttr(getattr(self, self.importantAttr))
+        pyld = self.exportAttr(self.getAttr())
         
         # Write the file to disk, truncate if it exists
         try:

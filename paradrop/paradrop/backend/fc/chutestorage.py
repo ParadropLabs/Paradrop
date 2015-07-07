@@ -28,16 +28,24 @@ class ChuteStorage(PDStorage):
     def __init__(self, filename=None, reactor=None):
         if(not filename):
             filename = settings.FC_CHUTESTORAGE_SAVE_PATH
-        PDStorage.__init__(self, filename, "chuteList", reactor, settings.FC_CHUTESTORAGE_SAVE_TIMER)
+        PDStorage.__init__(self, filename, reactor, settings.FC_CHUTESTORAGE_SAVE_TIMER)
 
         # Has it been loaded?
         if(len(ChuteStorage.chuteList) == 0):
             out.verbose('   %s Loading chutes from disk: %s\n' % (logPrefix(), filename))
             self.loadFromDisk()
 
+    def setAttr(self, attr):
+        """Save our attr however we want (as class variable for all to see)"""
+        ChuteStorage.chuteList = attr
+    
+    def getAttr(self, attr):
+        """Get our attr (as class variable for all to see)"""
+        return ChuteStorage.chuteList
+
     def getChuteList(self):
         """Return a list of the GUIDs of the chutes we know of."""
-        return list(ChuteStorage.chuteList.values())
+        return ChuteStorage.chuteList.values()
 
     def getChute(self, name):
         """Returns a reference to a chute we have in our cache, or None."""
