@@ -5,12 +5,13 @@ setup(
     version="0.1",
     author="Paradrop Labs",
     description="Paradrop wireless virtualization",
-    install_requires=['twisted'],
+    install_requires=['ipaddress', 'twisted', 'txdbus'],
     packages=find_packages(),
 
     entry_points={
         'console_scripts': [
             'paradrop=paradrop:main',
+            'pdconfd=paradrop:run_pdconfd'
         ],
     },
 )
