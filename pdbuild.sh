@@ -52,6 +52,7 @@ build() {
 
     rm -rf buildenv
     rm -rf paradrop/paradrop.egg-info
+    rm -rf paradrop/build
     rm snap/bin/pd
 
     echo -e "${COLOR}Loading and building python dependencies"
@@ -69,9 +70,11 @@ build() {
     pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
     # pex -r docs/requirements.txt -o snap/bin/pd.pex -m paradrop.main:main -f buildenv/dist
 
+    deactivate 
+
     #the above is somewhat redundant now, but meh
-    cd buildenv
-    python ../paradrop/setup.py bdist_egg -d .
+    cd paradrop
+    python setup.py bdist_egg -d ../buildenv
     cd ..
 
     echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0

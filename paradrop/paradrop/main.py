@@ -65,7 +65,7 @@ def main():
     :raises: AttributeError, KeyError
     """
 
-    a = 1 / 0
+    # a = 1 / 0
     # Setup the signal handler for verbose
     signal.signal(signal.SIGUSR1, caughtSIGUSR1)
 
