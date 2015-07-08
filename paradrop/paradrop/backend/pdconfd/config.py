@@ -3,6 +3,7 @@ import os
 import subprocess
 from pprint import pprint
 
+from paradrop.lib.utils.output import logPrefix, out
 from paradrop.lib.utils.uci import UCIConfig
 
 CONFIG_DIR = "/etc/config"
@@ -436,8 +437,6 @@ class ConfigManager(object):
          - Yes -> Revert current section, mark any affected dependents,
                   add new section, apply changes, and stop.
         """
-        files = findConfigFiles(search)
-
         # Map (type, name) -> config
         allConfigs = dict(self.currentConfig)
 
@@ -452,56 +451,31 @@ class ConfigManager(object):
         # Final list of commands to execute.
         commands = list()
 
-        # First, parse all of the new configuration files.  There may be
-        # dependencies across files, so we read them all in first.
-        for fn in files:
-            print("Trying file {}".format(fn))
-            uci = UCIConfig(fn)
-            config = uci.readConfig()
+        files = findConfigFiles(search)
 
-            if config is None:
-                print("Error reading file.")
-                continue
+        for config in self.readConfig(files):
+            key = config.getTypeAndName()
 
-            for section, options in config:
-                # Sections differ in where they put the name, if they have one.
-                if "name" in section:
-                    name = section['name']
-                elif "name" in options:
-                    name = options['name']
+            # Check if the section already exists in identical form
+            # in our current configuration.
+            matches = False
+            if key in self.currentConfig:
+                oldobj = self.currentConfig[key]
+                if config.optionsMatch(oldobj):
+                    matches = True
                 else:
-                    name = None
+                    # Old section will need to be undone appropriately.
+                    undoConfigs.add(oldobj)
 
-                try:
-                    cls = configTypeMap[section['type']]
-                except:
-                    print("Warning: unsupported section type {} in {}".format(
-                        section['type'], fn))
-                    continue
+                    # Keep track of sections that may be affected by this
+                    # one's change.
+                    affectedConfigs.update(oldobj.dependents)
 
-                obj = cls.build(self, fn, name, options)
-                key = obj.getTypeAndName()
-
-                # Check if the section already exists in identical form
-                # in our current configuration.
-                matches = False
-                if key in self.currentConfig:
-                    oldobj = self.currentConfig[key]
-                    if obj.optionsMatch(oldobj):
-                        matches = True
-                    else:
-                        # Old section will need to be undone appropriately.
-                        undoConfigs.add(oldobj)
-
-                        # Keep track of sections that may be affected by this
-                        # one's change.
-                        affectedConfigs.update(oldobj.dependents)
-
-                # If it did not exist or is different, add it to our queue
-                # of sections to execute.
-                if not matches:
-                    newConfigs.add(obj)
-                    allConfigs[(cls.typename, name)] = obj
+            # If it did not exist or is different, add it to our queue
+            # of sections to execute.
+            if not matches:
+                newConfigs.add(config)
+                allConfigs[(config.typename, config.name)] = config
 
         # Generate list of commands to implement configuration.
         for config in affectedConfigs:
@@ -522,6 +496,55 @@ class ConfigManager(object):
 
         self.currentConfig = allConfigs
         return True
+
+    def readConfig(self, files):
+        """
+        Load configuration files and return configuration objects.
+
+        This method only loads the configuration files without making any
+        changes to the system and returns configuration objects as a generator.
+        """
+        # Keep track of headers (section type and name) that have been
+        # processed so far.  The dictionary maps them to filename, so that we
+        # can print a useful warning message about duplicates.
+        usedHeaders = dict()
+
+        for fn in files:
+            out.info("-- {} Reading file {}\n".format(logPrefix(), fn))
+
+            uci = UCIConfig(fn)
+            config = uci.readConfig()
+
+            for section, options in config:
+                # Sections differ in where they put the name, if they have one.
+                if "name" in section:
+                    name = section['name']
+                elif "name" in options:
+                    name = options['name']
+                else:
+                    name = None
+
+                try:
+                    cls = configTypeMap[section['type']]
+                except:
+                    out.warn("** {} Unsupported section type {} in {}\n".format(
+                        logPrefix(), section['type'], fn))
+                    continue
+
+                try:
+                    obj = cls.build(self, fn, name, options)
+                except:
+                    out.warn("** {} Error building object from section {}:{} in {}\n".format(
+                        logPrefix(), section['type'], name, fn))
+                    continue
+
+                key = obj.getTypeAndName()
+                if key in usedHeaders:
+                    out.warn("** {} Section {}:{} from {} overrides section in {}\n".format(
+                        logPrefix(), section['type'], name, fn, usedHeaders[key]))
+                usedHeaders[key] = fn
+
+                yield obj
 
     def unload(self, execute=True):
         commands = list()
