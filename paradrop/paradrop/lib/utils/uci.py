@@ -5,19 +5,7 @@
 
 import traceback, os
 
-from lib.paradrop import *
-from lib.paradrop.chute import Chute
-from lib.paradrop.utils import pdutils
-
-from lib.internal.fc.fcerror import PDFCError
-from lib.internal.utils import pdos
-from lib.internal.fc import macromanager
-
-# Test locations - remove
-#NET_PATH = "/tmp/etc/config/network"
-#WIFI_PATH = "/tmp/etc/config/wireless"
-#WSHAPER_PATH = "/tmp/etc/config/wshaper"
-#FIREWALL_PATH = "/tmp/etc/config/firewall"
+from paradrop.lib.utils import pdos
 
 NET_PATH = "/etc/config/network"
 WIFI_PATH = "/etc/config/wireless"
@@ -444,7 +432,7 @@ class UCIConfig:
             fd.close()
         except Exception as e:
             out.err('!! %s Error reading file %s: %s\n' % (logPrefix(), self.filepath, str(e)))
-            raise PDFCError('OpenwrtReadError')
+            raise e
 
         cfg = None
         opt = None
@@ -563,8 +551,9 @@ if(__name__ == '__main__'):
        
     fileLoc = args.file
  
-    uci = OpenWrtConfig(fileLoc)
+    uci = UCIConfig(fileLoc)
 
     config = uci.readConfig()
+    pp.pprint(config)
 
 

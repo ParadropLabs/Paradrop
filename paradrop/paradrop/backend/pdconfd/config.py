@@ -3,7 +3,7 @@ import os
 import subprocess
 from pprint import pprint
 
-from paradrop.internal.utils.uci import OpenWrtConfig
+from paradrop.lib.utils.uci import UCIConfig
 
 CONFIG_DIR = "/etc/config"
 
@@ -456,7 +456,7 @@ class ConfigManager(object):
         # dependencies across files, so we read them all in first.
         for fn in files:
             print("Trying file {}".format(fn))
-            uci = OpenWrtConfig(fn)
+            uci = UCIConfig(fn)
             config = uci.readConfig()
 
             if config is None:
