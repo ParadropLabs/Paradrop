@@ -10,6 +10,9 @@ way to interpret the results through a set of basic actionable functions.
 from paradrop.backend import exc
 from paradrop.backend.fc import chutestorage
 from paradrop.lib import settings
+from paradrop.lib import chute
+
+UPDATE_SPECIFIC_ARGS = ["pkg", "func"]
 
 class UpdateObject(object):
     """
@@ -32,18 +35,32 @@ class UpdateObject(object):
     def __init__(self, obj):
         # Pull in all the keys from the obj identified
         self.__dict__.update(obj)
+        # Any module can add notes and warnings here
         self.responses = []
+        # In case of a failure, the final message about failure goes here
         self.failure = None
-        # Use a temporary planmap for each chute
+        
+        # Each update gets its own plan map
         self.plans = exc.plangraph.PlanMap(self.name)
+        # Grab a reference to our storage system
         self.chuteStor = chutestorage.ChuteStorage()
-    
-    def __str__(self):
-        return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
+        # Explicitly define a reference to the new data object
+        self.new = chute.Chute(obj, strip=UPDATE_SPECIFIC_ARGS)
+        # Grab the old version if it exists
+        self.old = self.chuteStor.getChute(self.name)
     
     def __repr__(self):
+        return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
+    
+    def __str__(self):
         return "<Update({}) :: {}>".format(self.updateClass, self.name)
 
+    def saveState(self):
+        """
+            Function should be overwritten for each UpdateObject subtype
+        """
+        pass
+    
     def complete(self, **kwargs):
         """
             Signal to the API server that any action we need to perform is complete and the API 
@@ -79,9 +96,25 @@ class UpdateObject(object):
         exc.executionplan.aggregatePlans(self)
 
         # Execute on those plans
-        # TODO
+        if(exc.executionplan.executePlans(self)):
+            # Getting here means we need to abort what we did
+            res = exc.executionplan.abortPlans(self)
+            
+            # Did aborting also fail? This is bad!
+            if(res):
+                ###################################################################################
+                ## Getting here means the abort system thinks it wasn't able to get the system
+                ## back into the state it was in prior to this update.
+                ###################################################################################
+                out.err('!! %s TODO: What do we do when we fail during abort?\n' % logPrefix())
+                pass
+            
+            # Report the failure back to the user
+            self.complete(success=False, message=self.failure)
+            return
 
         # Now save the new state if we are all ok
+        self.saveState()
 
         # Respond to the API server to let them know the result
         self.complete(success=True, message='Chute {} {} success'.format(
@@ -91,19 +124,35 @@ class UpdateChute(UpdateObject):
     """
     Updates specifically tailored to chute actions like create, delete, etc...
     """
-    
+    # List of all modules that need to be called during execution planning
     updateModuleList = [
         exc.name,
         exc.state,
         exc.runtime,
-        exc.files,
         exc.struct,
         exc.resource,
         exc.traffic
     ]
     
     def __init__(self, obj):
+        # TODO : do this better
+        if(obj.get('updateType', None) == "create"):
+            obj['state'] = chute.STATE_RUNNING
+        elif(obj.get('updateType', None) == "delete"):
+            obj['state'] = chute.STATE_STOPPED
+        
         super(UpdateChute, self).__init__(obj)
+    
+    def saveState(self):
+        """
+            For chutes specifically we need to change the chuteStor object to reflect
+            the new state of the system after a chute update. Perform that update here.
+        """
+        if(self.updateType == "delete"):
+            self.chuteStor.deleteChute(self.new)
+        else:
+            self.chuteStor.saveChute(self.new)
+
 
 
 
@@ -123,5 +172,5 @@ def parse(obj):
     cls = UPDATE_CLASSES.get(uclass, None)
 
     if(cls is None):
-        raise Exception('BadUpdateType')
+        raise Exception('BadUpdateType', 'updateClass is invalid, must be one of: %s' % ", ".join(UPDATE_CLASSES))
     return cls(obj)

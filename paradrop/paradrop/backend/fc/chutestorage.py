@@ -6,7 +6,7 @@
 import sys, json, copy, base64
 
 from paradrop.lib.utils.output import out, logPrefix
-from paradrop.lib.utils.pdutils import timeint, str2json
+from paradrop.lib.utils import pdutils
 from paradrop.lib.utils import pdos
 from paradrop.lib import settings
 
@@ -28,16 +28,24 @@ class ChuteStorage(PDStorage):
     def __init__(self, filename=None, reactor=None):
         if(not filename):
             filename = settings.FC_CHUTESTORAGE_SAVE_PATH
-        PDStorage.__init__(self, filename, "chuteList", reactor, settings.FC_CHUTESTORAGE_SAVE_TIMER)
+        PDStorage.__init__(self, filename, reactor, settings.FC_CHUTESTORAGE_SAVE_TIMER)
 
         # Has it been loaded?
         if(len(ChuteStorage.chuteList) == 0):
             out.verbose('   %s Loading chutes from disk: %s\n' % (logPrefix(), filename))
             self.loadFromDisk()
 
+    def setAttr(self, attr):
+        """Save our attr however we want (as class variable for all to see)"""
+        ChuteStorage.chuteList = attr
+    
+    def getAttr(self):
+        """Get our attr (as class variable for all to see)"""
+        return ChuteStorage.chuteList
+
     def getChuteList(self):
         """Return a list of the GUIDs of the chutes we know of."""
-        return list(ChuteStorage.chuteList.values())
+        return ChuteStorage.chuteList.values()
 
     def getChute(self, name):
         """Returns a reference to a chute we have in our cache, or None."""
@@ -58,19 +66,14 @@ class ChuteStorage(PDStorage):
         """
         # check if there is a version of the chute already
         oldch = ChuteStorage.chuteList.get(ch.name, None)
-        if(oldch):
+        if(oldch != None):
             newch = copy.deepcopy(oldch)
             # we should merge these chutes so we don't lose any data
-            # First set the regular data
-            for k,v in ch.getAPIDataFormat().iteritems():
-                setattr(newch, k, v)
-            # Now deal with cache separately
-            for k,v in ch._cache.iteritems():
-                newch._cache[k] = v
-            # this allows us to keep what WAS there, replace any duplicates with new stuff without loosing anything too
-            ChuteStorage.chuteList[ch.name] = newch
+            oldch.__dict__.update(ch.__dict__)
+            # TODO: do we need to deal with cache separate? Old code we did
         else:
             ChuteStorage.chuteList[ch.name] = ch
+        
         self.saveToDisk()
     
     def clearChuteStorage(self):
@@ -84,25 +87,6 @@ class ChuteStorage(PDStorage):
         """Returns True if we should save the ChuteList, otherwise False."""
         return (type(ChuteStorage.chuteList) == dict)
 
-    def importAttr(self, pyld):
-        """Takes an array of dicts that represent Chutes and converts them into a list of Chute objects.
-            Raises Exception if name missing from Chute.
-            Returns dict[name] = Chute
-            """
-        pyld = json.loads(base64.b64decode(pyld), object_hook=convertUnicode)
-        d = {}
-        for p in pyld:
-            c = Chute(p)
-            if(c.name == ""):
-                raise Exception('importChuteList', 'Missing name from Chute object')
-            d[c.name] = c
-
-        #print("importChuteList\n%s" % d)
-        return d
-    
-    def exportAttr(self, cl):
-        """Takes a chutelist (dict of Chute objects) and returns a string representing an array of chutes in API Data format."""
-        return base64.b64encode(json.dumps([c.fullDump() for c in ChuteStorage.chuteList.values()]))
 
 if(__name__ == '__main__'):
     def usage():

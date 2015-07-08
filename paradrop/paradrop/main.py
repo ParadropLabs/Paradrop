@@ -37,14 +37,14 @@ def caughtSIGUSR1(signum, frame):
     """
     Catches SIGUSR1 calls and toggles verbose output
     """
-    if(isinstance(PD.out.verbose, PD.FakeOutput)):
+    if(isinstance(output.out.verbose, output.FakeOutput)):
         output.out.header("== %s Activating verbose mode\n" % logPrefix())
-        output.out.verbose = PD.Stdout(PD.Colors.VERBOSE)
+        output.out.verbose = output.Stdout(output.Colors.VERBOSE)
         output.verbose = True
     else:
         output.out.header("== %s Deactivating verbose mode\n" % logPrefix())
         output.verbose = False
-        output.out.verbose = PD.FakeOutput()
+        output.out.verbose = output.FakeOutput()
 
 
 ##########################################################################
@@ -75,7 +75,7 @@ def main():
     # Check for settings to overwrite
     settings.updateSettings(args.settings)
 
-    if(args.verbose):
+    if(args.verbose == True or settings.VERBOSE == True):
         caughtSIGUSR1(signal.SIGUSR1, None)
 
     # Before we setup anything make sure we have generated a UUID for our instance

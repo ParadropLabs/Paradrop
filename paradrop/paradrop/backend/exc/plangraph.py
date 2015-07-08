@@ -28,9 +28,9 @@ RESOURCE_GET_VIRT_MEM           = 16
 RESOURCE_GET_OS_CONFIG          = 17
 TRAFFIC_GET_OS_FIREWALL         = 18
 TRAFFIC_GET_DEVELOPER_FIREWALL  = 19
-DHCP_GET_VIRT_RULES             = 22
-RUNTIME_GET_VIRT_SCRIPT         = 20
+RUNTIME_GET_VIRT_PREAMBLE       = 20
 RUNTIME_GET_VIRT_DHCP           = 21
+DHCP_GET_VIRT_RULES             = 22
 
 ###############################################################################
 # Write Configuration Data
@@ -78,22 +78,18 @@ class Plan:
     """
         Helper class to hold onto the actual plan data associated with each plan
     """
-    def __init__(self, chute, todoTuple):
+    def __init__(self, func, *args):
         """
             Takes a tuple of (function, (args)) of actions to perform at some point.
         """
-        self.chute = chute
-        f, a = todoTuple
-        self.func = f
-        self.args = a
+        self.func = func
+        self.args = args
 
     def __repr__(self):
-        return "<%s: %r>" % (self.chute.guid, self.func)
+        return "<%r>" % (self.func)
 
     def __eq__(self, o):
         """Implementing equal function so we can do 'if a in b' logic"""
-        if(self.chute != o.chute):
-            return False
         if(not self.func is o.func):
             return False
         if(self.args != o.args):
@@ -115,12 +111,11 @@ class PlanMap:
         self.abtPlans = []
         self.skipFunctions = []
 
-    def addPlans(self, chute, priority, todoPlan, abortPlan=[]):
+    def addPlans(self, priority, todoPlan, abortPlan=[]):
         """
             Adds new Plan objects into the list of plans for this PlanMap.
             
             Arguments:
-                @chute      : The chute object associated with these plans
                 @priority   : The priority number (1 is done first, 99 done last - see PRIORITYFLAGS section at top of this file)
                 @todoPlan   : A tuple of (function, (args)), this is the function that completes the actual task requested
                               the args can either be a single variable, a tuple of variables, or None.
@@ -132,16 +127,17 @@ class PlanMap:
         # They can provide multiple abortPlans in a list, or 1 in a tuple, or none at all empty list
         # But internally the abortPlan should be either None or a list (even if the list is size 1)
         if(isinstance(abortPlan, tuple)):
-            abortP = [Plan(chute, abortPlan)]
+            abortP = [Plan(*abortPlan)]
         elif(isinstance(abortPlan, list)):
             # See if there is no plans at all
             if(len(abortPlan) == 0):
                 abortP = None
             else:
-                abortP = [Plan(chute, a) for a in abortPlan]
+                abortP = [Plan(*a) for a in abortPlan]
         else:
-            raise PDFCError('BadAbortPlan', 'Plan should be tuple, list of tuples, or empty')
-        todoP = Plan(chute, todoPlan)
+            raise Exception('BadAbortPlan', 'Plan should be tuple, list of tuples, or empty')
+        
+        todoP = Plan(*todoPlan)
         
         # Now add into the set
         self.plans.append((priority, todoP, abortP))
@@ -150,8 +146,8 @@ class PlanMap:
         """
             Takes another PlanMap object and appends whatever the plans are into this plans object.
         """
-        # Note we say += here, this concats the lists, otherwise if you use .append() the list will be added as 1 element
-        self.plans += other.plans
+        # Make sure to extend NOT append these new plans!
+        self.plans.extend(other.plans)
 
     def sort(self):
         """
@@ -172,7 +168,7 @@ class PlanMap:
             Like an iterator function, it returns each element in the list of plans in order.
             
             Returns: 
-                (chute, function, args) : Each todo is returned just how the user first added it
+                (function, args) : Each todo is returned just how the user first added it
                 None                      : None is returned when there are no more todo's
         """
         # Are there more plans?
@@ -187,14 +183,14 @@ class PlanMap:
             if(todo.func in self.skipFunctions):
                 return self.getNextTodo()
             else:
-                return (todo.chute, todo.func, todo.args)
+                return (todo.func, todo.args)
     
     def getNextAbort(self):
         """
             Like an iterator function, it returns each element in the list of abort plans in order.
             
             Returns: 
-                (chute, function, args) : Each todo is returned just how the user first added it
+                (function, args) : Each todo is returned just how the user first added it
                 None                      : None is returned when there are no more todo's
         """
         # Check if this is the first time calling the function
@@ -230,7 +226,7 @@ class PlanMap:
         else:
             abt = self.abtPlans[self.abtPtr]
             self.abtPtr += 1
-            return (abt.chute, abt.func, abt.args)
+            return (abt.func, abt.args)
 
     def __repr__(self):
         return "<%s %r: %d Plans>" % (self.__class__.__name__, self.name, len(self.plans))

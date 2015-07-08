@@ -73,15 +73,21 @@ def executePlans(update):
             break
         
         # Explode tuple otherwise
-        ch, func, args = p
+        func, args = p
             
+        # We are in a try-except block so if func isn't callable that will catch it
         try:
-            # We are in a try-except block so if func isn't callable that will catch it
-            skipme = func(args)
+            out.verbose('   %s Calling %s\n' % (logPrefix(), func))
+            #
+            # Call the function from the execution plan
+            #
+            # args may be empty, but we don't want to pass in a tuple if we don't need to
+            # so this below explodes the args so if @args is (), then what is passed is @update
+            skipme = func(*((update, ) + args))
         
-        except Exception as e2:
-            out.err('!! %s Exception executing plan %r: %s\n%s\n' % (logPrefix(), update.plans, str(e2), traceback.format_exc()))
-            update.responses.append({'exception': str(e2), 'traceback': traceback.format_exc()})
+        except Exception as e:
+            out.exception(logPrefix(), e, True, plans=str(update.plans))
+            update.responses.append({'exception': str(e), 'traceback': traceback.format_exc()})
             return True
             
         # The functions we call here can return other functions, if they do these are functions that should
@@ -111,19 +117,19 @@ def abortPlans(update):
     out.header('== %s Aborting plans %r\n' % (logPrefix(), update.plans))
     sameError = False
     while(True):
+        # This function either returns None or a tuple just like generate added to it
+        p = update.plans.getNextAbort()
+        
+        # No more to do?
+        if(not p):
+            break
+        
+        # Explode tuple otherwise
+        func, args = p
+            
+        # We are in a try-except block so if func isn't callable that will catch it
         try:
-            # This function either returns None or a tuple just like generate added to it
-            p = update.plans.getNextAbort()
-            
-            # No more to do?
-            if(not p):
-                break
-            
-            # Explode tuple otherwise
-            ch, func, args = p
-            
-            # We are in a try-except block so if func isn't callable that will catch it
-            func(args)
+            func(*((update, ) + args))
             
             # If the func is called without exception then clear the @sameError flag for the next function call
             sameError = False
@@ -133,7 +139,7 @@ def abortPlans(update):
             # we could loop forever, so check for the error, which is only reset at the end of the loop
             if(sameError):
                 return True
-            responseMessages.append({'exception': str(e), 'traceback': traceback.format_exc()})
+            update.responses.append({'exception': str(e), 'traceback': traceback.format_exc()})
             out.fatal('!! %s An abort function raised an exception!!! %r: %s\n%s\n' % (logPrefix(), update.plans, str(e), traceback.format_exc()))
             sameError = True
     

@@ -29,6 +29,7 @@
 import os, re, sys
 
 DEBUG_MODE = False
+VERBOSE = False
 
 #
 # pdfcd
