@@ -55,6 +55,8 @@ build() {
     rm -rf paradrop/build
     rm snap/bin/pd
 
+    mkdir buildenv
+
     echo -e "${COLOR}Loading and building python dependencies"
     # echo -e "${COLOR}Bootstrapping environment" && tput sgr0
 

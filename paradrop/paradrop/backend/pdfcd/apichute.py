@@ -45,7 +45,13 @@ class ChuteAPI:
 
         name = 'testchute'
 
-        path = downloadChute(apiPkg.inputArgs['url'], name)
+        print ''
+        print apiPkg.inputArgs['url']
+        print ''
+
+        zipName = apiPkg.inputArgs['url'] + '/archive/master.zip'
+
+        path = downloadChute(zipName, name)
         installChute(path, name)
         startDockerContainer(path, name)
 
@@ -101,7 +107,10 @@ def startDockerContainer(path, name):
     '''
     Start the docker container given a directory containing the application.
 
+    Configure port bindings based on the conf files. Could merge this method and the above
+    depending on how complicated it gets
+
     Blocks badly. Needs to be fixed.
     '''
     deployment.launchApp(path=path, name=name, restart_policy={"MaximumRetryCount": 0, "Name": "always"},
-                         port_bindings={7777: 9777})
+                         port_bindings={80: 9000})
