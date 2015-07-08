@@ -22,6 +22,7 @@ then
     echo -e "  down\n\t closes a local snappy virtual machine"
     echo -e "  connect\n\t connects to a local snappy virtual machine"
 
+
     exit
 fi
 
@@ -40,13 +41,12 @@ killvm() {
     fi
 }
 
+
 ###
 # Operations
 ###
 
-# venv.pex is a bootstrapped virtualenv. It allows us to install without requiring the 
-# package to be installed on a local system. After creating the environment, installs 
-# paradrop and its dependancies, then bundles them into a pex and sets it in the bin directory
+#  ommented lines are from the older virtualenv way of packaging the app. This seems cleaner
 build() {
     echo "Cleaning build directories"
 
@@ -96,6 +96,9 @@ build() {
     pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
     rm -rf *.egg-info
 }
+
+# Generates docs 
+
 
 clean() {
     echo "Cleaning build directories"
