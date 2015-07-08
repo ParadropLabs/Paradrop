@@ -190,7 +190,7 @@ up() {
 
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
-    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 -redir :9999::14321 snappy-vm.img &
+    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :7777::9000 -redir :9999::14321 snappy-vm.img &
     echo $! > pid.txt
 }
 

@@ -60,6 +60,8 @@ class ChuteAPI:
                                         tok=timeint(), name=name, config='Stuff and Things',
                                         pkg=apiPkg, func=self.rest.complete)
 
+        # TODO: cleanup download directory
+
         # Tell our system we aren't done yet (the configurer will deal with
         # closing the connection)
         apiPkg.setNotDoneYet()

@@ -80,7 +80,6 @@ def main():
         caughtSIGUSR1(signal.SIGUSR1, None)
 
     # Before we setup anything make sure we have generated a UUID for our instance
-    # TODO
     output.out.info('-- {} Teste\n'.format(logPrefix()))
 
     # Now setup the RESTful API server for Paradrop
