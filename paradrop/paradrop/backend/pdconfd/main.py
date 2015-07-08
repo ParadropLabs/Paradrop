@@ -63,3 +63,7 @@ def listen():
         print("Failed to export DBus object: {}".format(e))
         reactor.stop()
 
+def run_pdconfd():
+    reactor.callWhenRunning(listen)
+    reactor.run()
+

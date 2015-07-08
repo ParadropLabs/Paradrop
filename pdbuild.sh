@@ -103,7 +103,6 @@ build() {
     fi
 
     pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
-    pex paradrop -o snap/bin/pdconfd -m paradrop:run_pdconfd -f buildenv
     rm -rf *.egg-info
 
     build_dnsmasq
