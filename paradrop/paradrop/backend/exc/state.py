@@ -7,7 +7,7 @@ from paradrop.lib.utils.output import out, logPrefix
 from paradrop.backend.exc import plangraph
 from paradrop.lib import chute
 
-from paradrop.lib.utils import docker as virt
+from paradrop.lib.utils import dockerapi as virt
 
 def generatePlans(update):
     """

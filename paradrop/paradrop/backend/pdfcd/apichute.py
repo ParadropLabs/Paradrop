@@ -7,9 +7,9 @@ from paradrop.lib.api import pdapi
 
 from paradrop.dock import deployment
 
-import wget
+#import wget
 import os
-import zipfile
+#import zipfile
 
 
 class ChuteAPI:
@@ -38,44 +38,26 @@ class ChuteAPI:
         """
 
         out.info('-- {} Creating chute...\n'.format(logPrefix()))
-
-        # download and install the chute with docker
-        # TODO: handle errors that arise from docker. Make this async
-
-        name = 'testchute'
-
-        print ''
-        print apiPkg.inputArgs['url']
-        print ''
-
-        zipName = apiPkg.inputArgs['url'] + '/archive/master.zip'
-
-        path = downloadChute(zipName, name)
-        installChute(path, name)
-        startDockerContainer(path, name)
-
-        # This looks like a hardcoded chute, so I'm commentint it out until we can
-        # coordinate
-
-        self.rest.configurer.updateList(updateClass='CHUTE', updateType='create',
-                                        tok=timeint(), name=name, config='Stuff and Things',
-                                        pkg=apiPkg, func=self.rest.complete)
-
-        apiPkg.setNotDoneYet()
-        return
-
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='create',
                       tok=timeint(), pkg=apiPkg, func=self.rest.complete)
         import datetime
         update.update({
-            'from': 'ubuntu', 'name': 'helloworld',
+            'image': 'ubuntu', 'name': 'helloworld',
             'firewall': [{'type': 'redirect', 'from': '@host.lan:5000\n',
                           'name': 'web-access', 'to': '*mylan:80\n'}],
-            'setup': [{'program': 'echo',
-                       'args': '"<html><h1>This is working!</h1></html>" > index.html\n'}],
+            'setup': ['echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list',
+                'apt-get update',
+                'apt-get -y install nginx',
+                'echo "daemon off;" >> /etc/nginx/nginx.conf',
+                'mkdir /etc/nginx/ssl'
+            ],
+            'addFile': [
+                'https://raw.githubusercontent.com/nphyatt/docker-test/master/default /etc/nginx/sites-available/default',
+                'https://raw.githubusercontent.com/nphyatt/docker-test/master/index.html /var/www/index.html'
+            ],
             'owner': 'dale',
-            'init': [{'program': 'python', 'args': '-m SimpleHTTPServer 80'}],
+            'init': 'nginx',
             'date': datetime.date(2015, 7, 7),
             'net': {'mylan': {'intfName': 'eth0', 'type': 'lan'}},
             'description': 'This is a very very simple hello world chute.\n'})
