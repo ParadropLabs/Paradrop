@@ -1,3 +1,4 @@
 Twisted==15.2.1
+wget==2.2
 wheel==0.24.0
 zope.interface==4.1.2

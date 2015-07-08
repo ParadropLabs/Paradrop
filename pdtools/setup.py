@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="paradrop",
-    version="0.1",
+    version="0.1.1",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
     install_requires=['docopt', 'requests'],

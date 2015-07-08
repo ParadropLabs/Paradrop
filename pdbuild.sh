@@ -14,7 +14,7 @@ then
 
     echo "Usage:"
     echo -e "  build\n\t build and package dependencies, install paradrop locally"
-    echo -e "  clean\n\t remove virtual environment, clean packages"
+    # echo -e "  clean\n\t remove virtual environment, clean packages"
     echo -e "  run\n\t run paradrop locally"
     echo -e "  install \n\t compile snap and install on local snappy virtual machine."
     echo -e "  setup\n\t prepares environment for local snappy testing"
@@ -48,27 +48,51 @@ killvm() {
 # package to be installed on a local system. After creating the environment, installs 
 # paradrop and its dependancies, then bundles them into a pex and sets it in the bin directory
 build() {
-    echo -e "${COLOR}Loading and building python dependencies"
-    echo -e "${COLOR}Bootstrapping environment" && tput sgr0
+    echo "Cleaning build directories"
 
-    ./venv.pex buildenv/env
-    source buildenv/env/bin/activate
+    rm -rf buildenv
+    rm -rf paradrop/paradrop.egg-info
+    rm -rf paradrop/build
+    rm snap/bin/pd
+
+    mkdir buildenv
+
+    echo -e "${COLOR}Loading and building python dependencies"
+    # echo -e "${COLOR}Bootstrapping environment" && tput sgr0
+
+    # ./venv.pex buildenv/env
+    # source buildenv/env/bin/activate
 
     echo -e "${COLOR}Installing paradrop" && tput sgr0
 
-    pip install pex
-    pip install -e ./paradrop
+    if ! type "pex" > /dev/null; then
+        echo 'Please install pex. Try:'
+        echo "pip install pex"
+        exit
+    fi
+
+    # pip install pex
+    # pip install -e ./paradrop
 
     #also-- we can get away without saving the requirements just fine, but readthedocs needs them
-    pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
+    # pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
     # pex -r docs/requirements.txt -o snap/bin/pd.pex -m paradrop.main:main -f buildenv/dist
 
+    # pip and bdist doesn't play well together. Turn off the virtualenv.
+    # deactivate 
+
     #the above is somewhat redundant now, but meh
-    cd buildenv
-    python ../paradrop/setup.py bdist_egg -d .
+    cd paradrop
+    python setup.py bdist_egg -d ../buildenv
     cd ..
 
     echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
+    
+    #Unexpected, but it doesn't like trying to overrite the existing pex
+    if [ -f snap/bin/pd ]; then
+        rm snap/bin/pd
+    fi
+
     pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
     rm -rf *.egg-info
 }
@@ -77,7 +101,7 @@ clean() {
     echo "Cleaning build directories"
 
     rm -rf buildenv
-    # rm -rf src/paradrop.egg-info
+    rm -rf paradrop/paradrop.egg-info
     rm snap/bin/pd
 }
 
@@ -108,8 +132,6 @@ install() {
     fi
 
     echo -e "${COLOR}Building snap" && tput sgr0
-
-    
     
     #build the snap using snappy dev tools and extract the name of the snap
     snappy build snap
@@ -168,7 +190,7 @@ up() {
 
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
-    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :8777::7777 -redir :9999::14321 snappy-vm.img &
+    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :7777::9000 -redir :9999::14321 snappy-vm.img &
     echo $! > pid.txt
 }
 
@@ -193,7 +215,7 @@ connect() {
 
 case "$1" in
     "build") build;;
-    "clean") clean;;
+    # "clean") clean;;
     "run") run;;
     "install") install;;
     "setup") setup;;

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+
+echo "Hello World!"
+
+
+# /var/lib/apps/hello-world.sideload/1.0.17
+# /tmp
+
+echo "${SNAP_APP_DATA_PATH}"
+echo "${TMPDIR}"
