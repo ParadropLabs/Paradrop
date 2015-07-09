@@ -5,7 +5,6 @@
 
 from paradrop.lib.utils.output import out, logPrefix
 import docker
-from docker import Client
 import json
 
 
@@ -17,12 +16,12 @@ def startChute(update):
     dockerfile = update.dockerfile
     name = update.name
 
-    host_config=docker.utils.create_host_config(
-        port_bindings={ 80: 9000 },
-        restart_policy={"MaximumRetryCount": 0, "Name": "always"} 
+    host_config = docker.utils.create_host_config(
+        port_bindings={80: 9000},
+        restart_policy={"MaximumRetryCount": 0, "Name": "always"}
     )
 
-    c = Client(base_url="unix://var/run/docker.sock")
+    c = docker.Client(base_url="unix://var/run/docker.sock")
 
     for line in c.build(rm=True, tag=repo, fileobj=dockerfile):
         for key, value in json.loads(line).iteritems():
@@ -41,9 +40,10 @@ def startChute(update):
     out.info("-- %s %s\n" % (logPrefix(), str(container.get('Id'))))
     c.start(container.get('Id'))
 
+
 def stopChute(update):
     out.warn('** %s TODO implement me\n' % logPrefix())
-    c = Client(base_url='unix://var/run/docker.sock')
+    c = docker.Client(base_url='unix://var/run/docker.sock')
     repo = update.name + ":latest"
     name = update.name
     c.stop(container=name)
