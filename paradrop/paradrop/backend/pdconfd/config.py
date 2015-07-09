@@ -17,11 +17,19 @@ class ConfigObject(object):
         self.id = ConfigObject.nextId
         ConfigObject.nextId += 1
 
+        self.source = None
         self.name = "section-{:08x}".format(self.id)
         self.dependents = set()
 
     def __hash__(self):
         return hash(self.getTypeAndName())
+
+    def __repr__(self):
+        return "{}({}:{}:{})".format(self.__class__.__name__,
+                self.source, self.typename, self.name)
+
+    def __str__(self):
+        return "{}:{}".format(self.typename, self.name)
 
     def addDependent(self, dep):
         self.dependents.add(dep)
@@ -166,10 +174,16 @@ class ConfigDhcp(ConfigObject):
         return [cmd]
 
     def undoCommands(self, allConfigs):
-        with open(self.pidFile, "r") as inputFile:
-            pid = inputFile.read().strip()
-        cmd = ["kill", pid]
-        return [cmd]
+        try:
+            with open(self.pidFile, "r") as inputFile:
+                pid = inputFile.read().strip()
+            cmd = ["kill", pid]
+            return [cmd]
+        except:
+            # No pid file --- maybe dnsmasq was not running?
+            out.warn("** {} File not found: {}\n".format(
+                logPrefix(), self.pidFile))
+            return []
 
 class ConfigInterface(ConfigObject):
     typename = "interface"
@@ -414,6 +428,44 @@ class ConfigManager(object):
         # If ==0, we can probably disable.
         self.forwardingCount = 0
 
+    def changingSet(self, files):
+        """
+        Return the sections from the current configuration that may have changed.
+
+        This checks which sections from the current configuration came from
+        files in the given file list.  These are sections that may be changed
+        or removed when we reload the files.
+        """
+        out = set()
+        files = set(files)
+        for config in self.currentConfig.values():
+            if config.source in files:
+                out.add(config)
+        return out
+
+    def findMatchingConfig(self, config, byName=False):
+        """
+        Check the current config for an identical section.
+
+        Returns the matching object or None.
+        """
+        # First try by name (faster).
+        key = config.getTypeAndName()
+
+        if key in self.currentConfig:
+            oldConfig = self.currentConfig[key]
+            if byName:
+                return oldConfig
+            if config.optionsMatch(oldConfig):
+                return oldConfig
+
+        # Loop over them and check by content.
+        for oldConfig in self.currentConfig.values():
+            if config.optionsMatch(oldConfig):
+                return oldConfig
+
+        return None
+
     def loadConfig(self, search=None, execute=True):
         """
         Load configuration files and apply changes to the system.
@@ -453,29 +505,45 @@ class ConfigManager(object):
 
         files = findConfigFiles(search)
 
-        for config in self.readConfig(files):
-            key = config.getTypeAndName()
+        # We will remove things from this set as we find them in the new
+        # configuration files.  Anything that remains at the end must have been
+        # deleted from its source file.
+        deletionSet = self.changingSet(files)
 
+        for config in self.readConfig(files):
             # Check if the section already exists in identical form
             # in our current configuration.
-            matches = False
-            if key in self.currentConfig:
-                oldobj = self.currentConfig[key]
-                if config.optionsMatch(oldobj):
-                    matches = True
-                else:
+            matchByContent = self.findMatchingConfig(config, byName=False)
+            matchByName = self.findMatchingConfig(config, byName=True)
+
+            # If we found anything that matches, then the existing config
+            # section should not be deleted.
+            if matchByContent in deletionSet:
+                deletionSet.remove(matchByContent)
+            if matchByName in deletionSet:
+                deletionSet.remove(matchByName)
+
+            # If an existing section is identical (in content), we have
+            # no new work to do for this section.
+            if matchByContent is None:
+                if matchByName is not None:
                     # Old section will need to be undone appropriately.
-                    undoConfigs.add(oldobj)
+                    undoConfigs.add(matchByName)
 
                     # Keep track of sections that may be affected by this
                     # one's change.
-                    affectedConfigs.update(oldobj.dependents)
+                    affectedConfigs.update(matchByName.dependents)
 
-            # If it did not exist or is different, add it to our queue
-            # of sections to execute.
-            if not matches:
+                # If it did not exist or is different, add it to our queue
+                # of sections to execute.
                 newConfigs.add(config)
-                allConfigs[(config.typename, config.name)] = config
+                allConfigs[config.getTypeAndName()] = config
+
+        # Items from the deletion set should be deleted from memory as well as
+        # have their changes undone.
+        for config in deletionSet:
+            del allConfigs[config.getTypeAndName()]
+            undoConfigs.add(config)
 
         # Generate list of commands to implement configuration.
         for config in affectedConfigs:
@@ -563,5 +631,10 @@ class ConfigManager(object):
 
 if __name__=="__main__":
     manager = ConfigManager()
+    print("Loading configuration files:")
     manager.loadConfig(execute=False)
+    print("\nReloading configuration files:")
+    manager.loadConfig(execute=False)
+    print("\nUnloading configuration files:")
+    manager.unload(execute=False)
 
