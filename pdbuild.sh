@@ -102,7 +102,7 @@ build() {
         rm snap/bin/pd
     fi
 
-    pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
+    pex --disable-cache paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
     rm -rf *.egg-info
 
     build_dnsmasq
