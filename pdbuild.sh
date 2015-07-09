@@ -98,7 +98,13 @@ build() {
 }
 
 # Generates docs 
+docs() {
+    virtualenv buildenv/env
+    source buildenv/env/bin/activate
 
+    pip install -e ./paradrop
+    pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
+}
 
 clean() {
     echo "Cleaning build directories"
@@ -225,6 +231,7 @@ case "$1" in
     "up") up;;
     "down") down;;
     "connect") connect;;
+    "docs") docs;;
     *) echo "Unknown input $1"
    ;;
 esac
