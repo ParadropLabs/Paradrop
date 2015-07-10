@@ -5,14 +5,15 @@
 
 import traceback, os
 
+from paradrop.lib import settings
 from paradrop.lib.utils import pdos
 from paradrop.lib.utils.output import out, logPrefix
 
-NET_PATH = "/etc/config/network"
-WIFI_PATH = "/etc/config/wireless"
-QOS_PATH = "/etc/config/qos"
-FIREWALL_PATH = "/etc/config/firewall"
-DHCP_PATH = "/etc/config/dhcp"
+NET_PATH = settings.UCI_CONFIG_DIR + "/network"
+WIFI_PATH = settings.UCI_CONFIG_DIR + "/wireless"
+QOS_PATH = settings.UCI_CONFIG_DIR + "/qos"
+FIREWALL_PATH = settings.UCI_CONFIG_DIR + "/firewall"
+DHCP_PATH = settings.UCI_CONFIG_DIR + "/dhcp"
  
 def stringify(a):
     b = {}

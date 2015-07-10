@@ -45,6 +45,10 @@ FC_BOUNCE_UPDATE = None
 FC_CHUTESTORAGE_SAVE_PATH = "./tmp"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
 
+#
+# UCI configuration files
+#
+UCI_CONFIG_DIR = "/etc/config"
 
 
 ###############################################################################
