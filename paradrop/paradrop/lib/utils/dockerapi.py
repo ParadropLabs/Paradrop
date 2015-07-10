@@ -16,7 +16,7 @@ def startChute(update):
     dockerfile = update.dockerfile
     name = update.name
 
-    host_config = {}#build_host_config(update)
+    host_config = build_host_config(update)
     
     c = docker.Client(base_url="unix://var/run/docker.sock")
 
@@ -49,14 +49,14 @@ def build_host_config(update):
 
     return docker.utils.create_host_config(
         #TO support
-        port_bindings=port_bindings,
-        restart_policy={"MaximumRetryCount": 0, "Name": "always"},
-        network_mode='bridge',
-        binds=binds,
-        links={},
-        extra_hosts={},
-        dns=[],
+        port_bindings=update.host_config.get('port_bindings'),
+        restart_policy=update.host_config.get('restart_policy'),
+        network_mode=update.host_config.get('network_mode'),
+        binds=update.host_config.get('binds'),
+        links=update.host_config.get('links'),
+        dns=update.host_config.get('dns'),
         #not supported
+        #extra_hosts=update.host_config.get('extra_hosts'),
         devices=[],
         lxc_conf={},
         publish_all_ports=False,

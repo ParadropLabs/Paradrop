@@ -69,7 +69,12 @@ class ChuteAPI:
             EXPOSE 80
 
             CMD ["nginx"]
-            '''
+            ''',
+            'host_config': {
+                'port_bindings': {80:9000},
+                'restart_policy': {'MaximumRetryCount': 0, 'Name': "always"}
+            }
+
         })
 
         self.rest.configurer.updateList(**update)
