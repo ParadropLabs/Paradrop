@@ -44,7 +44,7 @@ class ChuteAPI:
         import datetime
         update.update({
             'from': 'ubuntu', 'name': 'helloworld',
-            'firewall': [{'type': 'redirect', 'from': '@host.lan:5000\n',
+            'firewall': [{'type': 'redirect', 'from': '@host.lan:9000\n',
                           'name': 'web-access', 'to': '*mylan:80\n'}],
             'setup': [{'program': 'echo', 'args': '"<html><h1>This is working!</h1></html>" > index.html\n'}],
             'owner': 'dale',
