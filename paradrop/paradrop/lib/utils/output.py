@@ -17,6 +17,9 @@ from .pdutils import timestr, jsonPretty
 # "global" variable all modules should be able to toggle
 verbose = False
 
+LOG_PATH = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
+LOG_NAME = 'log.txt'
+
 
 def logPrefix(*args, **kwargs):
     """Setup a default logPrefix for any function that doesn't overwrite it."""
@@ -249,15 +252,14 @@ class Output():
     def __repr__(self):
         return "REPR"
 
-outputPath = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
-if outputPath is not None:
-    outputPath += 'pdlog.txt'
-    print outputPath
+if LOG_PATH is not None:
+    outputPath = LOG_PATH + LOG_NAME
+    # print outputPath
 
     # File logging. Need to do this locally as well as change files when
     # logs become too large
 
-    writer = Fileout(outputPath + 'pdlog')
+    writer = Fileout(outputPath)
     out = Output(
         header=Fileout(outputPath),
         testing=Fileout(outputPath),
