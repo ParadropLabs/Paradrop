@@ -25,13 +25,9 @@ def startChute(update):
 
     for line in c.build(rm=True, tag=repo, fileobj=dockerfile):
         for key, value in json.loads(line).iteritems():
-            if (key == "stream"):
-                #out.info("-- %s %s\n" % (logPrefix(), str(value)))
-                update.pkg.request.write(str(value))
-            elif (isinstance(value, dict)):
+            if (isinstance(value, dict)):
                 continue
             else:
-                #out.info("-- %s %s\n" % (logPrefix(), str(value)))
                 update.pkg.request.write(str(value))
     container = c.create_container(
         image=repo, name=name, host_config=host_config
