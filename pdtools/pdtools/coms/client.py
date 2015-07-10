@@ -9,9 +9,15 @@ class RpcClient:
 
     '''
     Remote client RPC wrapper. Translates seemingly local calls
-    into remote RPC calls.
+    into remote RPC calls to the given server. 
 
-    Will aleays return deferreds
+    Usage: 
+        client = RpcClient("https://something:70234")
+        call = client.nameOfRemoteCall(arg1 arg2)
+        call.addCallbacks(aCallback)
+
+
+    Calls to this object always return deferreds. 
     '''
 
     def __init__(self, urlAndPort):

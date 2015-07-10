@@ -6,10 +6,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="paradrop",
-    version="0.1.11",
+    version="0.1.12",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
-    install_requires=['docopt', 'requests', 'twisted'],
+    install_requires=['docopt', 'requests', 'twisted', 'bcrypt'],
     packages=find_packages(),
 
     entry_points={
