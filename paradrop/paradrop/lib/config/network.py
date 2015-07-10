@@ -24,6 +24,8 @@ def getNetworkConfig(update):
 
     interfaces = list()
 
+    if(not hasattr(update, 'net')):
+        return None
     for name, cfg in update.net.iteritems():
         # First we must check the length of the name string, it cannot be
         # longer then 16-6 This is because the veth pair name for lxc cannot be
@@ -88,6 +90,9 @@ def getOSNetworkConfig(update):
     interfaces = update.new.getCache('networkInterfaces')
 
     osNetwork = list()
+
+    if(interfaces is None):
+        return None
 
     for iface in interfaces:
         # A basic set of things must exist for all interfaces
