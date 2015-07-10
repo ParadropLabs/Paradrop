@@ -10,7 +10,6 @@ from paradrop.lib.utils import output
 
 from paradrop.lib import settings
 from paradrop.lib.utils.output import logPrefix
-from paradrop.backend import pdfcd
 
 
 ##########################################################################
@@ -25,6 +24,8 @@ def setupArgParse():
     p.add_argument('-s', '--settings', help='Overwrite settings, format is "KEY:VALUE"',
                    action='append', type=str, default=[])
     p.add_argument('--development', help='Enable the development environment variables',
+                   action='store_true')
+    p.add_argument('--config', help='Run as the configuration daemon',
                    action='store_true')
     p.add_argument(
         '--unittest', help="Run the server in unittest mode", action='store_true')
@@ -80,10 +81,19 @@ def main():
         caughtSIGUSR1(signal.SIGUSR1, None)
 
     # Before we setup anything make sure we have generated a UUID for our instance
-    output.out.info('-- {} Teste\n'.format(logPrefix()))
+    output.out.info('-- {} Test\n'.format(logPrefix()))
 
-    # Now setup the RESTful API server for Paradrop
-    pdfcd.server.setup(args)
+    if(args.config):
+        from paradrop.backend import pdconfd
+
+        # Start the configuration daemon
+        pdconfd.main.run_pdconfd() 
+
+    else:
+        from paradrop.backend import pdfcd
+
+        # Now setup the RESTful API server for Paradrop
+        pdfcd.server.setup(args)
 
 if __name__ == "__main__":
     main()

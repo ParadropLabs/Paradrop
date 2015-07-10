@@ -50,7 +50,7 @@ class ChuteAPI:
             'owner': 'dale',
             'init': [{'program': 'python', 'args': '-m SimpleHTTPServer 80'}],
             'date': datetime.date(2015, 7, 7),
-            'net': {'mylan': {'intfName': 'eth0', 'type': 'lan'}},
+            'net': {'mylan': {'intfName': 'eth0', 'type': 'lan', 'ipaddr': '192.168.17.5', 'netmask': '255.255.255.0'}},
             'description': 'This is a very very simple hello world chute.\n',
             'dockerfile': '''
             FROM ubuntu
