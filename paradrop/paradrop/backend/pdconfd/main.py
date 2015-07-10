@@ -67,3 +67,6 @@ def run_pdconfd():
     reactor.callWhenRunning(listen)
     reactor.run()
 
+if __name__=="__main__":
+    run_pdconfd()
+

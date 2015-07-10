@@ -103,12 +103,8 @@ def getOSNetworkConfig(update):
             'type': "bridge", 
             'proto': 'static', 
             'ipaddr': iface['externalIpaddr'], 
-            'netmask': iface['netmask']
-        }
-
-        # Populate the veth that LXC will create when this chute starts
-        options['list'] = {
-            'ifname': [iface['externalIntf']]
+            'netmask': iface['netmask'],
+            'ifname': iface['externalIntf']
         }
 
         # Add to our OS Network
