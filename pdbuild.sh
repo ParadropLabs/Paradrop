@@ -43,6 +43,14 @@ killvm() {
     fi
 }
 
+build_dnsmasq() {
+    test -d third-party || mkdir third-party
+    test -d third-party/dnsmasq || git clone git://thekelleys.org.uk/dnsmasq.git third-party/dnsmasq
+    pushd third-party/dnsmasq
+    LDFLAGS=-static make
+    popd
+    cp third-party/dnsmasq/src/dnsmasq snap/bin/
+}
 
 ###
 # Operations
@@ -95,8 +103,10 @@ build() {
         rm snap/bin/pd
     fi
 
-    pex paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
+    pex --disable-cache paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
     rm -rf *.egg-info
+
+    build_dnsmasq
 }
 
 # Generates docs 
@@ -201,7 +211,8 @@ up() {
 
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
-    kvm -m 512 -redir :8090::80 -redir :8022::22 -redir :7777::9000 -redir :9999::14321 snappy-vm.img &
+    kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::7777-:9000,hostfwd=tcp::9999-:14321 \
+            -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 snappy-vm.img &
     echo $! > pid.txt
 }
 

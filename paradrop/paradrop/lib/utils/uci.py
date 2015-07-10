@@ -432,7 +432,7 @@ class UCIConfig:
             fd.close()
         except Exception as e:
             out.err('!! %s Error reading file %s: %s\n' % (logPrefix(), self.filepath, str(e)))
-            raise PDFCError('OpenwrtReadError')
+            raise e
 
         cfg = None
         opt = None
@@ -551,8 +551,9 @@ if(__name__ == '__main__'):
        
     fileLoc = args.file
  
-    uci = OpenWrtConfig(fileLoc)
+    uci = UCIConfig(fileLoc)
 
     config = uci.readConfig()
+    pp.pprint(config)
 
 
