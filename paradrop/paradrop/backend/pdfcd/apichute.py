@@ -24,7 +24,7 @@ class ChuteAPI:
         self.rest.register('POST', '^/v1/chute/create$', self.POST_createChute)
         self.rest.register('POST', '^/v1/chute/delete$', self.POST_deleteChute)
 
-    @APIDecorator(requiredArgs=["url"])
+    @APIDecorator(requiredArgs=["config"])
     def POST_createChute(self, apiPkg):
         print 'STUFF STUFF STUFF'
 
