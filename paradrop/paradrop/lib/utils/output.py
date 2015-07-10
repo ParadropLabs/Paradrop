@@ -17,6 +17,9 @@ from .pdutils import timestr, jsonPretty
 # "global" variable all modules should be able to toggle
 verbose = False
 
+LOG_PATH = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
+LOG_NAME = 'log.txt'
+
 
 def logPrefix(*args, **kwargs):
     """Setup a default logPrefix for any function that doesn't overwrite it."""
@@ -89,22 +92,14 @@ class Fileout(IOutput):
     def __init__(self, filename, truncate=False):
         self.filename = filename
         self.mode = None
-        if(truncate):
-            self.mode = "w"
-        else:
-            self.mode = "a"
+        self.mode = 'w' if truncate else 'a'
 
     def __call__(self, args):
-        try:
-            fd = open(self.filename, self.mode)
-            # Make sure args is a str type
-            if(not isinstance(args, str)):
-                args = str(args)
-            fd.write(args)
-            fd.flush()
-            fd.close()
-        except:
-            pass
+        print 'Trying to Write!'
+
+        with open(self.filename, self.mode) as f:
+            f.write(str(args))
+            f.flush()
 
 
 class Stdout(IOutput):
@@ -257,16 +252,37 @@ class Output():
     def __repr__(self):
         return "REPR"
 
-# Create a standard out module to be used if no one overrides it
-out = Output(
-    header=Stdout(Colors.HEADER),
-    testing=Stdout(Colors.PERF),
-    verbose=FakeOutput(),
-    info=Stdout(Colors.INFO),
-    perf=Stdout(Colors.PERF),
-    warn=Stdout(Colors.WARN),
-    err=Stderr(Colors.ERR),
-    exception=OutException(Colors.ERR),
-    security=Stderr(Colors.SECURITY),
-    fatal=Stderr(Colors.FATAL)
-)
+if LOG_PATH is not None:
+    outputPath = LOG_PATH + LOG_NAME
+    # print outputPath
+
+    # File logging. Need to do this locally as well as change files when
+    # logs become too large
+
+    writer = Fileout(outputPath)
+    out = Output(
+        header=Fileout(outputPath),
+        testing=Fileout(outputPath),
+        verbose=Fileout(outputPath),
+        perf=Fileout(outputPath),
+        warn=Fileout(outputPath),
+        err=Fileout(outputPath),
+        exception=Fileout(outputPath),
+        security=Fileout(outputPath),
+        fatal=Fileout(outputPath)
+    )
+
+else:
+    # Create a standard out module to be used if no one overrides it
+    out = Output(
+        header=Stdout(Colors.HEADER),
+        testing=Stdout(Colors.PERF),
+        verbose=FakeOutput(),
+        info=Stdout(Colors.INFO),
+        perf=Stdout(Colors.PERF),
+        warn=Stdout(Colors.WARN),
+        err=Stderr(Colors.ERR),
+        exception=OutException(Colors.ERR),
+        security=Stderr(Colors.SECURITY),
+        fatal=Stderr(Colors.FATAL)
+    )

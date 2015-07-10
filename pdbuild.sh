@@ -13,16 +13,18 @@ then
     echo -e "To get paradrop on a snappy instance as quickly as possible, run build and install\n"
 
     echo "Usage:"
-    echo -e "  build\n\t build and package dependencies, install paradrop locally"
+    echo -e "  build\t\t build and package dependencies, install paradrop locally"
     # echo -e "  clean\n\t remove virtual environment, clean packages"
-    echo -e "  run\n\t run paradrop locally"
-    echo -e "  install \n\t compile snap and install on local snappy virtual machine."
-    echo -e "  setup\n\t prepares environment for local snappy testing"
-    echo -e "  up\n\t starts a local snappy virtual machine"
-    echo -e "  down\n\t closes a local snappy virtual machine"
-    echo -e "  connect\n\t connects to a local snappy virtual machine"
+    echo -e "  run\t\t run paradrop locally"
+    echo -e "  install \t compile snap and install on local snappy virtual machine."
+    echo -e "  setup\t\t prepares environment for local snappy testing"
+    echo -e "  up\t\t starts a local snappy virtual machine"
+    echo -e "  down\t\t closes a local snappy virtual machine"
+    echo -e "  connect\t connects to a local snappy virtual machine"
 
-
+    echo -e "\nDevelopment operations"
+    echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"
+    echo -e "  update-tools\t uploads build tools to pypi. Requires authentication."
     exit
 fi
 
@@ -98,7 +100,13 @@ build() {
 }
 
 # Generates docs 
+docs() {
+    virtualenv buildenv/env
+    source buildenv/env/bin/activate
 
+    pip install -e ./paradrop
+    pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
+}
 
 clean() {
     echo "Cleaning build directories"
@@ -212,6 +220,16 @@ connect() {
     ssh -p 8022 ubuntu@localhost
 }
 
+
+update-tools() {
+    cd pdtools
+    rm -rf build/
+    rm -rf dist/
+
+    python setup.py sdist bdist_wheel
+    twine upload dist/* 
+}
+
 ###
 # Call Operations
 ###
@@ -225,6 +243,8 @@ case "$1" in
     "up") up;;
     "down") down;;
     "connect") connect;;
+    "docs") docs;;
+    "update-tools") update-tools;;
     *) echo "Unknown input $1"
    ;;
 esac

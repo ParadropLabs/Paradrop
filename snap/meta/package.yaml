@@ -5,13 +5,9 @@ icon: meta/hello.png
 type: framework
 frameworks: 
     - docker
-
 # binaries:
-#  - name: bin/pd
-#    security-policy:
-#       apparmor: meta/pd.apparmor
-#       seccomp: meta/pd.seccomp
-
+#  - name: bin/echo
+#    caps: []
 services:
  - name: pd
    start: bin/pd
