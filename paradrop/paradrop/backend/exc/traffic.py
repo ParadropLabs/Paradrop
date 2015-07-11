@@ -3,8 +3,9 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from paradrop.lib.utils.output import out, logPrefix
 from paradrop.backend.exc import plangraph
+from paradrop.lib import config
+from paradrop.lib.utils.output import out, logPrefix
 
 def generatePlans(update):
     """
@@ -19,6 +20,21 @@ def generatePlans(update):
     # Make sure we need to create this chute (does it already exist)
     # TODO
 
+    
+    # First time, so generate the basic firewall rules in cache (key: 'osFirewallConfig')
+    update.plans.addPlans(plangraph.TRAFFIC_GET_OS_FIREWALL, (config.firewall.getOSFirewallRules, ))
+            
+    # Combine rules from above two fucntions, save to file
+    todoPlan = (config.firewall.setOSFirewallRules, )
+    abtPlan = (config.osconfig.revertConfig, "firewall")
+    update.plans.addPlans(plangraph.TRAFFIC_SET_OS_FIREWALL, todoPlan, abtPlan)
+    
+    # Reload firewall based on rule changes
+    todoPlan = (config.configservice.reloadFirewall, )
+    # To abort we first have to revert changes we made
+    abtPlan = [(config.osconfig.revertConfig, "firewall"), (config.configservice.reloadFirewall, )]
+    update.plans.addPlans(plangraph.TRAFFIC_RELOAD_FIREWALL, todoPlan, abtPlan)
+    
     return None
 
 ###########################################################################################################

@@ -1,7 +1,7 @@
 """Paradrop build tools.
 
 Usage:
-    paradrop install <host> <port> <github-url> 
+    paradrop install <host> <port> <path-to-config> 
     paradrop snap-install <host> <port>
     paradrop (-h | --help)
     paradrop --version
@@ -25,13 +25,13 @@ def main():
     # print(args)
 
     if args['install']:
-        installChute(args['<host>'], args['<port>'], args['<github-url>'])
+        installChute(args['<host>'], args['<port>'], args['<path-to-config>'])
 
     if args['snap-install']:
         print 'Not implemented. Sorry, love.'
 
 
-def installChute(host, port, github):
+def installChute(host, port, config):
     '''
     Testing method. Take a git url from github and load it onto snappy-pd. 
     '''
@@ -43,9 +43,9 @@ def installChute(host, port, github):
     # The project directory can either be cloned to the backend or installed locally,
     # doesn't matter which one-- we still have to stream the files over
 
-    params = {'url': github}
+    params = {'config': config}
     r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/create', data=json.dumps(params))
-    print r.text
+    print r.text_
 
 
 def installParadrop():

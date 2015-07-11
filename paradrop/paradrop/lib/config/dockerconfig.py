@@ -14,25 +14,13 @@ from io import BytesIO
 def getVirtPreamble(update):
     out.warn('** %s TODO implement me\n' % logPrefix())
     if(update.updateType == 'create'):
-        print 'here'
-        #preamble setup
-        dockerfile = 'FROM ' + update.image
-        dockerfile += '\nMAINTAINER ' + update.owner
-
-        #setup commands
-        for run in update.setup:
-            dockerfile += '\nRUN ' + run
-
-        for f in update.addFile:
-            dockerfile += '\nADD ' + f
-        dockerfile += '\nEXPOSE 80'
-
-        #Launch command
-        if(update.init != None):
-            dockerfile += '\nCMD ["' + update.init + '"]'
-
-        #encode into fileobj
-        update.dockerfile = BytesIO(dockerfile.encode('utf-8'))
+        if(not hasattr(update, 'dockerfile')):
+            return
+        if(update.dockerfile == None):
+            return
+        else:
+            out.info('-- %s Using prexisting dockerfile.\n' % logPrefix())
+            update.dockerfile = BytesIO(update.dockerfile.encode('utf-8'))
     
     
 def getVirtDHCPSettings(update):

@@ -24,7 +24,7 @@ class ChuteAPI:
         self.rest.register('POST', '^/v1/chute/create$', self.POST_createChute)
         self.rest.register('POST', '^/v1/chute/delete$', self.POST_deleteChute)
 
-    @APIDecorator(requiredArgs=["url"])
+    @APIDecorator(requiredArgs=["config"])
     def POST_createChute(self, apiPkg):
         print 'STUFF STUFF STUFF'
 
@@ -43,24 +43,39 @@ class ChuteAPI:
                       tok=timeint(), pkg=apiPkg, func=self.rest.complete)
         import datetime
         update.update({
-            'image': 'ubuntu', 'name': 'helloworld',
-            'firewall': [{'type': 'redirect', 'from': '@host.lan:5000\n',
+            'from': 'ubuntu', 'name': 'helloworld',
+            'firewall': [{'type': 'redirect', 'from': '@host.lan:9000\n',
                           'name': 'web-access', 'to': '*mylan:80\n'}],
-            'setup': ['echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list',
-                'apt-get update',
-                'apt-get -y install nginx',
-                'echo "daemon off;" >> /etc/nginx/nginx.conf',
-                'mkdir /etc/nginx/ssl'
-            ],
-            'addFile': [
-                'https://raw.githubusercontent.com/nphyatt/docker-test/master/default /etc/nginx/sites-available/default',
-                'https://raw.githubusercontent.com/nphyatt/docker-test/master/index.html /var/www/index.html'
-            ],
+            'setup': [{'program': 'echo', 'args': '"<html><h1>This is working!</h1></html>" > index.html\n'}],
             'owner': 'dale',
-            'init': 'nginx',
+            'init': [{'program': 'python', 'args': '-m SimpleHTTPServer 80'}],
             'date': datetime.date(2015, 7, 7),
-            'net': {'mylan': {'intfName': 'eth0', 'type': 'lan'}},
-            'description': 'This is a very very simple hello world chute.\n'})
+            'net': {'mylan': {'intfName': 'eth0', 'type': 'lan', 'ipaddr': '192.168.17.5', 'netmask': '255.255.255.0'}},
+            'description': 'This is a very very simple hello world chute.\n',
+            'dockerfile': '''
+            FROM ubuntu
+            MAINTAINER Nick Hyatt
+            RUN echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list
+            RUN apt-get update
+            RUN apt-get -y install nginx
+
+            RUN echo "daemon off;" >> /etc/nginx/nginx.conf
+            RUN mkdir /etc/nginx/ssl
+            ADD https://raw.githubusercontent.com/nphyatt/docker-test/master/default /etc/nginx/sites-available/default
+            ADD https://raw.githubusercontent.com/nphyatt/docker-test/master/index.html /var/www/index.html
+            RUN chmod 664 /var/www/index.html
+            RUN chmod 664 /etc/nginx/sites-available/default
+
+            EXPOSE 80
+
+            CMD ["nginx"]
+            ''',
+            'host_config': {
+                'port_bindings': {80:9000},
+                'restart_policy': {'MaximumRetryCount': 0, 'Name': "always"}
+            }
+
+        })
 
         self.rest.configurer.updateList(**update)
 

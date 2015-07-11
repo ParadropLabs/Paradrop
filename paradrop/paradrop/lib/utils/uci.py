@@ -5,25 +5,15 @@
 
 import traceback, os
 
-from lib.paradrop import *
-from lib.paradrop.chute import Chute
-from lib.paradrop.utils import pdutils
+from paradrop.lib import settings
+from paradrop.lib.utils import pdos
+from paradrop.lib.utils.output import out, logPrefix
 
-from lib.internal.fc.fcerror import PDFCError
-from lib.internal.utils import pdos
-from lib.internal.fc import macromanager
-
-# Test locations - remove
-#NET_PATH = "/tmp/etc/config/network"
-#WIFI_PATH = "/tmp/etc/config/wireless"
-#WSHAPER_PATH = "/tmp/etc/config/wshaper"
-#FIREWALL_PATH = "/tmp/etc/config/firewall"
-
-NET_PATH = "/etc/config/network"
-WIFI_PATH = "/etc/config/wireless"
-QOS_PATH = "/etc/config/qos"
-FIREWALL_PATH = "/etc/config/firewall"
-DHCP_PATH = "/etc/config/dhcp"
+NET_PATH = settings.UCI_CONFIG_DIR + "/network"
+WIFI_PATH = settings.UCI_CONFIG_DIR + "/wireless"
+QOS_PATH = settings.UCI_CONFIG_DIR + "/qos"
+FIREWALL_PATH = settings.UCI_CONFIG_DIR + "/firewall"
+DHCP_PATH = settings.UCI_CONFIG_DIR + "/dhcp"
  
 def stringify(a):
     b = {}
@@ -319,7 +309,6 @@ class UCIConfig:
 
     def getChuteConfigs(self, internalid):
         chuteConfigs = []
-        out.warn("FINDING internalid: %s\n" % internalid)
         for e in self.config:
             c, o = e
             if ('comment' in c):
@@ -444,7 +433,7 @@ class UCIConfig:
             fd.close()
         except Exception as e:
             out.err('!! %s Error reading file %s: %s\n' % (logPrefix(), self.filepath, str(e)))
-            raise PDFCError('OpenwrtReadError')
+            raise e
 
         cfg = None
         opt = None
@@ -563,8 +552,9 @@ if(__name__ == '__main__'):
        
     fileLoc = args.file
  
-    uci = OpenWrtConfig(fileLoc)
+    uci = UCIConfig(fileLoc)
 
     config = uci.readConfig()
+    pp.pprint(config)
 
 
