@@ -23,6 +23,10 @@ from paradrop.backend import fc
 from . import apiutils
 from . import apichute
 
+# temp
+from paradrop.backend.pdfcd.apiinternal import Base
+from paradrop.backend.pdfcd import apiinternal
+
 
 class ParadropAPIServer(pdrest.APIResource):
 
@@ -224,6 +228,8 @@ class ParadropAPIServer(pdrest.APIResource):
 ###############################################################################
 # Main function
 ###############################################################################
+
+
 def setup(args=None):
     """
     This is the main setup function to establish the TCP listening logic for
@@ -232,6 +238,7 @@ def setup(args=None):
 
     # Setup API server
     api = ParadropAPIServer(reactor)
+    api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
 
     # Development mode

@@ -26,8 +26,6 @@ class ChuteAPI:
 
     @APIDecorator(requiredArgs=["config"])
     def POST_createChute(self, apiPkg):
-        print 'STUFF STUFF STUFF'
-
         """
            Description:
            Arguments:
@@ -71,7 +69,7 @@ class ChuteAPI:
             CMD ["nginx"]
             ''',
             'host_config': {
-                'port_bindings': {80:9000},
+                'port_bindings': {80: 9000},
                 'restart_policy': {'MaximumRetryCount': 0, 'Name': "always"}
             }
 
