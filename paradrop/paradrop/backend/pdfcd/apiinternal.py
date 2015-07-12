@@ -33,7 +33,7 @@ def api_echo(message):
 
 
 @defer.inlineCallbacks
-def api_log(lines):
+def api_log(lines=100):
     ''' Return the last number lines of the log. '''
     contents = yield utils.getProcessOutput('/usr/bin/tail',
                                             args=['/home/damouse/Documents/python/scratch/popen.txt', '-n ' + str(lines), ])

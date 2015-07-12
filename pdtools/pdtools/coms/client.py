@@ -20,8 +20,8 @@ class RpcClient:
     Calls to this object always return deferreds. 
     '''
 
-    def __init__(self, urlAndPort):
-        self.proxy = Proxy(urlAndPort, allowNone=True)
+    def __init__(self, host, port, path):
+        self.proxy = Proxy('http://%s:%s/%s/' % (host, port, path), allowNone=True)
 
     def __getattr__(self, item):
         def wrap(*args):

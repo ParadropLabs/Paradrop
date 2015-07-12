@@ -3,6 +3,7 @@
 Usage:
     paradrop install <host> <port> <path-to-config> 
     paradrop snap-install <host> <port>
+    paradrop logs <host> <port>
     paradrop (-h | --help)
     paradrop --version
 Options:
@@ -11,10 +12,15 @@ Options:
 """
 
 
-from docopt import docopt
 import requests
 import os
 import json
+
+from pdtools.coms.client import RpcClient
+
+from twisted.internet import reactor
+from twisted.internet import defer
+from docopt import docopt
 
 
 def main():
@@ -29,6 +35,9 @@ def main():
 
     if args['snap-install']:
         print 'Not implemented. Sorry, love.'
+
+    if args['logs']:
+        logs(args['<host>'], args['<port>'])
 
 
 def installChute(host, port, config):
@@ -48,9 +57,38 @@ def installChute(host, port, config):
     print r.text_
 
 
+def logs(host, port):
+    '''
+    Connect to the named router.
+
+    TODO: convert from host/port to finding the router by its name. 
+    '''
+
+    RpcClient(host, port, 'internal').log().addCallbacks(printSuccess, printFailure).addBoth(killReactor)
+
+    reactor.run()
+
+
 def installParadrop():
     ''' Testing method. Install paradrop, snappy, etc onto SD card '''
     pass
+
+###############################################################################
+# Default Callbacks
+###############################################################################
+
+
+def killReactor(r):
+    reactor.stop()
+
+
+def printSuccess(r):
+    print r
+
+
+def printFailure(r):
+    print 'Failed!'
+    print r
 
 if __name__ == '__main__':
     main()
