@@ -81,7 +81,7 @@ def main():
         caughtSIGUSR1(signal.SIGUSR1, None)
 
     # Before we setup anything make sure we have generated a UUID for our instance
-    output.out.info('-- {} Test\n'.format(logPrefix()))
+    # output.out.info('-- {} Test\n'.format(logPrefix()))
 
     if(args.config):
         from paradrop.backend import pdconfd

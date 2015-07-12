@@ -21,7 +21,9 @@ I have done this in the interest of time and development speed.
 
 
 from twisted.web import xmlrpc
-from twisted.internet import defer
+from twisted.internet import defer, utils
+
+from paradrop.lib.utils.output import out, logPrefix
 
 
 @defer.inlineCallbacks
@@ -30,9 +32,16 @@ def api_echo(message):
     defer.returnValue(message)
 
 
+@defer.inlineCallbacks
+def api_log(lines):
+    ''' Return the last number lines of the log. '''
+    contents = yield utils.getProcessOutput('/usr/bin/tail', args=['/home/damouse/Documents/python/scratch/popen.txt'])
+    defer.returnValue(contents)
+
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.
 ###############################################################################
+
 
 class Base(xmlrpc.XMLRPC):
 
@@ -51,6 +60,8 @@ class Base(xmlrpc.XMLRPC):
 
 def castFailure(failure):
     ''' Converts an exception (or general failure) into an xmlrpc fault for transmission. '''
+    out.info("-- Failed API call (TODO: categorize errors)")
+
     raise xmlrpc.Fault(123, failure.getErrorMessage())
 
 
@@ -64,6 +75,8 @@ def apiWrapper(target):
 
 
 def castSuccess(res):
+    out.info("-- Completed API call (TODO: add details)")
+
     # screen out Objectids on mongo returns. The remote objects have no
     # need for them, and they confuse xmlrpc
     if isinstance(res, dict):
