@@ -47,12 +47,11 @@ def api_log(lines=100):
     contents = yield utils.getProcessOutput('/usr/bin/tail', args=[path, '-n ' + str(lines), ])
 
     defer.returnValue(contents)
-    # defer.returnValue("Well this part works")
+
 
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.
 ###############################################################################
-
 
 class Base(xmlrpc.XMLRPC):
 
