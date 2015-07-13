@@ -26,6 +26,8 @@ from twisted.internet import defer, utils
 from paradrop.lib.utils.output import out, logPrefix
 from paradrop.lib import settings
 
+import os
+
 
 @defer.inlineCallbacks
 def api_echo(message):
@@ -41,10 +43,11 @@ def api_log(lines=100):
     #     raise Exception("Logging to file is not currently enabled.")
 
     # path = settings.LOG_PATH + settings.LOG_NAME
-    # contents = yield utils.getProcessOutput('/usr/bin/tail', args=[path, '-n ' + str(lines), ])
+    path = os.path.dirname(os.getcwd()) + '/' + settings.LOG_NAME
+    contents = yield utils.getProcessOutput('/usr/bin/tail', args=[path, '-n ' + str(lines), ])
 
-    # defer.returnValue(contents)
-    defer.returnValue("Well this part works")
+    defer.returnValue(contents)
+    # defer.returnValue("Well this part works")
 
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.

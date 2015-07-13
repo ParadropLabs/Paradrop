@@ -257,10 +257,13 @@ class Output():
     def __repr__(self):
         return "REPR"
 
+# isSnappy = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
+isSnappy = True
+
 # out = None
-if settings.LOG_PATH is not None:
-    outputPath = settings.LOG_PATH + settings.LOG_NAME
-    # outputPath = os.path.dirname(os.getcwd()) + settings.LOG_NAME
+if isSnappy is not None:
+    # outputPath = settings.LOG_PATH + settings.LOG_NAME
+    outputPath = origOS.path.dirname(origOS.getcwd()) + '/' + settings.LOG_NAME
 
     # File logging. Need to do this locally as well as change files when
     # logs become too large

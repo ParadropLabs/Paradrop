@@ -212,8 +212,8 @@ class ParadropAPIServer(pdrest.APIResource):
         """
 
         # Testing-- I need logs.
-        with open(settings.LOG_PATH + settings.LOG_NAME) as f:
-            return f.read()
+        # with open(settings.LOG_PATH + settings.LOG_NAME) as f:
+        #    return f.read()
 
         ip = apiutils.getIP(request)
         uri = request.uri

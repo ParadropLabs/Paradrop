@@ -66,7 +66,6 @@ def main():
     :raises: AttributeError, KeyError
     """
 
-    # a = 1 / 0
     # Setup the signal handler for verbose
     # signal.signal(signal.SIGUSR1, caughtSIGUSR1)
 
@@ -83,17 +82,20 @@ def main():
     # Before we setup anything make sure we have generated a UUID for our instance
     output.out.info('-- {} Test\n'.format(logPrefix()))
 
-    if(args.config):
-        from paradrop.backend import pdconfd
+    # if args.config:
+    #     from paradrop.backend import pdconfd
 
-        # Start the configuration daemon
-        pdconfd.main.run_pdconfd()
+    # Start the configuration daemon
+    #     pdconfd.main.run_pdconfd()
 
-    else:
-        from paradrop.backend import pdfcd
+    # else:
+    #     from paradrop.backend import pdfcd
 
-        # Now setup the RESTful API server for Paradrop
-        pdfcd.server.setup(args)
+    # Now setup the RESTful API server for Paradrop
+    #     pdfcd.server.setup(args)
+
+    from paradrop.backend import pdfcd
+    pdfcd.server.setup(args)
 
 if __name__ == "__main__":
     main()
