@@ -264,5 +264,9 @@ def setup(args=None):
     out.info('-- %s Establishing API server, port: %d\n' % (logPrefix(), thePort))
     reactor.listenTCP(thePort, site)
 
+    # from twisted.python import log
+    # import sys
+    # log.startLogging(sys.stdout)
+
     # Never return from here
     reactor.run()

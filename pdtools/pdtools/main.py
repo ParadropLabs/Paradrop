@@ -73,7 +73,7 @@ def logs(host, port):
 
 
 def echo(host, port):
-    RpcClient(host, port, 'internal').echo('Hello!').addCallbacks(printSuccess, printFailure).addBoth(killReactor)
+    RpcClient(host, port, 'internal').echo().addCallbacks(printSuccess, printFailure).addBoth(killReactor)
     reactor.run()
 
 

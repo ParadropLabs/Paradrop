@@ -100,10 +100,6 @@ class Fileout(IOutput):
             f.write(str(args))
             f.flush()
 
-    # def write(self, message):
-    #     ''' Testing '''
-    #     self.__call__(message)
-
 
 class Stdout(IOutput):
 
@@ -114,14 +110,17 @@ class Stdout(IOutput):
         self.other_out = other_out_types
 
     def __call__(self, args):
-        # Make sure args is a str type
-        if(not isinstance(args, str)):
-            args = str(args)
+        args = str(args)
         msg = ""
         if(self.color):
             msg = self.color + args + Colors.END
         else:
             msg = args
+
+        # Check to make sure there's a newline (not needed now)
+        if "\n" not in msg:
+            msg += "\n"
+
         sys.stdout.write(msg)
         sys.stdout.flush()
         if self.other_out:
@@ -183,6 +182,7 @@ class OutException(IOutput):
 
         msg = "!! %s\nException: %s\nArguments: %s\nTraceback: %s\n" % (
             prefix, str(e), argStr, theTrace)
+
         # Format the message in a reasonable way
         msg = msg.replace('\n', '\n    ') + '\n'
         if(self.color):
@@ -227,7 +227,6 @@ class Output():
         any attributes you pass as args, and anything else not defined gets sent to __getattr__
         so that it doesn't error out.
 
-
         Currently these are the choices for Output classes:
             - StdoutOutput() : output sent to sys.stdout
             - StderrOutput() : output sent to sys.stderr
@@ -239,12 +238,17 @@ class Output():
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
 
-    def __getattr__(self, name):
-        """Catch attribute access attempts that were not defined in __init__
-            by default throw them out."""
+    # def __getattr__(self, name):
+    #     """Catch attribute access attempts that were not defined in __init__
+    #         by default throw them out."""
 
-        print name
-        return FakeOutput()
+    #     print name
+    #     return FakeOutput()
+
+    # Doesn't work because they're assigned as magic methods
+    # def __getattribute__(self, name):
+    #     print 'Getting attr!'
+    #     return self.__dict__[name]
 
     def __setattr__(self, name, val):
         """Allow the program to add new output streams on the fly."""
@@ -252,13 +256,22 @@ class Output():
             print('>> Adding new Output stream %s' % name)
         # WARNING you cannot call setattr() here, it would recursively call
         # back into this function
-        self.__dict__[name] = val
+        self.__dict__[name] = wrap(val)
 
     def __repr__(self):
         return "REPR"
 
-# isSnappy = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
-isSnappy = True
+
+def wrap(f):
+    def inner(*args, **kwargs):
+        print 'Wrapped!'
+        return f(*args, **kwargs)
+
+    return inner
+
+
+isSnappy = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
+# isSnappy = True
 
 # out = None
 if isSnappy is not None:
@@ -290,11 +303,15 @@ if isSnappy is not None:
 
 else:
     # Create a standard out module to be used if no one overrides it
+    from twisted.python import log
+    info = Stdout(Colors.INFO)
+    # log.startLoggingWithObserver(info, setStdout=False)
+
     out = Output(
         header=Stdout(Colors.HEADER),
         testing=Stdout(Colors.PERF),
         verbose=FakeOutput(),
-        info=Stdout(Colors.INFO),
+        info=info,
         perf=Stdout(Colors.PERF),
         warn=Stdout(Colors.WARN),
         err=Stderr(Colors.ERR),
