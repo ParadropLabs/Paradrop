@@ -70,6 +70,22 @@ def getNetworkConfig(update):
         externalIntf="{}.{}".format(update.new.name[0:prefixLen], name)
         iface['externalIntf'] = externalIntf
 
+        # Add extra fields for WiFi devices.
+        if cfg['type'] == "wifi":
+            # Check for required fields.
+            res = pdutils.check(cfg, dict, ['ssid'])
+            if(res):
+                out.warn('** {} WiFi network interface definition {}\n'.format(logPrefix(), res))
+                raise Exception("Interface definition missing field(s)")
+
+            iface['ssid'] = cfg['ssid']
+
+            # Option encryption settings
+            if 'encryption' in cfg:
+                iface['encryption'] = cfg['encryption']
+            if 'key' in cfg:
+                iface['key'] = cfg['key']
+
         interfaces.append(iface)
 
     update.new.setCache('networkInterfaces', interfaces)

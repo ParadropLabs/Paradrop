@@ -10,7 +10,7 @@ from paradrop.lib.utils import pdos
 from paradrop.lib.utils.output import out, logPrefix
 
 NET_PATH = settings.UCI_CONFIG_DIR + "/network"
-WIFI_PATH = settings.UCI_CONFIG_DIR + "/wireless"
+WIRELESS_PATH = settings.UCI_CONFIG_DIR + "/wireless"
 QOS_PATH = settings.UCI_CONFIG_DIR + "/qos"
 FIREWALL_PATH = settings.UCI_CONFIG_DIR + "/firewall"
 DHCP_PATH = settings.UCI_CONFIG_DIR + "/dhcp"
