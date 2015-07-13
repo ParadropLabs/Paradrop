@@ -23,6 +23,9 @@ def generatePlans(update):
     
     # First time, so generate the basic firewall rules in cache (key: 'osFirewallConfig')
     update.plans.addPlans(plangraph.TRAFFIC_GET_OS_FIREWALL, (config.firewall.getOSFirewallRules, ))
+
+    # Get developer firewall rules (key: 'developerFirewallRules')
+    update.plans.addPlans(plangraph.TRAFFIC_GET_DEVELOPER_FIREWALL, (config.firewall.getDeveloperFirewallRules, ))
             
     # Combine rules from above two fucntions, save to file
     todoPlan = (config.firewall.setOSFirewallRules, )
