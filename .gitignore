@@ -83,3 +83,5 @@ snap/bin/pd
 
 *.xz
 pid.txt
+log.txt
+third-party/

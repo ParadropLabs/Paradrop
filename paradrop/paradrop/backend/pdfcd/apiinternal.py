@@ -24,6 +24,7 @@ from twisted.web import xmlrpc
 from twisted.internet import defer, utils
 
 from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib import settings
 
 
 @defer.inlineCallbacks
@@ -35,9 +36,15 @@ def api_echo(message):
 @defer.inlineCallbacks
 def api_log(lines=100):
     ''' Return the last number lines of the log. '''
-    contents = yield utils.getProcessOutput('/usr/bin/tail',
-                                            args=['/home/damouse/Documents/python/scratch/popen.txt', '-n ' + str(lines), ])
-    defer.returnValue(contents)
+
+    # if settings.LOG_PATH is None:
+    #     raise Exception("Logging to file is not currently enabled.")
+
+    # path = settings.LOG_PATH + settings.LOG_NAME
+    # contents = yield utils.getProcessOutput('/usr/bin/tail', args=[path, '-n ' + str(lines), ])
+
+    # defer.returnValue(contents)
+    defer.returnValue("Well this part works")
 
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.

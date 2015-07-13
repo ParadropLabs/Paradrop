@@ -4,6 +4,7 @@ Usage:
     paradrop install <host> <port> <path-to-config> 
     paradrop snap-install <host> <port>
     paradrop logs <host> <port>
+    paradrop echo <host> <port>
     paradrop (-h | --help)
     paradrop --version
 Options:
@@ -39,6 +40,9 @@ def main():
     if args['logs']:
         logs(args['<host>'], args['<port>'])
 
+    if args['echo']:
+        echo(args['<host>'], args['<port>'])
+
 
 def installChute(host, port, config):
     '''
@@ -65,7 +69,11 @@ def logs(host, port):
     '''
 
     RpcClient(host, port, 'internal').log().addCallbacks(printSuccess, printFailure).addBoth(killReactor)
+    reactor.run()
 
+
+def echo(host, port):
+    RpcClient(host, port, 'internal').echo('Hello!').addCallbacks(printSuccess, printFailure).addBoth(killReactor)
     reactor.run()
 
 

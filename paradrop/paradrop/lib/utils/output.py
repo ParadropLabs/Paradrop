@@ -13,12 +13,10 @@ import os as origOS
 import traceback
 
 from .pdutils import timestr, jsonPretty
+from paradrop.lib import settings
 
 # "global" variable all modules should be able to toggle
 verbose = False
-
-LOG_PATH = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
-LOG_NAME = 'log.txt'
 
 
 def logPrefix(*args, **kwargs):
@@ -83,8 +81,8 @@ class IOutput:
     def __call__(self, args):
         pass
 
-    def __repr__(self):
-        return "REPR"
+    # def __repr__(self):
+    #     return "REPR"
 
 
 class Fileout(IOutput):
@@ -92,14 +90,19 @@ class Fileout(IOutput):
     def __init__(self, filename, truncate=False):
         self.filename = filename
         self.mode = None
-        self.mode = 'w' if truncate else 'a'
+
+        # create the file if it does not exist
+        write = truncate or not origOS.path.exists
+        self.mode = 'w' if write else 'a'
 
     def __call__(self, args):
-        print 'Trying to Write!'
-
         with open(self.filename, self.mode) as f:
             f.write(str(args))
             f.flush()
+
+    # def write(self, message):
+    #     ''' Testing '''
+    #     self.__call__(message)
 
 
 class Stdout(IOutput):
@@ -239,6 +242,8 @@ class Output():
     def __getattr__(self, name):
         """Catch attribute access attempts that were not defined in __init__
             by default throw them out."""
+
+        print name
         return FakeOutput()
 
     def __setattr__(self, name, val):
@@ -252,14 +257,17 @@ class Output():
     def __repr__(self):
         return "REPR"
 
-if LOG_PATH is not None:
-    outputPath = LOG_PATH + LOG_NAME
-    # print outputPath
+# out = None
+if settings.LOG_PATH is not None:
+    outputPath = settings.LOG_PATH + settings.LOG_NAME
+    # outputPath = os.path.dirname(os.getcwd()) + settings.LOG_NAME
 
     # File logging. Need to do this locally as well as change files when
     # logs become too large
 
-    writer = Fileout(outputPath)
+    # print 'Creating log file at: ' + outputPath
+
+    # writer = Fileout(outputPath)
     out = Output(
         header=Fileout(outputPath),
         testing=Fileout(outputPath),
@@ -269,8 +277,13 @@ if LOG_PATH is not None:
         err=Fileout(outputPath),
         exception=Fileout(outputPath),
         security=Fileout(outputPath),
-        fatal=Fileout(outputPath)
+        fatal=Fileout(outputPath),
+        info=Fileout(outputPath)
     )
+
+    # sys.stdout = Fileout(outputPath)
+    # out.verbose("Starting...")
+    # Fileout(outputPath)('STUFF!')
 
 else:
     # Create a standard out module to be used if no one overrides it

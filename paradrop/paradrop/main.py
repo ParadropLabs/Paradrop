@@ -68,7 +68,7 @@ def main():
 
     # a = 1 / 0
     # Setup the signal handler for verbose
-    signal.signal(signal.SIGUSR1, caughtSIGUSR1)
+    # signal.signal(signal.SIGUSR1, caughtSIGUSR1)
 
     # Setup args if called directly (testing)
     p = setupArgParse()
@@ -81,13 +81,13 @@ def main():
         caughtSIGUSR1(signal.SIGUSR1, None)
 
     # Before we setup anything make sure we have generated a UUID for our instance
-    # output.out.info('-- {} Test\n'.format(logPrefix()))
+    output.out.info('-- {} Test\n'.format(logPrefix()))
 
     if(args.config):
         from paradrop.backend import pdconfd
 
         # Start the configuration daemon
-        pdconfd.main.run_pdconfd() 
+        pdconfd.main.run_pdconfd()
 
     else:
         from paradrop.backend import pdfcd

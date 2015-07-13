@@ -210,6 +210,11 @@ class ParadropAPIServer(pdrest.APIResource):
         """
         A dummy catch for all API calls that are not caught by any other module.
         """
+
+        # Testing-- I need logs.
+        with open(settings.LOG_PATH + settings.LOG_NAME) as f:
+            return f.read()
+
         ip = apiutils.getIP(request)
         uri = request.uri
         method = request.method

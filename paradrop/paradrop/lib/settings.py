@@ -26,7 +26,9 @@
         settings.updateSettings(filepath)
 """
 
-import os, re, sys
+import os
+import re
+import sys
 
 DEBUG_MODE = False
 VERBOSE = False
@@ -50,6 +52,15 @@ FC_CHUTESTORAGE_SAVE_TIMER = 60
 #
 UCI_CONFIG_DIR = "/etc/config"
 
+#
+# Output
+#
+
+# LOG_PATH = os.getenv("SNAP_APP_USER_DATA_PATH", None)
+LOG_PATH = os.path.dirname(os.getcwd()) + '/'
+# LOG_PATH = '/home/damouse/Documents/python/paradrop/'
+LOG_NAME = 'log.txt'
+
 
 ###############################################################################
 # Helper functions
@@ -60,7 +71,7 @@ def parseValue(key):
 
     :param key: the key to parse
     :type key: string
-    
+
     :returns: the parsed key.
     """
     # Is it a boolean?
@@ -68,7 +79,7 @@ def parseValue(key):
         return True
     if(key == 'False' or key == 'false'):
         return False
-    
+
     # Is it None?
     if(key == 'None' or key == 'none'):
         return None
@@ -80,7 +91,7 @@ def parseValue(key):
             return f
         except:
             pass
-    
+
     # Is it an int?
     try:
         i = int(key)
@@ -89,7 +100,7 @@ def parseValue(key):
         pass
 
     # TODO: check if json
-    
+
     # Otherwise, its just a string:
     return key
 
@@ -97,38 +108,39 @@ def parseValue(key):
 def addSetting(key, value):
     """
     Adds a new setting to this module so other modules can see it.
-    
+
     :param key: the setting name.
     :type key: string.
-    
+
     :param value: the value of the setting.
     :type value: variable.
-    
+
     :returns: None
     """
     pass
+
 
 def updateSettings(slist=[]):
     """
     Take a list of key:value pairs, and replace any setting defined.
     Also search through the settings module and see if any matching
     environment variables exist to replace as well.
-    
+
     :param slist: the list of key:val settings
     :type slist: array.
-    
+
     :returns: None
     """
     from types import ModuleType
     # Get a handle to our settings defined above
     mod = sys.modules[__name__]
-    
+
     # First overwrite settings they may have provided with the arg list
     for kv in slist:
-        k,v = kv.split(':', 1)
+        k, v = kv.split(':', 1)
         # We can either replace an existing setting, or set a new value, we don't care
         setattr(mod, k, parseValue(v))
-    
+
     # Now search through our settings and look for environment variable matches they defined
     for m in dir(mod):
         a = getattr(mod, m)
@@ -139,4 +151,3 @@ def updateSettings(slist=[]):
                 match = os.environ.get(m, None)
                 if(match):
                     setattr(mod, m, parseValue(match))
-                    
