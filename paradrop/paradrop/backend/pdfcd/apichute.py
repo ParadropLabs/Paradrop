@@ -7,10 +7,6 @@ from paradrop.lib.api import pdapi
 
 from paradrop.dock import deployment
 
-#import wget
-import os
-#import zipfile
-
 
 class ChuteAPI:
 
@@ -23,6 +19,7 @@ class ChuteAPI:
         self.rest = rest
         self.rest.register('POST', '^/v1/chute/create$', self.POST_createChute)
         self.rest.register('POST', '^/v1/chute/delete$', self.POST_deleteChute)
+        self.rest.register('POST', '^/v1/chute/stop$', self.POST_stopChute)
 
     @APIDecorator(requiredArgs=["config"])
     def POST_createChute(self, apiPkg):
@@ -81,7 +78,7 @@ class ChuteAPI:
         # closing the connection)
         apiPkg.setNotDoneYet()
 
-    @APIDecorator(requiredArgs=["test"])
+    @APIDecorator(requiredArgs=["name"])
     def POST_deleteChute(self, apiPkg):
         """
            Description:
@@ -97,64 +94,34 @@ class ChuteAPI:
         # TODO implement
 
         # For now fake out a create chute message
-        update = dict(updateClass='CHUTE', updateType='delete', name='helloworld',
+        update = dict(updateClass='CHUTE', updateType='delete', name=apiPkg.inputArgs.get('name'),
                       tok=timeint(), pkg=apiPkg, func=self.rest.complete)
 
         self.rest.configurer.updateList(**update)
-
-        # TODO: cleanup download directory
 
         # Tell our system we aren't done yet (the configurer will deal with
         # closing the connection)
         apiPkg.setNotDoneYet()
 
+    @APIDecorator(requiredArgs=["name"])
+    def POST_stopChute(self, apiPkg):
+        """
+           Description:
+           Arguments:
+               POST request:
+           Returns:
+               On success: SUCCESS object
+               On failure: FAILURE object
+        """
 
-#########
-# I do not belong here. Find me a home, please.
-#########
+        out.info('-- {} Stopping chute...\n'.format(logPrefix()))
 
-def downloadChute(url, name):
-    '''
-    Downloads a chute as a zip from the provided URL, unzips it, 
-    removes the zip, and returns the path to the contents of the chute.
+        # For now fake out a create chute message
+        update = dict(updateClass='CHUTE', updateType='stop', name=apiPkg.inputArgs.get('name'),
+                      tok=timeint(), pkg=apiPkg, func=self.rest.complete)
 
-    This method blocks on both wget and zipfile. It must be made asynchronous.
-    '''
+        self.rest.configurer.updateList(**update)
 
-    outPath = os.path.dirname(os.getcwd()) + '/buildenv/inbound/'  # local testing
-    # outPath = os.environ['TMPDIR']
-    zipPath = outPath + name + '.zip'
-    chutePath = outPath + name
-
-    if not os.path.exists(outPath):
-        os.makedirs(outPath)
-
-    wget.download(url, out=zipPath)
-
-    # unzip contents
-    zipped = zipfile.ZipFile(zipPath)
-    zipped.extractall(path=chutePath)
-    zipped.close()
-    os.remove(zipPath)
-
-    return chutePath + '/' + os.listdir(chutePath)[0]
-
-
-def installChute(path, name):
-    '''
-    Parse config file, make necesary changes to the system-- any and all paradrop-related config.
-    '''
-    pass
-
-
-def startDockerContainer(path, name):
-    '''
-    Start the docker container given a directory containing the application.
-
-    Configure port bindings based on the conf files. Could merge this method and the above
-    depending on how complicated it gets
-
-    Blocks badly. Needs to be fixed.
-    '''
-    deployment.launchApp(path=path, name=name, restart_policy={"MaximumRetryCount": 0, "Name": "always"},
-                         port_bindings={80: 9000})
+        # Tell our system we aren't done yet (the configurer will deal with
+        # closing the connection)
+        apiPkg.setNotDoneYet()

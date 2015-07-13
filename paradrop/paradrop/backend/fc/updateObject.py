@@ -114,7 +114,11 @@ class UpdateObject(object):
             return
 
         # Now save the new state if we are all ok
-        self.saveState()
+        try:
+            self.saveState()
+        except KeyError:
+            self.complete(success=False, message='No chute with that name.')
+            return
 
         # Respond to the API server to let them know the result
         self.complete(success=True, message='Chute {} {} success'.format(
@@ -139,6 +143,8 @@ class UpdateChute(UpdateObject):
         if(obj.get('updateType', None) == "create"):
             obj['state'] = chute.STATE_RUNNING
         elif(obj.get('updateType', None) == "delete"):
+            obj['state'] = chute.STATE_STOPPED
+        elif(obj.get('updateType', None) == "stop"):
             obj['state'] = chute.STATE_STOPPED
         
         super(UpdateChute, self).__init__(obj)
