@@ -234,7 +234,6 @@ class ParadropAPIServer(pdrest.APIResource):
 # Main function
 ###############################################################################
 
-
 def setup(args=None):
     """
     This is the main setup function to establish the TCP listening logic for

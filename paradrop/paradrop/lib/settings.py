@@ -56,10 +56,25 @@ UCI_CONFIG_DIR = "/etc/config"
 # Output
 #
 
-# LOG_PATH = os.getenv("SNAP_APP_USER_DATA_PATH", None)
+# This is the data directory to save to
+
+LOG_PATH = os.getenv("SNAP_APP_USER_DATA_PATH", None)
 # LOG_PATH = os.path.dirname(os.getcwd()) + '/'
 # LOG_PATH = '/home/damouse/Documents/python/paradrop/'
 LOG_NAME = 'log.txt'
+
+#
+# Stateful and Output
+#
+
+# Check and see if we're on snappy or not. If not, then stick the logs in the local 
+# directory. We will be provisioned as a developer instance anyway, so the info doesn't matter yet
+snappyPath = os.getenv("SNAP_APP_USER_DATA_PATH", None)
+STORE_PATH = snappyPath + '/' if snappyPath is not None else '~/.paradrop/instance'
+
+LOG_PATH = STORE_PATH + 'logs/'
+KEY_PATH = STORE_PATH + 'keys/'
+INFO_PATH = STORE_PATH + 'root.yaml'
 
 
 ###############################################################################
