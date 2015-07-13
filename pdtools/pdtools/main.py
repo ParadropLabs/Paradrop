@@ -2,6 +2,8 @@
 
 Usage:
     paradrop install <host> <port> <path-to-config> 
+    paradrop delete <host> <port> <chute-name>
+    paradrop stop <host> <port> <chute-name>
     paradrop snap-install <host> <port>
     paradrop (-h | --help)
     paradrop --version
@@ -12,9 +14,7 @@ Options:
 
 
 from docopt import docopt
-import requests
-import os
-import json
+import requests, json, yaml, urllib
 
 
 def main():
@@ -27,26 +27,65 @@ def main():
     if args['install']:
         installChute(args['<host>'], args['<port>'], args['<path-to-config>'])
 
+    if args['delete']:
+        deleteChute(args['<host>'], args['<port>'], args['<chute-name>'])
+
+    if args['stop']:
+        stopChute(args['<host>'], args['<port>'], args['<chute-name>'])
+
     if args['snap-install']:
         print 'Not implemented. Sorry, love.'
 
 
 def installChute(host, port, config):
     '''
-    Testing method. Take a git url from github and load it onto snappy-pd. 
+    Take a local config yaml file and launch chute of given host with pdfcd running on specified port.
     '''
 
-    print 'Installing chute'
+    print 'Installing chute...'
 
-    # path = os.abspath(directory)
+    #Read local yaml into a config_json to send via post request
+    with open(config, 'r') as stream:
+        config_json = yaml.load(stream)
+        config_json['date'] = config_json['date'].isoformat()
 
-    # The project directory can either be cloned to the backend or installed locally,
-    # doesn't matter which one-- we still have to stream the files over
+    params = {'config': config_json}
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/create', data=json.dumps(params), stream=True)
+    for line in r.iter_lines():
+        if line:
+            print line
 
-    params = {'config': config}
-    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/create', data=json.dumps(params))
-    print r.text_
+def deleteChute(host, port, name):
+    '''
+    Remove chute with given name from host with pdfcd running on specified port.
+    '''
 
+    print 'Removing chute...'
+
+    params = {'name': name}
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/delete', data=json.dumps(params))
+
+    res = json.loads(r._content)
+    if res.get('success'):
+        print res.get('message')
+    else:
+        print 'ERROR: Failed to delete chute.(' + urllib.unquote(str(res.get('message'))) + ')'
+
+def stopChute(host, port, name):
+    '''
+    Stop chute with given name from host with pdfcd running on specified port.
+    '''
+
+    print 'Stopping chute...'
+
+    params = {'name': name}
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/stop', data=json.dumps(params))
+
+    res = json.loads(r._content)
+    if res.get('success'):
+        print res.get('message')
+    else:
+        print 'ERROR: Failed to stop chute.(' + urllib.unquote(str(res.get('message'))) + ')'
 
 def installParadrop():
     ''' Testing method. Install paradrop, snappy, etc onto SD card '''

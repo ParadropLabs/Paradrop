@@ -13,10 +13,10 @@ from io import BytesIO
 
 def getVirtPreamble(update):
     out.warn('** %s TODO implement me\n' % logPrefix())
-    if(update.updateType == 'create'):
-        if(not hasattr(update, 'dockerfile')):
+    if update.updateType == 'create':
+        if not hasattr(update, 'dockerfile'):
             return
-        if(update.dockerfile == None):
+        if update.dockerfile == None:
             return
         else:
             out.info('-- %s Using prexisting dockerfile.\n' % logPrefix())

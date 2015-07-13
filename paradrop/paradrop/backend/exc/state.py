@@ -35,8 +35,11 @@ def generatePlans(update):
     
     # Not a new chute
     else:
-        if(update.new.state == chute.STATE_STOPPED):
-            update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.stopChute,))
+        if update.new.state == chute.STATE_STOPPED :
+            if update.updateType == 'delete':
+                update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.removeChute,))
+            if update.updateType == 'stop':
+                update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.stopChute,))
         pass
 
     return None
