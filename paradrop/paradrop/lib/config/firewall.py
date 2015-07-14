@@ -123,7 +123,7 @@ def setOSFirewallRules(update):
     """
     changed = uciutils.setConfig(update.new, update.old,
             cacheKeys=['osFirewallRules', 'developerFirewallRules'], 
-            filepath=uci.FIREWALL_PATH)
+            filepath=uci.getSystemPath("firewall"))
 
     # If we didn't change anything, then return the function to reloadFirewall so we can save ourselves from that call
     if(not changed):
