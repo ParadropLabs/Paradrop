@@ -143,6 +143,8 @@ class UpdateChute(UpdateObject):
         # TODO : do this better
         if(obj.get('updateType', None) == "create"):
             obj['state'] = chute.STATE_RUNNING
+        elif(obj.get('updateType', None) == "start"):
+            obj['state'] = chute.STATE_RUNNING
         elif(obj.get('updateType', None) == "delete"):
             obj['state'] = chute.STATE_STOPPED
         elif(obj.get('updateType', None) == "stop"):

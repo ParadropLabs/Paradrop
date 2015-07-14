@@ -53,6 +53,14 @@ def stopChute(update):
     except Exception as e:
         update.complete(success=False, message= e.explanation)
 
+def restartChute(update):
+    out.info('-- %s Attempting to start chute %s\n' % (logPrefix(), update.name))
+    c = docker.Client(base_url='unix://var/run/docker.sock')
+    try:
+        c.start(container=update.name)
+    except Exception as e:
+        update.complete(success=False, message= e.explanation)
+
 def build_host_config(update):
 
     return docker.utils.create_host_config(

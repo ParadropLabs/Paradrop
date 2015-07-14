@@ -24,8 +24,8 @@ def generatePlans(update):
     if(update.old is None):
         out.verbose('   %s new chute\n' % logPrefix())
         
-        #If it's a stop command go ahead and fail right now since we don't have a record of it
-        if update.updateType == 'stop':
+        #If it's a stop  or start command go ahead and fail right now since we don't have a record of it
+        if update.updateType == 'stop' or update.updateType == 'start':
             update.failure ="No chute found with id: " + update.name
             return True
         # If we are now running then everything has to be setup for the first time
@@ -40,10 +40,21 @@ def generatePlans(update):
     
     # Not a new chute
     else:
-        if update.new.state == chute.STATE_STOPPED :
+        if update.updateType == 'start':
+            if update.old.state == chute.STATE_RUNNING :
+                update.failure = update.name +" already running."
+                return True
+            update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.restartChute,))
+        elif update.updateType == 'create':
+            update.failure = update.name + " already exists on this device."
+            return True
+        elif update.new.state == chute.STATE_STOPPED :
             if update.updateType == 'delete':
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.removeChute,))
             if update.updateType == 'stop':
+                if update.old.state == chute.STATE_STOPPED :
+                    update.failure = update.name +" already stopped."
+                    return True
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.stopChute,))
         pass
 
