@@ -17,7 +17,7 @@ def startChute(update):
 
     host_config = build_host_config(update)
     
-    c = docker.Client(base_url="unix://var/run/docker.sock")
+    c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
 
     for line in c.build(rm=True, tag=repo, fileobj=dockerfile):
         for key, value in json.loads(line).iteritems():
@@ -36,7 +36,7 @@ def startChute(update):
 
 def removeChute(update):
     out.info('-- %s Attempting to remove chute %s\n' % (logPrefix(), update.name))
-    c = docker.Client(base_url='unix://var/run/docker.sock')
+    c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     repo = update.name + ":latest"
     name = update.name
     try:
@@ -47,7 +47,7 @@ def removeChute(update):
 
 def stopChute(update):
     out.info('-- %s Attempting to stop chute %s\n' % (logPrefix(), update.name))
-    c = docker.Client(base_url='unix://var/run/docker.sock')
+    c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     try:
         c.stop(container=update.name)
     except Exception as e:
@@ -55,7 +55,7 @@ def stopChute(update):
 
 def restartChute(update):
     out.info('-- %s Attempting to start chute %s\n' % (logPrefix(), update.name))
-    c = docker.Client(base_url='unix://var/run/docker.sock')
+    c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     try:
         c.start(container=update.name)
     except Exception as e:
