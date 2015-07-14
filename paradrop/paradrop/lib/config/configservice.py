@@ -12,17 +12,17 @@ from paradrop.lib.utils.output import out, logPrefix
 def reloadNetwork(update):
     # leverage osconfig to poke pdconfd to tell it we have made changes
     # to the file specified.
-    client.reload(uci.NET_PATH)
+    client.reload(uci.getSystemPath("network"))
 
 def reloadWireless(update):
-    out.warn('** %s TODO implement me\n' % logPrefix())
     # leverage osconfig to poke pdconfd to tell it we have made changes
     # to the file specified.
+    client.reload(uci.getSystemPath("wireless"))
 
 def reloadFirewall(update):
     # leverage osconfig to poke pdconfd to tell it we have made changes
     # to the file specified.
-    client.reload(uci.FIREWALL_PATH)
+    client.reload(uci.getSystemPath("firewall"))
 
 def reloadQos(update):
     out.warn('** %s TODO implement me\n' % logPrefix())

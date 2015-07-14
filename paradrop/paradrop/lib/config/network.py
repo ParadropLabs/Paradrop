@@ -141,7 +141,7 @@ def setOSNetworkConfig(update):
     # old code under lib.internal.chs.chutelxc same function name
 
     changed = uciutils.setConfig(update.new, update.old, 
-            cacheKeys=['osNetworkConfig'], filepath=uci.NET_PATH)
+            cacheKeys=['osNetworkConfig'], filepath=uci.getSystemPath("network"))
 
     # If we didn't change anything, then return the function to reloadNetwork so we can save ourselves from that call
     if(not changed):
