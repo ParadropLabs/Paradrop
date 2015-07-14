@@ -8,6 +8,7 @@ lib.utils.output.
 Helper for formatting output from Paradrop.
 """
 
+import errno
 import sys
 import os as origOS
 import traceback
@@ -253,11 +254,20 @@ class Output():
         return "REPR"
 
 if LOG_PATH is not None:
-    outputPath = LOG_PATH + LOG_NAME
+    outputPath = LOG_PATH + "/" + LOG_NAME
     # print outputPath
 
     # File logging. Need to do this locally as well as change files when
     # logs become too large
+
+    # First make sure the logging directory exists.
+    try:
+        origOS.makedirs(LOG_PATH)
+    except OSError as e:
+        # EEXIST is fine (directory already existed).  Anything else would be
+        # problematic.
+        if e.errno != errno.EEXIST:
+            raise e
 
     writer = Fileout(outputPath)
     out = Output(
