@@ -9,6 +9,7 @@ way to interpret the results through a set of basic actionable functions.
 
 from paradrop.backend import exc
 from paradrop.backend.fc import chutestorage
+from paradrop.lib.utils.output import out, logPrefix
 from paradrop.lib import settings
 from paradrop.lib import chute
 

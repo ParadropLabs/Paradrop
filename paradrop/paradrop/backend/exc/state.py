@@ -6,6 +6,7 @@
 from paradrop.lib.utils.output import out, logPrefix
 from paradrop.backend.exc import plangraph
 from paradrop.lib import chute
+from paradrop.lib.utils.pdutils import jsonPretty
 
 from paradrop.lib.utils import dockerapi as virt
 
@@ -23,6 +24,10 @@ def generatePlans(update):
     if(update.old is None):
         out.verbose('   %s new chute\n' % logPrefix())
         
+        #If it's a stop command go ahead and fail right now since we don't have a record of it
+        if update.updateType == 'stop':
+            update.failure ="No chute found with id: " + update.name
+            return True
         # If we are now running then everything has to be setup for the first time
         if(update.new.state == chute.STATE_RUNNING):
             update.plans.addPlans(plangraph.STATE_CALL_START, (virt.startChute,))
