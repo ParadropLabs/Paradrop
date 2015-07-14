@@ -88,21 +88,6 @@ def mkdir(p):
 def symlink(a, b):
     return os.symlink(a, b)
 
-def makedirs(p):
-    """Like the real make dirs function, except we cannot use it on Mac OS X machines."""
-    # Make sure we have the abs path
-    ap = os.path.abspath(p)
-    buildUp = "/"
-    for d in p.split('/'):
-        if(not d):
-            continue
-        # Build up the path from root using the buildUp var
-        buildUp += d + '/'
-        # Check if it exists, if not make it
-        # make sure to use our exists function in case its a unittest
-        if(not exists(buildUp)):
-            mkdir(buildUp)
-
 def ismount(p):
     return os.path.ismount(p)
 

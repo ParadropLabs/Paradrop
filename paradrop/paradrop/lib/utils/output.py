@@ -8,12 +8,12 @@ lib.utils.output.
 Helper for formatting output from Paradrop.
 """
 
-import errno
 import sys
 import os as origOS
 import traceback
 
-from .pdutils import timestr, jsonPretty
+import pdosq
+from pdutils import timestr, jsonPretty
 
 # "global" variable all modules should be able to toggle
 verbose = False
@@ -255,19 +255,12 @@ class Output():
 
 if LOG_PATH is not None:
     outputPath = LOG_PATH + "/" + LOG_NAME
-    # print outputPath
 
     # File logging. Need to do this locally as well as change files when
     # logs become too large
 
     # First make sure the logging directory exists.
-    try:
-        origOS.makedirs(LOG_PATH)
-    except OSError as e:
-        # EEXIST is fine (directory already existed).  Anything else would be
-        # problematic.
-        if e.errno != errno.EEXIST:
-            raise e
+    pdosq.makedirs(LOG_PATH)
 
     writer = Fileout(outputPath)
     out = Output(
