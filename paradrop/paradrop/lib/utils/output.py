@@ -183,6 +183,8 @@ class OutException(IOutput):
             prefix, str(e), argStr, theTrace)
         # Format the message in a reasonable way
         msg = msg.replace('\n', '\n    ') + '\n'
+        # Save the part without color for passing to other_out objects.
+        msg_only = msg
         if(self.color):
             msg = self.color + msg + Colors.END
 
@@ -191,7 +193,7 @@ class OutException(IOutput):
         if self.other_out:
             for item in self.other_out:
                 obj = item
-                obj(args)
+                obj(msg_only)
 
 
 class FakeOutput(IOutput):
@@ -270,7 +272,7 @@ if LOG_PATH is not None:
         perf=Fileout(outputPath),
         warn=Fileout(outputPath),
         err=Fileout(outputPath),
-        exception=Fileout(outputPath),
+        exception=OutException(outputPath, other_out_types=Fileout(outputPath)),
         security=Fileout(outputPath),
         fatal=Fileout(outputPath)
     )
