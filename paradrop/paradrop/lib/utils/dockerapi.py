@@ -66,13 +66,13 @@ def build_host_config(update):
     return docker.utils.create_host_config(
         #TO support
         port_bindings=update.host_config.get('port_bindings'),
-        restart_policy=update.host_config.get('restart_policy'),
         binds=update.host_config.get('binds'),
         links=update.host_config.get('links'),
         dns=update.host_config.get('dns'),
-        #not supported
+        #not supported/managed by us
         #network_mode=update.host_config.get('network_mode'),
         #extra_hosts=update.host_config.get('extra_hosts'),
+        restart_policy={'MaximumRetryCount': 5, 'Name': 'always'},
         devices=[],
         lxc_conf={},
         publish_all_ports=False,
