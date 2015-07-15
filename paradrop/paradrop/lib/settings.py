@@ -56,6 +56,9 @@ UCI_CONFIG_DIR = "/etc/config"
 # Output
 #
 
+LOG_NAME = 'paradrop.logs'
+LOG_PATH = '/var/run/' #Not supposed to be for log files but will work for now.
+
 # This is the data directory to save to
 
 
