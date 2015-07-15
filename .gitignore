@@ -75,6 +75,7 @@ docs/_static
 docs/_templates
 
 snap/bin/pd
+snap/bin/dnsmasq
 *.img
 *.swp
 *.pyc
