@@ -56,10 +56,7 @@ UCI_CONFIG_DIR = "/etc/config"
 # Output
 #
 
-# LOG_PATH = os.getenv("SNAP_APP_USER_DATA_PATH", None)
-# LOG_PATH = os.path.dirname(os.getcwd()) + '/'
-# LOG_PATH = '/home/damouse/Documents/python/paradrop/'
-LOG_NAME = 'log.txt'
+# This is the data directory to save to
 
 
 ###############################################################################

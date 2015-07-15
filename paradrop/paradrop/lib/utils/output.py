@@ -242,12 +242,12 @@ class Output():
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
 
-    # def __getattr__(self, name):
-    #     """Catch attribute access attempts that were not defined in __init__
-    #         by default throw them out."""
+    def __getattr__(self, name):
+        """Catch attribute access attempts that were not defined in __init__
+            by default throw them out."""
 
-    #     print name
-    #     return FakeOutput()
+        print name
+        return FakeOutput()
 
     # Doesn't work because they're assigned as magic methods
     # def __getattribute__(self, name):
