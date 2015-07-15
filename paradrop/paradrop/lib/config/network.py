@@ -70,6 +70,22 @@ def getNetworkConfig(update):
         externalIntf="{}.{}".format(update.new.name[0:prefixLen], name)
         iface['externalIntf'] = externalIntf
 
+        # Add extra fields for WiFi devices.
+        if cfg['type'] == "wifi":
+            # Check for required fields.
+            res = pdutils.check(cfg, dict, ['ssid'])
+            if(res):
+                out.warn('** {} WiFi network interface definition {}\n'.format(logPrefix(), res))
+                raise Exception("Interface definition missing field(s)")
+
+            iface['ssid'] = cfg['ssid']
+
+            # Option encryption settings
+            if 'encryption' in cfg:
+                iface['encryption'] = cfg['encryption']
+            if 'key' in cfg:
+                iface['key'] = cfg['key']
+
         interfaces.append(iface)
 
     update.new.setCache('networkInterfaces', interfaces)
@@ -125,7 +141,7 @@ def setOSNetworkConfig(update):
     # old code under lib.internal.chs.chutelxc same function name
 
     changed = uciutils.setConfig(update.new, update.old, 
-            cacheKeys=['osNetworkConfig'], filepath=uci.NET_PATH)
+            cacheKeys=['osNetworkConfig'], filepath=uci.getSystemPath("network"))
 
     # If we didn't change anything, then return the function to reloadNetwork so we can save ourselves from that call
     if(not changed):

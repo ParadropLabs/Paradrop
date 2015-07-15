@@ -6,14 +6,26 @@
 import traceback, os
 
 from paradrop.lib import settings
-from paradrop.lib.utils import pdos
+from paradrop.lib.utils import pdos, pdosq
 from paradrop.lib.utils.output import out, logPrefix
 
-NET_PATH = settings.UCI_CONFIG_DIR + "/network"
-WIFI_PATH = settings.UCI_CONFIG_DIR + "/wireless"
-QOS_PATH = settings.UCI_CONFIG_DIR + "/qos"
-FIREWALL_PATH = settings.UCI_CONFIG_DIR + "/firewall"
-DHCP_PATH = settings.UCI_CONFIG_DIR + "/dhcp"
+CONFIG_DIR = settings.UCI_CONFIG_DIR
+if "SNAP_APP_DATA_PATH" in os.environ:
+    # If running under Snappy, prepend the Snap data path so that our config
+    # files end up in a writable location.
+    CONFIG_DIR = os.environ['SNAP_APP_DATA_PATH'] + CONFIG_DIR
+
+def getSystemPath(filename):
+    """
+    Get the path to the system configuration file.
+
+    This function also attempts to create the configuration directory if it
+    does not exist.
+    
+    Typical filenames: network, wireless, qos, firewall, dhcp, etc.
+    """
+    pdosq.makedirs(CONFIG_DIR)
+    return CONFIG_DIR + "/" + filename
  
 def stringify(a):
     b = {}

@@ -3,6 +3,7 @@
 Usage:
     paradrop install <host> <port> <path-to-config> 
     paradrop delete <host> <port> <chute-name>
+    paradrop start <host> <port> <chute-name>
     paradrop stop <host> <port> <chute-name>
     paradrop snap-install <host> <port>
     paradrop logs <host> <port>
@@ -15,10 +16,13 @@ Options:
 """
 
 
-
 from docopt import docopt
-import requests, json, yaml, urllib
+import requests
+import json
+import yaml
+import urllib
 
+from pdtools.lib import pdutils
 from pdtools.coms.client import RpcClient
 
 from twisted.internet import reactor
@@ -39,6 +43,9 @@ def main():
     if args['delete']:
         deleteChute(args['<host>'], args['<port>'], args['<chute-name>'])
 
+    if args['start']:
+        startChute(args['<host>'], args['<port>'], args['<chute-name>'])
+
     if args['stop']:
         stopChute(args['<host>'], args['<port>'], args['<chute-name>'])
 
@@ -57,18 +64,44 @@ def installChute(host, port, config):
     Take a local config yaml file and launch chute of given host with pdfcd running on specified port.
     '''
 
-    print 'Installing chute...'
-
-    #Read local yaml into a config_json to send via post request
+    # Read local yaml into a config_json to send via post request
     with open(config, 'r') as stream:
         config_json = yaml.load(stream)
         config_json['date'] = config_json['date'].isoformat()
 
+    # Verify the config provided in some way.
+    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str, 'host_config': dict})
+    if cfg_verf:
+        print 'ERROR: ' + cfg_verf
+        return
+
+    # Only allowed one way to provide a dockerfile order is local, remote, inline
+    if 'local' in config_json['dockerfile']:
+        with open(config_json['dockerfile']['local'], 'r') as stream:
+            config_json['dockerfile'] = stream.read()
+    elif 'remote' in config_json['dockerfile']:
+        print 'Remote Dockerfile not supported yet.'
+        return
+    elif 'inline' in config_json['dockerfile']:
+        config_json['dockerfile'] = config_json['dockerfile']['inline']
+    else:
+        print 'ERROR: No Dockerfile specified in config file.'
+        return
+
+    print 'Installing chute...'
     params = {'config': config_json}
     r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/create', data=json.dumps(params), stream=True)
     for line in r.iter_lines():
         if line:
-            print line
+            try:
+                line = json.loads(line)
+                if line.get('success'):
+                    print line.get('message')
+                else:
+                    print 'ERROR: Failed to install chute.(' + urllib.unquote(str(line.get('message'))) + ')'
+            except ValueError as e:
+                print line
+
 
 def deleteChute(host, port, name):
     '''
@@ -86,6 +119,7 @@ def deleteChute(host, port, name):
     else:
         print 'ERROR: Failed to delete chute.(' + urllib.unquote(str(res.get('message'))) + ')'
 
+
 def stopChute(host, port, name):
     '''
     Stop chute with given name from host with pdfcd running on specified port.
@@ -101,6 +135,24 @@ def stopChute(host, port, name):
         print res.get('message')
     else:
         print 'ERROR: Failed to stop chute.(' + urllib.unquote(str(res.get('message'))) + ')'
+
+
+def startChute(host, port, name):
+    '''
+    Start chute with given name from host with pdfcd running on specified port.
+    '''
+
+    print 'Starting chute...'
+
+    params = {'name': name}
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/start', data=json.dumps(params))
+
+    res = json.loads(r._content)
+    if res.get('success'):
+        print res.get('message')
+    else:
+        print 'ERROR: Failed to start chute.(' + urllib.unquote(str(res.get('message'))) + ')'
+
 
 def logs(host, port):
     '''

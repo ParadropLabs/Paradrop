@@ -14,6 +14,8 @@ import traceback
 
 from .pdutils import timestr, jsonPretty
 from paradrop.lib import settings
+import pdosq
+from pdutils import timestr, jsonPretty
 
 # "global" variable all modules should be able to toggle
 verbose = False
@@ -185,6 +187,8 @@ class OutException(IOutput):
 
         # Format the message in a reasonable way
         msg = msg.replace('\n', '\n    ') + '\n'
+        # Save the part without color for passing to other_out objects.
+        msg_only = msg
         if(self.color):
             msg = self.color + msg + Colors.END
 
@@ -193,7 +197,7 @@ class OutException(IOutput):
         if self.other_out:
             for item in self.other_out:
                 obj = item
-                obj(args)
+                obj(msg_only)
 
 
 class FakeOutput(IOutput):
@@ -256,7 +260,7 @@ class Output():
             print('>> Adding new Output stream %s' % name)
         # WARNING you cannot call setattr() here, it would recursively call
         # back into this function
-        self.__dict__[name] = wrap(val)
+        self.__dict__[name] = val
 
     def __repr__(self):
         return "REPR"
@@ -281,9 +285,10 @@ if isSnappy is not None:
     # File logging. Need to do this locally as well as change files when
     # logs become too large
 
-    # print 'Creating log file at: ' + outputPath
+    # First make sure the logging directory exists.
+    # pdosq.makedirs(LOG_PATH)
 
-    # writer = Fileout(outputPath)
+    writer = Fileout(outputPath)
     out = Output(
         header=Fileout(outputPath),
         testing=Fileout(outputPath),
@@ -291,7 +296,7 @@ if isSnappy is not None:
         perf=Fileout(outputPath),
         warn=Fileout(outputPath),
         err=Fileout(outputPath),
-        exception=Fileout(outputPath),
+        exception=OutException(outputPath, other_out_types=Fileout(outputPath)),
         security=Fileout(outputPath),
         fatal=Fileout(outputPath),
         info=Fileout(outputPath)
