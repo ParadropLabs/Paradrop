@@ -193,7 +193,7 @@ def printFailure(r):
     print r
 
 if __name__ == '__main__':
-    main()
+    # main()
 
-    #out.info("Hello!")
-    # print 'Testing!'
+    out.info("Hello!")
+    print 'Testing!'

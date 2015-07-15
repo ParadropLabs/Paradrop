@@ -12,6 +12,6 @@ def teardown():
     pass
 
 
-@with_setup(setup_func, teardown_func)
+@with_setup(setup, teardown)
 def testOutputRedirects():
     pass

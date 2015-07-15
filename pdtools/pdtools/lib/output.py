@@ -27,6 +27,11 @@ import time
 # "global" variable all modules should be able to toggle
 verbose = False
 
+# should we print logs to std?
+# This is primarily a performance concern. Regardless of this setting the logs
+# are always saved (as currently implementd)
+PRINT_LOGS = True
+
 
 def logPrefix(*args, **kwargs):
     """Setup a default logPrefix for any function that doesn't overwrite it."""
@@ -43,6 +48,11 @@ def logPrefix(*args, **kwargs):
         return '[%s.%s%s @ %s %s]' % (modName, funcName, line, timestr(), ', '.join([str(a) for a in args]))
     else:
         return '[%s.%s%s @ %s]' % (modName, funcName, line, timestr())
+
+
+# Could also represent this as a struct, but this makes it easier to read raw-- should
+# consider the change later on
+LOG_TYPE = ['HEADER', 'VERBOSE', ' INFO', ' PERF', ' WARN', ' ERR', ' SECURITY', ' FATAL']
 
 
 class Colors:
@@ -83,73 +93,51 @@ class Colors:
     FATAL = BG_WHITE + RED
 
 
-class IOutput:
+class BaseOutput:
 
-    """Interface class that all Output classes should inherit."""
+    '''
+    Base output type class. 
+
+    This class and its subclasses are registered with an attribute on the global
+    'out' function and is responsible for formatting the given output stream
+    and returning it as a "log structure" (which is a dict.)
+
+    For example:
+        out.info("Text", anObject)
+
+    requires a custom object to figure out what to do with anObject where the default case will simply 
+    parse the string with an appropriate color.
+
+    Objects are required to output a dict that mininmally contains the keys message and type. 
+    '''
+
+    def __init__(self, color, tag):
+        '''
+        Initialize this output type. 
+
+        :param color: how this output type is displayed
+        :type color: Colors constant
+        :param tag: identifier this print belongs to-- constant value lib.output.MessageType
+        :type tag: int.
+        '''
+        self.color = color
+        self.tag = tag
 
     def __call__(self, args):
-        pass
+        '''
+        This method is a little magical, but it *must* return a string formatted in the appropriate
+        way. That is its only purpose.
+
+        Base version simply returns the args passed to it as a string.
+
+        '''
+        return {'message': str(args), 'type': self.tag, 'extra': {}}
 
     def __repr__(self):
         return "REPR"
 
 
-class Stdout(IOutput):
-
-    def __init__(self, color=None, other_out_types=None):
-        self.color = color
-        if(other_out_types and type(other_out_types) is not list):
-            other_out_types = [other_out_types]
-        self.other_out = other_out_types
-
-    def __call__(self, args):
-        args = str(args)
-        msg = ""
-        if(self.color):
-            msg = self.color + args + Colors.END
-        else:
-            msg = args
-
-        # Check to make sure there's a newline (not needed now)
-        if "\n" not in msg:
-            msg += "\n"
-
-        sys.stdout.write(msg)
-        sys.stdout.flush()
-        if self.other_out:
-            for item in self.other_out:
-                obj = item
-                obj(args)
-
-
-class Stderr(IOutput):
-
-    def __init__(self, color=None, other_out_types=None):
-        self.color = color
-        if(other_out_types and type(other_out_types) is not list):
-            other_out_types = [other_out_types]
-        self.other_out = other_out_types
-
-    def __call__(self, args):
-        return args
-
-        # Make sure args is a str type
-        if(not isinstance(args, str)):
-            args = str(args)
-        msg = ""
-        if(self.color):
-            msg = self.color + args + Colors.END
-        else:
-            msg = args
-        sys.stderr.write(msg)
-        sys.stderr.flush()
-        if self.other_out:
-            for item in self.other_out:
-                obj = item
-                obj(args)
-
-
-class OutException(IOutput):
+class OutException(BaseOutput):
 
     """
         This is a special call (out.exception()) that helps print exceptions
@@ -193,7 +181,7 @@ class OutException(IOutput):
                 obj(msg_only)
 
 
-class FakeOutput(IOutput):
+class FakeOutput(BaseOutput):
 
     def __call__(self, args):
         pass
@@ -248,7 +236,7 @@ class OutputRedirect(object):
 
     def __init__(self, output, contentAppearedCallback):
         self.callback = contentAppearedCallback
-        self.trueOut = sys.stderr
+        self.trueOut = output
 
     def trueWrite(self, contents):
         ''' Someone really does want to output'''
@@ -258,9 +246,7 @@ class OutputRedirect(object):
         if len(formatted) == 0 or formatted[-1] is not '\n':
             formatted += '\n'
 
-        self.trueOut.write('asdf')
         self.trueOut.write(formatted)
-        1 / 0
 
     def write(self, contents):
         '''
@@ -268,6 +254,7 @@ class OutputRedirect(object):
         returned with the callback so the delegate can differentiate between captured outputs
         in the case when two redirecters are active.
         '''
+        # print 'call1' + '\n'
         self.callback(contents, trueOut=self.trueOut)
 
 
@@ -312,8 +299,13 @@ class Output():
 
     def __init__(self, **kwargs):
         """Setup the initial set of output stream functions."""
-        # self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint)
-        # self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint)
+
+        # Refactor this as an Output class
+        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint)
+        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint)
+
+        sys.stdout = self.__dict__['redirectOut']
+        sys.stderr = self.__dict__['redirectErr']
 
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
@@ -329,11 +321,6 @@ class Output():
 
         return FakeOutput()
 
-    # Doesn't work because they're assigned as magic methods
-    # def __getattribute__(self, name):
-    #     print 'Getting attr!'
-    #     return self.__dict__[name]
-
     def __setattr__(self, name, val):
         """Allow the program to add new output streams on the fly."""
         if(verbose):
@@ -341,28 +328,31 @@ class Output():
 
         def inner(*args, **kwargs):
             result = val(*args, **kwargs)
-            # self.handlePrint(result)
+            self.handlePrint(result)
             return result
 
         # WARNING you cannot call setattr() here, it would recursively call
         # back into this function
-        # self.__dict__[name] = inner
-        self.__dict__[name] = val
+        self.__dict__[name] = inner
 
     def __repr__(self):
         return "REPR"
 
-    def handlePrint(self, contents, **kwargs):
+    def handlePrint(self, logDict):
         '''
         All printing objects return their messages. These messages are routed
         to this method for handling.
 
         Send the messages to the printer. Optionally display the messages. 
         Decorate the print messages with metadata.
+
+        :param logDict: a dictionary representing this log item. Must contain keys
+        message and type.
+        :type logDict: dict.
         '''
 
-        # self.redirectOut.trueWrite(contents)
-        print contents
+        if PRINT_LOGS:
+            self.redirectOut.trueWrite(logDict)
 
 
 # isSnappy = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
@@ -389,11 +379,24 @@ from twisted.python import log
 # info = Stdout(Colors.INFO)
 # log.startLoggingWithObserver(info, setStdout=False)
 
+# out = Output(
+#     header=Stdout(Colors.HEADER),
+#     testing=Stdout(Colors.PERF),
+#     verbose=FakeOutput(),
+#     info=Stdout(Colors.INFO),
+#     perf=Stdout(Colors.PERF),
+#     warn=Stdout(Colors.WARN),
+#     err=Stderr(Colors.ERR),
+#     exception=OutException(Colors.ERR),
+#     security=Stderr(Colors.SECURITY),
+#     fatal=Stderr(Colors.FATAL)
+# )
+
 out = Output(
     header=Stdout(Colors.HEADER),
     testing=Stdout(Colors.PERF),
-    verbose=FakeOutput(),
-    info=Stdout(Colors.INFO),
+    verbose=FakeOutput(None, None),
+    info=BaseOutput(Colors.INFO, 'INFO'),
     perf=Stdout(Colors.PERF),
     warn=Stdout(Colors.WARN),
     err=Stderr(Colors.ERR),
