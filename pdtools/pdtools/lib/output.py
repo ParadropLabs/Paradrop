@@ -4,8 +4,10 @@
 ###################################################################
 
 """
-lib.utils.output.
-Helper for formatting output from Paradrop.
+Output mapping, capture, storange, and display. 
+
+Some of the methods and choice here may seem strange -- they are meant to 
+keep this file in 
 """
 
 import sys
@@ -344,7 +346,8 @@ class Output():
 
         # WARNING you cannot call setattr() here, it would recursively call
         # back into this function
-        self.__dict__[name] = inner
+        # self.__dict__[name] = inner
+        self.__dict__[name] = val
 
     def __repr__(self):
         return "REPR"
@@ -362,40 +365,39 @@ class Output():
         print contents
 
 
-isSnappy = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
+# isSnappy = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
 # isSnappy = True
 
 # out = None
-if isSnappy is not None:
-    # outputPath = settings.LOG_PATH + settings.LOG_NAME
-    outputPath = origOS.path.dirname(origOS.getcwd()) + '/' + settings.LOG_NAME
+# if isSnappy is not None:
+# outputPath = settings.LOG_PATH + settings.LOG_NAME
+# outputPath = origOS.path.dirname(origOS.getcwd()) + '/' + settings.LOG_NAME
 
-    # File logging. Need to do this locally as well as change files when
-    # logs become too large
+# File logging. Need to do this locally as well as change files when
+# logs become too large
 
-    # First make sure the logging directory exists.
-    # pdosq.makedirs(LOG_PATH)
+# First make sure the logging directory exists.
+# pdosq.makedirs(LOG_PATH)
+
+# sys.stdout = Fileout(outputPath)
+# out.verbose("Starting...")
+# Fileout(outputPath)('STUFF!')
 
 
-    # sys.stdout = Fileout(outputPath)
-    # out.verbose("Starting...")
-    # Fileout(outputPath)('STUFF!')
+# Create a standard out module to be used if no one overrides it
+from twisted.python import log
+# info = Stdout(Colors.INFO)
+# log.startLoggingWithObserver(info, setStdout=False)
 
-else:
-    # Create a standard out module to be used if no one overrides it
-    from twisted.python import log
-    # info = Stdout(Colors.INFO)
-    # log.startLoggingWithObserver(info, setStdout=False)
-
-    out = Output(
-        header=Stdout(Colors.HEADER),
-        testing=Stdout(Colors.PERF),
-        verbose=FakeOutput(),
-        info=Stdout(Colors.INFO),
-        perf=Stdout(Colors.PERF),
-        warn=Stdout(Colors.WARN),
-        err=Stderr(Colors.ERR),
-        exception=OutException(Colors.ERR),
-        security=Stderr(Colors.SECURITY),
-        fatal=Stderr(Colors.FATAL)
-    )
+out = Output(
+    header=Stdout(Colors.HEADER),
+    testing=Stdout(Colors.PERF),
+    verbose=FakeOutput(),
+    info=Stdout(Colors.INFO),
+    perf=Stdout(Colors.PERF),
+    warn=Stdout(Colors.WARN),
+    err=Stderr(Colors.ERR),
+    exception=OutException(Colors.ERR),
+    security=Stderr(Colors.SECURITY),
+    fatal=Stderr(Colors.FATAL)
+)
