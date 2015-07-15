@@ -15,14 +15,9 @@ Options:
 """
 
 
-<<<<<<< HEAD
-import requests
-import os
-import json
-=======
+
 from docopt import docopt
 import requests, json, yaml, urllib
->>>>>>> e5037fc0d0bd7c0fa32ba807ab21c6aa074a1916
 
 from pdtools.coms.client import RpcClient
 
@@ -119,7 +114,7 @@ def logs(host, port):
 
 
 def echo(host, port):
-    RpcClient(host, port, 'internal').echo().addCallbacks(printSuccess, printFailure).addBoth(killReactor)
+    RpcClient(host, port, 'internal').echo('Hello!').addCallbacks(printSuccess, printFailure).addBoth(killReactor)
     reactor.run()
 
 
