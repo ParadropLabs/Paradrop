@@ -20,6 +20,7 @@ def testCreatesDirectories():
     assert os.path.exists(store.STORE_PATH)
     assert os.path.exists(store.LOG_PATH)
     assert os.path.exists(store.KEY_PATH)
+    assert os.path.exists(store.MISC_PATH)
     assert os.path.exists(store.INFO_PATH)
 
     cleanup()
@@ -27,18 +28,20 @@ def testCreatesDirectories():
 
 def testYamlSave():
     target = os.getcwd() + '/y.yaml'
-    args = {'a':'b', 'c':['d', 'e', 'f']}
+    args = {'a': 'b', 'c': ['d', 'e', 'f']}
 
     store.writeYaml(args, target)
     assert store.loadYaml(target) == args
 
     os.remove(target)
 
+
 def testYamlCorruption():
     ''' Corrupted or missing information in the saved file '''
-    args = {'version':'b', 'accounts':['d', 'e', 'f']}
+    args = {'version': 'b', 'accounts': ['d', 'e', 'f']}
 
-    assert store.sanityCheck(args) == False
+    assert store.validateInfo(args) == False
+
 
 def cleanup():
     os.remove(store.INFO_PATH)

@@ -17,7 +17,7 @@ class RpcClient:
         call.addCallbacks(aCallback)
 
 
-    Calls to this object always return deferreds. 
+    API calls always return deferreds. 
     '''
 
     def __init__(self, host, port, path):

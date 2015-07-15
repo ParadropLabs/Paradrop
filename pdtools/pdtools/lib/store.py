@@ -12,8 +12,6 @@ import os
 import yaml
 
 
-# LOG_NAME = 'log.txt'
-
 # Check and see if we're on snappy or not. If not, then stick the logs in the local
 # directory. We will be provisioned as a developer instance anyway, so the info doesn't matter yet,
 # Also doesn't really matter for the buildtools, although it is a bit of a vulnurability
@@ -23,18 +21,25 @@ STORE_PATH = snappyPath + '/' if snappyPath is not None else '~/.paradrop/instan
 
 LOG_PATH = STORE_PATH + 'logs/'
 KEY_PATH = STORE_PATH + 'keys/'
+MISC_PATH = STORE_PATH + 'misc/'
 INFO_PATH = STORE_PATH + 'root.yaml'
 
 # Keys required in the store
 INFO_REQUIRES = ['version', 'accounts', 'currentAccount']
 
+# Global singleton (lite)
+store = None
+
 
 class Store(object):
 
-    def __init__(self):
+    def __init__(self, autoSave=True):
+        '''
+        Autosave will save baseConfig on change.
+        '''
 
         # Create needed directories
-        for path in [STORE_PATH, KEY_PATH, LOG_PATH]:
+        for path in [STORE_PATH, KEY_PATH, LOG_PATH, MISC_PATH]:
             if not os.path.exists(path):
                 os.makedirs(path)
 
@@ -45,17 +50,25 @@ class Store(object):
         self.baseConfig = loadYaml(INFO_PATH)
 
         # Sanity check contents of info and throw it out if bad
-        if not sanityCheck(self.baseConfig):
+        if not validateInfo(self.baseConfig):
             os.remove(INFO_PATH)
             createDefaultInfo(INFO_PATH)
             self.baseConfig = loadYaml(INFO_PATH)
+
+        # TODO: load keys
 
     def close(self):
         ''' Write out leftovers, encrypt if needed, and empty it all out '''
         pass
 
+    def saveKey(self, key, name):
+        pass
 
-def sanityCheck(contents):
+    def saveMisc(self, contents, name):
+        pass
+
+
+def validateInfo(contents):
     '''
     Error checking on the read YAML file. 
 

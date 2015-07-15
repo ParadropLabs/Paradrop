@@ -23,6 +23,7 @@ import yaml
 import urllib
 
 from pdtools.lib import pdutils
+from pdtools.lib.output import out
 from pdtools.coms.client import RpcClient
 
 from twisted.internet import reactor
@@ -192,4 +193,7 @@ def printFailure(r):
     print r
 
 if __name__ == '__main__':
-    main()
+    # main()
+
+    out.info("Hello!")
+    # print 'Testing!'
