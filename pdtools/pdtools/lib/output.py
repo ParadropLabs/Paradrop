@@ -4,10 +4,10 @@
 ###################################################################
 
 """
-Output mapping, capture, storange, and display. 
+Output mapping, capture, storange, and display.
 
-Some of the methods and choice here may seem strange -- they are meant to 
-keep this file in 
+Some of the methods and choice here may seem strange -- they are meant to
+keep this file in
 """
 
 import sys
@@ -93,6 +93,25 @@ def logPrefix(*args, **kwargs):
         return '[%s.%s%s @ %s]' % (modName, funcName, line, timestr())
 
 
+def silentLogPrefix(stepsUp):
+    '''
+    A version of logPrefix that gets caller information silently.
+    The single parameter reflects how far up the stack to go to find the caller and
+    is somewhat heuristic-- it depends how deep you are calling this method
+
+    :param steps: the number of steps to move up the stack for the caller
+    :type steps: int.
+    '''
+
+    trace = sys._getframe(stepsUp).f_code.co_filename
+    line = sys._getframe(stepsUp).f_lineno
+    path = trace.split('/')
+    module = path[-1].replace('.py', '')
+    package = path[-2]
+
+    return package, module, line
+
+
 class BaseOutput:
 
     '''
@@ -131,8 +150,13 @@ class BaseOutput:
         Base version simply returns the args passed to it as a string.
 
         '''
-        print logPrefix()
-        return {'message': str(args), 'type': self.tag, 'extra': {}}
+        package, module, line = silentLogPrefix(3)
+
+        ret = {'message': str(args), 'type': self.tag, 'extra': {},
+               'package': package, 'module': module, 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': line, 'pdid':'pd.damouse.example'}
+        print ret
+        return ret
 
     def formatOutput(self, logDict):
         '''
@@ -333,7 +357,7 @@ class Output():
             print('>> Adding new Output stream %s' % name)
 
         def inner(*args, **kwargs):
-            print logPrefix()
+            # print logPrefix()
             result = val(*args, **kwargs)
             self.handlePrint(result)
             return result
