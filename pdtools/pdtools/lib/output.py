@@ -33,23 +33,6 @@ verbose = False
 PRINT_LOGS = True
 
 
-def logPrefix(*args, **kwargs):
-    """Setup a default logPrefix for any function that doesn't overwrite it."""
-    # Who called us?
-    funcName = sys._getframe(1).f_code.co_name
-    modName = origOS.path.basename(
-        sys._getframe(1).f_code.co_filename).split('.')[0].upper()
-    if(verbose):
-        line = "(%d)" % sys._getframe(1).f_lineno
-    else:
-        line = ""
-
-    if(args):
-        return '[%s.%s%s @ %s %s]' % (modName, funcName, line, timestr(), ', '.join([str(a) for a in args]))
-    else:
-        return '[%s.%s%s @ %s]' % (modName, funcName, line, timestr())
-
-
 # Could also represent this as a struct, but this makes it easier to read raw-- should
 # consider the change later on
 LOG_TYPE = ['HEADER', 'VERBOSE', ' INFO', ' PERF', ' WARN', ' ERR', ' SECURITY', ' FATAL']
@@ -93,6 +76,23 @@ class Colors:
     FATAL = BG_WHITE + RED
 
 
+def logPrefix(*args, **kwargs):
+    """Setup a default logPrefix for any function that doesn't overwrite it."""
+    # Who called us?
+    funcName = sys._getframe(1).f_code.co_name
+    modName = origOS.path.basename(
+        sys._getframe(1).f_code.co_filename).split('.')[0].upper()
+    if(verbose):
+        line = "(%d)" % sys._getframe(1).f_lineno
+    else:
+        line = ""
+
+    if(args):
+        return '[%s.%s%s @ %s %s]' % (modName, funcName, line, timestr(), ', '.join([str(a) for a in args]))
+    else:
+        return '[%s.%s%s @ %s]' % (modName, funcName, line, timestr())
+
+
 class BaseOutput:
 
     '''
@@ -131,7 +131,15 @@ class BaseOutput:
         Base version simply returns the args passed to it as a string.
 
         '''
+        print logPrefix()
         return {'message': str(args), 'type': self.tag, 'extra': {}}
+
+    def formatOutput(self, logDict):
+        '''
+        Convert a logdict into a custom formatted, human readable version suitable for 
+        printing to console. 
+        '''
+        return self.color + logDict['message'] + Colors.END
 
     def __repr__(self):
         return "REPR"
@@ -181,12 +189,6 @@ class OutException(BaseOutput):
                 obj(msg_only)
 
 
-class FakeOutput(BaseOutput):
-
-    def __call__(self, args):
-        pass
-
-
 class PrintLogThread(threading.Thread):
 
     '''
@@ -198,7 +200,7 @@ class PrintLogThread(threading.Thread):
     To add content to the printer, call queue.put(stringContents), where 'queue'
     is the passed in object.
 
-    The path must exist before DailyLog
+    The path must exist before DailyLog runs for the first time
     '''
 
     def __init__(self, path, queue, name='log'):
@@ -255,7 +257,8 @@ class OutputRedirect(object):
         in the case when two redirecters are active.
         '''
         # print 'call1' + '\n'
-        self.callback(contents, trueOut=self.trueOut)
+        res = {'message': str(contents), 'type': 'VERBOSE', 'extra': {'details': 'floating print statement'}}
+        self.callback(res)
 
 
 class Output():
@@ -304,8 +307,11 @@ class Output():
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint)
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint)
 
-        sys.stdout = self.__dict__['redirectOut']
-        sys.stderr = self.__dict__['redirectErr']
+        # sys.stdout = self.__dict__['redirectOut']
+        # sys.stderr = self.__dict__['redirectErr']
+
+        # The raw dict of tags and output objects
+        self.__dict__['outputMappings'] = {}
 
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
@@ -327,6 +333,7 @@ class Output():
             print('>> Adding new Output stream %s' % name)
 
         def inner(*args, **kwargs):
+            print logPrefix()
             result = val(*args, **kwargs)
             self.handlePrint(result)
             return result
@@ -334,6 +341,10 @@ class Output():
         # WARNING you cannot call setattr() here, it would recursively call
         # back into this function
         self.__dict__[name] = inner
+
+        # Save the original function (unwrapped) under the tag its registered with
+        # so we can later query the objects by this tag and ask them to print
+        self.__dict__['outputMappings'][name] = val
 
     def __repr__(self):
         return "REPR"
@@ -351,8 +362,26 @@ class Output():
         :type logDict: dict.
         '''
 
+        # write out the log message to file
+        # self.queue.put(logDict)
+
+        # Write out the human-readable version to out if needed
         if PRINT_LOGS:
-            self.redirectOut.trueWrite(logDict)
+            res = self.messageToString(logDict)
+            self.redirectOut.trueWrite(res)
+
+    def messageToString(self, message):
+        '''
+        Converts message dicts to a format suitable for printing based on 
+        the conversion rules laid out in in that class's implementation.
+
+        :param message: the dict to convert to string
+        :type message: dict.
+        :returns: str 
+        '''
+
+        outputObject = self.outputMappings[message['type'].lower()]
+        return outputObject.formatOutput(message)
 
 
 # isSnappy = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
@@ -393,14 +422,14 @@ from twisted.python import log
 # )
 
 out = Output(
-    header=Stdout(Colors.HEADER),
-    testing=Stdout(Colors.PERF),
-    verbose=FakeOutput(None, None),
+    header=BaseOutput(Colors.HEADER, 'HEADER'),
+    testing=BaseOutput(Colors.VERBOSE, 'VERBOSE'),
+    verbose=BaseOutput(Colors.VERBOSE, 'VERBOSE'),
     info=BaseOutput(Colors.INFO, 'INFO'),
-    perf=Stdout(Colors.PERF),
-    warn=Stdout(Colors.WARN),
-    err=Stderr(Colors.ERR),
-    exception=OutException(Colors.ERR),
-    security=Stderr(Colors.SECURITY),
-    fatal=Stderr(Colors.FATAL)
+    perf=BaseOutput(Colors.PERF, 'PERF'),
+    warn=BaseOutput(Colors.WARN, 'WARN'),
+    err=BaseOutput(Colors.ERR, 'ERR'),
+    exception=BaseOutput(Colors.ERR, 'ERR'),
+    security=BaseOutput(Colors.SECURITY, 'SECURITY'),
+    fatal=BaseOutput(Colors.FATAL, 'FATAL')
 )
