@@ -219,4 +219,4 @@ if __name__ == '__main__':
 
     # This is obviously bad. Please fix.
     import time
-    # time.sleep(2)
+    time.sleep(2)

@@ -23,6 +23,9 @@ import Queue
 import threading
 import time
 
+import colorama
+# from colorama import init, Fore, Back, Style
+
 # "global" variable all modules should be able to toggle
 verbose = False
 
@@ -32,71 +35,31 @@ verbose = False
 PRINT_LOGS = True
 
 
-# Could also represent this as a struct, but this makes it easier to read raw-- should
-# consider the change later on
-LOG_TYPE = ['HEADER', 'VERBOSE', ' INFO', ' PERF', ' WARN', ' ERR', ' SECURITY', ' FATAL']
-
-
 class Colors:
-    # Regular ANSI supported colors foreground
-    BLACK = '\033[30m'
-    RED = '\033[31m'
-    GREEN = '\033[32m'
-    YELLOW = '\033[33m'
-    BLUE = '\033[34m'
-    MAGENTA = '\033[35m'
-    CYAN = '\033[36m'
-    WHITE = '\033[37m'
-
-    # Regular ANSI suported colors background
-    BG_BLACK = '\033[40m'
-    BG_RED = '\033[41m'
-    BG_GREEN = '\033[42m'
-    BG_YELLOW = '\033[43m'
-    BG_BLUE = '\033[44m'
-    BG_MAGENTA = '\033[45m'
-    BG_CYAN = '\033[46m'
-    BG_WHITE = '\033[47m'
-
     # Other abilities
     BOLD = '\033[1m'
 
     # Ending sequence
     END = '\033[0m'
 
-    # Color suggestions
-    HEADER = BLUE
-    VERBOSE = BLACK
-    INFO = GREEN
-    PERF = WHITE
-    WARN = YELLOW
-    ERR = RED
-    SECURITY = BOLD + RED
-    FATAL = BG_WHITE + RED
-
-
-def logPrefix(*args, **kwargs):
-    """Setup a default logPrefix for any function that doesn't overwrite it."""
-    # Who called us?
-    funcName = sys._getframe(1).f_code.co_name
-    modName = origOS.path.basename(
-        sys._getframe(1).f_code.co_filename).split('.')[0].upper()
-    if(verbose):
-        line = "(%d)" % sys._getframe(1).f_lineno
-    else:
-        line = ""
-
-    if(args):
-        return '[%s.%s%s @ %s %s]' % (modName, funcName, line, timestr(), ', '.join([str(a) for a in args]))
-    else:
-        return '[%s.%s%s @ %s]' % (modName, funcName, line, timestr())
+# Represents formatting information for the specified log type
+LOG_TYPES = {
+    'HEADER': {'name': 'HEADER', 'glyph': '--', 'color': colorama.Fore.BLUE},
+    'VERBOSE': {'name': 'VERBOSE', 'glyph': '--', 'color': colorama.Fore.BLACK},
+    'INFO': {'name': 'INFO', 'glyph': '--', 'color': colorama.Fore.GREEN},
+    'PERF': {'name': 'PERF', 'glyph': '--', 'color': colorama.Fore.WHITE},
+    'WARN': {'name': 'WARN', 'glyph': '**', 'color': colorama.Fore.YELLOW},
+    'ERR': {'name': 'ERR', 'glyph': '!!', 'color': colorama.Fore.RED},
+    'SECURITY': {'name': 'SECURITY', 'glyph': '!!', 'color': Colors.BOLD + colorama.Fore.RED},
+    'FATAL': {'name': 'FATAL', 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+}
 
 
 def silentLogPrefix(stepsUp):
     '''
     A version of logPrefix that gets caller information silently.
     The single parameter reflects how far up the stack to go to find the caller and
-    is somewhat heuristic-- it depends how deep you are calling this method
+    depends how deep the direct caller to this method is wrt to the target caller
 
     :param steps: the number of steps to move up the stack for the caller
     :type steps: int.
@@ -129,32 +92,30 @@ class BaseOutput:
     Objects are required to output a dict that mininmally contains the keys message and type. 
     '''
 
-    def __init__(self, color, tag):
+    def __init__(self, logType):
         '''
         Initialize this output type. 
 
-        :param color: how this output type is displayed
-        :type color: Colors constant
-        :param tag: identifier this print belongs to-- constant value lib.output.MessageType
-        :type tag: int.
+        :param logType: how this output type is displayed
+        :type logType: dictionary object containing name, glyph, and color keys
         '''
-        self.color = color
-        self.tag = tag
+
+        self.type = logType
 
     def __call__(self, args):
         '''
-        This method is a little magical, but it *must* return a string formatted in the appropriate
-        way. That is its only purpose.
+        Called as an attribute on out. This method takes the passed params and builds a log dict,
+        returning it. 
 
-        Base version simply returns the args passed to it as a string.
-
+        Subclasses can customize args to include whatever they'd like, adding content
+        under the key 'extras.' The remaining keys should stay in place. 
         '''
         package, module, line = silentLogPrefix(3)
 
-        ret = {'message': str(args), 'type': self.tag, 'extra': {},
+        ret = {'message': str(args), 'type': self.type['name'], 'extra': {},
                'package': package, 'module': module, 'timestamp': time.time(),
                'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
-        # print ret
+
         return ret
 
     def formatOutput(self, logDict):
@@ -163,7 +124,7 @@ class BaseOutput:
         printing to console. 
         '''
         trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.timestr(logDict['timestamp']))
-        return self.color + '-- ' + trace + logDict['message'] + Colors.END
+        return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + Colors.END
 
     def __repr__(self):
         return "REPR"
@@ -234,10 +195,11 @@ class PrintLogThread(threading.Thread):
         self.running = True
 
         # Don't want this to float around if the rest of the system goes down
-        self.setDaemon(True)
+        # self.setDaemon(True)
         self.writer = DailyLogFile(name, path)
 
     def _emptyQueue(self):
+        print 'emptying queue'
         while not self.queue.empty():
             result = self.queue.get()
 
@@ -334,6 +296,9 @@ class Output():
     def __init__(self, **kwargs):
         """Setup the initial set of output stream functions."""
 
+        # Begins intercepting output and converting ANSI characters to win32 as applicable
+        colorama.init()
+
         # Refactor this as an Output class
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint)
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint)
@@ -362,6 +327,7 @@ class Output():
         '''
         Ask the printing thread to flush and end, then return.
         '''
+        out.info('Asking file logger to close')
         self.printer.running = False
         self.printer.join()
 
@@ -435,14 +401,14 @@ from twisted.python import log
 # log.startLoggingWithObserver(info, setStdout=False)
 
 out = Output(
-    header=BaseOutput(Colors.HEADER, 'HEADER'),
-    testing=BaseOutput(Colors.VERBOSE, 'VERBOSE'),
-    verbose=BaseOutput(Colors.VERBOSE, 'VERBOSE'),
-    info=BaseOutput(Colors.INFO, 'INFO'),
-    perf=BaseOutput(Colors.PERF, 'PERF'),
-    warn=BaseOutput(Colors.WARN, 'WARN'),
-    err=BaseOutput(Colors.ERR, 'ERR'),
-    exception=BaseOutput(Colors.ERR, 'ERR'),
-    security=BaseOutput(Colors.SECURITY, 'SECURITY'),
-    fatal=BaseOutput(Colors.FATAL, 'FATAL')
+    header=BaseOutput(LOG_TYPES['HEADER']),
+    testing=BaseOutput(LOG_TYPES['VERBOSE']),
+    verbose=BaseOutput(LOG_TYPES['VERBOSE']),
+    info=BaseOutput(LOG_TYPES['INFO']),
+    perf=BaseOutput(LOG_TYPES['PERF']),
+    warn=BaseOutput(LOG_TYPES['WARN']),
+    err=BaseOutput(LOG_TYPES['ERR']),
+    exception=BaseOutput(LOG_TYPES['ERR']),
+    security=BaseOutput(LOG_TYPES['SECURITY']),
+    fatal=BaseOutput(LOG_TYPES['FATAL'])
 )
