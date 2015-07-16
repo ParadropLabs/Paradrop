@@ -162,7 +162,8 @@ class BaseOutput:
         Convert a logdict into a custom formatted, human readable version suitable for 
         printing to console. 
         '''
-        return self.color + logDict['message'] + Colors.END
+        trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.timestr(logDict['timestamp']))
+        return self.color + '-- ' + trace + logDict['message'] + Colors.END
 
     def __repr__(self):
         return "REPR"
@@ -241,20 +242,17 @@ class PrintLogThread(threading.Thread):
             result = self.queue.get()
 
             writable = pdutils.json2str(result)
-            print writable
 
             self.writer.write(writable + '\n')
             self.queue.task_done()
 
     def run(self):
-        print 'Starting!'
         while self.running:
             if not self.queue.empty():
                 self._emptyQueue()
             else:
                 time.sleep(1)
 
-        print 'Ending'
         self.queue.empty()
         self.writer.flush()
         self.writer.close()
@@ -364,14 +362,8 @@ class Output():
         '''
         Ask the printing thread to flush and end, then return.
         '''
-        # self.writer.flush()
-        # self.writer.close()
-
-        # This
         self.printer.running = False
         self.printer.join()
-        # self.printer.writer.flush()
-        # self.printer.writer.close()
 
     def __getattr__(self, name):
         """Catch attribute access attempts that were not defined in __init__
@@ -437,42 +429,10 @@ class Output():
         return outputObject.formatOutput(message)
 
 
-# isSnappy = origOS.getenv("SNAP_APP_USER_DATA_PATH", None)
-# isSnappy = True
-
-# out = None
-# if isSnappy is not None:
-# outputPath = settings.LOG_PATH + settings.LOG_NAME
-# outputPath = origOS.path.dirname(origOS.getcwd()) + '/' + settings.LOG_NAME
-
-# File logging. Need to do this locally as well as change files when
-# logs become too large
-
-# First make sure the logging directory exists.
-# pdosq.makedirs(LOG_PATH)
-
-# sys.stdout = Fileout(outputPath)
-# out.verbose("Starting...")
-# Fileout(outputPath)('STUFF!')
-
-
 # Create a standard out module to be used if no one overrides it
 from twisted.python import log
 # info = Stdout(Colors.INFO)
 # log.startLoggingWithObserver(info, setStdout=False)
-
-# out = Output(
-#     header=Stdout(Colors.HEADER),
-#     testing=Stdout(Colors.PERF),
-#     verbose=FakeOutput(),
-#     info=Stdout(Colors.INFO),
-#     perf=Stdout(Colors.PERF),
-#     warn=Stdout(Colors.WARN),
-#     err=Stderr(Colors.ERR),
-#     exception=OutException(Colors.ERR),
-#     security=Stderr(Colors.SECURITY),
-#     fatal=Stderr(Colors.FATAL)
-# )
 
 out = Output(
     header=BaseOutput(Colors.HEADER, 'HEADER'),
