@@ -94,7 +94,7 @@ class PrintLogThread(threading.Thread):
         self.running = True
 
         # Don't want this to float around if the rest of the system goes down
-        # self.setDaemon(True)
+        self.setDaemon(True)
         self.writer = DailyLogFile(name, path)
 
     def _emptyQueue(self):
@@ -109,13 +109,13 @@ class PrintLogThread(threading.Thread):
 
     def run(self):
         while self.running:
-            print 'running...'
-            if not self.queue.empty():
-                self._emptyQueue()
-            else:
-                time.sleep(1)
+            result = self.queue.get(block=True, timeout=1)
+            writable = pdutils.json2str(result)
 
-        self.queue.empty()
+            self.writer.write(writable + '\n')
+            self.queue.task_done()
+
+        # self.queue.empty()
         self.writer.flush()
         self.writer.close()
 
@@ -369,7 +369,8 @@ class Output():
         '''
         out.info('Asking file logger to close')
         self.printer.running = False
-        self.printer.join()
+        # self.printer.join()
+        self.queue.join()
 
     def handlePrint(self, logDict):
         '''
