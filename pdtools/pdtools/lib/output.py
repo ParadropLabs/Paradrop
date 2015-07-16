@@ -14,11 +14,10 @@ import sys
 import os as origOS
 import traceback
 
-from .pdutils import timestr, jsonPretty
-# from paradrop.lib import settings
-from pdutils import timestr, jsonPretty
-
+from pdtools.lib import pdutils
 from twisted.python.logfile import DailyLogFile
+
+from pdtools.lib import store
 
 import Queue
 import threading
@@ -154,8 +153,8 @@ class BaseOutput:
 
         ret = {'message': str(args), 'type': self.tag, 'extra': {},
                'package': package, 'module': module, 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': line, 'pdid':'pd.damouse.example'}
-        print ret
+               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+        # print ret
         return ret
 
     def formatOutput(self, logDict):
@@ -237,16 +236,26 @@ class PrintLogThread(threading.Thread):
         self.setDaemon(True)
         self.writer = DailyLogFile(name, path)
 
+    def _emptyQueue(self):
+        while not self.queue.empty():
+            result = self.queue.get()
+
+            writable = pdutils.json2str(result)
+            print writable
+
+            self.writer.write(writable + '\n')
+            self.queue.task_done()
+
     def run(self):
+        print 'Starting!'
         while self.running:
             if not self.queue.empty():
-                result = self.queue.get()
-                self.writer.write(result)
-                self.queue.task_done()
+                self._emptyQueue()
             else:
                 time.sleep(1)
 
         print 'Ending'
+        self.queue.empty()
         self.writer.flush()
         self.writer.close()
 
@@ -340,16 +349,35 @@ class Output():
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
 
-        # All function calls are transparently routed to the writer for logging.
-        # self.queue = Queue.Queue()
-        # self.printer = PrintLogThread(None, self.queue)
-        # self.printer.start()
+    def startLogging(self, path):
+        '''
+        All function calls are transparently routed to the writer for logging.
+
+        This must be initialized, else testing would be terrible
+        '''
+
+        self.__dict__['queue'] = Queue.Queue()
+        self.__dict__['printer'] = PrintLogThread(store.LOG_PATH, self.queue)
+        self.printer.start()
+
+    def endLogging(self):
+        '''
+        Ask the printing thread to flush and end, then return.
+        '''
+        # self.writer.flush()
+        # self.writer.close()
+
+        # This
+        self.printer.running = False
+        self.printer.join()
+        # self.printer.writer.flush()
+        # self.printer.writer.close()
 
     def __getattr__(self, name):
         """Catch attribute access attempts that were not defined in __init__
             by default throw them out."""
 
-        return FakeOutput()
+        raise NotImplementedError("You must create " + name + " to log with it")
 
     def __setattr__(self, name, val):
         """Allow the program to add new output streams on the fly."""
@@ -387,7 +415,8 @@ class Output():
         '''
 
         # write out the log message to file
-        # self.queue.put(logDict)
+        if self.queue is not None:
+            self.queue.put(logDict)
 
         # Write out the human-readable version to out if needed
         if PRINT_LOGS:

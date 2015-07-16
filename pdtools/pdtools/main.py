@@ -195,6 +195,13 @@ def printFailure(r):
 if __name__ == '__main__':
     # main()
 
+    # initialize the store
+    from pdtools.lib import store
+    store.store = store.Storage()
+
+    # Connect the store to the output module for file logging
+    out.startLogging(store.LOG_PATH)
+
     out.header('Testing: header')
     out.testing('Testing: testing')
     out.verbose('Testing: verbose')
@@ -207,3 +214,9 @@ if __name__ == '__main__':
     out.fatal('Testing: fatal')
 
     print 'Testing!'
+
+    out.endLogging()
+
+    # This is obviously bad. Please fix.
+    import time
+    # time.sleep(2)
