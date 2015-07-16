@@ -11,20 +11,18 @@ keep this file in
 """
 
 import sys
-import os as origOS
 import traceback
+import Queue
+import threading
+import time
+import colorama
 
 from pdtools.lib import pdutils
 from twisted.python.logfile import DailyLogFile
 
 from pdtools.lib import store
 
-import Queue
-import threading
-import time
-
-import colorama
-# from colorama import init, Fore, Back, Style
+out = None
 
 # "global" variable all modules should be able to toggle
 verbose = False
@@ -34,13 +32,11 @@ verbose = False
 # are always saved (as currently implementd)
 PRINT_LOGS = True
 
+# colorama package does colors, doesn't do style, so keeping this for posterity
+
 
 class Colors:
-    # Other abilities
     BOLD = '\033[1m'
-
-    # Ending sequence
-    END = '\033[0m'
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
@@ -55,26 +51,12 @@ LOG_TYPES = {
 }
 
 
-def silentLogPrefix(stepsUp):
-    '''
-    A version of logPrefix that gets caller information silently.
-    The single parameter reflects how far up the stack to go to find the caller and
-    depends how deep the direct caller to this method is wrt to the target caller
-
-    :param steps: the number of steps to move up the stack for the caller
-    :type steps: int.
-    '''
-
-    trace = sys._getframe(stepsUp).f_code.co_filename
-    line = sys._getframe(stepsUp).f_lineno
-    path = trace.split('/')
-    module = path[-1].replace('.py', '')
-    package = path[-2]
-
-    return package, module, line
+###############################################################################
+# Output Classes
+###############################################################################
 
 
-class BaseOutput:
+class BaseOutput(object):
 
     '''
     Base output type class. 
@@ -124,7 +106,7 @@ class BaseOutput:
         printing to console. 
         '''
         trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.timestr(logDict['timestamp']))
-        return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + Colors.END
+        return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
 
     def __repr__(self):
         return "REPR"
@@ -174,6 +156,29 @@ class OutException(BaseOutput):
                 obj(msg_only)
 
 
+###############################################################################
+# Logging Utilities
+###############################################################################
+
+def silentLogPrefix(stepsUp):
+    '''
+    A version of logPrefix that gets caller information silently.
+    The single parameter reflects how far up the stack to go to find the caller and
+    depends how deep the direct caller to this method is wrt to the target caller
+
+    :param steps: the number of steps to move up the stack for the caller
+    :type steps: int.
+    '''
+
+    trace = sys._getframe(stepsUp).f_code.co_filename
+    line = sys._getframe(stepsUp).f_lineno
+    path = trace.split('/')
+    module = path[-1].replace('.py', '')
+    package = path[-2]
+
+    return package, module, line
+
+
 class PrintLogThread(threading.Thread):
 
     '''
@@ -210,6 +215,7 @@ class PrintLogThread(threading.Thread):
 
     def run(self):
         while self.running:
+            print ' running...'
             if not self.queue.empty():
                 self._emptyQueue()
             else:
@@ -220,7 +226,7 @@ class PrintLogThread(threading.Thread):
         self.writer.close()
 
 
-class OutputRedirect(object):
+class OutputRedirect(BaseOutput):
 
     """
     Intercepts passed output object (either stdout and stderr), calling the provided callback
@@ -229,9 +235,17 @@ class OutputRedirect(object):
     Retains the original mappings so writing can still happen. Performs no formatting.
     """
 
-    def __init__(self, output, contentAppearedCallback):
-        self.callback = contentAppearedCallback
+    def __init__(self, output, logType):
+        super(OutputRedirect, self).__init__(logType)
         self.trueOut = output
+
+        if output.name == '<stdout>':
+            print 'Redirecting out!'
+            sys.stdout = self
+
+        if output.name == '<stderr>':
+            print 'Redirecting err!'
+            sys.stderr = self
 
     def trueWrite(self, contents):
         ''' Someone really does want to output'''
@@ -249,10 +263,50 @@ class OutputRedirect(object):
         returned with the callback so the delegate can differentiate between captured outputs
         in the case when two redirecters are active.
         '''
-        # print 'call1' + '\n'
-        res = {'message': str(contents), 'type': 'VERBOSE', 'extra': {'details': 'floating print statement'}}
-        self.callback(res)
+        if contents == '\n':
+            return
 
+        package, module, line = silentLogPrefix(2)
+
+        ret = {'message': str(contents), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
+               'package': package, 'module': module, 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+
+        # self.callback(ret)
+        # out.handlePrint(ret)
+        return ret
+
+    def __call__(self, args):
+        '''
+        Called as an attribute on out. This method takes the passed params and builds a log dict,
+        returning it. 
+
+        Subclasses can customize args to include whatever they'd like, adding content
+        under the key 'extras.' The remaining keys should stay in place. 
+        '''
+        package, module, line = silentLogPrefix(3)
+
+        ret = {'message': str(args), 'type': self.type['name'], 'extra': {},
+               'package': package, 'module': module, 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+
+        return ret
+
+    def formatOutput(self, logDict):
+        '''
+        Convert a logdict into a custom formatted, human readable version suitable for 
+        printing to console. 
+        '''
+        trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.timestr(logDict['timestamp']))
+        return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
+
+    def __repr__(self):
+        return "REPR"
+
+
+###############################################################################
+# Global Out Class
+###############################################################################
 
 class Output():
 
@@ -299,37 +353,15 @@ class Output():
         # Begins intercepting output and converting ANSI characters to win32 as applicable
         colorama.init()
 
-        # Refactor this as an Output class
-        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint)
-        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint)
-
-        # sys.stdout = self.__dict__['redirectOut']
-        # sys.stderr = self.__dict__['redirectErr']
-
         # The raw dict of tags and output objects
         self.__dict__['outputMappings'] = {}
 
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
 
-    def startLogging(self, path):
-        '''
-        All function calls are transparently routed to the writer for logging.
-
-        This must be initialized, else testing would be terrible
-        '''
-
-        self.__dict__['queue'] = Queue.Queue()
-        self.__dict__['printer'] = PrintLogThread(store.LOG_PATH, self.queue)
-        self.printer.start()
-
-    def endLogging(self):
-        '''
-        Ask the printing thread to flush and end, then return.
-        '''
-        out.info('Asking file logger to close')
-        self.printer.running = False
-        self.printer.join()
+        # Special cases-- add stdio redirects
+        setattr(self, 'stdoutWrite', self.__dict__['outputMappings']['stdout'].write)
+        setattr(self, 'stderrWrite', self.__dict__['outputMappings']['stderr'].write)
 
     def __getattr__(self, name):
         """Catch attribute access attempts that were not defined in __init__
@@ -359,6 +391,25 @@ class Output():
     def __repr__(self):
         return "REPR"
 
+    def startLogging(self, path):
+        '''
+        All function calls are transparently routed to the writer for logging.
+
+        This must be initialized, else testing would be terrible
+        '''
+
+        self.__dict__['queue'] = Queue.Queue()
+        self.__dict__['printer'] = PrintLogThread(store.LOG_PATH, self.queue)
+        self.printer.start()
+
+    def endLogging(self):
+        '''
+        Ask the printing thread to flush and end, then return.
+        '''
+        out.info('Asking file logger to close')
+        self.printer.running = False
+        self.printer.join()
+
     def handlePrint(self, logDict):
         '''
         All printing objects return their messages. These messages are routed
@@ -379,7 +430,7 @@ class Output():
         # Write out the human-readable version to out if needed
         if PRINT_LOGS:
             res = self.messageToString(logDict)
-            self.redirectOut.trueWrite(res)
+            self.outputMappings['stdout'].trueWrite(res)
 
     def messageToString(self, message):
         '''
@@ -410,5 +461,7 @@ out = Output(
     err=BaseOutput(LOG_TYPES['ERR']),
     exception=BaseOutput(LOG_TYPES['ERR']),
     security=BaseOutput(LOG_TYPES['SECURITY']),
-    fatal=BaseOutput(LOG_TYPES['FATAL'])
+    fatal=BaseOutput(LOG_TYPES['FATAL']),
+    stdout=OutputRedirect(sys.stdout, LOG_TYPES['VERBOSE']),
+    stderr=OutputRedirect(sys.stderr, LOG_TYPES['ERR'])
 )

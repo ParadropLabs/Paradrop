@@ -203,15 +203,15 @@ if __name__ == '__main__':
     out.startLogging(store.LOG_PATH)
 
     out.header('Testing: header')
-    out.testing('Testing: testing')
-    out.verbose('Testing: verbose')
-    out.info('Testing: info')
-    out.perf('Testing: perf')
-    out.warn('Testing: warn')
-    out.err('Testing: err')
-    out.exception('Testing: exception')
-    out.security('Testing: security')
-    out.fatal('Testing: fatal')
+    # out.testing('Testing: testing')
+    # out.verbose('Testing: verbose')
+    # out.info('Testing: info')
+    # out.perf('Testing: perf')
+    # out.warn('Testing: warn')
+    # out.err('Testing: err')
+    # out.exception('Testing: exception')
+    # out.security('Testing: security')
+    # out.fatal('Testing: fatal')
 
     print 'Testing!'
 
