@@ -22,7 +22,6 @@ from twisted.python.logfile import DailyLogFile
 
 from pdtools.lib import store
 
-out = None
 
 # "global" variable all modules should be able to toggle
 verbose = False
@@ -52,11 +51,122 @@ LOG_TYPES = {
 
 
 ###############################################################################
+# Logging Utilities
+###############################################################################
+
+def silentLogPrefix(stepsUp):
+    '''
+    A version of logPrefix that gets caller information silently.
+    The single parameter reflects how far up the stack to go to find the caller and
+    depends how deep the direct caller to this method is wrt to the target caller
+
+    :param steps: the number of steps to move up the stack for the caller
+    :type steps: int.
+    '''
+
+    trace = sys._getframe(stepsUp).f_code.co_filename
+    line = sys._getframe(stepsUp).f_lineno
+    path = trace.split('/')
+    module = path[-1].replace('.py', '')
+    package = path[-2]
+
+    return package, module, line
+
+
+class PrintLogThread(threading.Thread):
+
+    '''
+    All file printing access from one thread.
+
+    Does not start automatically (so call 'start()'). To stop the thread (and flush!)
+    set running to False.
+
+    To add content to the printer, call queue.put(stringContents), where 'queue'
+    is the passed in object.
+
+    The path must exist before DailyLog runs for the first time
+    '''
+
+    def __init__(self, path, queue, name='log'):
+        threading.Thread.__init__(self)
+        self.queue = queue
+
+        self.running = True
+
+        # Don't want this to float around if the rest of the system goes down
+        # self.setDaemon(True)
+        self.writer = DailyLogFile(name, path)
+
+    def _emptyQueue(self):
+        print 'emptying queue'
+        while not self.queue.empty():
+            result = self.queue.get()
+
+            writable = pdutils.json2str(result)
+
+            self.writer.write(writable + '\n')
+            self.queue.task_done()
+
+    def run(self):
+        while self.running:
+            print 'running...'
+            if not self.queue.empty():
+                self._emptyQueue()
+            else:
+                time.sleep(1)
+
+        self.queue.empty()
+        self.writer.flush()
+        self.writer.close()
+
+
+class OutputRedirect(object):
+
+    """
+    Intercepts passed output object (either stdout and stderr), calling the provided callback
+    method when input appears.
+
+    Retains the original mappings so writing can still happen. Performs no formatting.
+    """
+
+    def __init__(self, output, contentAppearedCallback, logType):
+        self.callback = contentAppearedCallback
+        self.trueOut = output
+        self.type = logType
+
+    def trueWrite(self, contents):
+        ''' Someone really does want to output'''
+        formatted = str(contents)
+
+        # print statement ususally handles these things
+        if len(formatted) == 0 or formatted[-1] is not '\n':
+            formatted += '\n'
+
+        self.trueOut.write(formatted)
+
+    def write(self, contents):
+        '''
+        Intercept output to the assigned target and callback with it. The true output is
+        returned with the callback so the delegate can differentiate between captured outputs
+        in the case when two redirecters are active.
+        '''
+        if contents == '\n':
+            return
+
+        package, module, line = silentLogPrefix(2)
+
+        ret = {'message': str(contents), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
+               'package': package, 'module': module, 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+
+        self.callback(ret)
+
+###############################################################################
 # Output Classes
 ###############################################################################
 
 
-class BaseOutput(object):
+class BaseOutput:
 
     '''
     Base output type class. 
@@ -156,158 +266,6 @@ class OutException(BaseOutput):
                 obj(msg_only)
 
 
-###############################################################################
-# Logging Utilities
-###############################################################################
-
-def silentLogPrefix(stepsUp):
-    '''
-    A version of logPrefix that gets caller information silently.
-    The single parameter reflects how far up the stack to go to find the caller and
-    depends how deep the direct caller to this method is wrt to the target caller
-
-    :param steps: the number of steps to move up the stack for the caller
-    :type steps: int.
-    '''
-
-    trace = sys._getframe(stepsUp).f_code.co_filename
-    line = sys._getframe(stepsUp).f_lineno
-    path = trace.split('/')
-    module = path[-1].replace('.py', '')
-    package = path[-2]
-
-    return package, module, line
-
-
-class PrintLogThread(threading.Thread):
-
-    '''
-    All file printing access from one thread.
-
-    Does not start automatically (so call 'start()'). To stop the thread (and flush!)
-    set running to False.
-
-    To add content to the printer, call queue.put(stringContents), where 'queue'
-    is the passed in object.
-
-    The path must exist before DailyLog runs for the first time
-    '''
-
-    def __init__(self, path, queue, name='log'):
-        threading.Thread.__init__(self)
-        self.queue = queue
-
-        self.running = True
-
-        # Don't want this to float around if the rest of the system goes down
-        # self.setDaemon(True)
-        self.writer = DailyLogFile(name, path)
-
-    def _emptyQueue(self):
-        print 'emptying queue'
-        while not self.queue.empty():
-            result = self.queue.get()
-
-            writable = pdutils.json2str(result)
-
-            self.writer.write(writable + '\n')
-            self.queue.task_done()
-
-    def run(self):
-        while self.running:
-            print ' running...'
-            if not self.queue.empty():
-                self._emptyQueue()
-            else:
-                time.sleep(1)
-
-        self.queue.empty()
-        self.writer.flush()
-        self.writer.close()
-
-
-class OutputRedirect(BaseOutput):
-
-    """
-    Intercepts passed output object (either stdout and stderr), calling the provided callback
-    method when input appears.
-
-    Retains the original mappings so writing can still happen. Performs no formatting.
-    """
-
-    def __init__(self, output, logType):
-        super(OutputRedirect, self).__init__(logType)
-        self.trueOut = output
-
-        if output.name == '<stdout>':
-            print 'Redirecting out!'
-            sys.stdout = self
-
-        if output.name == '<stderr>':
-            print 'Redirecting err!'
-            sys.stderr = self
-
-    def trueWrite(self, contents):
-        ''' Someone really does want to output'''
-        formatted = str(contents)
-
-        # print statement ususally handles these things
-        if len(formatted) == 0 or formatted[-1] is not '\n':
-            formatted += '\n'
-
-        self.trueOut.write(formatted)
-
-    def write(self, contents):
-        '''
-        Intercept output to the assigned target and callback with it. The true output is
-        returned with the callback so the delegate can differentiate between captured outputs
-        in the case when two redirecters are active.
-        '''
-        if contents == '\n':
-            return
-
-        package, module, line = silentLogPrefix(2)
-
-        ret = {'message': str(contents), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
-               'package': package, 'module': module, 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
-
-        # self.callback(ret)
-        # out.handlePrint(ret)
-        return ret
-
-    def __call__(self, args):
-        '''
-        Called as an attribute on out. This method takes the passed params and builds a log dict,
-        returning it. 
-
-        Subclasses can customize args to include whatever they'd like, adding content
-        under the key 'extras.' The remaining keys should stay in place. 
-        '''
-        package, module, line = silentLogPrefix(3)
-
-        ret = {'message': str(args), 'type': self.type['name'], 'extra': {},
-               'package': package, 'module': module, 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
-
-        return ret
-
-    def formatOutput(self, logDict):
-        '''
-        Convert a logdict into a custom formatted, human readable version suitable for 
-        printing to console. 
-        '''
-        trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.timestr(logDict['timestamp']))
-        return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
-
-    def __repr__(self):
-        return "REPR"
-
-
-###############################################################################
-# Global Out Class
-###############################################################################
-
 class Output():
 
     """
@@ -353,15 +311,18 @@ class Output():
         # Begins intercepting output and converting ANSI characters to win32 as applicable
         colorama.init()
 
+        # Refactor this as an Output class
+        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
+        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
+
+        sys.stdout = self.__dict__['redirectOut']
+        sys.stderr = self.__dict__['redirectErr']
+
         # The raw dict of tags and output objects
         self.__dict__['outputMappings'] = {}
 
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
-
-        # Special cases-- add stdio redirects
-        setattr(self, 'stdoutWrite', self.__dict__['outputMappings']['stdout'].write)
-        setattr(self, 'stderrWrite', self.__dict__['outputMappings']['stderr'].write)
 
     def __getattr__(self, name):
         """Catch attribute access attempts that were not defined in __init__
@@ -430,7 +391,7 @@ class Output():
         # Write out the human-readable version to out if needed
         if PRINT_LOGS:
             res = self.messageToString(logDict)
-            self.outputMappings['stdout'].trueWrite(res)
+            self.redirectOut.trueWrite(res)
 
     def messageToString(self, message):
         '''
@@ -461,7 +422,5 @@ out = Output(
     err=BaseOutput(LOG_TYPES['ERR']),
     exception=BaseOutput(LOG_TYPES['ERR']),
     security=BaseOutput(LOG_TYPES['SECURITY']),
-    fatal=BaseOutput(LOG_TYPES['FATAL']),
-    stdout=OutputRedirect(sys.stdout, LOG_TYPES['VERBOSE']),
-    stderr=OutputRedirect(sys.stderr, LOG_TYPES['ERR'])
+    fatal=BaseOutput(LOG_TYPES['FATAL'])
 )
