@@ -193,9 +193,11 @@ def printFailure(r):
     print r
 
 
-if __name__ == '__main__':
-    # main()
+###############################################################################
+#  Inline testing
+###############################################################################
 
+def testLogging():
     # initialize the store
     from pdtools.lib import store
     store.store = store.Storage()
@@ -205,6 +207,9 @@ if __name__ == '__main__':
     output.out.startLogging(store.LOG_PATH)
 
     output.out.info("This is a message!")
-    print 'Hello!'
 
     output.out.endLogging()
+
+
+if __name__ == '__main__':
+    main()

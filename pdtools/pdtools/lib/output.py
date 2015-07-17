@@ -32,14 +32,14 @@ BOLD = '\033[1m'
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
-    'HEADER':   {'name': 'HEADER',   'glyph': '==', 'color': colorama.Fore.BLUE},
-    'VERBOSE':  {'name': 'VERBOSE',  'glyph': '--', 'color': colorama.Fore.BLACK},
-    'INFO':     {'name': 'INFO',     'glyph': '--', 'color': colorama.Fore.GREEN},
-    'PERF':     {'name': 'PERF',     'glyph': '--', 'color': colorama.Fore.WHITE},
-    'WARN':     {'name': 'WARN',     'glyph': '**', 'color': colorama.Fore.YELLOW},
-    'ERR':      {'name': 'ERR',      'glyph': '!!', 'color': colorama.Fore.RED},
+    'HEADER': {'name': 'HEADER', 'glyph': '==', 'color': colorama.Fore.BLUE},
+    'VERBOSE': {'name': 'VERBOSE', 'glyph': '--', 'color': colorama.Fore.BLACK},
+    'INFO': {'name': 'INFO', 'glyph': '--', 'color': colorama.Fore.GREEN},
+    'PERF': {'name': 'PERF', 'glyph': '--', 'color': colorama.Fore.WHITE},
+    'WARN': {'name': 'WARN', 'glyph': '**', 'color': colorama.Fore.YELLOW},
+    'ERR': {'name': 'ERR', 'glyph': '!!', 'color': colorama.Fore.RED},
     'SECURITY': {'name': 'SECURITY', 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
-    'FATAL':    {'name': 'FATAL',    'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+    'FATAL': {'name': 'FATAL', 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
 }
 
 
@@ -249,8 +249,15 @@ class TwistedOutput(BaseOutput):
         if args['isError'] == 1:
             return None
 
-        # Start with the default message
-        ret = super(TwistedOutput, self).__call__(args['message'][0])
+        # print args
+
+        # Start with the default message, but just grab the whole thing if it doesn't work
+        try:
+            ret = super(TwistedOutput, self).__call__(args['message'][0])
+        except:
+            ret = super(TwistedOutput, self).__call__(str(args))
+
+        # print ret
 
         return ret
 

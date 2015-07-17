@@ -244,7 +244,7 @@ update-tools() {
     python setup.py sdist bdist_wheel
     twine upload dist/* 
 
-    sudo pip install paradrop --upgrade
+    sudo pip install pdtools --upgrade
 }
 
 ###

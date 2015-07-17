@@ -24,6 +24,8 @@ from twisted.web import xmlrpc
 from twisted.internet import defer, utils
 
 from pdtools.lib.output import out
+from pdtools.lib import store
+
 from paradrop.lib import settings
 
 import os
@@ -42,8 +44,9 @@ def api_log(lines=100):
     # if settings.LOG_PATH is None:
     #     raise Exception("Logging to file is not currently enabled.")
 
-    # path = settings.LOG_PATH + settings.LOG_NAME
-    path = os.path.dirname(os.getcwd()) + '/' + settings.LOG_NAME
+    # Fix this
+    path = store.LOG_PATH + 'log'
+    # path = os.path.dirname(os.getcwd()) + '/' + settings.LOG_NAME
     contents = yield utils.getProcessOutput('/usr/bin/tail', args=[path, '-n ' + str(lines), ])
 
     defer.returnValue(contents)
