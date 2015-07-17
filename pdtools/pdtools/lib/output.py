@@ -18,20 +18,20 @@ import time
 import colorama
 
 from pdtools.lib import pdutils
-from twisted.python.logfile import DailyLogFile
-
 from pdtools.lib import store
 
+from twisted.python.logfile import DailyLogFile
+from twisted.python import log
 
 # "global" variable all modules should be able to toggle
 verbose = False
 
 # should we print logs to std?
 # This is primarily a performance concern. Regardless of this setting the logs
-# are always saved (as currently implementd)
+# are always saved (as currently implemented)
 PRINT_LOGS = True
 
-# colorama package does colors, doesn't do style, so keeping this for posterity
+# colorama package does colors but doesn't do style, so keeping this for now
 
 
 class Colors:
@@ -39,7 +39,7 @@ class Colors:
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
-    'HEADER': {'name': 'HEADER', 'glyph': '--', 'color': colorama.Fore.BLUE},
+    'HEADER': {'name': 'HEADER', 'glyph': '==', 'color': colorama.Fore.BLUE},
     'VERBOSE': {'name': 'VERBOSE', 'glyph': '--', 'color': colorama.Fore.BLACK},
     'INFO': {'name': 'INFO', 'glyph': '--', 'color': colorama.Fore.GREEN},
     'PERF': {'name': 'PERF', 'glyph': '--', 'color': colorama.Fore.WHITE},
@@ -99,10 +99,12 @@ class PrintLogThread(threading.Thread):
         while True:
             result = self.queue.get(block=True)
 
-            writable = pdutils.json2str(result)
-
-            self.writer.write(writable + '\n')
-            self.writer.flush()
+            try:
+                writable = pdutils.json2str(result)
+                self.writer.write(writable + '\n')
+                self.writer.flush()
+            except:
+                pass
 
             self.queue.task_done()
 
@@ -153,10 +155,10 @@ class OutputRedirect(object):
 ###############################################################################
 
 
-class BaseOutput:
+class BaseOutput(object):
 
     '''
-    Base output type class. 
+    Base output type class.
 
     This class and its subclasses are registered with an attribute on the global
     'out' function and is responsible for formatting the given output stream
@@ -165,15 +167,15 @@ class BaseOutput:
     For example:
         out.info("Text", anObject)
 
-    requires a custom object to figure out what to do with anObject where the default case will simply 
+    requires a custom object to figure out what to do with anObject where the default case will simply
     parse the string with an appropriate color.
 
-    Objects are required to output a dict that mininmally contains the keys message and type. 
+    Objects are required to output a dict that mininmally contains the keys message and type.
     '''
 
     def __init__(self, logType):
         '''
-        Initialize this output type. 
+        Initialize this output type.
 
         :param logType: how this output type is displayed
         :type logType: dictionary object containing name, glyph, and color keys
@@ -181,13 +183,13 @@ class BaseOutput:
 
         self.type = logType
 
-    def __call__(self, args):
+    def __call__(self, args, logPrefixLevel=3):
         '''
         Called as an attribute on out. This method takes the passed params and builds a log dict,
-        returning it. 
+        returning it.
 
         Subclasses can customize args to include whatever they'd like, adding content
-        under the key 'extras.' The remaining keys should stay in place. 
+        under the key 'extras.' The remaining keys should stay in place.
         '''
         package, module, line = silentLogPrefix(3)
 
@@ -199,8 +201,8 @@ class BaseOutput:
 
     def formatOutput(self, logDict):
         '''
-        Convert a logdict into a custom formatted, human readable version suitable for 
-        printing to console. 
+        Convert a logdict into a custom formatted, human readable version suitable for
+        printing to console.
         '''
         trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.timestr(logDict['timestamp']))
         return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
@@ -210,7 +212,53 @@ class BaseOutput:
 
 
 class TwistedOutput(BaseOutput):
-    pass
+
+    def __call__(self, args):
+        '''
+        Catch twisted logs and make them fall inline with our logs.
+
+        Ignore exceptions (those get their own handler)
+
+        Twisted will always pass a dict and guarantees [message, isError, and printed]
+        will be in there. 
+        '''
+
+        if args['isError'] == 1:
+            return None
+
+        # Start with the default message
+        ret = super(TwistedOutput, self).__call__(args['message'][0])
+
+        return ret
+
+
+class TwistedException(BaseOutput):
+
+    def __call__(self, args):
+        '''
+        Catch twisted logs and make them fall inline with our logs.
+
+        Only catch errors.
+
+        Twisted will always pass a dict and guarantees [message, isError, and printed]
+        will be in there. 
+        '''
+
+        if args['isError'] == 0:
+            return None
+
+        # Temporary so we can still see the messages while I get this working
+        print colorama.Fore.RED + args['failure'].getBriefTraceback()
+        # out.trueOut.trueWrite(colorama.Front.RED + args['failure'].getBriefTraceback())
+        # print args['failure'].getErrorMessage()
+        return None
+
+        # print args
+        # Start with the default message
+        # ret = super(TwistedOutput, self).__call__('Exception')
+
+        # print ret
+        return {'message': 'stuff'}
 
 
 class OutException(BaseOutput):
@@ -306,14 +354,19 @@ class Output():
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
 
-        # sys.stdout = self.__dict__['redirectOut']
-        # sys.stderr = self.__dict__['redirectErr']
+        sys.stdout = self.__dict__['redirectOut']
+        sys.stderr = self.__dict__['redirectErr']
 
         # The raw dict of tags and output objects
         self.__dict__['outputMappings'] = {}
 
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
+
+        # Override twisted logging (allows us to cleanly catch all exceptions)
+        # This must come after the setattr calls so we get the wrapped object
+        log.startLoggingWithObserver(self.twisted, setStdout=False)
+        log.startLoggingWithObserver(self.twistedErr, setStdout=False)
 
     def __getattr__(self, name):
         """Catch attribute access attempts that were not defined in __init__
@@ -328,7 +381,6 @@ class Output():
             print('>> Adding new Output stream %s' % name)
 
         def inner(*args, **kwargs):
-            # print logPrefix()
             result = val(*args, **kwargs)
             self.handlePrint(result)
             return result
@@ -380,6 +432,10 @@ class Output():
         :type logDict: dict.
         '''
 
+        # If the logger returns None, assume we dont want the output
+        if logDict is None:
+            return
+
         # write out the log message to file
         if self.queue is not None:
             self.queue.put(logDict)
@@ -404,10 +460,6 @@ class Output():
 
 
 # Create a standard out module to be used if no one overrides it
-from twisted.python import log
-# info = Stdout(Colors.INFO)
-# log.startLoggingWithObserver(info, setStdout=False)
-
 out = Output(
     header=BaseOutput(LOG_TYPES['HEADER']),
     testing=BaseOutput(LOG_TYPES['VERBOSE']),
@@ -418,5 +470,7 @@ out = Output(
     err=BaseOutput(LOG_TYPES['ERR']),
     exception=BaseOutput(LOG_TYPES['ERR']),
     security=BaseOutput(LOG_TYPES['SECURITY']),
-    fatal=BaseOutput(LOG_TYPES['FATAL'])
+    fatal=BaseOutput(LOG_TYPES['FATAL']),
+    twisted=TwistedOutput(LOG_TYPES['INFO']),
+    twistedErr=TwistedException(LOG_TYPES['ERR'])
 )

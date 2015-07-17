@@ -50,14 +50,13 @@ def caughtSIGUSR1(signum, frame):
 
 def onShutdown():
     ''' Get notified of system shutdown from Twisted '''
-    output.out.info("System going down")
 
     # Clears the print buffer, closes the logfile
     output.out.endLogging()
 
-    # TODO: call the server
+    # TODO: inform the server
 
-    # TODO: call pdconfd
+    # TODO: inform pdconfd
 
 ##########################################################################
 # Main Function
@@ -78,7 +77,7 @@ def main():
     """
 
     # Setup the signal handler for verbose
-    # signal.signal(signal.SIGUSR1, caughtSIGUSR1)
+    signal.signal(signal.SIGUSR1, caughtSIGUSR1)
 
     # Setup args if called directly (testing)
     p = setupArgParse()
@@ -98,6 +97,8 @@ def main():
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
+
+    print 'Look, print statements are ok now!'
 
     if args.config:
         from paradrop.backend import pdconfd

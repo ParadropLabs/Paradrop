@@ -192,6 +192,7 @@ def printFailure(r):
     print 'Failed!'
     print r
 
+
 if __name__ == '__main__':
     # main()
 
@@ -201,18 +202,5 @@ if __name__ == '__main__':
 
     # Connect the store to the output module for file logging
     out.startLogging(store.LOG_PATH)
-
-    out.header('Testing: header')
-    out.testing('Testing: testing')
-    out.verbose('Testing: verbose')
-    out.info('Testing: info')
-    out.perf('Testing: perf')
-    out.warn('Testing: warn')
-    out.err('Testing: err')
-    out.exception('Testing: exception')
-    out.security('Testing: security')
-    out.fatal('Testing: fatal')
-
-    print 'Testing!'
 
     out.endLogging()
