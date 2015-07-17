@@ -90,35 +90,22 @@ class PrintLogThread(threading.Thread):
     def __init__(self, path, queue, name='log'):
         threading.Thread.__init__(self)
         self.queue = queue
-
-        self.running = True
+        self.writer = DailyLogFile(name, path)
 
         # Don't want this to float around if the rest of the system goes down
         self.setDaemon(True)
-        self.writer = DailyLogFile(name, path)
-
-    def _emptyQueue(self):
-        print 'emptying queue'
-        while not self.queue.empty():
-            result = self.queue.get()
-
-            writable = pdutils.json2str(result)
-
-            self.writer.write(writable + '\n')
-            self.queue.task_done()
 
     def run(self):
-        while self.running:
-            result = self.queue.get(block=True, timeout=1)
+        while True:
+            result = self.queue.get(block=True)
+
             print 'Have result: '
             writable = pdutils.json2str(result)
 
             self.writer.write(writable + '\n')
-            self.queue.task_done()
+            self.writer.flush()
 
-        # self.queue.empty()
-        self.writer.flush()
-        self.writer.close()
+            self.queue.task_done()
 
 
 class OutputRedirect(object):
@@ -223,6 +210,10 @@ class BaseOutput:
         return "REPR"
 
 
+class TwistedOutput(BaseOutput):
+    pass
+
+
 class OutException(BaseOutput):
 
     """
@@ -316,8 +307,8 @@ class Output():
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
 
-        sys.stdout = self.__dict__['redirectOut']
-        sys.stderr = self.__dict__['redirectErr']
+        # sys.stdout = self.__dict__['redirectOut']
+        # sys.stderr = self.__dict__['redirectErr']
 
         # The raw dict of tags and output objects
         self.__dict__['outputMappings'] = {}
@@ -369,9 +360,12 @@ class Output():
         Ask the printing thread to flush and end, then return.
         '''
         out.info('Asking file logger to close')
-        self.printer.running = False
+        # self.printer.running = False
         # self.printer.join()
         self.queue.join()
+
+        # Because the print thread can't tell when it goes down as currently designed
+        self.printer.writer.close()
 
     def handlePrint(self, logDict):
         '''
