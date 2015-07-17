@@ -1,6 +1,5 @@
 """
 Quiet pdos module.
-
 Implements utility OS operations without relying on the output module.
 Therefore, this module can be used by output without circular dependency.
 """
@@ -8,10 +7,10 @@ Therefore, this module can be used by output without circular dependency.
 import errno
 import os
 
+
 def makedirs(p):
     """
     Recursive directory creation (like mkdir -p).
-
     Returns True if the path is successfully created, False if it existed
     already, and raises an OSError on other error conditions.
     """
@@ -24,4 +23,3 @@ def makedirs(p):
         if e.errno != errno.EEXIST:
             raise e
     return False
-

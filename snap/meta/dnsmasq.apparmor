@@ -44,7 +44,7 @@
   network inet raw,
 
   # Give dnsmasq access to a few files that it needs.
-  /tmp/dnsmasq-*.conf r,
-  /tmp/dnsmasq-*.leases rw,
-  /tmp/dnsmasq-*.pid w,
+  /{,var/}run/**/dnsmasq-*.conf r,
+  /{,var/}run/**/dnsmasq-*.leases rw,
+  /{,var/}run/**/dnsmasq-*.pid w,
 }
