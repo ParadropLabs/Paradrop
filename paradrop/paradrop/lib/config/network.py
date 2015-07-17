@@ -31,26 +31,26 @@ def getNetworkConfig(update):
         # longer then 16-6 This is because the veth pair name for lxc cannot be
         # longer then 16, and we prepend "vc####" to that interface name
         if(len(name) > 10):
-            out.warn('** {} The network interface name ({}) cannot be longer than 10 characters.\n'.format(
-                logPrefix(), name))
+            out.warn('The network interface name ({}) cannot be longer than 10 characters.\n'.format(
+                name))
             raise Exception("Interface name too long")
 
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['ipaddr', 'intfName', 'type', 'netmask'])
         if(res):
-            out.warn('** {} Network interface definition {}\n'.format(logPrefix(), res))
+            out.warn('Network interface definition {}\n'.format(res))
             raise Exception("Interface definition missing field(s)")
 
         # verify that this chute can have the IP provided
         if(not addresses.isIpValid(cfg['ipaddr'])):
-            out.warn('** {} IP address ({}) not valid for {}'.format(
-                logPrefix(), cfg['ipaddr'], name))
+            out.warn('IP address ({}) not valid for {}'.format(
+                cfg['ipaddr'], name))
             raise Exception("IP address not valid")
 
         # Verify that no other interfaces on other chutes are using this IP address
         if(not addresses.isIpAvailable(cfg['ipaddr'], update.chuteStor, update.new.name)):
-            out.warn('** {} IP address ({}) requested by {} already in use'.format(
-                logPrefix(), cfg['ipaddr'], name))
+            out.warn('IP address ({}) requested by {} already in use'.format(
+                cfg['ipaddr'], name))
             raise Exception("IP address in use")
 
         iface = {
@@ -75,7 +75,7 @@ def getNetworkConfig(update):
             # Check for required fields.
             res = pdutils.check(cfg, dict, ['ssid'])
             if(res):
-                out.warn('** {} WiFi network interface definition {}\n'.format(logPrefix(), res))
+                out.warn('WiFi network interface definition {}\n'.format(res))
                 raise Exception("Interface definition missing field(s)")
 
             iface['ssid'] = cfg['ssid']
@@ -148,7 +148,7 @@ def setOSNetworkConfig(update):
         return configservice.reloadNetwork
 
 def getVirtNetworkConfig(update):
-    out.warn('** %s TODO implement me\n' % logPrefix())
+    out.warn('TODO implement me\n' )
     # old code under lib.internal.chs.chutelxc same function name
     # Takes any network specific config and sets up the cache:virtNetworkConfig
     # this would be the place to put anything into HostConfig or the dockerfile we need

@@ -12,19 +12,19 @@ from io import BytesIO
 
 
 def getVirtPreamble(update):
-    out.warn('** %s TODO implement me\n' % logPrefix())
+    out.warn('TODO implement me\n' )
     if update.updateType == 'create':
         if not hasattr(update, 'dockerfile'):
             return
         if update.dockerfile == None:
             return
         else:
-            out.info('-- %s Using prexisting dockerfile.\n' % logPrefix())
+            out.info('Using prexisting dockerfile.\n' )
             update.dockerfile = BytesIO(update.dockerfile.encode('utf-8'))
     
     
 def getVirtDHCPSettings(update):
-    out.warn('** %s TODO implement me\n' % logPrefix())
+    out.warn('TODO implement me\n' )
 
 def setVirtDHCPSettings(update):
-    out.warn('** %s TODO implement me\n' % logPrefix())
+    out.warn('TODO implement me\n' )

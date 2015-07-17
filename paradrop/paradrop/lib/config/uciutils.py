@@ -19,7 +19,7 @@ def setConfig(chute, old, cacheKeys, filepath):
                 newconfigs += t
 
         if(len(newconfigs) == 0):
-            out.info('-- %s no settings to add %r\n' % (logPrefix(), chute))
+            out.info('no settings to add %r\n' % (chute))
             # We are no longer returning because we need to remove the old configs if necessary
             #return False
 
@@ -38,21 +38,21 @@ def setConfig(chute, old, cacheKeys, filepath):
         # This is to improve reliability  - sometimes the file isn't changed it should be 
         # because we have reset the board, messed with chutes, etc. and the new/old chuteobjects are identical
         oldconfigs = cfgFile.getChuteConfigs(chute.name)
-        out.info('-- %s oldconfigs: %s\n' % (logPrefix(), oldconfigs))
-        out.info('-- %s newconfigs: %s\n' % (logPrefix(), newconfigs))
+        out.info('oldconfigs: %s\n' % (oldconfigs))
+        out.info('newconfigs: %s\n' % (newconfigs))
 
         if (uci.chuteConfigsMatch(oldconfigs, newconfigs)):
-            out.info('-- %s configs match skipping reloading.\n' % logPrefix())
+            out.info('configs match skipping reloading.\n' )
             return False
         else:
             # We need to make changes so delete old configs, load new configs
-            out.info('-- %s configs dont match, changing chutes and reloading.\n' % logPrefix())
+            out.info('configs dont match, changing chutes and reloading.\n' )
             cfgFile.delConfigs(oldconfigs)
             cfgFile.addConfigs(newconfigs)
             cfgFile.save(internalid=chute.name)
             return True
     except Exception as e:
-        out.err('!! %s Error: %s\n%s\n' % (logPrefix(), str(e), traceback.format_exc()))
+        out.err('Error: %s\n%s\n' % (str(e), traceback.format_exc()))
 
 def removeConfigs(chute, cacheKeys, filepath):
     """used to modify config file of each various setting in /etc/config/"""
@@ -72,5 +72,5 @@ def removeConfigs(chute, cacheKeys, filepath):
         cfgFile.save(internalid=chute.name)
 
     except Exception as e:
-        out.err('!! %s Error: %s\n%s\n' % (logPrefix(), str(e), traceback.format_exc()))
+        out.err('Error: %s\n%s\n' % (str(e), traceback.format_exc()))
 

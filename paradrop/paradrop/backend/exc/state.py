@@ -18,11 +18,11 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.verbose("   %s %r\n" % (logPrefix(), update))
+    out.verbose("%r\n" % (update))
     
     # If this chute is new (no old version)
     if(update.old is None):
-        out.verbose('   %s new chute\n' % logPrefix())
+        out.verbose('new chute\n' )
         
         #If it's a stop  or start command go ahead and fail right now since we don't have a record of it
         if update.updateType == 'stop' or update.updateType == 'start':
@@ -90,11 +90,11 @@ def generateStatePlan(chuteStor, newChute, chutePlan):
     """
     new = newChute
     old = chuteStor.getChute(newChute.guid)
-    out.header("-- %s Generating State Plan: %r\n" % (logPrefix(), new))
+    out.header("Generating State Plan: %r\n" % (new))
    
     # Was there an old chute?
     if(not old):
-        out.verbose('-- %s brand new chute\n' % logPrefix())
+        out.verbose('brand new chute\n' )
         
         # If we are now running then everything has to be setup for the first time
         if(new.state == chute.STATE_RUNNING):
@@ -118,7 +118,7 @@ def generateStatePlan(chuteStor, newChute, chutePlan):
     else:
         if(new.state != old.state):
             if(pdutil.isValidStateTransition(old.state, new.state)):
-                out.info('-- %s State change required: %s -> %s\n' % (logPrefix(), old.state, new.state))
+                out.info('State change required: %s -> %s\n' % (old.state, new.state))
                 os = old.state
                 ns = new.state
                 # We already verified its a valid state change, so less to check here
@@ -135,7 +135,7 @@ def generateStatePlan(chuteStor, newChute, chutePlan):
                 return False #Change state, but don't perform everything else
 
             else:
-                out.warn('** %s Invalid state change discovered: %s -> %s\n' % (logPrefix(), old.state, new.state))
+                out.warn('Invalid state change discovered: %s -> %s\n' % (old.state, new.state))
                 return "Invalid state change, cannot go from %s -> %s\n" % (old.state, new.state)
         
         else: #New State is the same as old state, (could be a Startup)

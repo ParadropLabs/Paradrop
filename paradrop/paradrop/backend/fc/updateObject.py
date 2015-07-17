@@ -89,7 +89,7 @@ class UpdateObject(object):
         """
         # Generate the plans we need to setup the chute
         if(exc.executionplan.generatePlans(self)):
-            out.warn('** %s Failed to generate plans\n' % logPrefix())
+            out.warn('Failed to generate plans\n' )
             self.complete(success=False, message=self.failure)
             return
         
@@ -107,7 +107,7 @@ class UpdateObject(object):
                 ## Getting here means the abort system thinks it wasn't able to get the system
                 ## back into the state it was in prior to this update.
                 ###################################################################################
-                out.err('!! %s TODO: What do we do when we fail during abort?\n' % logPrefix())
+                out.err('TODO: What do we do when we fail during abort?\n' )
                 pass
             
             # Report the failure back to the user

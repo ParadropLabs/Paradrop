@@ -70,7 +70,7 @@ class Base(xmlrpc.XMLRPC):
 
 def castFailure(failure):
     ''' Converts an exception (or general failure) into an xmlrpc fault for transmission. '''
-    out.info("-- Failed API call (TODO: categorize errors)")
+    out.info("Failed API call (TODO: categorize errors)")
 
     raise xmlrpc.Fault(123, failure.getErrorMessage())
 
@@ -85,7 +85,7 @@ def apiWrapper(target):
 
 
 def castSuccess(res):
-    out.info("-- Completed API call (TODO: add details)")
+    out.info("Completed API call (TODO: add details)")
 
     # screen out Objectids on mongo returns. The remote objects have no
     # need for them, and they confuse xmlrpc

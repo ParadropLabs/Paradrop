@@ -9,7 +9,7 @@ import json
 
 
 def startChute(update):
-    out.info('-- %s Attempting to start new Chute %s \n' % (logPrefix(), update.name))
+    out.info('Attempting to start new Chute %s \n' % (update.name))
 
     repo = update.name + ":latest"
     dockerfile = update.dockerfile
@@ -31,11 +31,11 @@ def startChute(update):
         image=repo, name=name, host_config=host_config
     )
 
-    out.info("-- %s Successfully started chute with Id: %s\n" % (logPrefix(), str(container.get('Id'))))
+    out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
     c.start(container.get('Id'))
 
 def removeChute(update):
-    out.info('-- %s Attempting to remove chute %s\n' % (logPrefix(), update.name))
+    out.info('Attempting to remove chute %s\n' % (update.name))
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     repo = update.name + ":latest"
     name = update.name
@@ -46,7 +46,7 @@ def removeChute(update):
         update.complete(success=False, message= e.explanation)
 
 def stopChute(update):
-    out.info('-- %s Attempting to stop chute %s\n' % (logPrefix(), update.name))
+    out.info('Attempting to stop chute %s\n' % (update.name))
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     try:
         c.stop(container=update.name)
@@ -54,7 +54,7 @@ def stopChute(update):
         update.complete(success=False, message= e.explanation)
 
 def restartChute(update):
-    out.info('-- %s Attempting to start chute %s\n' % (logPrefix(), update.name))
+    out.info('Attempting to start chute %s\n' % (update.name))
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     try:
         c.start(container=update.name)

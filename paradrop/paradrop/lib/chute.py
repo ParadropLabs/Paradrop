@@ -79,7 +79,7 @@ class Chute(object):
         if(not r):
             r = []
         elif(not isinstance(r, list)):
-            out.warn('** %s Unable to append to cache, not list type\n' % logPrefix())
+            out.warn('Unable to append to cache, not list type\n' )
             return
         r.append(val)
         self.setCache(key, r)

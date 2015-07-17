@@ -33,7 +33,7 @@ class ChuteAPI:
                On failure: FAILURE object
         """
 
-        out.info('-- {} Creating chute...\n'.format(logPrefix()))
+        out.info('Creating chute...\n'))
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='create',
                       tok=timeint(), pkg=apiPkg, func=self.rest.complete)
@@ -90,7 +90,7 @@ class ChuteAPI:
                On failure: FAILURE object
         """
 
-        out.info('-- {} Deleting chute...\n'.format(logPrefix()))
+        out.info('Deleting chute...\n'))
 
         # TODO implement
 
@@ -115,7 +115,7 @@ class ChuteAPI:
                On failure: FAILURE object
         """
 
-        out.info('-- {} Starting chute...\n'.format(logPrefix()))
+        out.info('Starting chute...\n'))
 
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='start', name=apiPkg.inputArgs.get('name'),
@@ -138,7 +138,7 @@ class ChuteAPI:
                On failure: FAILURE object
         """
 
-        out.info('-- {} Stopping chute...\n'.format(logPrefix()))
+        out.info('Stopping chute...\n'))
 
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='stop', name=apiPkg.inputArgs.get('name'),

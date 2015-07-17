@@ -30,7 +30,7 @@ def doMount(part, mnt):
     output, errors = proc.communicate()
 
     if(proc.returncode):
-        out.err("!! %s Unable to mount (%d) %s\n" % (logPrefix(), proc.returncode, errors))
+        out.err("Unable to mount (%d) %s\n" % (proc.returncode, errors))
         raise Exception('UnableToMount', 'Mount error for %s' % mnt)
 
 def doUnmount(mnt):
@@ -40,7 +40,7 @@ def doUnmount(mnt):
     output, errors = proc.communicate()
 
     if(proc.returncode):
-        out.err("!! %s Unable to mount (%d) %s\n" % (logPrefix(), proc.returncode, errors))
+        out.err("Unable to mount (%d) %s\n" % (proc.returncode, errors))
         raise Exception('UnableToUnmount', 'Mount error for %s' % mnt)
 
 def oscall(cmd, get=False):
@@ -61,9 +61,9 @@ def oscall(cmd, get=False):
         return (output, proc.returncode, errors)
     else:
         if(output and output != ""):
-            out.verbose('-- %s "%s" stdout: "%s"\n' % (logPrefix(), cmd, output.rstrip()))
+            out.verbose('"%s" stdout: "%s"\n' % (cmd, output.rstrip()))
         if(errors and errors != ""):
-            out.verbose('-- %s "%s" stderr: "%s"\n' % (logPrefix(), cmd, errors.rstrip()))
+            out.verbose('"%s" stderr: "%s"\n' % (cmd, errors.rstrip()))
         return None
 
 def syncFS():
@@ -128,12 +128,12 @@ def makeExecutable(*args):
         args = list(args)
    
     for a in args:
-        out.verbose('-- %s Making %s executable\n' % (logPrefix(), os.path.basename(a)))
+        out.verbose('Making %s executable\n' % (os.path.basename(a)))
         
         if(os.path.exists(a)):
             os.chmod(a, 0744)
         else:
-            out.warn('-- %s File missing "%s"\n' % (logPrefix(), a))
+            out.warn('File missing "%s"\n' % (a))
 
 def writeFile(filename, line, mode="a"):
     """Adds the following cfg (either str or list(str)) to this Chute's current
@@ -144,7 +144,7 @@ def writeFile(filename, line, mode="a"):
         elif(type(line) is str):
             data = "%s\n" % line
         else:
-            out.err("!! Bad line provided for %s\n" % filename)
+            out.err("Bad line provided for %s\n" % filename)
             return
         fd = open(filename, mode)
         fd.write(data)
@@ -152,7 +152,7 @@ def writeFile(filename, line, mode="a"):
         fd.close()
 
     except Exception as e:
-        out.err('!! %s Unable to write file: %s\n' % (logPrefix(), str(e)))
+        out.err('Unable to write file: %s\n' % (str(e)))
 
 def write(filename, data, mode="w"):
     """ Writes out a config file to the specified location.
@@ -163,7 +163,7 @@ def write(filename, data, mode="w"):
         fd.flush()
         fd.close()
     except Exception as e:
-        out.err('!! Unable to write to file: %s\n' % str(e))
+        out.err('Unable to write to file: %s\n' % str(e))
 
 def readFile(filename, array=True, delimiter="\n"):
     """

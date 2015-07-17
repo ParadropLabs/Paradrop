@@ -91,12 +91,12 @@ class PDConfigurer:
             try:
                 # Take the object and identify the update type
                 update = updateObject.parse(updateObj)
-                out.info('-- %s Performing update %s\n' % (logPrefix(), update))
+                out.info('Performing update %s\n' % (update))
 
                 # TESTING start
                 if(settings.FC_BOUNCE_UPDATE):
-                    out.testing('   %s Bouncing update %s, result: %s\n' % (
-                        logPrefix(), update, settings.FC_BOUNCE_UPDATE))
+                    out.testing('Bouncing update %s, result: %s\n' % (
+                        update, settings.FC_BOUNCE_UPDATE))
                     update.complete(success=True, message=settings.FC_BOUNCE_UPDATE)
                     continue
                 # TESTING end
@@ -105,6 +105,6 @@ class PDConfigurer:
                 update.execute()
 
             except Exception as e:
-                out.exception(logPrefix(), e, True)
+                out.exception(e, True)
 
     

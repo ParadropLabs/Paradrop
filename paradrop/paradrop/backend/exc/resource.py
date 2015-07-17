@@ -14,7 +14,7 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.header("== %s %r\n" % (logPrefix(), update))
+    out.header("%r\n" % (update))
     
     # Make sure we need to create this chute (does it already exist)
     # TODO
@@ -51,7 +51,7 @@ def generateResourcePlan(chuteStor, newChute, chutePlan):
     
     new = newChute
     old = chuteStor.getChute(newChute.guid)
-    out.header("-- %s Generating Resource Plan: %r\n" % (logPrefix(), new))
+    out.header("Generating Resource Plan: %r\n" % (new))
     
     # Check if the chute is new
     # if(not old):

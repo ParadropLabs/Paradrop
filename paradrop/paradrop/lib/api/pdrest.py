@@ -163,7 +163,7 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
         def wrapper(theSelf, request, *args, **kwargs):
             tictoc = 0 # theSelf.perf.tic()
             ip = '0.0.0.0' # TODO getIP(request)
-            out.verbose('-- %s HTTP request from IP %s\n' % (logPrefix(), ip))
+            out.verbose('HTTP request from IP %s\n' % (ip))
             request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)
             
             apiPackage = APIPackage(request)

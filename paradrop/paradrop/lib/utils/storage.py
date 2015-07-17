@@ -44,14 +44,14 @@ class PDStorage:
         
         if(pdos.exists(self.filename)):
             deleteFile = False
-            out.info('-- %s Loading from disk\n' % logPrefix())
+            out.info('Loading from disk\n' )
             data = ""
             try:
                 pyld = pickle.load(pdos.open(self.filename, 'rb'))
                 self.setAttr(self.importAttr(pyld))
                 return True
             except Exception as e:
-                out.err('!! %s Error loading from disk: %s\n' % (logPrefix(), str(e)))
+                out.err('Error loading from disk: %s\n' % (str(e)))
                 deleteFile = True
 
             # Delete the file
@@ -59,13 +59,13 @@ class PDStorage:
                 try:
                     pdos.unlink(self.filename)
                 except Exception as e:
-                    out.err('!! %s Error unlinking %s\n' % (logPrefix(), self.filename))
+                    out.err('Error unlinking %s\n' % (self.filename))
         
         return False
             
     def saveToDisk(self):
         """Saves the data to disk."""
-        out.info('-- %s Saving to disk (%s)\n' % (logPrefix(), self.filename))
+        out.info('Saving to disk (%s)\n' % (self.filename))
         
         # Make sure they want to save
         if(not self.attrSaveable()):
@@ -80,7 +80,7 @@ class PDStorage:
             pdos.syncFS()
             
         except Exception as e:
-            out.err('!! %s Error writing to disk %s\n' % (logPrefix(), str(e)))
+            out.err('Error writing to disk %s\n' % (str(e)))
     
     def attrSaveable(self):
         """THIS SHOULD BE OVERRIDEN BY THE IMPLEMENTER."""

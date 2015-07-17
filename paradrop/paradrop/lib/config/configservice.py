@@ -25,11 +25,11 @@ def reloadFirewall(update):
     client.reload(uci.getSystemPath("firewall"))
 
 def reloadQos(update):
-    out.warn('** %s TODO implement me\n' % logPrefix())
+    out.warn('TODO implement me\n' )
     # leverage osconfig to poke pdconfd to tell it we have made changes
     # to the file specified.
 
 def reloadDHCP(update):
-    out.warn('** %s TODO implement me\n' % logPrefix())
+    out.warn('TODO implement me\n' )
     # leverage osconfig to poke pdconfd to tell it we have made changes
     # to the file specified.

@@ -77,7 +77,7 @@ def getDeveloperFirewallRules(update):
 
                 # Do not allow rules that do not pertain to the chute.
                 if "@host.lan" in from_parts[0] and "@host.lan" in to_parts[0]:
-                    out.warn("** {} Unable to add firewall rule - dst and src are both outside of chute\n".format(
+                    out.warn("Unable to add firewall rule - dst and src are both outside of chute\n".format(
                         logPrefix()))
 
                 # From @host.lan means this is a DNAT rule (redirect to the chute).
@@ -92,8 +92,8 @@ def getDeveloperFirewallRules(update):
                     # IP address.
                     iface = findMatchingInterface(to_parts[0], interfaces)
                     if iface is None:
-                        out.warn("** {} No interface found with name {}\n".format(
-                            logPrefix(), to_parts[0]))
+                        out.warn("No interface found with name {}\n".format(
+                            to_parts[0]))
                         raise Exception("Interface not found")
 
                     options['dest_ip'] = iface['externalIpaddr']
@@ -105,12 +105,12 @@ def getDeveloperFirewallRules(update):
                     options['target'] = "SNAT"
 
                     # TODO: Implement
-                    out.warn("** {} SNAT rules not supported yet".format(logPrefix()))
+                    out.warn("SNAT rules not supported yet"))
                     raise Exception("SNAT rules not implemented")
 
                 # Could be forwarding between chute interfaces?
                 else:
-                    out.warn("** {} Other rules not supported yet".format(logPrefix()))
+                    out.warn("Other rules not supported yet"))
                     raise Exception("Other rules not implemented")
 
                 rules.append((config, options))

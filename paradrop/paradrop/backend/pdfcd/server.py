@@ -100,12 +100,12 @@ class ParadropAPIServer(pdrest.APIResource):
             ipaddr = apiutils.unpackIPAddr(ip)
             for ipnet in self.WHITELIST_IP:
                 if(apiutils.addressInNetwork(ipaddr, ipnet)):
-                    out.verbose('-- %s Request from white list: %s\n' % (logPrefix(), ip))
+                    out.verbose('Request from white list: %s\n' % (ip))
                     return None
 
             if(key in failureDict):
                 if(failureDict[key].attempts >= settings.DBAPI_FAILURE_THRESH):
-                    out.err('!! %s Threshold met: %s %s!\n' % (logPrefix(), ip, key))
+                    out.err('Threshold met: %s %s!\n' % (ip, key))
                     if(tictoc is None):
                         usage = None
                     else:
@@ -137,7 +137,7 @@ class ParadropAPIServer(pdrest.APIResource):
             # TODO self.usageTracker.addTrackInfo(ip, devid, request.path, self.usageTracker.SUCCESS, duration, request.content.getvalue())
         if(failureDict is not None):
             if(key in failureDict):
-                out.info('-- %s Clearing %s from failure list\n' % (logPrefix(), key))
+                out.info('Clearing %s from failure list\n' % (key))
                 del failureDict[key]
 
     def failprocess(self, ip, request, logFailure, errorStmt, logUsage, errType):
@@ -186,7 +186,7 @@ class ParadropAPIServer(pdrest.APIResource):
                 failureDict[key] = AccessInfo(ip, headers, time)
 
             attempts = failureDict[key].attempts
-            out.warn('** %s Failure access recorded: %s Attempts: %d\n' % (logPrefix(), key, attempts))
+            out.warn('Failure access recorded: %s Attempts: %d\n' % (key, attempts))
 
             remaining = str(max(0, settings.DBAPI_FAILURE_THRESH - attempts))
             if(errorStmt):
@@ -201,7 +201,7 @@ class ParadropAPIServer(pdrest.APIResource):
         """
         request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)
         ip = apiutils.getIP(request)
-        out.info('-- %s Test called (%s)\n' % (logPrefix(), ip))
+        out.info('Test called (%s)\n' % (ip))
         request.setResponseCode(*pdapi.getResponse(pdapi.OK))
         return "SUCCESS\n"
 
@@ -215,7 +215,7 @@ class ParadropAPIServer(pdrest.APIResource):
         uri = request.uri
         method = request.method
         # Get data about who done it
-        out.err("!! %s Default caught API call (%s => %s:%s)\n" % (logPrefix(), ip, method, uri))
+        out.err("Default caught API call (%s => %s:%s)\n" % (ip, method, uri))
 
         # Someone might be trying something bad, track their IP
         res = self.preprocess(request, (ip, None, ip, self.defaultFailures), tictoc)
@@ -244,19 +244,19 @@ def setup(args=None):
     # Development mode
     if(args and args.development):
         thePort = settings.PDFCD_PORT + 10000
-        out.info('-- %s Using DEVELOPMENT variables\n' % (logPrefix()))
+        out.info('Using DEVELOPMENT variables\n' ))
         # Disable sending the error traceback to the client
         site.displayTracebacks = True
     elif(args and args.unittest):
         thePort = settings.DBAPI_PORT + 20000
-        out.info('-- %s Running under unittest mode\n' % (logPrefix()))
+        out.info('Running under unittest mode\n' ))
         site.displayTracebacks = True
     else:
         thePort = settings.PDFCD_PORT
         site.displayTracebacks = False
 
     # Setup the port we listen on
-    out.info('-- %s Establishing API server, port: %d\n' % (logPrefix(), thePort))
+    out.info('Establishing API server, port: %d\n' % (thePort))
     reactor.listenTCP(thePort, site)
 
     # from twisted.python import log

@@ -15,7 +15,7 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.verbose("   %s %r\n" % (logPrefix(), update))
+    out.verbose("%r\n" % (update))
     
     # TODO: Create a directory for the chute for us to hold onto things (dockerfile, OS config stuff)
 

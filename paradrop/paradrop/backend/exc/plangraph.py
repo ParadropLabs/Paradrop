@@ -348,7 +348,7 @@ if(__name__ == "__main__"):
         try:
             s = f(a)
             if(s):
-                out.info('-- Got skip function: %s' % s.__module__)
+                out.info('Got skip function: %s' % s.__module__)
                 pm.registerSkip(s)
         except Exception as e:
             doAbort = True

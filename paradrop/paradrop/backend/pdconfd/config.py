@@ -204,8 +204,8 @@ class ConfigDhcp(ConfigObject):
             return [cmd]
         except:
             # No pid file --- maybe dnsmasq was not running?
-            out.warn("** {} File not found: {}\n".format(
-                logPrefix(), self.pidFile))
+            out.warn("File not found: {}\n".format(
+                self.pidFile))
             return []
 
 class ConfigInterface(ConfigObject):
@@ -375,7 +375,7 @@ class ConfigWifiIface(ConfigObject):
         commands = list()
 
         if self.mode != "ap":
-            out.warn("** {} Mode {} not supported\n".format(logPrefix(), self.mode))
+            out.warn("Mode {} not supported\n".format(self.mode))
             raise Exception("WiFi interface mode not supported")
 
         # Look up the wifi-device section.
@@ -411,8 +411,8 @@ class ConfigWifiIface(ConfigObject):
                 else:
                     outputFile.write("wpa_passphrase={}\n".format(self.key))
             else:
-                out.warn("** {} Encryption type {} not supported (supported: none|psk2)".format(
-                    logPrefix(), self.encryption))
+                out.warn("Encryption type {} not supported (supported: none|psk2)".format(
+                    self.encryption))
                 raise Exception("Encryption type not supported")
 
         self.pidFile = "{}/hostapd-{}.pid".format(self.manager.writeDir, self.name)
@@ -430,8 +430,8 @@ class ConfigWifiIface(ConfigObject):
             return [cmd]
         except:
             # No pid file --- maybe it was not running?
-            out.warn("** {} File not found: {}\n".format(
-                logPrefix(), self.pidFile))
+            out.warn("File not found: {}\n".format(
+                self.pidFile))
             return []
 
 class ConfigZone(ConfigObject):
@@ -692,7 +692,7 @@ class ConfigManager(object):
         usedHeaders = dict()
 
         for fn in files:
-            out.info("-- {} Reading file {}\n".format(logPrefix(), fn))
+            out.info("Reading file {}\n".format(fn))
 
             uci = UCIConfig(fn)
             config = uci.readConfig()
@@ -709,21 +709,21 @@ class ConfigManager(object):
                 try:
                     cls = configTypeMap[section['type']]
                 except:
-                    out.warn("** {} Unsupported section type {} in {}\n".format(
-                        logPrefix(), section['type'], fn))
+                    out.warn("Unsupported section type {} in {}\n".format(
+                        section['type'], fn))
                     continue
 
                 try:
                     obj = cls.build(self, fn, name, options)
                 except:
-                    out.warn("** {} Error building object from section {}:{} in {}\n".format(
-                        logPrefix(), section['type'], name, fn))
+                    out.warn("Error building object from section {}:{} in {}\n".format(
+                        section['type'], name, fn))
                     continue
 
                 key = obj.getTypeAndName()
                 if key in usedHeaders:
-                    out.warn("** {} Section {}:{} from {} overrides section in {}\n".format(
-                        logPrefix(), section['type'], name, fn, usedHeaders[key]))
+                    out.warn("Section {}:{} from {} overrides section in {}\n".format(
+                        section['type'], name, fn, usedHeaders[key]))
                 usedHeaders[key] = fn
 
                 yield obj

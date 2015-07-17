@@ -16,7 +16,7 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.verbose("   %s %r\n" % (logPrefix(), update))
+    out.verbose("%r\n" % (update))
     
     # Generate virt start script, stored in cache (key: 'virtPreamble')
     update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_PREAMBLE, (virtConfig.getVirtPreamble, ))
