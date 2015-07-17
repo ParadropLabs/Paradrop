@@ -39,11 +39,11 @@ def caughtSIGUSR1(signum, frame):
     Catches SIGUSR1 calls and toggles verbose output
     """
     if(isinstance(output.out.verbose, output.FakeOutput)):
-        output.out.header("Activating verbose mode\n" )
+        output.out.header("Activating verbose mode\n")
         output.out.verbose = output.Stdout(output.Colors.VERBOSE)
         output.verbose = True
     else:
-        output.out.header("Deactivating verbose mode\n" )
+        output.out.header("Deactivating verbose mode\n")
         output.verbose = False
         output.out.verbose = output.FakeOutput()
 
@@ -80,7 +80,7 @@ def main():
         caughtSIGUSR1(signal.SIGUSR1, None)
 
     # Before we setup anything make sure we have generated a UUID for our instance
-    output.out.info('{} Test\n'))
+    output.out.info('Test')
 
     if args.config:
         from paradrop.backend import pdconfd

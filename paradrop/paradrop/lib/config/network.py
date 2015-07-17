@@ -1,9 +1,10 @@
 
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.utils import addresses, pdutils, uci
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 
 MAX_INTERFACE_NAME_LEN = 16
+
 
 def getNetworkConfig(update):
     """
@@ -67,7 +68,7 @@ def getNetworkConfig(update):
 
         # The external interface is defined above in the class docs
         prefixLen = MAX_INTERFACE_NAME_LEN - len(name) - 1
-        externalIntf="{}.{}".format(update.new.name[0:prefixLen], name)
+        externalIntf = "{}.{}".format(update.new.name[0:prefixLen], name)
         iface['externalIntf'] = externalIntf
 
         # Add extra fields for WiFi devices.
@@ -89,6 +90,7 @@ def getNetworkConfig(update):
         interfaces.append(iface)
 
     update.new.setCache('networkInterfaces', interfaces)
+
 
 def getOSNetworkConfig(update):
     """
@@ -113,12 +115,12 @@ def getOSNetworkConfig(update):
     for iface in interfaces:
         # A basic set of things must exist for all interfaces
         config = {'type': 'interface', 'name': iface['externalIntf']}
- 
+
         # LXC network interfaces are always bridges
         options = {
-            'type': "bridge", 
-            'proto': 'static', 
-            'ipaddr': iface['externalIpaddr'], 
+            'type': "bridge",
+            'proto': 'static',
+            'ipaddr': iface['externalIpaddr'],
             'netmask': iface['netmask'],
             'ifname': iface['externalIntf']
         }
@@ -127,6 +129,7 @@ def getOSNetworkConfig(update):
         osNetwork.append((config, options))
 
     update.new.setCache('osNetworkConfig', osNetwork)
+
 
 def setOSNetworkConfig(update):
     """
@@ -140,15 +143,16 @@ def setOSNetworkConfig(update):
     #
     # old code under lib.internal.chs.chutelxc same function name
 
-    changed = uciutils.setConfig(update.new, update.old, 
-            cacheKeys=['osNetworkConfig'], filepath=uci.getSystemPath("network"))
+    changed = uciutils.setConfig(update.new, update.old,
+                                 cacheKeys=['osNetworkConfig'], filepath=uci.getSystemPath("network"))
 
     # If we didn't change anything, then return the function to reloadNetwork so we can save ourselves from that call
     if(not changed):
         return configservice.reloadNetwork
 
+
 def getVirtNetworkConfig(update):
-    out.warn('TODO implement me\n' )
+    out.warn('TODO implement me\n')
     # old code under lib.internal.chs.chutelxc same function name
     # Takes any network specific config and sets up the cache:virtNetworkConfig
     # this would be the place to put anything into HostConfig or the dockerfile we need

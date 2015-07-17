@@ -1,5 +1,5 @@
 
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 from io import BytesIO
 
 """
@@ -12,19 +12,20 @@ from io import BytesIO
 
 
 def getVirtPreamble(update):
-    out.warn('TODO implement me\n' )
+    out.warn('TODO implement me\n')
     if update.updateType == 'create':
         if not hasattr(update, 'dockerfile'):
             return
         if update.dockerfile == None:
             return
         else:
-            out.info('Using prexisting dockerfile.\n' )
+            out.info('Using prexisting dockerfile.\n')
             update.dockerfile = BytesIO(update.dockerfile.encode('utf-8'))
-    
-    
+
+
 def getVirtDHCPSettings(update):
-    out.warn('TODO implement me\n' )
+    out.warn('TODO implement me\n')
+
 
 def setVirtDHCPSettings(update):
-    out.warn('TODO implement me\n' )
+    out.warn('TODO implement me\n')

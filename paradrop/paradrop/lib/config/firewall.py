@@ -2,7 +2,8 @@ import fnmatch
 
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.utils import uci
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
+
 
 def findMatchingInterface(iface_name, interfaces):
     """
@@ -14,6 +15,7 @@ def findMatchingInterface(iface_name, interfaces):
         if fnmatch.fnmatch(iface['name'], iface_name):
             return iface
     return None
+
 
 def getOSFirewallRules(update):
     """
@@ -51,6 +53,7 @@ def getOSFirewallRules(update):
             rules.append(({'type': 'forwarding'}, {'src': iface['externalIntf'], 'dest': 'wan'}))
 
     update.new.setCache('osFirewallRules', rules)
+
 
 def getDeveloperFirewallRules(update):
     """
@@ -106,25 +109,25 @@ def getDeveloperFirewallRules(update):
 
                     # TODO: Implement
                     out.warn("SNAT rules not supported yet"))
-                    raise Exception("SNAT rules not implemented")
+                        raise Exception("SNAT rules not implemented")
 
-                # Could be forwarding between chute interfaces?
-                else:
-                    out.warn("Other rules not supported yet"))
-                    raise Exception("Other rules not implemented")
+                        # Could be forwarding between chute interfaces?
+                        else:
+                        out.warn("Other rules not supported yet"))
+                        raise Exception("Other rules not implemented")
 
-                rules.append((config, options))
+                        rules.append((config, options))
 
-    update.new.setCache('developerFirewallRules', rules)
+                        update.new.setCache('developerFirewallRules', rules)
 
-def setOSFirewallRules(update):
-    """
+                        def setOSFirewallRules(update):
+                        """
     Takes a list of tuples (config, opts) and saves it to the firewall config file.
     """
-    changed = uciutils.setConfig(update.new, update.old,
-            cacheKeys=['osFirewallRules', 'developerFirewallRules'], 
-            filepath=uci.getSystemPath("firewall"))
+                        changed = uciutils.setConfig(update.new, update.old,
+                                                     cacheKeys=['osFirewallRules', 'developerFirewallRules'],
+                                                     filepath=uci.getSystemPath("firewall"))
 
-    # If we didn't change anything, then return the function to reloadFirewall so we can save ourselves from that call
-    if(not changed):
-        return configservice.reloadFirewall
+                        # If we didn't change anything, then return the function to reloadFirewall so we can save ourselves from that call
+                        if(not changed):
+                        return configservice.reloadFirewall

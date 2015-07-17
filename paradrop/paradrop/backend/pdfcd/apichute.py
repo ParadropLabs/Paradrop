@@ -1,5 +1,5 @@
 
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 from paradrop.lib.utils.pdutils import json2str, str2json, timeint, urlDecodeMe
 
 from paradrop.lib.api.pdrest import APIDecorator
@@ -33,7 +33,7 @@ class ChuteAPI:
                On failure: FAILURE object
         """
 
-        out.info('Creating chute...\n'))
+        out.info('Creating chute...')
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='create',
                       tok=timeint(), pkg=apiPkg, func=self.rest.complete)
@@ -90,7 +90,7 @@ class ChuteAPI:
                On failure: FAILURE object
         """
 
-        out.info('Deleting chute...\n'))
+        out.info('Deleting chute...')
 
         # TODO implement
 
@@ -115,7 +115,7 @@ class ChuteAPI:
                On failure: FAILURE object
         """
 
-        out.info('Starting chute...\n'))
+        out.info('Starting chute...')
 
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='start', name=apiPkg.inputArgs.get('name'),
@@ -138,7 +138,7 @@ class ChuteAPI:
                On failure: FAILURE object
         """
 
-        out.info('Stopping chute...\n'))
+        out.info('Stopping chute...')
 
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='stop', name=apiPkg.inputArgs.get('name'),

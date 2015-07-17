@@ -3,16 +3,19 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-import time, threading
+import time
+import threading
 
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 from paradrop.lib.utils.pdutils import timeint, str2json
 
 from paradrop.lib import settings
 
 from . import updateObject
 
+
 class PDConfigurer:
+
     """
         ParaDropConfigurer class.
         This class is in charge of making the configuration changes required on the chutes.
@@ -22,6 +25,7 @@ class PDConfigurer:
             This function is thread-safe, this class will only call one update set at a time.
             All others are held in a queue until the last update is complete.
     """
+
     def __init__(self, storage, lclReactor):
         self.storage = storage
         self.reactor = lclReactor
@@ -36,7 +40,7 @@ class PDConfigurer:
         # then this function WILL BLOCK THE MAIN EVENT LOOP (ie. you cannot send any data)
         ###########################################################################################
         self.reactor.callInThread(self.performUpdates)
-    
+
     def getNextUpdate(self):
         """MUTEX: updateLock
             Returns the size of the local update queue.
@@ -49,7 +53,7 @@ class PDConfigurer:
             a = None
         self.updateLock.release()
         return a
-    
+
     def clearUpdateList(self):
         """MUTEX: updateLock
             Clears all updates from list (new array).
@@ -57,18 +61,18 @@ class PDConfigurer:
         self.updateLock.acquire()
         self.updateQueue = []
         self.updateLock.release()
-    
+
     def updateList(self, **updateObj):
         """MUTEX: updateLock
             Take the list of Chutes and push the list into a queue object, this object will then call
             the real update function in another thread so the function that called us is not blocked.
-            
+
             We take a callable responseFunction to call, when we are done with this update we should call it."""
         self.updateLock.acquire()
         # Push the data into our update queue
         self.updateQueue.append(updateObj)
         self.updateLock.release()
-            
+
     def performUpdates(self):
         """This is the main working function of the PDConfigurer class.
             It should be executed as a separate thread, it does the following:
@@ -87,7 +91,7 @@ class PDConfigurer:
             if(updateObj is None):
                 time.sleep(1)
                 continue
-            
+
             try:
                 # Take the object and identify the update type
                 update = updateObject.parse(updateObj)
@@ -106,5 +110,3 @@ class PDConfigurer:
 
             except Exception as e:
                 out.exception(e, True)
-
-    

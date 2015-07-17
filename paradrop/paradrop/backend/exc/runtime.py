@@ -3,7 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 from paradrop.backend.exc import plangraph
 
 from paradrop.lib.config import dockerconfig as virtConfig

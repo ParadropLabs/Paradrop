@@ -6,20 +6,23 @@ from itertools import ifilter
 from functools import wraps
 from twisted.web.resource import Resource
 from twisted.web.resource import NoResource
-#DFW: I think this is old: from twisted.web.error import NoResource
+# DFW: I think this is old: from twisted.web.error import NoResource
 from zope.interface.advice import addClassAdvisor
 from twisted.web.server import NOT_DONE_YET
 
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 from paradrop.lib.utils.pdutils import str2json, explode
 from paradrop.lib import settings
+
 
 def method_factory_factory(method):
     def factory(regex):
         _f = {}
+
         def decorator(f):
             _f[f.__name__] = f
             return f
+
         def advisor(cls):
             def wrapped(f):
                 def __init__(self, *args, **kwargs):
@@ -27,7 +30,7 @@ def method_factory_factory(method):
                     for func_name in _f:
                         orig = _f[func_name]
                         func = getattr(self, func_name)
-                    if func.im_func==orig:
+                    if func.im_func == orig:
                         self.register(method, regex, func)
                 return __init__
             cls.__init__ = wrapped(cls.__init__)
@@ -36,18 +39,21 @@ def method_factory_factory(method):
         return decorator
     return factory
 
-ALL    = method_factory_factory('ALL')
-GET    = method_factory_factory('GET')
-POST   = method_factory_factory('POST')
-PUT    = method_factory_factory('PUT')
+ALL = method_factory_factory('ALL')
+GET = method_factory_factory('GET')
+POST = method_factory_factory('POST')
+PUT = method_factory_factory('PUT')
 DELETE = method_factory_factory('DELETE')
+
 
 class _FakeResource(Resource):
     _result = ''
     isLeaf = True
+
     def __init__(self, result):
         Resource.__init__(self)
         self._result = result
+
     def render(self, request):
         return self._result
 
@@ -71,7 +77,7 @@ class APIResource(Resource):
         self._registry = []
 
     def _get_callback(self, request):
-        filterf = lambda t:t[0] in (request.method, 'ALL')
+        filterf = lambda t: t[0] in (request.method, 'ALL')
         for m, r, cb in ifilter(filterf, self._registry):
             result = r.search(request.path)
             if result:
@@ -84,9 +90,9 @@ class APIResource(Resource):
     def unregister(self, method=None, regex=None, callback=None):
         if regex is not None: regex = re.compile(regex)
         for m, r, cb in self._registry[:]:
-            if not method or (method and m==method):
-                if not regex or (regex and r==regex):
-                    if not callback or (callback and cb==callback):
+            if not method or (method and m == method):
+                if not regex or (regex and r == regex):
+                    if not callback or (callback and cb == callback):
                         self._registry.remove((m, r, cb))
 
     def getChild(self, name, request):
@@ -101,7 +107,9 @@ class APIResource(Resource):
         else:
             return r
 
+
 class APIPackage():
+
     """
     This is a class that wrap up the input and return value of API
     The input arguments will be in the inputArgs as a dict
@@ -109,6 +117,7 @@ class APIPackage():
     Result is False means the API return failure
     Result is None means the API return NOT_YET_DONE
     """
+
     def __init__(self, request):
         self.request = request
         # input values to the API
@@ -123,7 +132,6 @@ class APIPackage():
         self.countFailure = True
         # On NOT_YET_DONE
 
-
     def setSuccess(self, returnVal):
         self.result = True
         self.returnVal = returnVal
@@ -136,6 +144,7 @@ class APIPackage():
 
     def setNotDoneYet(self):
         self.result = None
+
 
 def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[]):
     """
@@ -161,11 +170,11 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
     """
     def realDecorator(func):
         def wrapper(theSelf, request, *args, **kwargs):
-            tictoc = 0 # theSelf.perf.tic()
-            ip = '0.0.0.0' # TODO getIP(request)
+            tictoc = 0  # theSelf.perf.tic()
+            ip = '0.0.0.0'  # TODO getIP(request)
             out.verbose('HTTP request from IP %s\n' % (ip))
             request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)
-            
+
             apiPackage = APIPackage(request)
             # Extract required arguments
             if(requiredArgs or optionalArgs):
@@ -178,7 +187,7 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
                         return theSelf.rest.failprocess(ip, request, (ip, theSelf.rest.clientFailures), "Malformed Body: %s", (tictoc, None), pdapi.ERR_BADPARAM)
                     # If exist put it into the apiPackage
                     apiPackage.inputArgs[arg] = required[idx]
-            
+
             # Extract optional arguments
             if(optionalArgs):
                 optional = explode(body, *optionalArgs)
@@ -190,7 +199,7 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
             # Make the real function call
             #######################################################################################
             func(theSelf, apiPackage, *args, **kwargs)
-            
+
             # NOT_DONE_YET
             if(apiPackage.result is None):
                 return NOT_DONE_YET
@@ -206,9 +215,6 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
                     return theSelf.rest.failprocess(ip, request, (failureKey, failureDict), errMsg, (tictoc, devid), errType)
                 else:
                     return theSelf.rest.failprocess(ip, request, None, errMsg, (tictoc, devid), errType)
-                
+
         return wrapper
     return realDecorator
-
-
-

@@ -5,7 +5,7 @@
 
 from paradrop.backend.exc import plangraph
 from paradrop.lib import config
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 
 def generatePlans(update):
     """

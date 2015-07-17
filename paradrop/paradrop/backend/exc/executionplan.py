@@ -4,7 +4,7 @@
 ###################################################################
 
 import traceback
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 
 from paradrop.backend.exc import plangraph
 
@@ -35,7 +35,6 @@ def generatePlans(update):
     for mod in update.updateModuleList:
         if(mod.generatePlans(update)):
             return True
-            
 
 
 def aggregatePlans(update):
@@ -45,13 +44,14 @@ def aggregatePlans(update):
         possible.
 
         This keeps things like reloading networking from happening twice if 2 chutes make changes.
-        
+
         Returns:
             A new PlanMap that should be executed
     """
-    out.header('Aggregating plans\n' )
+    out.header('Aggregating plans\n')
     # For now we just order the plans and return a new list
     update.plans.sort()
+
 
 def executePlans(update):
     """
@@ -67,14 +67,14 @@ def executePlans(update):
     while(True):
         # This function either returns None or a tuple just like generate added to it
         p = update.plans.getNextTodo()
-        
+
         # No more to do?
         if(not p):
             break
-        
+
         # Explode tuple otherwise
         func, args = p
-            
+
         # We are in a try-except block so if func isn't callable that will catch it
         try:
             out.verbose('Calling %s\n' % (func))
@@ -84,26 +84,27 @@ def executePlans(update):
             # args may be empty, but we don't want to pass in a tuple if we don't need to
             # so this below explodes the args so if @args is (), then what is passed is @update
             skipme = func(*((update, ) + args))
-        
+
         except Exception as e:
             out.exception(e, True, plans=str(update.plans))
             update.responses.append({'exception': str(e), 'traceback': traceback.format_exc()})
             return True
-            
+
         # The functions we call here can return other functions, if they do these are functions that should
         # be skipped later on (for instance a set* function discovering it didn't change anything, later on
         # we shouldn't call the corresponding reload function)
         if(skipme):
-            # These functions can return individual functions to skip, or a list of multiple functions 
+            # These functions can return individual functions to skip, or a list of multiple functions
             if (not isinstance(skipme, list)):
                 skipme = [skipme]
 
             for skip in skipme:
                 out.warn('Identified a skipped function: %r\n' % (skip))
                 update.plans.registerSkip(skip)
-    
+
     # Now we are done
     return False
+
 
 def abortPlans(update):
     """
@@ -119,18 +120,18 @@ def abortPlans(update):
     while(True):
         # This function either returns None or a tuple just like generate added to it
         p = update.plans.getNextAbort()
-        
+
         # No more to do?
         if(not p):
             break
-        
+
         # Explode tuple otherwise
         func, args = p
-            
+
         # We are in a try-except block so if func isn't callable that will catch it
         try:
             func(*((update, ) + args))
-            
+
             # If the func is called without exception then clear the @sameError flag for the next function call
             sameError = False
 
@@ -142,6 +143,6 @@ def abortPlans(update):
             update.responses.append({'exception': str(e), 'traceback': traceback.format_exc()})
             out.fatal('An abort function raised an exception!!! %r: %s\n%s\n' % (update.plans, str(e), traceback.format_exc()))
             sameError = True
-    
+
     # Getting here we assume the system state has been restored using our abort plan
     return False

@@ -1,7 +1,8 @@
 
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.utils import uci
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
+
 
 def getOSWirelessConfig(update):
     # old code under lib.internal.chs.chutelxc same function name
@@ -19,7 +20,7 @@ def getOSWirelessConfig(update):
 
         config = {'type': 'wifi-iface'}
         options = {
-            'device': 'wlan0', # TODO: Where do we get the device name?
+            'device': 'wlan0',  # TODO: Where do we get the device name?
             'network': iface['externalIntf'],
             'mode': 'ap',
             'ssid': iface['ssid']
@@ -35,12 +36,13 @@ def getOSWirelessConfig(update):
 
     update.new.setCache('osWirelessConfig', wifiIfaces)
 
+
 def setOSWirelessConfig(update):
     # Basically the same as the networking version of this
 
     changed = uciutils.setConfig(update.new, update.old,
-            cacheKeys=['osWirelessConfig'],
-            filepath=uci.getSystemPath("wireless"))
+                                 cacheKeys=['osWirelessConfig'],
+                                 filepath=uci.getSystemPath("wireless"))
 
     # If we didn't change anything, then return the function to reloadWireless so we can save ourselves from that call
     if not changed:

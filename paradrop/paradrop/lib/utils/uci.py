@@ -7,7 +7,7 @@ import traceback, os
 
 from paradrop.lib import settings
 from paradrop.lib.utils import pdos, pdosq
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 
 CONFIG_DIR = settings.UCI_CONFIG_DIR
 if "SNAP_APP_DATA_PATH" in os.environ:

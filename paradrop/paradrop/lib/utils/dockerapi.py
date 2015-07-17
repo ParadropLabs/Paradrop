@@ -3,7 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 import docker
 import json
 

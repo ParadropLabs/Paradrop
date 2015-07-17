@@ -23,7 +23,7 @@ I have done this in the interest of time and development speed.
 from twisted.web import xmlrpc
 from twisted.internet import defer, utils
 
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils.output import out
 from paradrop.lib import settings
 
 import os
