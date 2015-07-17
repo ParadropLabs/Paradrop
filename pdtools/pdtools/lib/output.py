@@ -110,6 +110,7 @@ class PrintLogThread(threading.Thread):
     def run(self):
         while self.running:
             result = self.queue.get(block=True, timeout=1)
+            print 'Have result: '
             writable = pdutils.json2str(result)
 
             self.writer.write(writable + '\n')
