@@ -7,9 +7,7 @@ from pprint import pprint
 
 from paradrop.lib.utils import pdosq
 from paradrop.lib.utils.output import logPrefix, out
-from paradrop.lib.utils.uci import UCIConfig
-
-CONFIG_DIR = "/etc/config"
+from paradrop.lib.utils.uci import CONFIG_DIR, UCIConfig
 
 WRITE_DIR = "/var/run/pdconfd"
 """ Directory for daemon configuration files, PID files, etc. """
@@ -233,7 +231,7 @@ class ConfigDhcp(ConfigObject):
             outputFile.write("except-interface=lo\n")
             outputFile.write("bind-interfaces\n")
 
-        cmd = ["dnsmasq", "--conf-file={}".format(outputPath),
+        cmd = ["/apps/bin/dnsmasq", "--conf-file={}".format(outputPath),
                 "--pid-file={}".format(pidFile)]
         commands.append((PRIO_START_DAEMON, cmd))
 
@@ -482,7 +480,7 @@ class ConfigWifiIface(ConfigObject):
         self.pidFile = "{}/hostapd-{}.pid".format(
                 self.manager.writeDir, self.name)
 
-        cmd = ["hostapd", "-P", self.pidFile, "-B", outputPath]
+        cmd = ["/apps/bin/hostapd", "-P", self.pidFile, "-B", outputPath]
         commands.append((PRIO_START_DAEMON, cmd))
 
         return commands
@@ -633,6 +631,24 @@ class ConfigManager(object):
                 out.add(config)
         return out
 
+    def execute(self, commands, execute=True):
+        # Sort the commands by priority.
+        commands = sortCommands(commands)
+
+        while len(commands) > 0:
+            prio, cmd = heapq.heappop(commands)
+            if execute:
+                try:
+                    result = subprocess.call(cmd)
+                except OSError as e:
+                    out.warn('** {} Command "{}" failed\n'.format(
+                        logPrefix, " ".join(cmd)))
+                    out.exception(logPrefix(), e, True)
+            else:
+                result = "N/A"
+            out.info('-- {} Command (prio {}) "{}" Returned {}\n'.format(
+                logPrefix(), prio, " ".join(cmd), result))
+
     def findMatchingConfig(self, config, byName=False):
         """
         Check the current config for an identical section.
@@ -745,16 +761,8 @@ class ConfigManager(object):
         for config in affectedConfigs:
             commands.extend(config.commands(allConfigs))
 
-        # Sort the commands by priority.
-        commands = sortCommands(commands)
-
         # Finally, execute the commands.
-        while len(commands) > 0:
-            prio, cmd = heapq.heappop(commands)
-            print("Command (prio {}): {}".format(prio, " ".join(cmd)))
-            if execute:
-                result = subprocess.call(cmd)
-                print("Result: {}".format(result))
+        self.execute(commands, execute)
 
         self.currentConfig = allConfigs
         return True
@@ -814,16 +822,8 @@ class ConfigManager(object):
         for config in self.currentConfig.values():
             commands.extend(config.undoCommands(self.currentConfig))
 
-        # Sort the commands by priority.
-        commands = sortCommands(commands)
-
         # Finally, execute the commands.
-        while len(commands) > 0:
-            prio, cmd = heapq.heappop(commands)
-            print("Command (prio {}): {}".format(prio, " ".join(cmd)))
-            if execute:
-                result = subprocess.call(cmd)
-                print("Result: {}".format(result))
+        self.execute(commands, execute)
 
         self.currentConfig = dict()
         return True
