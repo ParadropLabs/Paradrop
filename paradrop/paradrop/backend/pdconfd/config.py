@@ -1,3 +1,4 @@
+import heapq
 import ipaddress
 import os
 import string
@@ -13,11 +14,44 @@ CONFIG_DIR = "/etc/config"
 WRITE_DIR = "/var/run/pdconfd"
 """ Directory for daemon configuration files, PID files, etc. """
 
+# Command priorities, lower numbers executed first.
+PRIO_CREATE_IFACE = 10
+PRIO_CONFIG_IFACE = 20
+PRIO_START_DAEMON = 30
+PRIO_ADD_IPTABLES = 40
+PRIO_DELETE_IFACE = 50
+
 def isHexString(data):
     """
     Test if a string contains only hex digits.
     """
     return all(c in string.hexdigits for c in data)
+
+def sortCommands(commands):
+    """
+    Return a sorted list of prioritized commands.
+
+    The list is actually a heap.  In order to execute the commands in order, it
+    is important to use the heappop function.
+    """
+    result = list()
+
+    # First check to make sure the commands are proper tuples.
+    for item in commands:
+        if len(item) != 2:
+            raise Exception("Command ({}) not a (priority, command) tuple.".format(item))
+
+    n = len(commands)
+    for prio, cmd in commands:
+        # This math (n * prio + i) ensures that the commands are sorted by
+        # priority level first, and by order added within each priority level.
+        # This is functionally identical to keeping separate FIFO queues for
+        # each priority level.  It is just nicer to deal with a single command
+        # queue than a bunch of them.
+        i = len(result)
+        heapq.heappush(result, (n * prio + i, cmd))
+
+    return result
 
 class ConfigObject(object):
     nextId = 0
@@ -46,6 +80,11 @@ class ConfigObject(object):
         self.dependents.add(dep)
 
     def commands(self, allConfigs):
+        """
+        Return a list of commands to execute.
+
+        Each one is a tuple (priority, command).
+        """
         return []
 
     def getTypeAndName(self):
@@ -69,6 +108,11 @@ class ConfigObject(object):
         return config
 
     def undoCommands(self, allConfigs):
+        """
+        Return a list of commands to execute.
+
+        Each one is a tuple (priority, command).
+        """
         return []
 
     def optionsMatch(self, other):
@@ -150,6 +194,8 @@ class ConfigDhcp(ConfigObject):
     ]
 
     def commands(self, allConfigs):
+        commands = list()
+
         # Look up the interface - may fail.
         interface = self.lookup(allConfigs, "interface", self.interface)
 
@@ -179,23 +225,33 @@ class ConfigDhcp(ConfigObject):
                 str(firstAddress), str(lastAddress), self.leasetime))
             outputFile.write("dhcp-leasefile={}\n".format(leaseFile))
 
+            # TODO: Bind interfaces allows us to have multiple instances of
+            # dnsmasq running, but it would probably be better to have one
+            # running and reconfigure it when we want to add or remove
+            # interfaces.  It is not very disruptive to reconfigure and restart
+            # dnsmasq.
+            outputFile.write("except-interface=lo\n")
+            outputFile.write("bind-interfaces\n")
+
         cmd = ["dnsmasq", "--conf-file={}".format(outputPath),
                 "--pid-file={}".format(pidFile)]
+        commands.append((PRIO_START_DAEMON, cmd))
 
         self.pidFile = pidFile
-        return [cmd]
+        return commands
 
     def undoCommands(self, allConfigs):
+        commands = list()
         try:
             with open(self.pidFile, "r") as inputFile:
                 pid = inputFile.read().strip()
             cmd = ["kill", pid]
-            return [cmd]
+            commands.append((PRIO_START_DAEMON, cmd))
         except:
             # No pid file --- maybe dnsmasq was not running?
             out.warn("** {} File not found: {}\n".format(
                 logPrefix(), self.pidFile))
-            return []
+        return commands
 
 class ConfigInterface(ConfigObject):
     typename = "interface"
@@ -212,16 +268,16 @@ class ConfigInterface(ConfigObject):
         commands = list()
         if self.proto == "static":
             cmd = ["ip", "addr", "flush", "dev", self.ifname]
-            commands.append(cmd)
+            commands.append((PRIO_CONFIG_IFACE, cmd))
 
             cmd = ["ip", "addr", "add", 
                     "{}/{}".format(self.ipaddr, self.netmask),
                     "dev", self.ifname]
-            commands.append(cmd)
+            commands.append((PRIO_CONFIG_IFACE, cmd))
 
             updown = "up" if self.enabled else "down"
             cmd = ["ip", "link", "set", "dev", self.ifname, updown]
-            commands.append(cmd)
+            commands.append((PRIO_CONFIG_IFACE, cmd))
 
         return commands
 
@@ -288,7 +344,7 @@ class ConfigRedirect(ConfigObject):
                 cmd.extend(["--match", "comment", "--comment",
                     "pdconfd {} {}".format(self.typename, self.name)])
 
-                commands.append(cmd)
+                commands.append((PRIO_ADD_IPTABLES, cmd))
 
         return commands
 
@@ -312,7 +368,7 @@ class ConfigRedirect(ConfigObject):
         if self.manager.forwardingCount == 1:
             cmd = ["sysctl", "--write",
                     "net.ipv4.conf.all.forwarding=1"]
-            commands.append(cmd)
+            commands.append((PRIO_ADD_IPTABLES, cmd))
         
         return commands
 
@@ -328,7 +384,7 @@ class ConfigRedirect(ConfigObject):
         if self.manager.forwardingCount == 0:
             cmd = ["sysctl", "--write",
                     "net.ipv4.conf.all.forwarding=0"]
-            commands.append(cmd)
+            commands.append((PRIO_ADD_IPTABLES, cmd))
 
         return commands
 
@@ -377,6 +433,20 @@ class ConfigWifiIface(ConfigObject):
         # Look up the interface section.
         interface = self.lookup(allConfigs, "interface", self.network)
 
+        if interface.ifname == wifiDevice.name:
+            # This interface is using the physical device directly (eg. wlan0).
+            self.vifName = None
+            ifname = wifiDevice.name
+        else:
+            # This interface is a virtual one (eg. foo.wlan0 using wlan0).
+            self.vifName = interface.ifname
+            ifname = self.vifName
+
+            # Command to create the virtual interface.
+            cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
+                    self.vifName, "type", "__ap"]
+            commands.append((PRIO_CREATE_IFACE, cmd))
+
         outputPath = "{}/hostapd-{}.conf".format(
                 self.manager.writeDir, self.name)
         with open(outputPath, "w") as outputFile:
@@ -389,7 +459,7 @@ class ConfigWifiIface(ConfigObject):
             outputFile.write("#" * 80 + "\n")
 
             # Write essential options.
-            outputFile.write("interface={}\n".format(wifiDevice.name))
+            outputFile.write("interface={}\n".format(ifname))
             outputFile.write("ssid={}\n".format(self.ssid))
             outputFile.write("channel={}\n".format(wifiDevice.channel))
 
@@ -413,21 +483,29 @@ class ConfigWifiIface(ConfigObject):
                 self.manager.writeDir, self.name)
 
         cmd = ["hostapd", "-P", self.pidFile, "-B", outputPath]
-        commands.append(cmd)
+        commands.append((PRIO_START_DAEMON, cmd))
 
         return commands
 
     def undoCommands(self, allConfigs):
+        commands = list()
+
         try:
             with open(self.pidFile, "r") as inputFile:
                 pid = inputFile.read().strip()
             cmd = ["kill", pid]
-            return [cmd]
+            commands.append((PRIO_START_DAEMON, cmd))
         except:
             # No pid file --- maybe it was not running?
             out.warn("** {} File not found: {}\n".format(
                 logPrefix(), self.pidFile))
-            return []
+
+        # Delete our virtual interface.
+        if self.vifName is not None:
+            cmd = ["iw", "dev", self.vifName, "del"]
+            commands.append((PRIO_DELETE_IFACE, cmd))
+
+        return commands
 
 class ConfigZone(ConfigObject):
     typename = "zone"
@@ -462,7 +540,7 @@ class ConfigZone(ConfigObject):
                         "--jump", "MASQUERADE",
                         "--match", "comment", "--comment", 
                         "pdconfd {} {}".format(self.typename, self.name)]
-                commands.append(cmd) 
+                commands.append((PRIO_ADD_IPTABLES, cmd))
 
         return commands
 
@@ -474,7 +552,7 @@ class ConfigZone(ConfigObject):
             if self.manager.forwardingCount == 1:
                 cmd = ["sysctl", "--write",
                         "net.ipv4.conf.all.forwarding=1"]
-                commands.append(cmd)
+                commands.append((PRIO_ADD_IPTABLES, cmd))
         
         return commands
 
@@ -486,7 +564,7 @@ class ConfigZone(ConfigObject):
             if self.manager.forwardingCount == 0:
                 cmd = ["sysctl", "--write",
                         "net.ipv4.conf.all.forwarding=0"]
-                commands.append(cmd)
+                commands.append((PRIO_ADD_IPTABLES, cmd))
 
         return commands
 
@@ -667,9 +745,13 @@ class ConfigManager(object):
         for config in affectedConfigs:
             commands.extend(config.commands(allConfigs))
 
+        # Sort the commands by priority.
+        commands = sortCommands(commands)
+
         # Finally, execute the commands.
-        for cmd in commands:
-            print("Command: {}".format(" ".join(cmd)))
+        while len(commands) > 0:
+            prio, cmd = heapq.heappop(commands)
+            print("Command (prio {}): {}".format(prio, " ".join(cmd)))
             if execute:
                 result = subprocess.call(cmd)
                 print("Result: {}".format(result))
@@ -732,8 +814,13 @@ class ConfigManager(object):
         for config in self.currentConfig.values():
             commands.extend(config.undoCommands(self.currentConfig))
 
-        for cmd in commands:
-            print("Command: {}".format(" ".join(cmd)))
+        # Sort the commands by priority.
+        commands = sortCommands(commands)
+
+        # Finally, execute the commands.
+        while len(commands) > 0:
+            prio, cmd = heapq.heappop(commands)
+            print("Command (prio {}): {}".format(prio, " ".join(cmd)))
             if execute:
                 result = subprocess.call(cmd)
                 print("Result: {}".format(result))
