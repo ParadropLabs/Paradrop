@@ -47,7 +47,7 @@ def getOSFirewallRules(update):
 
         # Add the zone section first.
         rules.append((config, options))
-        
+
         # Then add a forwarding rule for wan type interfaces.
         if iface['netType'] == 'wan':
             rules.append(({'type': 'forwarding'}, {'src': iface['externalIntf'], 'dest': 'wan'}))
@@ -80,13 +80,13 @@ def getDeveloperFirewallRules(update):
 
                 # Do not allow rules that do not pertain to the chute.
                 if "@host.lan" in from_parts[0] and "@host.lan" in to_parts[0]:
-                    out.warn("Unable to add firewall rule - dst and src are both outside of chute\n".format(
+                    out.warn("** {} Unable to add firewall rule - dst and src are both outside of chute\n".format(
                         logPrefix()))
 
                 # From @host.lan means this is a DNAT rule (redirect to the chute).
                 if from_parts[0] == "@host.lan":
                     options['target'] = "DNAT"
-                    
+
                     options['src'] = "wan"
                     if len(from_parts) > 1:
                         options['src_dport'] = from_parts[1]
@@ -95,8 +95,7 @@ def getDeveloperFirewallRules(update):
                     # IP address.
                     iface = findMatchingInterface(to_parts[0], interfaces)
                     if iface is None:
-                        out.warn("No interface found with name {}\n".format(
-                            to_parts[0]))
+                        out.warn("No interface found with name {}\n".format(to_parts[0]))
                         raise Exception("Interface not found")
 
                     options['dest_ip'] = iface['externalIpaddr']
@@ -108,26 +107,27 @@ def getDeveloperFirewallRules(update):
                     options['target'] = "SNAT"
 
                     # TODO: Implement
-                    out.warn("SNAT rules not supported yet"))
-                        raise Exception("SNAT rules not implemented")
+                    out.warn("SNAT rules not supported yet")
+                    raise Exception("SNAT rules not implemented")
 
-                        # Could be forwarding between chute interfaces?
-                        else:
-                        out.warn("Other rules not supported yet"))
-                        raise Exception("Other rules not implemented")
+                # Could be forwarding between chute interfaces?
+                else:
+                    out.warn("Other rules not supported yet")
+                    raise Exception("Other rules not implemented")
 
-                        rules.append((config, options))
+                rules.append((config, options))
 
-                        update.new.setCache('developerFirewallRules', rules)
+    update.new.setCache('developerFirewallRules', rules)
 
-                        def setOSFirewallRules(update):
-                        """
+
+def setOSFirewallRules(update):
+    """
     Takes a list of tuples (config, opts) and saves it to the firewall config file.
     """
-                        changed = uciutils.setConfig(update.new, update.old,
-                                                     cacheKeys=['osFirewallRules', 'developerFirewallRules'],
-                                                     filepath=uci.getSystemPath("firewall"))
+    changed = uciutils.setConfig(update.new, update.old,
+                                 cacheKeys=['osFirewallRules', 'developerFirewallRules'],
+                                 filepath=uci.getSystemPath("firewall"))
 
-                        # If we didn't change anything, then return the function to reloadFirewall so we can save ourselves from that call
-                        if(not changed):
-                        return configservice.reloadFirewall
+    # If we didn't change anything, then return the function to reloadFirewall so we can save ourselves from that call
+    if(not changed):
+        return configservice.reloadFirewall

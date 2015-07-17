@@ -6,10 +6,10 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-from paradrop.lib.utils import output
-
+from pdtools.lib import output, store
 from paradrop.lib import settings
-from pdtools.lib.output import logPrefix
+
+from twisted.internet import reactor
 
 
 ##########################################################################
@@ -48,6 +48,17 @@ def caughtSIGUSR1(signum, frame):
         output.out.verbose = output.FakeOutput()
 
 
+def onShutdown():
+    ''' Get notified of system shutdown from Twisted '''
+    output.out.info("System going down")
+
+    # Clears the print buffer, closes the logfile
+    output.out.endLogging()
+
+    # TODO: call the server
+
+    # TODO: call pdconfd
+
 ##########################################################################
 # Main Function
 ##########################################################################
@@ -76,11 +87,17 @@ def main():
     # Check for settings to overwrite
     settings.updateSettings(args.settings)
 
-    if(args.verbose == True or settings.VERBOSE == True):
+    if(args.verbose or settings.VERBOSE):
         caughtSIGUSR1(signal.SIGUSR1, None)
 
-    # Before we setup anything make sure we have generated a UUID for our instance
-    output.out.info('Test')
+    # Ask the shared store to setup (paths can be set up there)
+    store.store = store.Storage()
+
+    # Logger needs to open its files and whatnot
+    output.out.startLogging(store.LOG_PATH)
+
+    # Register for the shutdown callback so we can gracefully close logging
+    reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
 
     if args.config:
         from paradrop.backend import pdconfd
@@ -92,6 +109,10 @@ def main():
         from paradrop.backend import pdfcd
 
         # Now setup the RESTful API server for Paradrop
+
+        # Set up the shared store
+        store.store = store.Storage()
+
         pdfcd.server.setup(args)
 
 if __name__ == "__main__":

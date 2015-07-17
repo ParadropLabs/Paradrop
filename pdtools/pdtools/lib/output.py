@@ -99,7 +99,6 @@ class PrintLogThread(threading.Thread):
         while True:
             result = self.queue.get(block=True)
 
-            print 'Have result: '
             writable = pdutils.json2str(result)
 
             self.writer.write(writable + '\n')
@@ -320,7 +319,8 @@ class Output():
         """Catch attribute access attempts that were not defined in __init__
             by default throw them out."""
 
-        raise NotImplementedError("You must create " + name + " to log with it")
+        # raise NotImplementedError("You must create " + name + " to log with it")
+        pass
 
     def __setattr__(self, name, val):
         """Allow the program to add new output streams on the fly."""

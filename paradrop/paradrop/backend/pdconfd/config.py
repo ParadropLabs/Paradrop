@@ -4,7 +4,7 @@ import string
 import subprocess
 from pprint import pprint
 
-from pdtools.lib.output import logPrefix, out
+from pdtools.lib.output import out
 from paradrop.lib.utils.uci import UCIConfig
 
 CONFIG_DIR = "/etc/config"

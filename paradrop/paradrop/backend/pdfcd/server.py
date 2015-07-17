@@ -11,7 +11,7 @@ Contains the classes required to establish a RESTful API server using Twisted.
 from twisted.web.server import Site
 from twisted.internet import reactor
 
-from pdtools.lib.output import logPrefix, out
+from pdtools.lib.output import out
 from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
 from paradrop.lib.api import pdrest
@@ -244,19 +244,19 @@ def setup(args=None):
     # Development mode
     if(args and args.development):
         thePort = settings.PDFCD_PORT + 10000
-        out.info('Using DEVELOPMENT variables\n' ))
+        out.info('Using DEVELOPMENT variables')
         # Disable sending the error traceback to the client
         site.displayTracebacks = True
     elif(args and args.unittest):
         thePort = settings.DBAPI_PORT + 20000
-        out.info('Running under unittest mode\n' ))
+        out.info('Running under unittest mode')
         site.displayTracebacks = True
     else:
         thePort = settings.PDFCD_PORT
         site.displayTracebacks = False
 
     # Setup the port we listen on
-    out.info('Establishing API server, port: %d\n' % (thePort))
+    out.info('Establishing API server, port: %d' % (thePort))
     reactor.listenTCP(thePort, site)
 
     # from twisted.python import log
