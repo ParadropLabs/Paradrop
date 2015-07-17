@@ -21,6 +21,7 @@ PRIO_START_DAEMON = 30
 PRIO_ADD_IPTABLES = 40
 PRIO_DELETE_IFACE = 50
 
+
 def isHexString(data):
     """
     Test if a string contains only hex digits.
@@ -53,6 +54,7 @@ def sortCommands(commands):
         heapq.heappush(result, (n * prio + i, cmd))
 
     return result
+
 
 class ConfigObject(object):
     nextId = 0
@@ -236,7 +238,7 @@ class ConfigDhcp(ConfigObject):
             outputFile.write("bind-interfaces\n")
 
         cmd = ["/apps/bin/dnsmasq", "--conf-file={}".format(outputPath),
-                "--pid-file={}".format(pidFile)]
+               "--pid-file={}".format(pidFile)]
         commands.append((PRIO_START_DAEMON, cmd))
 
         self.pidFile = pidFile
@@ -275,9 +277,9 @@ class ConfigInterface(ConfigObject):
             cmd = ["ip", "addr", "flush", "dev", self.ifname]
             commands.append((PRIO_CONFIG_IFACE, cmd))
 
-            cmd = ["ip", "addr", "add", 
-                    "{}/{}".format(self.ipaddr, self.netmask),
-                    "dev", self.ifname]
+            cmd = ["ip", "addr", "add",
+                   "{}/{}".format(self.ipaddr, self.netmask),
+                   "dev", self.ifname]
             commands.append((PRIO_CONFIG_IFACE, cmd))
 
             updown = "up" if self.enabled else "down"
@@ -373,9 +375,9 @@ class ConfigRedirect(ConfigObject):
         self.manager.forwardingCount += 1
         if self.manager.forwardingCount == 1:
             cmd = ["sysctl", "--write",
-                    "net.ipv4.conf.all.forwarding=1"]
+                   "net.ipv4.conf.all.forwarding=1"]
             commands.append((PRIO_ADD_IPTABLES, cmd))
-        
+
         return commands
 
     def undoCommands(self, allConfigs):
@@ -389,7 +391,7 @@ class ConfigRedirect(ConfigObject):
         self.manager.forwardingCount -= 1
         if self.manager.forwardingCount == 0:
             cmd = ["sysctl", "--write",
-                    "net.ipv4.conf.all.forwarding=0"]
+                   "net.ipv4.conf.all.forwarding=0"]
             commands.append((PRIO_ADD_IPTABLES, cmd))
 
         return commands
@@ -452,7 +454,7 @@ class ConfigWifiIface(ConfigObject):
 
             # Command to create the virtual interface.
             cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
-                    self.vifName, "type", "__ap"]
+                   self.vifName, "type", "__ap"]
             commands.append((PRIO_CREATE_IFACE, cmd))
 
         outputPath = "{}/hostapd-{}.conf".format(
@@ -508,7 +510,6 @@ class ConfigWifiIface(ConfigObject):
             out.warn("File not found: {}\n".format(
                 self.pidFile))
 
-
         # Delete our virtual interface.
         if self.vifName is not None:
             cmd = ["iw", "dev", self.vifName, "del"]
@@ -545,11 +546,11 @@ class ConfigZone(ConfigObject):
         if self.masq:
             for interface in self.interfaces(allConfigs):
                 cmd = ["iptables", "--table", "nat",
-                        action, "POSTROUTING",
-                        "--out-interface", interface.ifname,
-                        "--jump", "MASQUERADE",
-                        "--match", "comment", "--comment", 
-                        "pdconfd {} {}".format(self.typename, self.name)]
+                       action, "POSTROUTING",
+                       "--out-interface", interface.ifname,
+                       "--jump", "MASQUERADE",
+                       "--match", "comment", "--comment",
+                       "pdconfd {} {}".format(self.typename, self.name)]
                 commands.append((PRIO_ADD_IPTABLES, cmd))
 
         return commands
@@ -561,9 +562,9 @@ class ConfigZone(ConfigObject):
             self.manager.forwardingCount += 1
             if self.manager.forwardingCount == 1:
                 cmd = ["sysctl", "--write",
-                        "net.ipv4.conf.all.forwarding=1"]
+                       "net.ipv4.conf.all.forwarding=1"]
                 commands.append((PRIO_ADD_IPTABLES, cmd))
-        
+
         return commands
 
     def undoCommands(self, allConfigs):
