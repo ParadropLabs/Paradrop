@@ -11,8 +11,8 @@ Contains the classes required to establish a RESTful API server using Twisted.
 from twisted.web.server import Site
 from twisted.internet import reactor
 
-from paradrop.lib.utils.output import logPrefix, out
-from paradrop.lib.utils.pdutils import timeflt, str2json, json2str
+from pdtools.lib.output import logPrefix, out
+from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
 from paradrop.lib.api import pdrest
 from paradrop.lib import settings

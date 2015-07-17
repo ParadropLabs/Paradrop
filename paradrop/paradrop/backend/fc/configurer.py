@@ -6,8 +6,8 @@
 import time
 import threading
 
-from paradrop.lib.utils.output import out
-from paradrop.lib.utils.pdutils import timeint, str2json
+from pdtools.lib.output import out
+from pdtools.lib.pdutils import timeint, str2json
 
 from paradrop.lib import settings
 

@@ -1,7 +1,7 @@
 import traceback
 
 from paradrop.lib.utils import uci
-from paradrop.lib.utils.output import out
+from pdtools.lib.output import out
 
 
 def setConfig(chute, old, cacheKeys, filepath):

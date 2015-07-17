@@ -4,7 +4,7 @@ import string
 import subprocess
 from pprint import pprint
 
-from paradrop.lib.utils.output import logPrefix, out
+from pdtools.lib.output import logPrefix, out
 from paradrop.lib.utils.uci import UCIConfig
 
 CONFIG_DIR = "/etc/config"
@@ -12,11 +12,13 @@ CONFIG_DIR = "/etc/config"
 WRITE_DIR = "/var/run"
 """ Directory for daemon configuration files, PID files, etc. """
 
+
 def isHexString(data):
     """
     Test if a string contains only hex digits.
     """
     return all(c in string.hexdigits for c in data)
+
 
 class ConfigObject(object):
     nextId = 0
@@ -36,7 +38,7 @@ class ConfigObject(object):
 
     def __repr__(self):
         return "{}({}:{}:{})".format(self.__class__.__name__,
-                self.source, self.typename, self.name)
+                                     self.source, self.typename, self.name)
 
     def __str__(self):
         return "{}:{}".format(self.typename, self.name)
@@ -138,6 +140,7 @@ class ConfigObject(object):
 
         return obj
 
+
 class ConfigDhcp(ConfigObject):
     typename = "dhcp"
 
@@ -185,13 +188,13 @@ class ConfigDhcp(ConfigObject):
                     str(firstAddress), str(lastAddress), self.leasetime))
                 outputFile.write("dhcp-leasefile={}\n".format(leaseFile))
             cmd = ["dnsmasq", "--conf-file={}".format(outputPath),
-                    "--pid-file={}".format(pidFile)]
+                   "--pid-file={}".format(pidFile)]
         else:
             cmd = ["/apps/paradrop/current/bin/dnsmasq",
-                    "--interface={}".format(interface.ifname),
-                    "--dhcp-range={},{},{}".format(str(firstAddress), str(lastAddress), self.leasetime),
-                    "--dhcp-leasefile={}".format(leaseFile),
-                    "--pid-file={}".format(pidFile)]
+                   "--interface={}".format(interface.ifname),
+                   "--dhcp-range={},{},{}".format(str(firstAddress), str(lastAddress), self.leasetime),
+                   "--dhcp-leasefile={}".format(leaseFile),
+                   "--pid-file={}".format(pidFile)]
 
         self.pidFile = pidFile
         return [cmd]
@@ -207,6 +210,7 @@ class ConfigDhcp(ConfigObject):
             out.warn("File not found: {}\n".format(
                 self.pidFile))
             return []
+
 
 class ConfigInterface(ConfigObject):
     typename = "interface"
@@ -225,9 +229,9 @@ class ConfigInterface(ConfigObject):
             cmd = ["ip", "addr", "flush", "dev", self.ifname]
             commands.append(cmd)
 
-            cmd = ["ip", "addr", "add", 
-                    "{}/{}".format(self.ipaddr, self.netmask),
-                    "dev", self.ifname]
+            cmd = ["ip", "addr", "add",
+                   "{}/{}".format(self.ipaddr, self.netmask),
+                   "dev", self.ifname]
             commands.append(cmd)
 
             updown = "up" if self.enabled else "down"
@@ -235,6 +239,7 @@ class ConfigInterface(ConfigObject):
             commands.append(cmd)
 
         return commands
+
 
 class ConfigRedirect(ConfigObject):
     typename = "redirect"
@@ -260,7 +265,7 @@ class ConfigRedirect(ConfigObject):
 
         src_zone = self.lookup(allConfigs, "zone", self.src)
 
-        # Special cases: 
+        # Special cases:
         # None->skip protocol and port arguments,
         # tcpudp->[tcp, udp]
         if self.proto is None:
@@ -273,8 +278,8 @@ class ConfigRedirect(ConfigObject):
         for interface in src_zone.interfaces(allConfigs):
             for proto in protocols:
                 cmd = ["iptables", "--table", "nat",
-                        action, "PREROUTING",
-                        "--in-interface", interface.ifname]
+                       action, "PREROUTING",
+                       "--in-interface", interface.ifname]
 
                 if self.src_ip is not None:
                     cmd.extend(["--source", self.src_ip])
@@ -290,14 +295,14 @@ class ConfigRedirect(ConfigObject):
                 if self.dest_ip is not None:
                     if self.dest_port is not None:
                         cmd.extend(["--jump", "DNAT", "--to-destination",
-                            "{}:{}".format(self.dest_ip, self.dest_port)])
+                                    "{}:{}".format(self.dest_ip, self.dest_port)])
                     else:
                         cmd.extend(["--jump", "DNAT", "--to-destination", self.dest_ip])
                 elif self.dest_port is not None:
                     cmd.extend(["--jump", "REDIRECT", "--to-port", self.dest_port])
 
                 cmd.extend(["--match", "comment", "--comment",
-                    "pdconfd {} {}".format(self.typename, self.name)])
+                            "pdconfd {} {}".format(self.typename, self.name)])
 
                 commands.append(cmd)
 
@@ -322,9 +327,9 @@ class ConfigRedirect(ConfigObject):
         self.manager.forwardingCount += 1
         if self.manager.forwardingCount == 1:
             cmd = ["sysctl", "--write",
-                    "net.ipv4.conf.all.forwarding=1"]
+                   "net.ipv4.conf.all.forwarding=1"]
             commands.append(cmd)
-        
+
         return commands
 
     def undoCommands(self, allConfigs):
@@ -338,10 +343,11 @@ class ConfigRedirect(ConfigObject):
         self.manager.forwardingCount -= 1
         if self.manager.forwardingCount == 0:
             cmd = ["sysctl", "--write",
-                    "net.ipv4.conf.all.forwarding=0"]
+                   "net.ipv4.conf.all.forwarding=0"]
             commands.append(cmd)
 
         return commands
+
 
 class ConfigWifiDevice(ConfigObject):
     typename = "wifi-device"
@@ -358,6 +364,7 @@ class ConfigWifiDevice(ConfigObject):
         commands.append(cmd)
 
         return commands
+
 
 class ConfigWifiIface(ConfigObject):
     typename = "wifi-iface"
@@ -434,6 +441,7 @@ class ConfigWifiIface(ConfigObject):
                 self.pidFile))
             return []
 
+
 class ConfigZone(ConfigObject):
     typename = "zone"
 
@@ -462,12 +470,12 @@ class ConfigZone(ConfigObject):
         if self.masq:
             for interface in self.interfaces(allConfigs):
                 cmd = ["iptables", "--table", "nat",
-                        action, "POSTROUTING",
-                        "--out-interface", interface.ifname,
-                        "--jump", "MASQUERADE",
-                        "--match", "comment", "--comment", 
-                        "pdconfd {} {}".format(self.typename, self.name)]
-                commands.append(cmd) 
+                       action, "POSTROUTING",
+                       "--out-interface", interface.ifname,
+                       "--jump", "MASQUERADE",
+                       "--match", "comment", "--comment",
+                       "pdconfd {} {}".format(self.typename, self.name)]
+                commands.append(cmd)
 
         return commands
 
@@ -478,9 +486,9 @@ class ConfigZone(ConfigObject):
             self.manager.forwardingCount += 1
             if self.manager.forwardingCount == 1:
                 cmd = ["sysctl", "--write",
-                        "net.ipv4.conf.all.forwarding=1"]
+                       "net.ipv4.conf.all.forwarding=1"]
                 commands.append(cmd)
-        
+
         return commands
 
     def undoCommands(self, allConfigs):
@@ -490,7 +498,7 @@ class ConfigZone(ConfigObject):
             self.manager.forwardingCount -= 1
             if self.manager.forwardingCount == 0:
                 cmd = ["sysctl", "--write",
-                        "net.ipv4.conf.all.forwarding=0"]
+                       "net.ipv4.conf.all.forwarding=0"]
                 commands.append(cmd)
 
         return commands
@@ -500,10 +508,11 @@ configTypeMap = dict()
 for cls in ConfigObject.__subclasses__():
     configTypeMap[cls.typename] = cls
 
+
 def findConfigFiles(search=None):
     """
     Look for and return a list of configuration files.  
-    
+
     The behavior depends on whether the search argument is a file, a directory,
     or None.
 
@@ -530,7 +539,9 @@ def findConfigFiles(search=None):
 
     return files
 
+
 class ConfigManager(object):
+
     def __init__(self, writeDir=WRITE_DIR):
         self.writeDir = writeDir
 
@@ -743,7 +754,7 @@ class ConfigManager(object):
         self.currentConfig = dict()
         return True
 
-if __name__=="__main__":
+if __name__ == "__main__":
     manager = ConfigManager(writeDir="/tmp")
     print("Loading configuration files:")
     manager.loadConfig(execute=False)
@@ -751,4 +762,3 @@ if __name__=="__main__":
     manager.loadConfig(execute=False)
     print("\nUnloading configuration files:")
     manager.unload(execute=False)
-

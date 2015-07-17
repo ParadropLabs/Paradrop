@@ -7,7 +7,7 @@
         we need to support only this module would change.
 """
 
-from paradrop.lib.utils.output import out
+from pdtools.lib.output import out
 
 
 def revertConfig(update, theType):

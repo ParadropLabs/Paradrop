@@ -3,7 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from paradrop.lib.utils.output import out
+from pdtools.lib.output import out
 from paradrop.backend.exc import plangraph
 
 def generatePlans(update):
@@ -26,7 +26,7 @@ def generatePlans(update):
 # import sys, os, hashlib, urllib2, tarfile
 # 
 # from lib.paradrop import *
-# from lib.paradrop.utils import pdutils
+# from pdtools.lib import pdutils
 # from lib.paradrop.chute import Chute
 # from lib.paradrop import chute
 # from lib.internal.utils import lxc as virt

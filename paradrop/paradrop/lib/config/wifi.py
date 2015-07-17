@@ -1,7 +1,7 @@
 
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.utils import uci
-from paradrop.lib.utils.output import out
+from pdtools.lib.output import out
 
 
 def getOSWirelessConfig(update):

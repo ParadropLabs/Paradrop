@@ -9,7 +9,7 @@ import signal
 from paradrop.lib.utils import output
 
 from paradrop.lib import settings
-from paradrop.lib.utils.output import logPrefix
+from pdtools.lib.output import logPrefix
 
 
 ##########################################################################

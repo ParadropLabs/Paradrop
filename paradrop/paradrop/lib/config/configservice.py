@@ -7,7 +7,7 @@
 
 from paradrop.backend.pdconfd import client
 from paradrop.lib.utils import uci
-from paradrop.lib.utils.output import out
+from pdtools.lib.output import out
 
 def reloadNetwork(update):
     # leverage osconfig to poke pdconfd to tell it we have made changes
