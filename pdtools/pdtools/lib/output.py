@@ -32,14 +32,14 @@ BOLD = '\033[1m'
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
-    'HEADER': {'name': 'HEADER', 'glyph': '==', 'color': colorama.Fore.BLUE},
-    'VERBOSE': {'name': 'VERBOSE', 'glyph': '--', 'color': colorama.Fore.BLACK},
-    'INFO': {'name': 'INFO', 'glyph': '--', 'color': colorama.Fore.GREEN},
-    'PERF': {'name': 'PERF', 'glyph': '--', 'color': colorama.Fore.WHITE},
-    'WARN': {'name': 'WARN', 'glyph': '**', 'color': colorama.Fore.YELLOW},
-    'ERR': {'name': 'ERR', 'glyph': '!!', 'color': colorama.Fore.RED},
+    'HEADER':   {'name': 'HEADER',   'glyph': '==', 'color': colorama.Fore.BLUE},
+    'VERBOSE':  {'name': 'VERBOSE',  'glyph': '--', 'color': colorama.Fore.BLACK},
+    'INFO':     {'name': 'INFO',     'glyph': '--', 'color': colorama.Fore.GREEN},
+    'PERF':     {'name': 'PERF',     'glyph': '--', 'color': colorama.Fore.WHITE},
+    'WARN':     {'name': 'WARN',     'glyph': '**', 'color': colorama.Fore.YELLOW},
+    'ERR':      {'name': 'ERR',      'glyph': '!!', 'color': colorama.Fore.RED},
     'SECURITY': {'name': 'SECURITY', 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
-    'FATAL': {'name': 'FATAL', 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+    'FATAL':    {'name': 'FATAL',    'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
 }
 
 
