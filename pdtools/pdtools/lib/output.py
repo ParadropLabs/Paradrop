@@ -25,17 +25,10 @@ from twisted.python import log
 
 # "global" variable all modules should be able to toggle
 verbose = False
-
-# should we print logs to std?
-# This is primarily a performance concern. Regardless of this setting the logs
-# are always saved (as currently implemented)
-PRINT_LOGS = True
+out = None
 
 # colorama package does colors but doesn't do style, so keeping this for now
-
-
-class Colors:
-    BOLD = '\033[1m'
+BOLD = '\033[1m'
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
@@ -45,9 +38,38 @@ LOG_TYPES = {
     'PERF': {'name': 'PERF', 'glyph': '--', 'color': colorama.Fore.WHITE},
     'WARN': {'name': 'WARN', 'glyph': '**', 'color': colorama.Fore.YELLOW},
     'ERR': {'name': 'ERR', 'glyph': '!!', 'color': colorama.Fore.RED},
-    'SECURITY': {'name': 'SECURITY', 'glyph': '!!', 'color': Colors.BOLD + colorama.Fore.RED},
+    'SECURITY': {'name': 'SECURITY', 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
     'FATAL': {'name': 'FATAL', 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
 }
+
+
+def initializeLogger(stealStdio=True, printLogs=True):
+    '''
+    Set up logging for the current environment. 
+
+    The "out" object is fine living as a global in the module namespace, but CANNOT
+    autogenerate it if we're stealing stdio, otherwise anyone who imports it is going
+    to lose their output!
+
+    :param stealStdio: should the logger intercept stdio?
+    :param printLogs: output final logs to stdio. Performance concern
+    '''
+    global out
+
+    out = Output(stealStdio, printLogs,
+                 header=BaseOutput(LOG_TYPES['HEADER']),
+                 testing=BaseOutput(LOG_TYPES['VERBOSE']),
+                 verbose=BaseOutput(LOG_TYPES['VERBOSE']),
+                 info=BaseOutput(LOG_TYPES['INFO']),
+                 perf=BaseOutput(LOG_TYPES['PERF']),
+                 warn=BaseOutput(LOG_TYPES['WARN']),
+                 err=BaseOutput(LOG_TYPES['ERR']),
+                 exception=BaseOutput(LOG_TYPES['ERR']),
+                 security=BaseOutput(LOG_TYPES['SECURITY']),
+                 fatal=BaseOutput(LOG_TYPES['FATAL']),
+                 twisted=TwistedOutput(LOG_TYPES['INFO']),
+                 twistedErr=TwistedException(LOG_TYPES['ERR'])
+                 )
 
 
 ###############################################################################
@@ -56,7 +78,7 @@ LOG_TYPES = {
 
 def silentLogPrefix(stepsUp):
     '''
-    A version of logPrefix that gets caller information silently.
+    logPrefix v2-- gets caller information silently (without caller intervention)
     The single parameter reflects how far up the stack to go to find the caller and
     depends how deep the direct caller to this method is wrt to the target caller
 
@@ -78,13 +100,14 @@ class PrintLogThread(threading.Thread):
     '''
     All file printing access from one thread.
 
-    Does not start automatically (so call 'start()'). To stop the thread (and flush!)
-    set running to False.
+    Receives information when its placed on the passed queue.
+    Called from one location: Output.handlePrint.
 
-    To add content to the printer, call queue.put(stringContents), where 'queue'
-    is the passed in object.
+    Does not close the file: this happens in Output.endLogging. This 
+    simplifies the operation of this class, since it only has to concern
+    itself with the queue. 
 
-    The path must exist before DailyLog runs for the first time
+    The path must exist before DailyLog runs for the first time.
     '''
 
     def __init__(self, path, queue, name='log'):
@@ -344,8 +367,11 @@ class Output():
         open. All print functions are routed through a format transformer and then the printer.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, stdio, printLogs, **kwargs):
         """Setup the initial set of output stream functions."""
+
+        # Should final logs be output to stdout/err?
+        self.__dict__['printLogs'] = printLogs
 
         # Begins intercepting output and converting ANSI characters to win32 as applicable
         colorama.init()
@@ -354,8 +380,10 @@ class Output():
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
 
-        sys.stdout = self.__dict__['redirectOut']
-        sys.stderr = self.__dict__['redirectErr']
+        # Conditionally steal stdio and transform it into paradrop logs
+        if stdio:
+            sys.stdout = self.__dict__['redirectOut']
+            sys.stderr = self.__dict__['redirectErr']
 
         # The raw dict of tags and output objects
         self.__dict__['outputMappings'] = {}
@@ -441,7 +469,7 @@ class Output():
             self.queue.put(logDict)
 
         # Write out the human-readable version to out if needed
-        if PRINT_LOGS:
+        if self.printLogs:
             res = self.messageToString(logDict)
             self.redirectOut.trueWrite(res)
 
@@ -457,20 +485,3 @@ class Output():
 
         outputObject = self.outputMappings[message['type'].lower()]
         return outputObject.formatOutput(message)
-
-
-# Create a standard out module to be used if no one overrides it
-out = Output(
-    header=BaseOutput(LOG_TYPES['HEADER']),
-    testing=BaseOutput(LOG_TYPES['VERBOSE']),
-    verbose=BaseOutput(LOG_TYPES['VERBOSE']),
-    info=BaseOutput(LOG_TYPES['INFO']),
-    perf=BaseOutput(LOG_TYPES['PERF']),
-    warn=BaseOutput(LOG_TYPES['WARN']),
-    err=BaseOutput(LOG_TYPES['ERR']),
-    exception=BaseOutput(LOG_TYPES['ERR']),
-    security=BaseOutput(LOG_TYPES['SECURITY']),
-    fatal=BaseOutput(LOG_TYPES['FATAL']),
-    twisted=TwistedOutput(LOG_TYPES['INFO']),
-    twistedErr=TwistedException(LOG_TYPES['ERR'])
-)

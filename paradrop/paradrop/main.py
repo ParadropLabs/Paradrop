@@ -93,6 +93,7 @@ def main():
     store.store = store.Storage()
 
     # Logger needs to open its files and whatnot
+    output.initializeLogger()
     output.out.startLogging(store.LOG_PATH)
 
     # Register for the shutdown callback so we can gracefully close logging

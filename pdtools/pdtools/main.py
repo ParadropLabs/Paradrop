@@ -23,7 +23,7 @@ import yaml
 import urllib
 
 from pdtools.lib import pdutils
-from pdtools.lib.output import out
+from pdtools.lib import output
 from pdtools.coms.client import RpcClient
 
 from twisted.internet import reactor
@@ -201,6 +201,10 @@ if __name__ == '__main__':
     store.store = store.Storage()
 
     # Connect the store to the output module for file logging
-    out.startLogging(store.LOG_PATH)
+    output.initializeLogger()
+    output.out.startLogging(store.LOG_PATH)
 
-    out.endLogging()
+    output.out.info("This is a message!")
+    print 'Hello!'
+
+    output.out.endLogging()
