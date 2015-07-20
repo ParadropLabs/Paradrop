@@ -17,8 +17,7 @@ from twisted.internet import reactor
 
 from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
-
-import ast
+from pdtools.lib import pdutils
 
 
 ###############################################################################
@@ -61,7 +60,7 @@ def logs(reactor, host, port):
     res = yield client.log()
 
     # comes back raw from the file, have to convert back to dics
-    converted = [ast.literal_eval(x) for x in res.strip().split('\n')]
+    converted = [pdutils.str2json(x) for x in res.strip().split('\n')]
     for a in [out.messageToString(x) for x in converted]:
         print a
     # print formatted

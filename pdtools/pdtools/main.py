@@ -34,6 +34,7 @@ from docopt import docopt
 def main():
     # For now, don't grab STDIO
     output.out.stealStdio(False)
+    output.out.logToConsole(False)
 
     args = docopt(__doc__, version='Paradrop build tools v0.1')
 

@@ -110,10 +110,6 @@ def main():
         from paradrop.backend import pdfcd
 
         # Now setup the RESTful API server for Paradrop
-
-        # Set up the shared store
-        store.store = store.Storage()
-
         pdfcd.server.setup(args)
 
 if __name__ == "__main__":
