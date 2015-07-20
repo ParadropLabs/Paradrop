@@ -32,6 +32,9 @@ from docopt import docopt
 
 
 def main():
+    # For now, don't grab STDIO
+    output.out.stealStdio(False)
+
     args = docopt(__doc__, version='Paradrop build tools v0.1')
 
     host, port = args['<host>'], args['<port>']
@@ -52,11 +55,10 @@ def main():
         print 'Not implemented. Sorry, love.'
 
     if args['logs']:
-        general.logs(args['<host>'], args['<port>'])
+        task.react(general.logs, (host, port))
 
     if args['echo']:
         task.react(general.echo, (host, port))
-        # task.react(general.test, 'a')
 
 
 def installChute(host, port, config):
@@ -169,12 +171,13 @@ def testLogging():
     store.store = store.Storage()
 
     # Connect the store to the output module for file logging
-    output.initializeLogger()
-    output.out.startLogging(store.LOG_PATH)
+    output.out.stealStdio(False)
+    output.out.startFileLogging(store.LOG_PATH)
 
     output.out.info("This is a message!")
+    print 'This is an inline print'
 
-    output.out.endLogging()
+    output.out.endFileLogging()
 
 
 if __name__ == '__main__':

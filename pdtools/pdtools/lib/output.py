@@ -25,7 +25,6 @@ from twisted.python import log
 
 # "global" variable all modules should be able to toggle
 verbose = False
-out = None
 
 # colorama package does colors but doesn't do style, so keeping this for now
 BOLD = '\033[1m'
@@ -41,35 +40,6 @@ LOG_TYPES = {
     'SECURITY': {'name': 'SECURITY', 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
     'FATAL': {'name': 'FATAL', 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
 }
-
-
-def initializeLogger(stealStdio=True, printLogs=True):
-    '''
-    Set up logging for the current environment. 
-
-    The "out" object is fine living as a global in the module namespace, but CANNOT
-    autogenerate it if we're stealing stdio, otherwise anyone who imports it is going
-    to lose their output!
-
-    :param stealStdio: should the logger intercept stdio?
-    :param printLogs: output final logs to stdio. Performance concern
-    '''
-    global out
-
-    out = Output(stealStdio, printLogs,
-                 header=BaseOutput(LOG_TYPES['HEADER']),
-                 testing=BaseOutput(LOG_TYPES['VERBOSE']),
-                 verbose=BaseOutput(LOG_TYPES['VERBOSE']),
-                 info=BaseOutput(LOG_TYPES['INFO']),
-                 perf=BaseOutput(LOG_TYPES['PERF']),
-                 warn=BaseOutput(LOG_TYPES['WARN']),
-                 err=BaseOutput(LOG_TYPES['ERR']),
-                 exception=BaseOutput(LOG_TYPES['ERR']),
-                 security=BaseOutput(LOG_TYPES['SECURITY']),
-                 fatal=BaseOutput(LOG_TYPES['FATAL']),
-                 twisted=TwistedOutput(LOG_TYPES['INFO']),
-                 twistedErr=TwistedException(LOG_TYPES['ERR'])
-                 )
 
 ###############################################################################
 # Logging Utilities
@@ -374,11 +344,8 @@ class Output():
         open. All print functions are routed through a format transformer and then the printer.
     """
 
-    def __init__(self, stdio, printLogs, **kwargs):
+    def __init__(self, **kwargs):
         """Setup the initial set of output stream functions."""
-
-        # Should final logs be output to stdout/err?
-        self.__dict__['printLogs'] = printLogs
 
         # Begins intercepting output and converting ANSI characters to win32 as applicable
         colorama.init()
@@ -386,11 +353,6 @@ class Output():
         # Refactor this as an Output class
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
-
-        # Conditionally steal stdio and transform it into paradrop logs
-        if stdio:
-            sys.stdout = self.__dict__['redirectOut']
-            sys.stderr = self.__dict__['redirectErr']
 
         # The raw dict of tags and output objects
         self.__dict__['outputMappings'] = {}
@@ -402,6 +364,10 @@ class Output():
         # This must come after the setattr calls so we get the wrapped object
         log.startLoggingWithObserver(self.twisted, setStdout=False)
         log.startLoggingWithObserver(self.twistedErr, setStdout=False)
+
+        # By default, steal stdio and print to console
+        self.stealStdio(True)
+        self.logToConsole(True)
 
     def __getattr__(self, name):
         """Catch attribute access attempts that were not defined in __init__
@@ -431,7 +397,7 @@ class Output():
     def __repr__(self):
         return "REPR"
 
-    def startLogging(self, path):
+    def startFileLogging(self, path):
         '''
         All function calls are transparently routed to the writer for logging.
 
@@ -442,13 +408,12 @@ class Output():
         self.__dict__['printer'] = PrintLogThread(store.LOG_PATH, self.queue)
         self.printer.start()
 
-    def endLogging(self):
+    def endFileLogging(self):
         '''
         Ask the printing thread to flush and end, then return.
         '''
+
         out.info('Asking file logger to close')
-        # self.printer.running = False
-        # self.printer.join()
         self.queue.join()
 
         # Because the print thread can't tell when it goes down as currently designed
@@ -492,3 +457,38 @@ class Output():
 
         outputObject = self.outputMappings[message['type'].lower()]
         return outputObject.formatOutput(message)
+
+    ###############################################################################
+    # Reconfiguration
+    ###############################################################################
+    def stealStdio(self, newStatus):
+        self.__dict__['stealIo'] = newStatus
+
+        if newStatus:
+            # assign our interceptor objects to the outputs
+            sys.stdout = self.redirectOut
+            sys.stderr = self.redirectErr
+        else:
+            # return stdout and err to their respective positions
+            sys.stdout = self.__dict__['redirectOut'].trueOut
+            sys.stderr = self.__dict__['redirectErr'].trueOut
+
+    def logToConsole(self, newStatus):
+        self.__dict__['printLogs'] = newStatus
+
+
+# Make sure out is only created once
+out = Output(
+    header=BaseOutput(LOG_TYPES['HEADER']),
+    testing=BaseOutput(LOG_TYPES['VERBOSE']),
+    verbose=BaseOutput(LOG_TYPES['VERBOSE']),
+    info=BaseOutput(LOG_TYPES['INFO']),
+    perf=BaseOutput(LOG_TYPES['PERF']),
+    warn=BaseOutput(LOG_TYPES['WARN']),
+    err=BaseOutput(LOG_TYPES['ERR']),
+    exception=BaseOutput(LOG_TYPES['ERR']),
+    security=BaseOutput(LOG_TYPES['SECURITY']),
+    fatal=BaseOutput(LOG_TYPES['FATAL']),
+    twisted=TwistedOutput(LOG_TYPES['INFO']),
+    twistedErr=TwistedException(LOG_TYPES['ERR'])
+)
