@@ -71,10 +71,10 @@ def initializeLogger(stealStdio=True, printLogs=True):
                  twistedErr=TwistedException(LOG_TYPES['ERR'])
                  )
 
-
 ###############################################################################
 # Logging Utilities
 ###############################################################################
+
 
 def silentLogPrefix(stepsUp):
     '''
