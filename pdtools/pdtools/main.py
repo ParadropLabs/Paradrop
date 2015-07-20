@@ -194,17 +194,17 @@ def printFailure(r):
 
 
 if __name__ == '__main__':
-    # main()
+    main()
 
-    # initialize the store
-    from pdtools.lib import store
-    store.store = store.Storage()
+    # # initialize the store
+    # from pdtools.lib import store
+    # store.store = store.Storage()
 
-    # Connect the store to the output module for file logging
-    output.initializeLogger()
-    output.out.startLogging(store.LOG_PATH)
+    # # Connect the store to the output module for file logging
+    # output.initializeLogger()
+    # output.out.startLogging(store.LOG_PATH)
 
-    output.out.info("This is a message!")
-    print 'Hello!'
+    # output.out.info("This is a message!")
+    # print 'Hello!'
 
-    output.out.endLogging()
+    # output.out.endLogging()
