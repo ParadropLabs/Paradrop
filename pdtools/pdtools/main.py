@@ -32,7 +32,7 @@ from docopt import docopt
 
 
 def main():
-    # For now, don't grab STDIO
+    # For now, don't grab STDIO and don't write random log noise to conosle
     output.out.stealStdio(False)
     output.out.logToConsole(False)
 

@@ -32,7 +32,7 @@ BOLD = '\033[1m'
 # Represents formatting information for the specified log type
 LOG_TYPES = {
     'HEADER': {'name': 'HEADER', 'glyph': '==', 'color': colorama.Fore.BLUE},
-    'VERBOSE': {'name': 'VERBOSE', 'glyph': '--', 'color': colorama.Fore.BLACK},
+    'VERBOSE': {'name': 'VERBOSE', 'glyph': '>>', 'color': colorama.Fore.BLACK},
     'INFO': {'name': 'INFO', 'glyph': '--', 'color': colorama.Fore.GREEN},
     'PERF': {'name': 'PERF', 'glyph': '--', 'color': colorama.Fore.WHITE},
     'WARN': {'name': 'WARN', 'glyph': '**', 'color': colorama.Fore.YELLOW},
@@ -379,7 +379,7 @@ class Output():
     def __setattr__(self, name, val):
         """Allow the program to add new output streams on the fly."""
         if(verbose):
-            print('>> Adding new Output stream %s' % name)
+            print 'Adding new Output stream %s' % name
 
         def inner(*args, **kwargs):
             result = val(*args, **kwargs)
@@ -477,7 +477,6 @@ class Output():
         self.__dict__['printLogs'] = newStatus
 
 
-# Make sure out is only created once
 out = Output(
     header=BaseOutput(LOG_TYPES['HEADER']),
     testing=BaseOutput(LOG_TYPES['VERBOSE']),
