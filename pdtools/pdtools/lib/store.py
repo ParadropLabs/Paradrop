@@ -12,6 +12,7 @@ import os
 import yaml
 
 from os.path import expanduser
+from pdtools.lib.output import out
 
 # Check and see if we're on snappy or not. If not, then stick the logs in the local
 # directory. We will be provisioned as a developer instance anyway, so the info doesn't matter yet,
@@ -26,7 +27,7 @@ MISC_PATH = STORE_PATH + 'misc/'
 INFO_PATH = STORE_PATH + 'root.yaml'
 
 # Keys required in the store
-INFO_REQUIRES = ['version', 'accounts', 'currentAccount']
+INFO_REQUIRES = ['version', 'pdid']
 
 # Global singleton (lite). This is NOT set up by default (else testing would be a
 # nightmare.) The main script should set this up when ready to rock
@@ -35,10 +36,19 @@ store = None
 
 class Storage(object):
 
-    def __init__(self, autoSave=True):
+    def __init__(self, autoSave=True, router=False):
         '''
-        Autosave will save baseConfig on change.
+        Autosave saves baseConfig on change. (not implemented, see methods below)
+
+        The router optional flag should be set to configure runtime store allocation specific 
+        for VM routers
         '''
+        self.autosave = autoSave
+
+        # Check and see if we are running locally-- if so place the logs in a subdirectory
+        # and respecify the paths
+        if router:
+            configureLocalPaths()
 
         # Create needed directories
         for path in [STORE_PATH, KEY_PATH, LOG_PATH, MISC_PATH]:
@@ -53,6 +63,7 @@ class Storage(object):
 
         # Sanity check contents of info and throw it out if bad
         if not validateInfo(self.baseConfig):
+            out.warn('Saved configuration data invalid, destroying it.')
             os.remove(INFO_PATH)
             createDefaultInfo(INFO_PATH)
             self.baseConfig = loadYaml(INFO_PATH)
@@ -60,14 +71,52 @@ class Storage(object):
         # TODO: load keys
 
     def close(self):
-        ''' Write out leftovers, encrypt if needed, and empty it all out '''
+        ''' Close and write out. This is automatic if autoSave is on'''
         pass
 
+    def saveConfig(self, key, value):
+        self.baseConfig[key] = value
+
+        if self.autosave:
+            writeYaml(self.baseConfig, INFO_PATH)
+
     def saveKey(self, key, name):
-        pass
+        ''' Save the key with the given name. Overwrites by default '''
+        path = KEY_PATH + name
+
+        # Do nothing by default if the key already exists (but perhaps change this behavior)
+        if os.path.isfile(path):
+            pass
+
+        with open(path, 'w') as f:
+            f.write(key)
+
+    def getKey(self, name):
+        ''' Returns the given key or None '''
+        path = KEY_PATH + name
+
+        if os.path.isfile(path):
+            with open(path, 'r') as f:
+                return f.read()
+
+        return None
 
     def saveMisc(self, contents, name):
         pass
+
+
+def configureLocalPaths():
+    ''' Alter paths if the router is running as a vm '''
+    global STORE_PATH, LOG_PATH, KEY_PATH, MISC_PATH, INFO_PATH
+
+    # If not on snappy, we're a router running locally
+    if not snappyPath:
+        STORE_PATH = expanduser('~') + '/.paradrop/local/'
+
+        LOG_PATH = STORE_PATH + 'logs/'
+        KEY_PATH = STORE_PATH + 'keys/'
+        MISC_PATH = STORE_PATH + 'misc/'
+        INFO_PATH = STORE_PATH + 'root.yaml'
 
 
 def validateInfo(contents):
@@ -90,8 +139,7 @@ def validateInfo(contents):
 def createDefaultInfo(path):
     default = '''
     version: 1
-    accounts: ""
-    currentAccount: null
+    pdid: ""
     '''
 
     writeYaml(default, path)

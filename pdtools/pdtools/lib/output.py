@@ -18,7 +18,6 @@ import time
 import colorama
 
 from pdtools.lib import pdutils
-from pdtools.lib import store
 
 from twisted.python.logfile import DailyLogFile
 from twisted.python import log
@@ -405,7 +404,7 @@ class Output():
         '''
 
         self.__dict__['queue'] = Queue.Queue()
-        self.__dict__['printer'] = PrintLogThread(store.LOG_PATH, self.queue)
+        self.__dict__['printer'] = PrintLogThread(path, self.queue)
         self.printer.start()
 
     def endFileLogging(self):

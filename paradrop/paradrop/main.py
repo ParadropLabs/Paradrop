@@ -90,15 +90,14 @@ def main():
         caughtSIGUSR1(signal.SIGUSR1, None)
 
     # Ask the shared store to setup (paths can be set up there)
+    store.configureLocalPaths()
     store.store = store.Storage()
 
-    # Logger needs to open its files and whatnot
+    # Inform output it should being logging to file
     output.out.startFileLogging(store.LOG_PATH)
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
-
-    print 'Look, print statements are ok now!'
 
     if args.config:
         from paradrop.backend import pdconfd

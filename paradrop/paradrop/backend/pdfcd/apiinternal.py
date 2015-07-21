@@ -51,6 +51,19 @@ def api_log(lines=100):
 
     defer.returnValue(contents)
 
+
+def api_provision(pdid, keys):
+    '''
+    Provision this router with an id and a set of keys. 
+
+    This is a temporary call until the provisioning process is finalized.
+    '''
+    store.store.saveConfig('pdid', pdid)
+
+    priv, pub = keys
+    store.store.saveKey('private', "A Very Secure Key")
+    store.store.saveKey('public', "A Very Secure Key")
+
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.
 ###############################################################################

@@ -4,6 +4,9 @@ Router provisioning
 NOTE: In writing this code Ive come to believe its easier and better
 for us to host pre-installed and provisioned instances ourselves rather 
 than build them from scratch.
+
+We would host the image with all tools installed then provide it 
+for download. How the provisioning process actually occurs I'm not sure. 
 '''
 
 import subprocess

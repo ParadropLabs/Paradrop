@@ -243,9 +243,6 @@ def setup(args=None):
     api = ParadropAPIServer(reactor)
     api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
-
-    print store.snappyPath
-
     # Development mode
     if(args and args.development):
         thePort = settings.PDFCD_PORT + 10000
