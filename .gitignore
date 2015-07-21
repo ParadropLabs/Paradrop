@@ -57,6 +57,7 @@ target/
 
 # Ignore the tmp file that we use for storage of chute info right now
 paradrop/tmp
+tmp
 
 
 #End boilerplate ignores

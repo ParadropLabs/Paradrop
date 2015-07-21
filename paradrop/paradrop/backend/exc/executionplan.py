@@ -86,7 +86,7 @@ def executePlans(update):
             skipme = func(*((update, ) + args))
 
         except Exception as e:
-            out.exception(e, True, plans=str(update.plans))
+            out.exception(e, True) #, plans=str(update.plans)) # Removed because breaks new out.exception call
             update.responses.append({'exception': str(e), 'traceback': traceback.format_exc()})
             return True
 

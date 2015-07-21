@@ -18,7 +18,7 @@ def isIpAvailable(ipaddr, chuteStor, name):
        Checks the IP addresses of all zones on all other chutes,
         makes sure subnets are not the same."""
    
-    #return True
+    return True
     #TODO: Need to get this working for all types of chutes
     chList = chuteStor.getChuteList()
     
