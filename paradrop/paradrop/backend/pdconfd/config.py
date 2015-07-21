@@ -575,7 +575,7 @@ class ConfigZone(ConfigObject):
             if self.manager.forwardingCount == 0:
                 cmd = ["sysctl", "--write",
                        "net.ipv4.conf.all.forwarding=0"]
-                commands.append(cmd)
+                commands.append((PRIO_ADD_IPTABLES, cmd))
         return commands
 
 # Map of type names to the classes that handle them.
@@ -656,13 +656,12 @@ class ConfigManager(object):
                 try:
                     result = subprocess.call(cmd)
                 except OSError as e:
-                    out.warn('** {} Command "{}" failed\n'.format(
-                        logPrefix, " ".join(cmd)))
-                    out.exception(logPrefix(), e, True)
+                    out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
+                    out.exception(e, True)
             else:
                 result = "N/A"
-            out.info('-- {} Command (prio {}) "{}" Returned {}\n'.format(
-                logPrefix(), prio, " ".join(cmd), result))
+            out.info('Command (prio {}) "{}" Returned {}\n'.format(
+                prio, " ".join(cmd), result))
 
     def findMatchingConfig(self, config, byName=False):
         """

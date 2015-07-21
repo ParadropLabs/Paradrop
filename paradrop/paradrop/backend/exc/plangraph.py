@@ -45,6 +45,7 @@ STATE_SET_VIRT_CONFIG           = 59
 STATE_SET_VIRT_SCRIPT           = 60
 DHCP_SET_VIRT_RULES             = 62
 RUNTIME_SET_VIRT_DHCP           = 61
+RUNTIME_RELOAD_CONFIG           = 63
 
 ###############################################################################
 # Operations On Configuration Changes
