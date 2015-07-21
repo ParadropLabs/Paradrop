@@ -18,7 +18,8 @@ RUNTIME_SECURITY_CHECK          = 5
 
 ###############################################################################
 # Configuration Generation
-NAME_RESV_PART                  = 10
+NAME_RESV_PART                  = 9
+STRUCT_SETUP_SYSTEM_CONFIG      = 10
 STRUCT_GET_INT_NETWORK          = 11
 STRUCT_GET_OS_NETWORK           = 12
 STRUCT_GET_OS_WIRELESS          = 13
