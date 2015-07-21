@@ -60,10 +60,19 @@ def logs(reactor, host, port):
     res = yield client.log()
 
     # comes back raw from the file, have to convert back to dics
-    converted = [pdutils.str2json(x) for x in res.strip().split('\n')]
-    for a in [out.messageToString(x) for x in converted]:
-        print a
-    # print formatted
+    # converted = [pdutils.str2json(x) for x in res.strip().split('\n')]
+    # for a in [out.messageToString(x) for x in converted]:
+    #     print a
+
+    # Cant do this more succintly until we find the encoding bugs
+    for x in res.strip().split('\n'):
+        try:
+            j = pdutils.str2json(x)
+            s = out.messageToString(j)
+            print s
+        except:
+            print 'Malformed line, raw output: ' + x
+
     defer.returnValue('Done')
 
 
