@@ -7,11 +7,12 @@
         we need to support only this module would change.
 """
 
-from paradrop.lib.utils.output import out, logPrefix
+from pdtools.lib.output import out
+
 
 def revertConfig(update, theType):
-    out.warn('** %s TODO implement me\n' % logPrefix())
+    out.warn('TODO implement me')
     # look at lib.internal.chs.chutedefault.py, function: resetOSNetworkConfig
-    # Basically the UCI system saves a backup of the original config file, 
+    # Basically the UCI system saves a backup of the original config file,
     # if we need to revert changes at all, we can just tell our UCI module to
     # revert back using that backup copy.

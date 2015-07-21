@@ -3,7 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from paradrop.lib.utils.output import out, logPrefix
+from pdtools.lib.output import out
 from paradrop.backend.exc import plangraph
 
 def generatePlans(update):
@@ -14,7 +14,7 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.header("== %s %r\n" % (logPrefix(), update))
+    out.header("%r\n" % (update))
     
     # Make sure we need to create this chute (does it already exist)
     # TODO
@@ -26,7 +26,7 @@ def generatePlans(update):
 # import sys, os, hashlib, urllib2, tarfile
 # 
 # from lib.paradrop import *
-# from lib.paradrop.utils import pdutils
+# from pdtools.lib import pdutils
 # from lib.paradrop.chute import Chute
 # from lib.paradrop import chute
 # from lib.internal.utils import lxc as virt
@@ -55,7 +55,7 @@ def generateFilesPlan(chuteStor, newChute, chutePlan):
     """
     new = newChute
     old = chuteStor.getChute(newChute.guid)
-    out.header("-- %s Generating Files Plan: %r\n" % (logPrefix(), new))
+    out.header("Generating Files Plan: %r\n" % (new))
     
     tok = new.getCache('updateToken')
     if(tok and tok == 'STARTINGUP'):

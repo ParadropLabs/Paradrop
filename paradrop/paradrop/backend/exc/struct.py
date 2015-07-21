@@ -3,7 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from paradrop.lib.utils.output import out, logPrefix
+from pdtools.lib.output import out
 from paradrop.backend.exc import plangraph
 
 from paradrop.lib import config
@@ -16,7 +16,7 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.verbose("   %s %r\n" % (logPrefix(), update))
+    out.verbose("%r\n" % (update))
     
     # Save current network configuration into chute cache (key: 'networkInterfaces')
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK, (config.network.getNetworkConfig, ))

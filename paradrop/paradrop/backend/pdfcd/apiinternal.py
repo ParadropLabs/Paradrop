@@ -23,7 +23,9 @@ I have done this in the interest of time and development speed.
 from twisted.web import xmlrpc
 from twisted.internet import defer, utils
 
-from paradrop.lib.utils.output import out, logPrefix
+from pdtools.lib.output import out
+from pdtools.lib import store
+
 from paradrop.lib import settings
 
 import os
@@ -42,8 +44,9 @@ def api_log(lines=100):
     # if settings.LOG_PATH is None:
     #     raise Exception("Logging to file is not currently enabled.")
 
-    # path = settings.LOG_PATH + settings.LOG_NAME
-    path = os.path.dirname(os.getcwd()) + '/' + settings.LOG_NAME
+    # Fix this
+    path = store.LOG_PATH + 'log'
+    # path = os.path.dirname(os.getcwd()) + '/' + settings.LOG_NAME
     contents = yield utils.getProcessOutput('/usr/bin/tail', args=[path, '-n ' + str(lines), ])
 
     defer.returnValue(contents)
@@ -70,7 +73,7 @@ class Base(xmlrpc.XMLRPC):
 
 def castFailure(failure):
     ''' Converts an exception (or general failure) into an xmlrpc fault for transmission. '''
-    out.info("-- Failed API call (TODO: categorize errors)")
+    out.info("Failed API call (TODO: categorize errors)")
 
     raise xmlrpc.Fault(123, failure.getErrorMessage())
 
@@ -85,7 +88,7 @@ def apiWrapper(target):
 
 
 def castSuccess(res):
-    out.info("-- Completed API call (TODO: add details)")
+    out.info("Completed API call (TODO: add details)")
 
     # screen out Objectids on mongo returns. The remote objects have no
     # need for them, and they confuse xmlrpc

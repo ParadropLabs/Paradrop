@@ -5,7 +5,7 @@
 
 from paradrop.backend.exc import plangraph
 from paradrop.lib import config
-from paradrop.lib.utils.output import out, logPrefix
+from pdtools.lib.output import out
 
 def generatePlans(update):
     """
@@ -15,7 +15,7 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.header("== %s %r\n" % (logPrefix(), update))
+    out.header("%r\n" % (update))
     
     # Make sure we need to create this chute (does it already exist)
     # TODO
@@ -45,7 +45,7 @@ def generatePlans(update):
 # import sys
 # 
 # from lib.paradrop import *
-# from lib.paradrop.utils import pdutils
+# from pdtools.lib import pdutils
 # from lib.paradrop.chute import Chute
 # from lib.paradrop import chute
 # 
@@ -71,7 +71,7 @@ def generateTrafficPlan(chuteStor, newChute, chutePlan):
     """
     new = newChute
     old = chuteStor.getChute(newChute.guid)
-    out.header("-- %s Generating Traffic Plan: %r\n" % (logPrefix(), new))
+    out.header("Generating Traffic Plan: %r\n" % (new))
     
     # First see if we are making new rules or changing old ones
     

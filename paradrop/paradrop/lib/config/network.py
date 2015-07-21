@@ -1,9 +1,11 @@
 
 from paradrop.lib.config import configservice, uciutils
-from paradrop.lib.utils import addresses, pdutils, uci
-from paradrop.lib.utils.output import out, logPrefix
+from paradrop.lib.utils import addresses, uci
+from pdtools.lib.output import out
+from pdtools.lib import pdutils
 
-MAX_INTERFACE_NAME_LEN = 16
+MAX_INTERFACE_NAME_LEN = 15
+
 
 def getNetworkConfig(update):
     """
@@ -31,26 +33,26 @@ def getNetworkConfig(update):
         # longer then 16-6 This is because the veth pair name for lxc cannot be
         # longer then 16, and we prepend "vc####" to that interface name
         if(len(name) > 10):
-            out.warn('** {} The network interface name ({}) cannot be longer than 10 characters.\n'.format(
-                logPrefix(), name))
+            out.warn('The network interface name ({}) cannot be longer than 10 characters.\n'.format(
+                name))
             raise Exception("Interface name too long")
 
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['ipaddr', 'intfName', 'type', 'netmask'])
         if(res):
-            out.warn('** {} Network interface definition {}\n'.format(logPrefix(), res))
+            out.warn('Network interface definition {}\n'.format(res))
             raise Exception("Interface definition missing field(s)")
 
         # verify that this chute can have the IP provided
         if(not addresses.isIpValid(cfg['ipaddr'])):
-            out.warn('** {} IP address ({}) not valid for {}'.format(
-                logPrefix(), cfg['ipaddr'], name))
+            out.warn('IP address ({}) not valid for {}'.format(
+                cfg['ipaddr'], name))
             raise Exception("IP address not valid")
 
         # Verify that no other interfaces on other chutes are using this IP address
         if(not addresses.isIpAvailable(cfg['ipaddr'], update.chuteStor, update.new.name)):
-            out.warn('** {} IP address ({}) requested by {} already in use'.format(
-                logPrefix(), cfg['ipaddr'], name))
+            out.warn('IP address ({}) requested by {} already in use'.format(
+                cfg['ipaddr'], name))
             raise Exception("IP address in use")
 
         iface = {
@@ -67,7 +69,7 @@ def getNetworkConfig(update):
 
         # The external interface is defined above in the class docs
         prefixLen = MAX_INTERFACE_NAME_LEN - len(name) - 1
-        externalIntf="{}.{}".format(update.new.name[0:prefixLen], name)
+        externalIntf = "{}.{}".format(update.new.name[0:prefixLen], name)
         iface['externalIntf'] = externalIntf
 
         # Add extra fields for WiFi devices.
@@ -75,7 +77,7 @@ def getNetworkConfig(update):
             # Check for required fields.
             res = pdutils.check(cfg, dict, ['ssid'])
             if(res):
-                out.warn('** {} WiFi network interface definition {}\n'.format(logPrefix(), res))
+                out.warn('WiFi network interface definition {}\n'.format(res))
                 raise Exception("Interface definition missing field(s)")
 
             iface['ssid'] = cfg['ssid']
@@ -86,9 +88,14 @@ def getNetworkConfig(update):
             if 'key' in cfg:
                 iface['key'] = cfg['key']
 
+        # Pass on DHCP configuration if it exists.
+        if 'dhcp' in cfg:
+            iface['dhcp'] = cfg['dhcp']
+
         interfaces.append(iface)
 
     update.new.setCache('networkInterfaces', interfaces)
+
 
 def getOSNetworkConfig(update):
     """
@@ -113,12 +120,12 @@ def getOSNetworkConfig(update):
     for iface in interfaces:
         # A basic set of things must exist for all interfaces
         config = {'type': 'interface', 'name': iface['externalIntf']}
- 
+
         # LXC network interfaces are always bridges
         options = {
-            'type': "bridge", 
-            'proto': 'static', 
-            'ipaddr': iface['externalIpaddr'], 
+            'type': "bridge",
+            'proto': 'static',
+            'ipaddr': iface['externalIpaddr'],
             'netmask': iface['netmask'],
             'ifname': iface['externalIntf']
         }
@@ -127,6 +134,7 @@ def getOSNetworkConfig(update):
         osNetwork.append((config, options))
 
     update.new.setCache('osNetworkConfig', osNetwork)
+
 
 def setOSNetworkConfig(update):
     """
@@ -140,15 +148,16 @@ def setOSNetworkConfig(update):
     #
     # old code under lib.internal.chs.chutelxc same function name
 
-    changed = uciutils.setConfig(update.new, update.old, 
-            cacheKeys=['osNetworkConfig'], filepath=uci.getSystemPath("network"))
+    changed = uciutils.setConfig(update.new, update.old,
+                                 cacheKeys=['osNetworkConfig'], filepath=uci.getSystemPath("network"))
 
     # If we didn't change anything, then return the function to reloadNetwork so we can save ourselves from that call
     if(not changed):
         return configservice.reloadNetwork
 
+
 def getVirtNetworkConfig(update):
-    out.warn('** %s TODO implement me\n' % logPrefix())
+    out.warn('TODO implement me\n')
     # old code under lib.internal.chs.chutelxc same function name
     # Takes any network specific config and sets up the cache:virtNetworkConfig
     # this would be the place to put anything into HostConfig or the dockerfile we need

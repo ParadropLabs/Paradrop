@@ -211,8 +211,12 @@ up() {
 
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
-    kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::7777-:9000,hostfwd=tcp::9999-:14321 \
+    kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321 \
             -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 snappy-vm.img &
+
+    # I can't run this at home, original statement here:
+    # kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::7777-:9000,hostfwd=tcp::9999-:14321 \
+            # -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 snappy-vm.img &
     echo $! > pid.txt
 }
 
@@ -240,7 +244,7 @@ update-tools() {
     python setup.py sdist bdist_wheel
     twine upload dist/* 
 
-    sudo pip install paradrop --upgrade
+    sudo pip install pdtools -U
 }
 
 ###

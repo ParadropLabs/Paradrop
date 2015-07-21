@@ -23,20 +23,22 @@ import yaml
 import urllib
 
 from pdtools.lib import pdutils
-from pdtools.lib.output import out
+from pdtools.lib import output
 from pdtools.coms.client import RpcClient
+from pdtools.coms import routers, general, server
 
-from twisted.internet import reactor
-from twisted.internet import defer
+from twisted.internet import reactor, task, defer
 from docopt import docopt
 
 
 def main():
-    # args = createArgs().parse_args()
-    # print(args)
+    # For now, don't grab STDIO
+    output.out.stealStdio(False)
+    output.out.logToConsole(False)
 
     args = docopt(__doc__, version='Paradrop build tools v0.1')
-    # print(args)
+
+    host, port = args['<host>'], args['<port>']
 
     if args['install']:
         installChute(args['<host>'], args['<port>'], args['<path-to-config>'])
@@ -54,10 +56,10 @@ def main():
         print 'Not implemented. Sorry, love.'
 
     if args['logs']:
-        logs(args['<host>'], args['<port>'])
+        task.react(general.logs, (host, port))
 
     if args['echo']:
-        echo(args['<host>'], args['<port>'])
+        task.react(general.echo, (host, port))
 
 
 def installChute(host, port, config):
@@ -159,45 +161,30 @@ def startChute(host, port, name):
         print 'ERROR: Failed to start chute.(' + urllib.unquote(str(res.get('message'))) + ')'
 
 
-def logs(host, port):
-    '''
-    Connect to the named router.
-
-    TODO: convert from host/port to finding the router by its name. 
-    '''
-
-    RpcClient(host, port, 'internal').log().addCallbacks(printSuccess, printFailure).addBoth(killReactor)
-    reactor.run()
-
-
-def echo(host, port):
-    RpcClient(host, port, 'internal').echo('Hello!').addCallbacks(printSuccess, printFailure).addBoth(killReactor)
-    reactor.run()
-
-
 def installParadrop():
     ''' Testing method. Install paradrop, snappy, etc onto SD card '''
     pass
 
+
 ###############################################################################
-# Default Callbacks
+#  Inline testing
 ###############################################################################
 
+def testLogging():
+    # initialize the store
+    from pdtools.lib import store
+    store.store = store.Storage()
 
-def killReactor(r):
-    reactor.stop()
+    # Connect the store to the output module for file logging
+    output.out.stealStdio(False)
+    output.out.startFileLogging(store.LOG_PATH)
 
+    output.out.info("This is a message!")
+    print 'This is an inline print'
 
-def printSuccess(r):
-    print r
+    output.out.endFileLogging()
 
-
-def printFailure(r):
-    print 'Failed!'
-    print r
 
 if __name__ == '__main__':
     main()
-
-    #out.info("Hello!")
-    # print 'Testing!'
+    # testLogging()

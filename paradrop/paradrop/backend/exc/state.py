@@ -3,12 +3,13 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from paradrop.lib.utils.output import out, logPrefix
+from pdtools.lib.output import out
 from paradrop.backend.exc import plangraph
 from paradrop.lib import chute
-from paradrop.lib.utils.pdutils import jsonPretty
+from pdtools.lib.pdutils import jsonPretty
 
 from paradrop.lib.utils import dockerapi as virt
+
 
 def generatePlans(update):
     """
@@ -18,42 +19,42 @@ def generatePlans(update):
         Returns:
             True: abort the plan generation process
     """
-    out.verbose("   %s %r\n" % (logPrefix(), update))
-    
+    out.verbose("%r\n" % (update))
+
     # If this chute is new (no old version)
     if(update.old is None):
-        out.verbose('   %s new chute\n' % logPrefix())
-        
-        #If it's a stop  or start command go ahead and fail right now since we don't have a record of it
+        out.verbose('new chute\n')
+
+        # If it's a stop  or start command go ahead and fail right now since we don't have a record of it
         if update.updateType == 'stop' or update.updateType == 'start':
-            update.failure ="No chute found with id: " + update.name
+            update.failure = "No chute found with id: " + update.name
             return True
         # If we are now running then everything has to be setup for the first time
         if(update.new.state == chute.STATE_RUNNING):
             update.plans.addPlans(plangraph.STATE_CALL_START, (virt.startChute,))
-        
+
         # Check if the state is invalid, we should return bad things in this case (don't do anything)
         elif(update.new.state == chute.STATE_INVALID):
             if(settings.DEBUG_MODE):
                 update.responses.append('Chute state is invalid')
             return True
-    
+
     # Not a new chute
     else:
         if update.updateType == 'start':
-            if update.old.state == chute.STATE_RUNNING :
-                update.failure = update.name +" already running."
+            if update.old.state == chute.STATE_RUNNING:
+                update.failure = update.name + " already running."
                 return True
             update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.restartChute,))
         elif update.updateType == 'create':
             update.failure = update.name + " already exists on this device."
             return True
-        elif update.new.state == chute.STATE_STOPPED :
+        elif update.new.state == chute.STATE_STOPPED:
             if update.updateType == 'delete':
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.removeChute,))
             if update.updateType == 'stop':
-                if update.old.state == chute.STATE_STOPPED :
-                    update.failure = update.name +" already stopped."
+                if update.old.state == chute.STATE_STOPPED:
+                    update.failure = update.name + " already stopped."
                     return True
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.stopChute,))
         pass
@@ -61,11 +62,11 @@ def generatePlans(update):
     return None
 
 ###########################################################################################################
-## Integrate from below
+# Integrate from below
 
 # from lib.paradrop.chute import Chute
 # from lib.paradrop import chute
-# from lib.paradrop.utils import pdutils as pdutil
+# from pdtools.lib import pdutils as pdutil
 # from lib.internal.exc import plangraph
 # from lib.internal.fc import chutemanager
 # from lib.internal.utils import lxc as virt
@@ -90,27 +91,27 @@ def generateStatePlan(chuteStor, newChute, chutePlan):
     """
     new = newChute
     old = chuteStor.getChute(newChute.guid)
-    out.header("-- %s Generating State Plan: %r\n" % (logPrefix(), new))
-   
+    out.header("Generating State Plan: %r\n" % (new))
+
     # Was there an old chute?
     if(not old):
-        out.verbose('-- %s brand new chute\n' % logPrefix())
-        
+        out.verbose('brand new chute\n')
+
         # If we are now running then everything has to be setup for the first time
         if(new.state == chute.STATE_RUNNING):
             chutePlan.addPlans(new, plangraph.STATE_CALL_START, (virt.startChute, new))
-        
+
         # Check if the state is invalid, we should return bad things in this case (don't do anything)
         elif(new.state == chute.STATE_INVALID):
             return True
-        
+
         # Call this function to make sure the lxc_start script is executable
         s0 = chutemanager.getMntVirtScriptPath(new)
         chutePlan.addPlans(new, plangraph.STATE_MAKE_EXEC, (pdos.makeExecutable, s0))
-        
+
         # The create command generates an internal config file, save it for later
         chutePlan.addPlans(new, plangraph.STATE_SAVE_CFG, (virt.saveChuteConfig, new))
-        
+
         # If there wasn't a old one we need to configure this one
         chutePlan.addPlans(new, plangraph.STATE_CALL_CFG, (virt.configureChute, new))
 
@@ -118,7 +119,7 @@ def generateStatePlan(chuteStor, newChute, chutePlan):
     else:
         if(new.state != old.state):
             if(pdutil.isValidStateTransition(old.state, new.state)):
-                out.info('-- %s State change required: %s -> %s\n' % (logPrefix(), old.state, new.state))
+                out.info('State change required: %s -> %s\n' % (old.state, new.state))
                 os = old.state
                 ns = new.state
                 # We already verified its a valid state change, so less to check here
@@ -131,36 +132,35 @@ def generateStatePlan(chuteStor, newChute, chutePlan):
                 elif(ns == chute.STATE_STOPPED):
                     chutePlan.addPlans(new, plangraph.STATE_CALL_STOP, (virt.stopChute, new))
                 # TODO - test if needs to be moved to specific transitions
-                # Some transitions might need the             
-                return False #Change state, but don't perform everything else
+                # Some transitions might need the
+                return False  # Change state, but don't perform everything else
 
             else:
-                out.warn('** %s Invalid state change discovered: %s -> %s\n' % (logPrefix(), old.state, new.state))
+                out.warn('Invalid state change discovered: %s -> %s\n' % (old.state, new.state))
                 return "Invalid state change, cannot go from %s -> %s\n" % (old.state, new.state)
-        
-        else: #New State is the same as old state, (could be a Startup)
+
+        else:  # New State is the same as old state, (could be a Startup)
             tok = new.getCache('updateToken')
             if (tok and tok == 'STARTINGUP'):
                 # Call this function to make sure the lxc_start script is executable
                 s0 = chutemanager.getMntVirtScriptPath(new)
                 chutePlan.addPlans(new, plangraph.STATE_MAKE_EXEC, (pdos.makeExecutable, s0))
-                #restore chute config by calling configureChute
+                # restore chute config by calling configureChute
                 chutePlan.addPlans(new, plangraph.STATE_CALL_CFG, (virt.configureChute, new))
-               
-                currChuteState = stats.getLxcState(new.getInternalName()) 
-                #Only want to change when AP was power cycled, not just when pdfcd restarts
+
+                currChuteState = stats.getLxcState(new.getInternalName())
+                # Only want to change when AP was power cycled, not just when pdfcd restarts
                 if (currChuteState == chute.STATE_STOPPED):
-                    #if state was running, need to actually start the chute
+                    # if state was running, need to actually start the chute
                     if(new.state == chute.STATE_RUNNING):
                         chutePlan.addPlans(new, plangraph.STARTUP_CALL_EARLY_START, (virt.startChute, new))
                     elif(new.state == chute.STATE_FROZEN):
                         chutePlan.addPlans(new, plangraph.STARTUP_CALL_EARLY_START, (virt.startChute, new))
                         chutePlan.addPlans(new, plangraph.STATE_CALL_FREEZE, (virt.freezeChute, new))
-    
+
     # The last plans we need to add are to write virt config and script to file (the set* commands)
     chutePlan.addPlans(new, plangraph.STATE_SET_VIRT_CONFIG, (virt.setVirtConfig, new), (virt.resetVirtConfig, new))
     chutePlan.addPlans(new, plangraph.STATE_SET_VIRT_SCRIPT, (virt.setVirtScript, new), (virt.resetVirtScript, new))
 
     # Everything is OK
     return None
-

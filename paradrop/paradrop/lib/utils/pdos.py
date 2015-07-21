@@ -3,26 +3,31 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-import os, subprocess, shutil
+import os
+import subprocess
+import shutil
 from distutils import dir_util
 
 # We have to import this for the decorator
-from paradrop.lib.utils.output import out, logPrefix
+from pdtools.lib.output import out
 
-#protect the original open function
+# protect the original open function
 __open = open
 
 # Since we overwrite everything else, do the same to basename
 basename = lambda x: os.path.basename(x)
 
+
 def getMountCmd():
     return "mount"
+
 
 def isMount(mnt):
     """This function checks if @mnt is actually mounted."""
     # TODO - need to check if partition and mount match the expected??
     return os.path.ismount(mnt)
-        
+
+
 def doMount(part, mnt):
     """This function mounts @part to @mnt."""
     # Since we are already in a deferred chain, use subprocess to block and make the call to mount right HERE AND NOW
@@ -30,8 +35,9 @@ def doMount(part, mnt):
     output, errors = proc.communicate()
 
     if(proc.returncode):
-        out.err("!! %s Unable to mount (%d) %s\n" % (logPrefix(), proc.returncode, errors))
+        out.err("Unable to mount (%d) %s\n" % (proc.returncode, errors))
         raise Exception('UnableToMount', 'Mount error for %s' % mnt)
+
 
 def doUnmount(mnt):
     """This function unmounts @mnt."""
@@ -40,8 +46,9 @@ def doUnmount(mnt):
     output, errors = proc.communicate()
 
     if(proc.returncode):
-        out.err("!! %s Unable to mount (%d) %s\n" % (logPrefix(), proc.returncode, errors))
+        out.err("Unable to mount (%d) %s\n" % (proc.returncode, errors))
         raise Exception('UnableToUnmount', 'Mount error for %s' % mnt)
+
 
 def oscall(cmd, get=False):
     """
@@ -61,13 +68,15 @@ def oscall(cmd, get=False):
         return (output, proc.returncode, errors)
     else:
         if(output and output != ""):
-            out.verbose('-- %s "%s" stdout: "%s"\n' % (logPrefix(), cmd, output.rstrip()))
+            out.verbose('"%s" stdout: "%s"\n' % (cmd, output.rstrip()))
         if(errors and errors != ""):
-            out.verbose('-- %s "%s" stderr: "%s"\n' % (logPrefix(), cmd, errors.rstrip()))
+            out.verbose('"%s" stderr: "%s"\n' % (cmd, errors.rstrip()))
         return None
+
 
 def syncFS():
     oscall('sync')
+
 
 def getFileType(f):
     r = oscall('file "%s"' % f, True)
@@ -76,31 +85,40 @@ def getFileType(f):
     else:
         return None
 
+
 def exists(p):
     return os.path.exists(p)
+
 
 def unlink(p):
     return os.unlink(p)
 
+
 def mkdir(p):
     return os.mkdir(p)
+
 
 def symlink(a, b):
     return os.symlink(a, b)
 
+
 def ismount(p):
     return os.path.ismount(p)
+
 
 def fixpath(p):
     """This function is required because if we need to pass a path to something like tarfile,
         we cannot overwrite the function to fix the path, so we need to expose it somehow."""
     return p
 
+
 def copy(a, b):
     return shutil.copy(a, b)
 
+
 def move(a, b):
     return shutil.move(a, b)
+
 
 def remove(a):
     if (isdir(a)):
@@ -108,32 +126,38 @@ def remove(a):
     else:
         return os.remove(a)
 
+
 def isdir(a):
     return os.path.isdir(a)
 
+
 def isfile(a):
     return os.path.isfile(a)
+
 
 def copytree(a, b):
     """shutil's copytree is dumb so use distutils."""
     return dir_util.copy_tree(a, b)
 
+
 def open(p, mode):
     return __open(p, mode)
+
 
 def makeExecutable(*args):
     """The function that takes the list of files provided and sets the X bit on them."""
     # Force args to be a tuple
     if(not (isinstance(args, list) or isinstance(args, tuple))):
         args = list(args)
-   
+
     for a in args:
-        out.verbose('-- %s Making %s executable\n' % (logPrefix(), os.path.basename(a)))
-        
+        out.verbose('Making %s executable\n' % (os.path.basename(a)))
+
         if(os.path.exists(a)):
             os.chmod(a, 0744)
         else:
-            out.warn('-- %s File missing "%s"\n' % (logPrefix(), a))
+            out.warn('File missing "%s"\n' % (a))
+
 
 def writeFile(filename, line, mode="a"):
     """Adds the following cfg (either str or list(str)) to this Chute's current
@@ -144,7 +168,7 @@ def writeFile(filename, line, mode="a"):
         elif(type(line) is str):
             data = "%s\n" % line
         else:
-            out.err("!! Bad line provided for %s\n" % filename)
+            out.err("Bad line provided for %s\n" % filename)
             return
         fd = open(filename, mode)
         fd.write(data)
@@ -152,7 +176,8 @@ def writeFile(filename, line, mode="a"):
         fd.close()
 
     except Exception as e:
-        out.err('!! %s Unable to write file: %s\n' % (logPrefix(), str(e)))
+        out.err('Unable to write file: %s\n' % (str(e)))
+
 
 def write(filename, data, mode="w"):
     """ Writes out a config file to the specified location.
@@ -163,7 +188,8 @@ def write(filename, data, mode="w"):
         fd.flush()
         fd.close()
     except Exception as e:
-        out.err('!! Unable to write to file: %s\n' % str(e))
+        out.err('Unable to write to file: %s\n' % str(e))
+
 
 def readFile(filename, array=True, delimiter="\n"):
     """
@@ -179,7 +205,7 @@ def readFile(filename, array=True, delimiter="\n"):
     """
     if(not exists(filename)):
         return None
-    
+
     lines = []
     with open(filename, 'r') as fd:
         while(True):
@@ -191,4 +217,3 @@ def readFile(filename, array=True, delimiter="\n"):
         return lines
     else:
         return delimiter.join(lines)
-

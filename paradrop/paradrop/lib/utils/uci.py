@@ -7,7 +7,7 @@ import traceback, os
 
 from paradrop.lib import settings
 from paradrop.lib.utils import pdos, pdosq
-from paradrop.lib.utils.output import out, logPrefix
+from pdtools.lib.output import out
 
 CONFIG_DIR = settings.UCI_CONFIG_DIR
 if "SNAP_APP_DATA_PATH" in os.environ:
@@ -56,7 +56,7 @@ def configsMatch(a, b):
                 break
         else:
             # Didn't find a match so return false
-            out.err('-- Not a match in configsMatch\n')
+            out.err('Not a match in configsMatch\n')
             #out.warn('C1: %r\tO1: %r\n' % (c1, o1))
             #out.warn('C2: %r\tO2: %r\n' % (c2, o2))
             return False
@@ -288,7 +288,7 @@ class UCIConfig:
                 break
         else:
             # Getting here means we didn't break so no match
-            out.verbose('-- %s No match to delete, config: %r\n' % (logPrefix(), config))
+            out.verbose('No match to delete, config: %r\n' % (config))
             return
         
         del(self.config[i])
@@ -317,7 +317,7 @@ class UCIConfig:
                 pdos.move(backupPath, self.filepath)
         else:
             # This might be ok if they didn't actually make any changes
-            out.warn('** %s Cannot restore, %s missing backup (might be OK if no changes made)\n' % (logPrefix(), self.myname))
+            out.warn('Cannot restore, %s missing backup (might be OK if no changes made)\n' % (self.myname))
 
     def getChuteConfigs(self, internalid):
         chuteConfigs = []
@@ -413,7 +413,7 @@ class UCIConfig:
         
         # Now write to disk
         try:
-            out.info('-- %s Saving %s to disk\n' % (logPrefix(), self.filepath))
+            out.info('Saving %s to disk\n' % (self.filepath))
             fd = pdos.open(self.filepath, 'w')
             fd.write(output)
             
@@ -422,8 +422,8 @@ class UCIConfig:
             os.fsync(fd.fileno())
             fd.close()
         except Exception as e:
-            out.err('!! %s Unable to save new config %s, %s\n' % (logPrefix(), self.filepath, str(e)))
-            out.err('!! %s Config may be corrupted, backup exists at /tmp/%s\n' % (logPrefix(), self.myname))
+            out.err('Unable to save new config %s, %s\n' % (self.filepath, str(e)))
+            out.err('Config may be corrupted, backup exists at /tmp/%s\n' % (self.myname))
 
 
     def readConfig(self):
@@ -444,7 +444,7 @@ class UCIConfig:
                 lines.append(line)
             fd.close()
         except Exception as e:
-            out.err('!! %s Error reading file %s: %s\n' % (logPrefix(), self.filepath, str(e)))
+            out.err('Error reading file %s: %s\n' % (self.filepath, str(e)))
             raise e
 
         cfg = None

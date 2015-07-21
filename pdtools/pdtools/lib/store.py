@@ -11,13 +11,14 @@ Holds onto the following things:
 import os
 import yaml
 
+from os.path import expanduser
 
 # Check and see if we're on snappy or not. If not, then stick the logs in the local
 # directory. We will be provisioned as a developer instance anyway, so the info doesn't matter yet,
 # Also doesn't really matter for the buildtools, although it is a bit of a vulnurability
 snappyPath = os.getenv("SNAP_APP_USER_DATA_PATH", None)
 
-STORE_PATH = snappyPath + '/' if snappyPath is not None else '~/.paradrop/instance'
+STORE_PATH = snappyPath + '/' if snappyPath is not None else expanduser('~') + '/.paradrop/'
 
 LOG_PATH = STORE_PATH + 'logs/'
 KEY_PATH = STORE_PATH + 'keys/'
@@ -27,11 +28,12 @@ INFO_PATH = STORE_PATH + 'root.yaml'
 # Keys required in the store
 INFO_REQUIRES = ['version', 'accounts', 'currentAccount']
 
-# Global singleton (lite)
+# Global singleton (lite). This is NOT set up by default (else testing would be a
+# nightmare.) The main script should set this up when ready to rock
 store = None
 
 
-class Store(object):
+class Storage(object):
 
     def __init__(self, autoSave=True):
         '''

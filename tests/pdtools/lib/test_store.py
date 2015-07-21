@@ -15,7 +15,7 @@ store.INFO_PATH = store.STORE_PATH + 'root.yaml'
 
 
 def testCreatesDirectories():
-    s = store.Store()
+    s = store.Storage()
 
     assert os.path.exists(store.STORE_PATH)
     assert os.path.exists(store.LOG_PATH)

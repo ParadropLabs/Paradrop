@@ -181,7 +181,7 @@ def incIpaddr(ipaddr, inc=1):
         val += inc
         return socket.inet_ntoa(struct.pack('!I', val))
     except Exception as e:
-        out.err('!! %s Unable to inc ipaddr: %s\n' % (logPrefix(), str(e)))
+        out.err('Unable to inc ipaddr: %s\n' % (str(e)))
         return None
 
 def maxIpaddr(ipaddr):
@@ -199,7 +199,7 @@ def maxIpaddr(ipaddr):
         val |= inc
         return socket.inet_ntoa(struct.pack('!I', val))
     except Exception as e:
-        out.err('!! %s Unable to inc ipaddr: %s\n' % (logPrefix(), str(e)))
+        out.err('Unable to inc ipaddr: %s\n' % (str(e)))
         return None
 
 def getSubnet(ip1, sn1):
@@ -209,7 +209,7 @@ def getSubnet(ip1, sn1):
         res = val1 & nm
         return socket.inet_ntoa(struct.pack('!I', res))
     except Exception as e:
-        out.err('!! %s Unable to determine subnet: %s\n' % (logPrefix(), str(e)))
+        out.err('Unable to determine subnet: %s\n' % (str(e)))
         return False
 
 def isSameSubnet(ip1, ip2):
@@ -219,7 +219,7 @@ def isSameSubnet(ip1, ip2):
         nm = struct.unpack("!I", socket.inet_aton(settings.FC_NETMGMT_DEFAULT_NETMASK))[0]
         return (val1 & nm) == (val2 & nm)
     except Exception as e:
-        out.err('!! %s Unable to determine subnet: %s\n' % (logPrefix(), str(e)))
+        out.err('Unable to determine subnet: %s\n' % (str(e)))
         return False
 
 def getChuteIntf(name, netIntfs):

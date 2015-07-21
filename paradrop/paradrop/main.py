@@ -6,10 +6,10 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-from paradrop.lib.utils import output
-
+from pdtools.lib import output, store
 from paradrop.lib import settings
-from paradrop.lib.utils.output import logPrefix
+
+from twisted.internet import reactor
 
 
 ##########################################################################
@@ -39,19 +39,29 @@ def caughtSIGUSR1(signum, frame):
     Catches SIGUSR1 calls and toggles verbose output
     """
     if(isinstance(output.out.verbose, output.FakeOutput)):
-        output.out.header("== %s Activating verbose mode\n" % logPrefix())
+        output.out.header("Activating verbose mode\n")
         output.out.verbose = output.Stdout(output.Colors.VERBOSE)
         output.verbose = True
     else:
-        output.out.header("== %s Deactivating verbose mode\n" % logPrefix())
+        output.out.header("Deactivating verbose mode\n")
         output.verbose = False
         output.out.verbose = output.FakeOutput()
+
+
+def onShutdown():
+    ''' Get notified of system shutdown from Twisted '''
+
+    # Clears the print buffer, closes the logfile
+    output.out.endFileLogging()
+
+    # TODO: inform the server
+
+    # TODO: inform pdconfd
 
 
 ##########################################################################
 # Main Function
 ##########################################################################
-
 
 def main():
     """
@@ -67,7 +77,7 @@ def main():
     """
 
     # Setup the signal handler for verbose
-    # signal.signal(signal.SIGUSR1, caughtSIGUSR1)
+    signal.signal(signal.SIGUSR1, caughtSIGUSR1)
 
     # Setup args if called directly (testing)
     p = setupArgParse()
@@ -76,26 +86,31 @@ def main():
     # Check for settings to overwrite
     settings.updateSettings(args.settings)
 
-    if(args.verbose == True or settings.VERBOSE == True):
+    if(args.verbose or settings.VERBOSE):
         caughtSIGUSR1(signal.SIGUSR1, None)
 
-    # Before we setup anything make sure we have generated a UUID for our instance
-    output.out.info('-- {} Test\n'.format(logPrefix()))
+    # Ask the shared store to setup (paths can be set up there)
+    store.store = store.Storage()
 
-    # if args.config:
-    #     from paradrop.backend import pdconfd
+    # Logger needs to open its files and whatnot
+    output.out.startFileLogging(store.LOG_PATH)
 
-    # Start the configuration daemon
-    #     pdconfd.main.run_pdconfd()
+    # Register for the shutdown callback so we can gracefully close logging
+    reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
 
-    # else:
-    #     from paradrop.backend import pdfcd
+    print 'Look, print statements are ok now!'
 
-    # Now setup the RESTful API server for Paradrop
-    #     pdfcd.server.setup(args)
+    if args.config:
+        from paradrop.backend import pdconfd
 
-    from paradrop.backend import pdfcd
-    pdfcd.server.setup(args)
+        # Start the configuration daemon
+        pdconfd.main.run_pdconfd()
+
+    else:
+        from paradrop.backend import pdfcd
+
+        # Now setup the RESTful API server for Paradrop
+        pdfcd.server.setup(args)
 
 if __name__ == "__main__":
     main()
