@@ -12,12 +12,15 @@ from twisted.web.server import Site
 from twisted.internet import reactor
 
 from pdtools.lib.output import out
+from pdtools.lib import store
+
 from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
 from paradrop.lib.api import pdrest
 from paradrop.lib import settings
 
 from paradrop.backend import fc
+
 
 # Import local refs to pdfcd utilities
 from . import apiutils
@@ -241,6 +244,8 @@ def setup(args=None):
     api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
 
+    print store.snappyPath
+
     # Development mode
     if(args and args.development):
         thePort = settings.PDFCD_PORT + 10000
@@ -258,10 +263,6 @@ def setup(args=None):
     # Setup the port we listen on
     out.info('Establishing API server, port: %d' % (thePort))
     reactor.listenTCP(thePort, site)
-
-    # from twisted.python import log
-    # import sys
-    # log.startLogging(sys.stdout)
 
     # Never return from here
     reactor.run()

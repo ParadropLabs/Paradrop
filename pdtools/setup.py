@@ -9,7 +9,16 @@ setup(
     version="0.1.27",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
-    install_requires=['docopt', 'requests', 'twisted', 'bcrypt', 'service-identity', 'colorama'],
+    install_requires=[
+        'docopt',
+        'requests',
+        'twisted',
+        'bcrypt',
+        'service-identity',
+        'colorama',
+        'pyparted'
+    ],
+
     packages=find_packages(),
 
     entry_points={
