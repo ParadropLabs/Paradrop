@@ -238,11 +238,11 @@ connect() {
 
 update-tools() {
     cd pdtools
-    rm -rf build/
-    rm -rf dist/
 
     python setup.py sdist bdist_wheel
     twine upload dist/* 
+
+    rm -rf build/ dist/ *.egg-info
 
     sudo pip install pdtools -U
 }

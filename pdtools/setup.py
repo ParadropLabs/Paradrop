@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pdtools",
-    version="0.1.27",
+    version="0.1.28",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
     install_requires=[
@@ -15,15 +15,14 @@ setup(
         'twisted',
         'bcrypt',
         'service-identity',
-        'colorama',
-        'pyparted'
+        'colorama'
     ],
 
     packages=find_packages(),
 
     entry_points={
         'console_scripts': [
-            'pdtools=pdtools.main:main',
+            'paradrop=pdtools.main:main',
         ],
     },
 )

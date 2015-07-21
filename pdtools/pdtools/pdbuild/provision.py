@@ -11,6 +11,8 @@ for download. How the provisioning process actually occurs I'm not sure.
 
 import subprocess
 import os
+import wget
+
 
 def provisionVirtual():
     '''
@@ -59,3 +61,20 @@ def cleanup():
         subprocess.check_output("sudo umount " + mountdir, shell=True)
     except:
         print 'Done'
+
+###############################################################################
+#  Downloading
+###############################################################################
+
+
+def downloadImage(defaultPath):
+    '''
+    Download a snappy image
+    '''
+    url = 'http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz'
+
+    path = raw_input("Enter a directory to save the image [" + defaultPath + ']') or defaultPath
+
+    # Check and see if an image already exists
+    # Ask the user if they want to save to a custom directory
+    # Download the image

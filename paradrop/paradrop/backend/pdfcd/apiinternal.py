@@ -52,17 +52,22 @@ def api_log(lines=100):
     defer.returnValue(contents)
 
 
+@defer.inlineCallbacks
 def api_provision(pdid, keys):
     '''
     Provision this router with an id and a set of keys. 
 
     This is a temporary call until the provisioning process is finalized.
     '''
+
+    # Handshake with the server, ensuring the name is valid
     store.store.saveConfig('pdid', pdid)
 
     priv, pub = keys
     store.store.saveKey('private', "A Very Secure Key")
     store.store.saveKey('public', "A Very Secure Key")
+
+    # Return success to the user
 
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.
