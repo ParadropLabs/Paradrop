@@ -4,7 +4,7 @@ from paradrop.lib.utils import addresses, uci
 from pdtools.lib.output import out
 from pdtools.lib import pdutils
 
-MAX_INTERFACE_NAME_LEN = 16
+MAX_INTERFACE_NAME_LEN = 15
 
 
 def getNetworkConfig(update):
@@ -87,6 +87,10 @@ def getNetworkConfig(update):
                 iface['encryption'] = cfg['encryption']
             if 'key' in cfg:
                 iface['key'] = cfg['key']
+
+        # Pass on DHCP configuration if it exists.
+        if 'dhcp' in cfg:
+            iface['dhcp'] = cfg['dhcp']
 
         interfaces.append(iface)
 

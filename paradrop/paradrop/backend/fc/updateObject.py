@@ -137,10 +137,10 @@ class UpdateChute(UpdateObject):
     updateModuleList = [
         exc.name,
         exc.state,
-        exc.runtime,
         exc.struct,
         exc.resource,
-        exc.traffic
+        exc.traffic,
+        exc.runtime
     ]
 
     def __init__(self, obj):

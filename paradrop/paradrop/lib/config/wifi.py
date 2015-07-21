@@ -44,6 +44,7 @@ def setOSWirelessConfig(update):
                                  cacheKeys=['osWirelessConfig'],
                                  filepath=uci.getSystemPath("wireless"))
 
-    # If we didn't change anything, then return the function to reloadWireless so we can save ourselves from that call
+    # If we didn't change anything, then return the function to reloadWireless
+    # so we can save ourselves from that call
     if not changed:
         return configservice.reloadWireless

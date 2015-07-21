@@ -6,7 +6,7 @@
 from pdtools.lib.output import out
 from paradrop.backend.exc import plangraph
 
-from paradrop.lib.config import dockerconfig as virtConfig
+from paradrop.lib import config
 
 def generatePlans(update):
     """
@@ -19,11 +19,14 @@ def generatePlans(update):
     out.verbose("%r\n" % (update))
     
     # Generate virt start script, stored in cache (key: 'virtPreamble')
-    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_PREAMBLE, (virtConfig.getVirtPreamble, ))
+    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_PREAMBLE, (config.dockerconfig.getVirtPreamble, ))
     
     # If the user specifies DHCP then we need to generate the config and store it to disk
-    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_DHCP, (virtConfig.getVirtDHCPSettings, ))
-    update.plans.addPlans(plangraph.RUNTIME_SET_VIRT_DHCP, (virtConfig.setVirtDHCPSettings, ))
+    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_DHCP, (config.dhcp.getVirtDHCPSettings, ))
+    update.plans.addPlans(plangraph.RUNTIME_SET_VIRT_DHCP, (config.dhcp.setVirtDHCPSettings, ))
+
+    # Reload configuration files
+    update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, (config.configservice.reloadAll, ))
 
     return None
 

@@ -68,9 +68,13 @@ def installChute(host, port, config):
     '''
 
     # Read local yaml into a config_json to send via post request
-    with open(config, 'r') as stream:
-        config_json = yaml.load(stream)
-        config_json['date'] = config_json['date'].isoformat()
+    try:
+        with open(config, 'r') as stream:
+            config_json = yaml.load(stream)
+            config_json['date'] = config_json['date'].isoformat()
+    except IOError as e:
+        print 'Error: ' + config + ' not found.'
+        return
 
     # Verify the config provided in some way.
     cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str, 'host_config': dict})
