@@ -17,6 +17,10 @@ def generatePlans(update):
             True: abort the plan generation process
     """
     out.verbose("%r\n" % (update))
+
+    # Setup some basic system configuration (wan interface, wireless devices).
+    # This does not need to be reverted on failure.
+    update.plans.addPlans(plangraph.STRUCT_SETUP_SYSTEM_CONFIG, (config.devices.setupSystemConfig, ))
     
     # Save current network configuration into chute cache (key: 'networkInterfaces')
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK, (config.network.getNetworkConfig, ))

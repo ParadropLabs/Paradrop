@@ -362,15 +362,6 @@ class UCIConfig:
         if(backupToken):
             self.backup(backupToken)
       
-
-        #print("configs: %s" % self.config) 
-        # NOTE: this is a semi-ugly hack, could probably be improved
-        # Network file always needs to have a wan setting
-        if ('network' in self.filepath):
-            #print("CHECKWANCONFIG %s" % self.config) 
-            self.checkWanConfig(internalid)
-
- 
         output = ""
         # Now generate what the file would look like
         for c, o in self.config:
