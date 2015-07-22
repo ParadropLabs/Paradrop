@@ -95,6 +95,9 @@ build() {
     cd paradrop
     python setup.py bdist_egg -d ../buildenv
     cd ..
+    if [ ! -f snap/bin/pipework ]; then
+        wget https://raw.githubusercontent.com/jpetazzo/pipework/3bccb3adefe81b6acd97c50cfc6cda11420be109/pipework -O snap/bin/pipework
+    fi
 
     echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
     

@@ -6,6 +6,7 @@
 from pdtools.lib.output import out
 import docker
 import json
+import subprocess
 
 
 def startChute(update):
@@ -60,8 +61,9 @@ def startChute(update):
         image=repo, name=name, host_config=host_config
     )
 
-    out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
     c.start(container.get('Id'))
+    out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
+    setup_net_interfaces(update)
 
 def removeChute(update):
     out.info('Attempting to remove chute %s\n' % (update.name))
@@ -112,3 +114,20 @@ def build_host_config(update):
         cap_drop=[]
     )
 
+def setup_net_interfaces(update):
+    interfaces = update.new.getCache('networkInterfaces')
+    for iface in interfaces:
+        if iface.get('netType') == 'wifi':
+            IP = iface.get('ipaddrWithPrefix')
+            internalIntf = iface.get('internalIntf')
+            externalIntf = iface.get('externalIntf')
+        else:
+            continue
+
+        cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i', internalIntf, update.name,  IP]
+        try:
+            result = subprocess.call(cmd)
+        except OSError as e:
+            out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
+            out.exception(e, True)
+            raise e

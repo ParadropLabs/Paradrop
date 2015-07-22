@@ -85,7 +85,7 @@ def installChute(host, port, config):
                     print line.get('message')
                 else:
                     print 'ERROR: Failed to install chute.(' + urllib.unquote(str(line.get('message'))) + ')'
-            except ValueError as e:
+            except Exception as e:
                 print line
 
 

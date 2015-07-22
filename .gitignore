@@ -80,6 +80,7 @@ docs/_templates
 
 snap/bin/pd
 snap/bin/dnsmasq
+snap/bin/pipework
 *.img
 *.swp
 *.pyc
