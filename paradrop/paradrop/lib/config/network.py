@@ -63,7 +63,6 @@ def getNetworkConfig(update):
             'name': name,                     # Name (not used?)
             'netType': cfg['type'],           # Type (wan, lan, wifi)
             'internalIntf': cfg['intfName'],  # Interface name in chute
-            'internalIpaddr': cfg['ipaddr'],  # IP address in chute
             'netmask': cfg['netmask'],        # Netmask in host and chute
             'externalIpaddr': cfg['ipaddr']   # IP address in host
         }
@@ -76,9 +75,13 @@ def getNetworkConfig(update):
         externalIntf = "{}.{}".format(update.new.name[0:prefixLen], cfg['intfName'])
         iface['externalIntf'] = externalIntf
 
-        # Store IP address with prefix len (x.x.x.x/y) for tools that expect
-        # that format (eg. pipework).
-        ifaceAddr = ipaddress.ip_interface(u"{}/{}".format(cfg['ipaddr'],
+        # Generate the internal (inside chute) IP address by incrementing.
+        internalIpaddr = str(ipaddress.ip_address(unicode(cfg['ipaddr'])) + 1)
+        iface['internalIpaddr'] = internalIpaddr
+
+        # Also store the internal IP address with prefix len (x.x.x.x/y) for
+        # tools that expect that format (eg. pipework).
+        ifaceAddr = ipaddress.ip_interface(u"{}/{}".format(internalIpaddr,
                                                            cfg['netmask']))
         iface['ipaddrWithPrefix'] = str(ifaceAddr.with_prefixlen)
 
