@@ -19,7 +19,7 @@ RUNTIME_SECURITY_CHECK          = 5
 ###############################################################################
 # Configuration Generation
 NAME_RESV_PART                  = 9
-STRUCT_SETUP_SYSTEM_CONFIG      = 10
+STRUCT_GET_SYSTEM_DEVICES       = 10
 STRUCT_GET_INT_NETWORK          = 11
 STRUCT_GET_OS_NETWORK           = 12
 STRUCT_GET_OS_WIRELESS          = 13
@@ -36,6 +36,7 @@ DHCP_GET_VIRT_RULES             = 22
 ###############################################################################
 # Write Configuration Data
 NAME_SETUP_DIRS                 = 50
+STRUCT_SET_SYSTEM_DEVICES       = 51
 STRUCT_SET_OS_WIRELESS          = 52
 STRUCT_SET_OS_NETWORK           = 53
 TRAFFIC_SET_OS_FIREWALL         = 54

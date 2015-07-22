@@ -18,9 +18,11 @@ def generatePlans(update):
     """
     out.verbose("%r\n" % (update))
 
-    # Setup some basic system configuration (wan interface, wireless devices).
-    # This does not need to be reverted on failure.
-    update.plans.addPlans(plangraph.STRUCT_SETUP_SYSTEM_CONFIG, (config.devices.setupSystemConfig, ))
+    # Detect system devices and set up basic configuration for them (WAN
+    # interface, wireless devices).  These steps do not need to be reverted on
+    # abort.
+    update.plans.addPlans(plangraph.STRUCT_GET_SYSTEM_DEVICES, (config.devices.getSystemDevices, ))
+    update.plans.addPlans(plangraph.STRUCT_SET_SYSTEM_DEVICES, (config.devices.setSystemDevices, ))
     
     # Save current network configuration into chute cache (key: 'networkInterfaces')
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK, (config.network.getNetworkConfig, ))

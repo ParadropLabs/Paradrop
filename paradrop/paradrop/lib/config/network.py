@@ -72,7 +72,7 @@ def getNetworkConfig(update):
         # chute name and the interface name.  Note it does not really matter
         # what this name is, since the developer will not see it.  We should
         # check to make sure it is unique, though.
-        prefixLen = MAX_INTERFACE_NAME_LEN - len(name) - 1
+        prefixLen = MAX_INTERFACE_NAME_LEN - len(cfg['intfName']) - 1
         externalIntf = "{}.{}".format(update.new.name[0:prefixLen], cfg['intfName'])
         iface['externalIntf'] = externalIntf
 
