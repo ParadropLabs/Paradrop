@@ -1,3 +1,4 @@
+import ipaddress
 
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.utils import addresses, uci
@@ -9,18 +10,20 @@ MAX_INTERFACE_NAME_LEN = 15
 
 def getNetworkConfig(update):
     """
-    For the Chute provided, return the dict object of a 100% filled out configuration set of network
-    configuration. This would include determining what the IP addresses, interfaces names, etc...
+    For the Chute provided, return the dict object of a 100% filled out
+    configuration set of network configuration. This would include determining
+    what the IP addresses, interfaces names, etc...
     """
 
     # Notes:
     #
-    # Fill in the gaps of knowledge between what the dev provided us in their config
-    # and what would be required to add all the config changes to get the chute working
-    # By the end of this function there should be a cache:networkInterfaces key containing
-    # a list of dictionary objects for each interface we will need to create, including netmasks
-    # IP addresses, etc.. this is important to allow all other modules to know what the IP addr is
-    # for this chute, etc..
+    # Fill in the gaps of knowledge between what the dev provided us in their
+    # config and what would be required to add all the config changes to get
+    # the chute working By the end of this function there should be a
+    # cache:networkInterfaces key containing a list of dictionary objects for
+    # each interface we will need to create, including netmasks IP addresses,
+    # etc.. this is important to allow all other modules to know what the IP
+    # addr is for this chute, etc..
     #
     # old code under lib.internal.chs.chutelxc same function name
 
@@ -33,12 +36,13 @@ def getNetworkConfig(update):
         # longer then 16-6 This is because the veth pair name for lxc cannot be
         # longer then 16, and we prepend "vc####" to that interface name
         if(len(name) > 10):
-            out.warn('The network interface name ({}) cannot be longer than 10 characters.\n'.format(
-                name))
+            out.warn('The network interface name ({}) cannot be longer than '
+                     '10 characters.\n'.format(name))
             raise Exception("Interface name too long")
 
         # Check for required fields.
-        res = pdutils.check(cfg, dict, ['ipaddr', 'intfName', 'type', 'netmask'])
+        res = pdutils.check(cfg, dict,
+                            ['ipaddr', 'intfName', 'type', 'netmask'])
         if(res):
             out.warn('Network interface definition {}\n'.format(res))
             raise Exception("Interface definition missing field(s)")
@@ -56,21 +60,27 @@ def getNetworkConfig(update):
             raise Exception("IP address in use")
 
         iface = {
-            'name': name,
-            'netType': cfg['type'],
-            'internalIntf': cfg['intfName'],
-            'internalIpaddr': cfg['ipaddr'],
-            'netmask': cfg['netmask']
+            'name': name,                     # Name (not used?)
+            'netType': cfg['type'],           # Type (wan, lan, wifi)
+            'internalIntf': cfg['intfName'],  # Interface name in chute
+            'internalIpaddr': cfg['ipaddr'],  # IP address in chute
+            'netmask': cfg['netmask'],        # Netmask in host and chute
+            'externalIpaddr': cfg['ipaddr']   # IP address in host
         }
 
-        # Setup the external interface info for this chute:
-        externalIpaddr = addresses.incIpaddr(cfg['ipaddr'])
-        iface['externalIpaddr'] = externalIpaddr
-
-        # The external interface is defined above in the class docs
+        # Generate a name for the new interface in the host by combining the
+        # chute name and the interface name.  Note it does not really matter
+        # what this name is, since the developer will not see it.  We should
+        # check to make sure it is unique, though.
         prefixLen = MAX_INTERFACE_NAME_LEN - len(name) - 1
-        externalIntf = "{}.{}".format(update.new.name[0:prefixLen], name)
+        externalIntf = "{}.{}".format(update.new.name[0:prefixLen], cfg['intfName'])
         iface['externalIntf'] = externalIntf
+
+        # Store IP address with prefix len (x.x.x.x/y) for tools that expect
+        # that format (eg. pipework).
+        ifaceAddr = ipaddress.ip_interface(u"{}/{}".format(cfg['ipaddr'],
+                                                           cfg['netmask']))
+        iface['ipaddrWithPrefix'] = str(ifaceAddr.with_prefixlen)
 
         # Add extra fields for WiFi devices.
         if cfg['type'] == "wifi":
