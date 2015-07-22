@@ -97,6 +97,7 @@ build() {
     cd ..
     if [ ! -f snap/bin/pipework ]; then
         wget https://raw.githubusercontent.com/jpetazzo/pipework/3bccb3adefe81b6acd97c50cfc6cda11420be109/pipework -O snap/bin/pipework
+        chmod 755 snap/bin/pipework
     fi
 
     echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
