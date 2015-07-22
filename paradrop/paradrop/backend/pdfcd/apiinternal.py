@@ -22,13 +22,10 @@ I have done this in the interest of time and development speed.
 
 from twisted.web import xmlrpc
 from twisted.internet import defer, utils
+from pdtools.coms.client import RpcClient
 
 from pdtools.lib.output import out
 from pdtools.lib import store
-
-from paradrop.lib import settings
-
-import os
 
 
 @defer.inlineCallbacks
@@ -53,7 +50,7 @@ def api_log(lines=100):
 
 
 @defer.inlineCallbacks
-def api_provision(pdid, keys):
+def api_provision(pdid, publicKey, privateKey):
     '''
     Provision this router with an id and a set of keys. 
 
@@ -61,11 +58,12 @@ def api_provision(pdid, keys):
     '''
 
     # Handshake with the server, ensuring the name is valid
-    store.store.saveConfig('pdid', pdid)
+    client = RpcClient('paradrop.io', 8015, '')
+    # ret = yield client.
 
-    priv, pub = keys
-    store.store.saveKey('private', "A Very Secure Key")
-    store.store.saveKey('public', "A Very Secure Key")
+    store.store.saveConfig('pdid', pdid)
+    store.store.saveKey('private', privateKey)
+    store.store.saveKey('public', publicKey)
 
     # Return success to the user
 

@@ -15,7 +15,8 @@ setup(
         'twisted',
         'bcrypt',
         'service-identity',
-        'colorama'
+        'colorama',
+        'pyyaml'
     ],
 
     packages=find_packages(),

@@ -27,11 +27,7 @@ MISC_PATH = STORE_PATH + 'misc/'
 INFO_PATH = STORE_PATH + 'root.yaml'
 
 # Keys required in the store
-INFO_REQUIRES = ['version', 'pdid']
-
-# Global singleton (lite). This is NOT set up by default (else testing would be a
-# nightmare.) The main script should set this up when ready to rock
-store = None
+INFO_REQUIRES = ['version', 'pdid', 'chutes', 'routers', 'instances']
 
 
 class Storage(object):
@@ -80,6 +76,9 @@ class Storage(object):
         if self.autosave:
             writeYaml(self.baseConfig, INFO_PATH)
 
+    def getConfig(self, key):
+        return self.baseConfig[key]
+
     def saveKey(self, key, name):
         ''' Save the key with the given name. Overwrites by default '''
         path = KEY_PATH + name
@@ -103,6 +102,16 @@ class Storage(object):
 
     def saveMisc(self, contents, name):
         pass
+
+    def loggedIn(self):
+        ''' 
+        Robustly determine if the account stored is logged in
+
+        NOTE: not complete
+        '''
+
+        # currently just check for presence of saved id field
+        return True if self.baseConfig['pdid'] else False
 
 
 def configureLocalPaths():
@@ -137,10 +146,13 @@ def validateInfo(contents):
 
 
 def createDefaultInfo(path):
-    default = '''
-    version: 1
-    pdid: ""
-    '''
+    default = {
+        'version': 1,
+        'pdid': "",
+        'chutes': [],
+        'routers': [],
+        'instances': []
+    }
 
     writeYaml(default, path)
 
@@ -154,4 +166,9 @@ def writeYaml(contents, path):
 def loadYaml(path):
     ''' Return dict from YAML found at path '''
     with open(path, 'r') as f:
-        return yaml.load(f)
+        return yaml.load(f.read())
+
+
+# Global singleton (lite). This is NOT set up by default (else testing would be a
+# nightmare.) The main script should set this up when ready to rock
+store = Storage()

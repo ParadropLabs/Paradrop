@@ -31,7 +31,10 @@ def testYamlSave():
     args = {'a': 'b', 'c': ['d', 'e', 'f']}
 
     store.writeYaml(args, target)
-    assert store.loadYaml(target) == args
+    yaml = store.loadYaml(target)
+
+    assert yaml == args
+    assert isinstance(yaml, dict)
 
     os.remove(target)
 
@@ -41,6 +44,14 @@ def testYamlCorruption():
     args = {'version': 'b', 'accounts': ['d', 'e', 'f']}
 
     assert store.validateInfo(args) == False
+
+
+def testYamlLoad():
+    s = store.Storage()
+
+    assert isinstance(s.baseConfig, dict)
+
+    cleanup()
 
 
 def cleanup():

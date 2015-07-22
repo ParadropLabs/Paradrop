@@ -13,16 +13,26 @@ suitable for printing.
 '''
 
 from twisted.internet import defer
-from twisted.internet import reactor
 
 from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
 from pdtools.lib import pdutils
 
+# SERVER_HOST = 'paradrop.io'
+SERVER_HOST = 'localhost'
+SERVER_PORT = 8015
 
 ###############################################################################
 # Default Callbacks
 ###############################################################################
+
+
+def failureCallbacks(f):
+    def w(*args, **kwargs):
+        return f(*args, **kwargs).addErrback(printFailure)
+
+    return w
+
 
 def defaultCallbacks(f):
     ''' 
