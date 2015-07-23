@@ -20,7 +20,7 @@ def getOSWirelessConfig(update):
 
         config = {'type': 'wifi-iface'}
         options = {
-            'device': 'wlan0',  # TODO: Where do we get the device name?
+            'device': iface['device'],
             'network': iface['externalIntf'],
             'mode': 'ap',
             'ssid': iface['ssid']

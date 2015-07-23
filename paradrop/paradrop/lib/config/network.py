@@ -1,4 +1,5 @@
 import ipaddress
+import itertools
 
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.utils import addresses, uci
@@ -31,6 +32,10 @@ def getNetworkConfig(update):
 
     if(not hasattr(update, 'net')):
         return None
+
+    devices = update.new.getCache('networkDevices')
+    wifiIter = itertools.cycle(devices['wifi'])
+
     for name, cfg in update.net.iteritems():
         # First we must check the length of the name string, it cannot be
         # longer then 16-6 This is because the veth pair name for lxc cannot be
@@ -87,6 +92,15 @@ def getNetworkConfig(update):
 
         # Add extra fields for WiFi devices.
         if cfg['type'] == "wifi":
+            # Pick a WiFi device for this interface.  Then a virtual interface
+            # will be made from it.
+            try:
+                device = wifiIter.next()
+                iface['device'] = device['name']
+            except StopIteration:
+                out.warn("Request for WiFi device cannot be fulfilled")
+                raise Exception("Missing WiFi device(s) requested by chute")
+
             # Check for required fields.
             res = pdutils.check(cfg, dict, ['ssid'])
             if(res):

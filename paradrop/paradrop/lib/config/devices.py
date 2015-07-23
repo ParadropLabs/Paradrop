@@ -29,7 +29,7 @@ def isWAN(ifname):
     """
     Test if an interface is a WAN interface.
     """
-    pattern = re.compile("(\w+)\s+(\w+)*")
+    pattern = re.compile(r"(\w+)\s+(\w+)*")
     with open("/proc/net/route", "r") as routeList:
         for line in routeList:
             match = pattern.match(line)
@@ -75,6 +75,7 @@ def getSystemDevices(update):
     devices = dict()
     devices['wan'] = list()
     devices['wifi'] = list()
+    devices['lan'] = list()
 
     for ifname in os.listdir(SYS_DIR):
         if ifname in EXCLUDE_IFACES:
@@ -84,9 +85,10 @@ def getSystemDevices(update):
 
         if isWAN(ifname):
             devices['wan'].append(dev)
-
-        if isWireless(ifname):
+        elif isWireless(ifname):
             devices['wifi'].append(dev)
+        else:
+            devices['lan'].append(dev)
 
     update.new.setCache('networkDevices', devices)
 
