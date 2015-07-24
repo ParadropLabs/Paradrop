@@ -51,15 +51,22 @@ def silentLogPrefix(stepsUp):
     The single parameter reflects how far up the stack to go to find the caller and
     depends how deep the direct caller to this method is wrt to the target caller
 
+    NOTE: Some calls cannot be silently prefixed (getting into the twisted code is a 
+    great example)
+
     :param steps: the number of steps to move up the stack for the caller
     :type steps: int.
     '''
 
-    trace = sys._getframe(stepsUp).f_code.co_filename
-    line = sys._getframe(stepsUp).f_lineno
-    path = trace.split('/')
-    module = path[-1].replace('.py', '')
-    package = path[-2]
+    try:
+        trace = sys._getframe(stepsUp).f_code.co_filename
+        line = sys._getframe(stepsUp).f_lineno
+        path = trace.split('/')
+        module = path[-1].replace('.py', '')
+        package = path[-2]
+    except:
+        print 'Could not follow trace!'
+        return 'None', 'None,', 'None'
 
     return package, module, line
 
@@ -246,8 +253,10 @@ class TwistedException(BaseOutput):
         if args['isError'] == 0:
             return None
 
+        print 'que'
         # Temporary so we can still see the messages while I get this working
         print colorama.Fore.RED + args['failure'].getBriefTraceback()
+        args['failure'].printTraceback()
         # out.trueOut.trueWrite(colorama.Front.RED + args['failure'].getBriefTraceback())
         # print args['failure'].getErrorMessage()
         return None
@@ -256,10 +265,13 @@ class TwistedException(BaseOutput):
         # Start with the default message
         # ret = super(TwistedOutput, self).__call__('Exception')
 
-        # print ret
-        return {'message': 'stuff'}
+        ret = {'message': str(contents), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
+               'package': None, 'module': None, 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': None, 'pdid': 'pd.damouse.example'}
 
+        return ret
 
+# Kept for posterity, but not currently used
 class OutException(BaseOutput):
 
     """
@@ -359,15 +371,6 @@ class Output():
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
 
-        # Override twisted logging (allows us to cleanly catch all exceptions)
-        # This must come after the setattr calls so we get the wrapped object
-        log.startLoggingWithObserver(self.twisted, setStdout=False)
-        log.startLoggingWithObserver(self.twistedErr, setStdout=False)
-
-        # By default, steal stdio and print to console
-        self.stealStdio(True)
-        self.logToConsole(True)
-
     def __getattr__(self, name):
         """Catch attribute access attempts that were not defined in __init__
             by default throw them out."""
@@ -396,16 +399,26 @@ class Output():
     def __repr__(self):
         return "REPR"
 
-    def startFileLogging(self, path):
+    def startLogging(self, filePath=None):
         '''
-        All function calls are transparently routed to the writer for logging.
+        By default the tools automatically starts logging, but this means anyone who 
+        imports pdtools will get all twisted and stdio captures, which is not ideal. 
 
-        This must be initialized, else testing would be terrible
+        If path is provided, starts file logging. 
         '''
+        # by default, stdio gets captures. This can be toggled off
+        self.stealStdio(True)
+        self.logToConsole(True)
 
-        self.__dict__['queue'] = Queue.Queue()
-        self.__dict__['printer'] = PrintLogThread(path, self.queue)
-        self.printer.start()
+        # Override twisted logging (allows us to cleanly catch all exceptions)
+        # This must come after the setattr calls so we get the wrapped object
+        log.startLoggingWithObserver(self.twisted, setStdout=False)
+        log.startLoggingWithObserver(self.twistedErr, setStdout=False)
+
+        if filePath is not None:
+            self.__dict__['queue'] = Queue.Queue()
+            self.__dict__['printer'] = PrintLogThread(path, self.queue)
+            self.printer.start()
 
     def endFileLogging(self):
         '''

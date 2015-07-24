@@ -30,6 +30,7 @@ from pdtools.lib.store import store
 
 def main():
     # For now, don't grab STDIO and don't write random log noise to conosle
+    output.out.startLogging()
     output.out.stealStdio(False)
     output.out.logToConsole(False)
 
