@@ -272,6 +272,8 @@ class TwistedException(BaseOutput):
         return ret
 
 # Kept for posterity, but not currently used
+
+
 class OutException(BaseOutput):
 
     """
@@ -365,7 +367,9 @@ class Output():
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
 
-        # The raw dict of tags and output objects
+        # Setattr wraps the output objects in a
+        # decorator that allows this class to intercept their output, This dict holds the
+        # original objects.
         self.__dict__['outputMappings'] = {}
 
         for name, func in kwargs.iteritems():
@@ -388,8 +392,7 @@ class Output():
             self.handlePrint(result)
             return result
 
-        # WARNING you cannot call setattr() here, it would recursively call
-        # back into this function
+        # can't call setattr here (which normally looks like self.name = inner)
         self.__dict__[name] = inner
 
         # Save the original function (unwrapped) under the tag its registered with
@@ -399,16 +402,26 @@ class Output():
     def __repr__(self):
         return "REPR"
 
-    def startLogging(self, filePath=None):
+    def startLogging(self, filePath=None, stealStdio=False, printToConsole=True):
         '''
-        By default the tools automatically starts logging, but this means anyone who 
-        imports pdtools will get all twisted and stdio captures, which is not ideal. 
+        Begin logging. The output class is ready to go out of the box, but in order
+        to prevent mere imports from stealing stdio or console logging to vanish
+        these must be manually turned on.
 
-        If path is provided, starts file logging. 
+        :param filePath: if provided, begin logging to the given directory. If 
+            not provided, do not write out logs.
+        :type filePath: str
+        :param stealStdio: choose to intercept stdio (including vanilla print
+            statements) or allow it to passthrough
+        :type stealStdio: bool.
+        :param printToConsole: output the results of all logging to the console. This
+            is primarily a performance consideration when running in production
+        :type printToConsole: bool.
+
         '''
         # by default, stdio gets captures. This can be toggled off
-        self.stealStdio(True)
-        self.logToConsole(True)
+        self.stealStdio(stealStdio)
+        self.logToConsole(printToConsole)
 
         # Override twisted logging (allows us to cleanly catch all exceptions)
         # This must come after the setattr calls so we get the wrapped object
@@ -417,10 +430,10 @@ class Output():
 
         if filePath is not None:
             self.__dict__['queue'] = Queue.Queue()
-            self.__dict__['printer'] = PrintLogThread(path, self.queue)
+            self.__dict__['printer'] = PrintLogThread(filePath, self.queue)
             self.printer.start()
 
-    def endFileLogging(self):
+    def endLogging(self):
         '''
         Ask the printing thread to flush and end, then return.
         '''
