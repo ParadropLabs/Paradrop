@@ -252,7 +252,6 @@ class TwistedException(BaseOutput):
         if args['isError'] == 0:
             return None
 
-        print 'que'
         # Temporary so we can still see the messages while I get this working
         print colorama.Fore.RED + args['failure'].getBriefTraceback()
         args['failure'].printTraceback()
