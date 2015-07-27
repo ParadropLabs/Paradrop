@@ -65,7 +65,7 @@ def silentLogPrefix(stepsUp):
         module = path[-1].replace('.py', '')
         package = path[-2]
     except:
-        return 'None', 'None,', 'None'
+        return 'unknown', 'unknown', '?'
 
     return package, module, line
 
