@@ -21,8 +21,24 @@ SYS_DIR = "/sys/class/net"
 EXCLUDE_IFACES = set(["lo"])
 CHANNELS = [1, 6, 11]
 
+# Strings that identify a virtual interface.
+VIF_MARKERS = [".", "veth"]
+
 # Special chute name that indicates these are system rules.
 SYSTEM_CHUTE = "__PARADROP__"
+
+
+def isVirtual(ifname):
+    """
+    Test if an interface is a virtual one.
+
+    FIXME: This just tests for the presence of certain strings in the interface
+    name, so it is not very robust.
+    """
+    for marker in VIF_MARKERS:
+        if marker in ifname:
+            return True
+    return False
 
 
 def isWAN(ifname):
@@ -79,6 +95,10 @@ def getSystemDevices(update):
 
     for ifname in os.listdir(SYS_DIR):
         if ifname in EXCLUDE_IFACES:
+            continue
+
+        # Only want to detect physical interfaces.
+        if isVirtual(ifname):
             continue
 
         dev = {"name": ifname}
