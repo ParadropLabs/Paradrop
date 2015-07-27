@@ -65,7 +65,6 @@ def silentLogPrefix(stepsUp):
         module = path[-1].replace('.py', '')
         package = path[-2]
     except:
-        print 'Could not follow trace!'
         return 'None', 'None,', 'None'
 
     return package, module, line

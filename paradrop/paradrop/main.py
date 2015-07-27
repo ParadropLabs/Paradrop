@@ -94,7 +94,7 @@ def main():
     store.store = store.Storage()
 
     # Inform output it should being logging to file
-    output.out.startFileLogging(store.LOG_PATH)
+    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=False, printToConsole=True)
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
