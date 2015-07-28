@@ -102,11 +102,11 @@ class Portal(portal.Portal):
 
     def findRealm(self, credential):
         '''
-        Find the appropriate realm for the given credential. Base implementation is 
-        simple dictionary indexing.
+        Find the appropriate realm for the given credential. Matches are found using
+        re filters. 
         '''
-        print self.realms
-        return self.realms[credential]
+        # print self.realms
+        # return self.realms[credential]
 
         for k, v in self.realms.iteritems():
             if k.match(credential):

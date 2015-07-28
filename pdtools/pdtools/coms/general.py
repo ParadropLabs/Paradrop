@@ -12,6 +12,8 @@ success or failure. All failed calls return an exception which should be
 suitable for printing. 
 '''
 
+import re
+
 from twisted.internet import defer
 
 from pdtools.coms.client import RpcClient
@@ -95,8 +97,7 @@ def echo(reactor, host, port):
     clientKey = store.store.getKey('client.pem')
     caKey = store.store.getKey('ca.pem')
 
-    # Testing...
-    riffle.portal.addRealm(u'pds.production', riffle.Realm(ServerPerspective))
+    riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
 
     avatar = yield riffle.Riffle(host, int(port)).connect(caKey, clientKey)
     result = yield avatar.echo('Hello from a client!')
