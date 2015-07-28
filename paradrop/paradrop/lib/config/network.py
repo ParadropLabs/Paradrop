@@ -78,7 +78,8 @@ def getNetworkConfig(update):
         # what this name is, since the developer will not see it.  We should
         # check to make sure it is unique, though.
         prefixLen = MAX_INTERFACE_NAME_LEN - len(cfg['intfName']) - 1
-        externalIntf = "{}.{}".format(update.new.name[0:prefixLen], cfg['intfName'])
+        externalIntf = "{}.{}".format(update.new.name[0:prefixLen],
+                                      cfg['intfName'])
 
         # Generate the internal IP address with prefix length (x.x.x.x/y) for
         # convenience of other code that expect that format (e.g. pipework).
@@ -120,6 +121,12 @@ def getNetworkConfig(update):
             if 'key' in cfg:
                 iface['key'] = cfg['key']
 
+            # Give a warning if the dhcp block is missing, since it is likely
+            # that developers will want a DHCP server to go with their AP.
+            if 'dhcp' not in cfg:
+                out.warn("No dhcp block found for interface {}; "
+                         "will not run a DHCP server".format(name))
+
         # Pass on DHCP configuration if it exists.
         if 'dhcp' in cfg:
             iface['dhcp'] = cfg['dhcp']
@@ -131,14 +138,16 @@ def getNetworkConfig(update):
 
 def getOSNetworkConfig(update):
     """
-    Takes the network interface obj created by NetworkManager.getNetworkConfiguration
-    and returns a properly formatted object to be passed to the OpenWrtConfig class.
-    The object returned is a list of tuples (config, options).
+    Takes the network interface obj created by
+    NetworkManager.getNetworkConfiguration and returns a properly formatted
+    object to be passed to the OpenWrtConfig class.  The object returned is a
+    list of tuples (config, options).
     """
     # Notes:
     #
-    # Take the cache:networkInterfaces key and generate the UCI specific OS config we need
-    # to inact the chute changes, should create a cache:osNetworkConfig key
+    # Take the cache:networkInterfaces key and generate the UCI specific OS
+    # config we need to inact the chute changes, should create a
+    # cache:osNetworkConfig key
     #
     # old code under lib.internal.chs.chutelxc same function name
 
@@ -170,20 +179,23 @@ def getOSNetworkConfig(update):
 
 def setOSNetworkConfig(update):
     """
-    Takes a list of tuples (config, opts) and saves it to the network config file.
+    Takes a list of tuples (config, opts) and saves it to the network config
+    file.
     """
 
     # Notes:
     #
-    # Takes the config generated (cache:osNetworkConfig) and uses the UCI module to actually push
-    # it to the disk
+    # Takes the config generated (cache:osNetworkConfig) and uses the UCI
+    # module to actually push it to the disk
     #
     # old code under lib.internal.chs.chutelxc same function name
 
     changed = uciutils.setConfig(update.new, update.old,
-                                 cacheKeys=['osNetworkConfig'], filepath=uci.getSystemPath("network"))
+                                 cacheKeys=['osNetworkConfig'],
+                                 filepath=uci.getSystemPath("network"))
 
-    # If we didn't change anything, then return the function to reloadNetwork so we can save ourselves from that call
+    # If we didn't change anything, then return the function to reloadNetwork
+    # so we can save ourselves from that call
     if(not changed):
         return configservice.reloadNetwork
 
@@ -192,4 +204,5 @@ def getVirtNetworkConfig(update):
     out.warn('TODO implement me\n')
     # old code under lib.internal.chs.chutelxc same function name
     # Takes any network specific config and sets up the cache:virtNetworkConfig
-    # this would be the place to put anything into HostConfig or the dockerfile we need
+    # this would be the place to put anything into HostConfig or the dockerfile
+    # we need
