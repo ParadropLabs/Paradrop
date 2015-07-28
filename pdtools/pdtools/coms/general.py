@@ -89,13 +89,33 @@ def logs(reactor, host, port):
     defer.returnValue('Done')
 
 
+class ServerPerspective(riffle.RifflePerspective):
+
+    def perspective_echo(self, arg):
+        print 'Client: server called echo'
+        return arg
+
+
 @defaultCallbacks
 @defer.inlineCallbacks
 def echo(reactor, host, port):
-    caPem, pem = store.store.getKey('ca.pem'), store.store.getKey('client.pem')
+    capath = '/home/damouse/Documents/python/scratch/oldkeys/ca-private-cert.pem'
+    keypath = '/home/damouse/Documents/python/scratch/oldkeys/b.client.private.pem'
 
-    avatar = yield riffle.Riffle(host, int(port)).connect(caPem, pem)
-    result = yield avatar.echo()
+    # caPem, pem = store.store.getKey('ca.pem'), store.store.getKey('client.pem')
+    with open(capath, 'r') as f:
+        ca = f.read()
+
+    with open(keypath, 'r') as f:
+        key = f.read()
+
+    ca, key = ca.strip(), key.strip()
+
+    #Testing...
+    riffle.portal.addRealm(u'the-authority', riffle.Realm(ServerPerspective))
+
+    avatar = yield riffle.Riffle(host, int(port)).connect(ca, key)
+    result = yield avatar.echo('Hello from a client!')
     defer.returnValue(result)
 
 

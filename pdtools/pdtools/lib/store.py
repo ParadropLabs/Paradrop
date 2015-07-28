@@ -88,7 +88,7 @@ class Storage(object):
         #     print 'Key already exists!'
         #     pass
 
-        with open(path, 'w') as f:
+        with open(path, 'wb') as f:
             f.write(key)
 
     def getKey(self, name):
@@ -96,7 +96,7 @@ class Storage(object):
         path = KEY_PATH + name
 
         if os.path.isfile(path):
-            with open(path, 'r') as f:
+            with open(path, 'rb') as f:
                 return f.read()
 
         return None

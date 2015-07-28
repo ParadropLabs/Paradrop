@@ -44,41 +44,63 @@ class Riffle(object):
         self.host, self.port = host, port
         self.secure = secure
 
+    # def _serverContext(self, pem):
+    #     '''
+    #     NOTE: Incomplete!
+
+    #     Serves on the preset port with the supplied credientials.
+
+    #     :param pem: certificate authority certificate
+    #     :type caCert: str.
+    #     '''
+
+    # with open(caCert) as f:
+    # pemBytes = f.read()
+
+    # pemBytes = FilePath(path).getContent()
+    #     ca = Certificate.loadPEM(pem)
+    #     myCertificate = PrivateCertificate.loadPEM(pem)
+
+    #     return SSL4ServerEndpoint(reactor, self.port, myCertificate.options(ca))
+
+    # def _clientContext(self, caCert, keys):
+    #     '''
+    #     Serves on the preset port with the supplied credientials.
+
+    #     :param caCert: certificate authority certificate
+    #     :type caCert: str.
+    #     :param keys: this clients keys
+    #     :type keys: str.
+    #     '''
+
+    # certname = b"pd.damouse.client.private.pem"
+
+    # pem = FilePath(path.encode('utf-8') + '/' + certname).getContent()
+    # caPem = FilePath(path.encode('utf-8') + '/' + b"ca-private-cert.pem").getContent()
+
+    #     ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(keys), PrivateCertificate.loadPEM(caCert))
+
+    #     return SSL4ClientEndpoint(reactor, self.host, self.port, ctx,)
+
     def _serverContext(self, pem):
-        '''
-        NOTE: Incomplete!
-
-        Serves on the preset port with the supplied credientials.
-
-        :param pem: certificate authority certificate
-        :type caCert: str.
-        '''
-
-        # with open(caCert) as f:
-        #     pemBytes = f.read()
-
-        # pemBytes = FilePath(path).getContent()
         ca = Certificate.loadPEM(pem)
         myCertificate = PrivateCertificate.loadPEM(pem)
 
         return SSL4ServerEndpoint(reactor, self.port, myCertificate.options(ca))
 
-    def _clientContext(self, caCert, keys):
-        '''
-        Serves on the preset port with the supplied credientials. 
+    def _clientContext(self, caCert, key):
+        path = '/home/damouse/Documents/python/scratch/oldkeys/b.client.private.pem'
+        path2 = '/home/damouse/Documents/python/scratch/oldkeys/ca-private-cert.pem'
 
-        :param caCert: certificate authority certificate
-        :type caCert: str.
-        :param keys: this clients keys
-        :type keys: str.
-        '''
+        with open(path, 'r') as f:
+            pem = f.read()
 
-        # certname = b"pd.damouse.client.private.pem"
+        with open(path2, 'r') as f:
+            caPem = f.read()
 
-        # pem = FilePath(path.encode('utf-8') + '/' + certname).getContent()
-        # caPem = FilePath(path.encode('utf-8') + '/' + b"ca-private-cert.pem").getContent()
-
-        ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(caCert), PrivateCertificate.loadPEM(keys))
+        # pem = FilePath(path).getContent()
+        # caPem = FilePath(b"ca-private-cert.pem").getContent()
+        ctx = optionsForClientTLS(u"the-authority", Certificate.loadPEM(caPem), PrivateCertificate.loadPEM(pem))
 
         return SSL4ClientEndpoint(reactor, self.host, self.port, ctx,)
 
@@ -308,6 +330,7 @@ class _RifflePortalWrapper(pb._PortalWrapper):
 
         peerCertificate = Certificate.peerFromTransport(self.broker.transport)
         pdid = peerCertificate.getSubject().commonName.decode('utf-8')
+        print 'Got pdid', pdid
 
         avatar, logout = yield self.portal.login(pdid, client)
         avatar = pb.AsReferenceable(avatar, "perspective")
