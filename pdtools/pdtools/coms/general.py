@@ -117,6 +117,9 @@ class ServerPerspective(riffle.RifflePerspective):
 
 def connectServer():
     ''' Quick refactor method, returns a riffle client ready to communicate with the server '''
-    riffle.portal.addRealm(u'pds.production', riffle.Realm(ServerPerspective))
+    riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
 
-    return riffle.Riffle('localhost', 4322).connect(store.KEY_PATH)
+    clientKey = store.store.getKey('client.pem')
+    caKey = store.store.getKey('ca.pem')
+
+    return riffle.Riffle(SERVER_HOST, SERVER_RIFFLE_PORT).connect(caKey, clientKey)

@@ -28,6 +28,27 @@ def authSuccess(r):
 
     print 'You have been successfully logged in.'
 
+###############################################################################
+# Riffle Implementation
+###############################################################################
+
+
+@general.defaultCallbacks
+@defer.inlineCallbacks
+def list(r):
+    '''
+    List the resources this user owns.
+    '''
+
+    avatar = yield general.connectServer()
+    ret = yield avatar.list()
+    defer.returnValue(ret)
+
+
+###############################################################################
+# RPC Implementation
+###############################################################################
+
 
 @authCallbacks
 @defer.inlineCallbacks

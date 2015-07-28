@@ -69,7 +69,7 @@ def main():
         return
 
     if args['list']:
-        task.react(server.ownership)
+        task.react(server.list)
 
     if args['router-create']:
         task.react(server.createRouter, (args['<name>'],))
