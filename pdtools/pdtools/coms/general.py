@@ -99,6 +99,9 @@ class ServerPerspective(riffle.RifflePerspective):
 @defaultCallbacks
 @defer.inlineCallbacks
 def echo(reactor, host, port):
+    clientKey = store.store.getKey('client.pem')
+    caKey = store.store.getKey('ca.pem')
+
     capath = '/home/damouse/Documents/python/scratch/oldkeys/ca-private-cert.pem'
     keypath = '/home/damouse/Documents/python/scratch/oldkeys/b.client.private.pem'
 
@@ -111,10 +114,10 @@ def echo(reactor, host, port):
 
     # ca, key = ca.strip(), key.strip()
 
-    #Testing...
-    riffle.portal.addRealm(u'the-authority', riffle.Realm(ServerPerspective))
+    # Testing...
+    riffle.portal.addRealm(u'pds.production', riffle.Realm(ServerPerspective))
 
-    avatar = yield riffle.Riffle(host, int(port)).connect(ca, key)
+    avatar = yield riffle.Riffle(host, int(port)).connect(caKey, clientKey)
     result = yield avatar.echo('Hello from a client!')
     defer.returnValue(result)
 

@@ -49,11 +49,6 @@ def register(reactor):
 
     client = RpcClient(general.SERVER_HOST, general.SERVER_PORT, '')
     ret = yield client.register(name, email, password)
-
-    # Upon success, ret is a dictionary containing the user's information. Save the keys
-    with open(os.getcwd() + '/pd.damouse.client.private.pem', 'wb') as f:
-        f.write(ret['keys'])
-
     defer.returnValue(ret)
 
 

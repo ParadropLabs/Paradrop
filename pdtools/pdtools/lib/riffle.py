@@ -109,7 +109,7 @@ class Riffle(object):
 
         # pem = FilePath(path).getContent()
         # caPem = FilePath(b"ca-private-cert.pem").getContent()
-        ctx = optionsForClientTLS(u"the-authority", Certificate.loadPEM(caCert), PrivateCertificate.loadPEM(pkey))
+        ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(caCert), PrivateCertificate.loadPEM(pkey))
 
         return SSL4ClientEndpoint(reactor, self.host, self.port, ctx,)
 
