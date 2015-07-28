@@ -89,30 +89,11 @@ def logs(reactor, host, port):
     defer.returnValue('Done')
 
 
-class ServerPerspective(riffle.RifflePerspective):
-
-    def perspective_echo(self, arg):
-        print 'Client: server called echo'
-        return arg
-
-
 @defaultCallbacks
 @defer.inlineCallbacks
 def echo(reactor, host, port):
     clientKey = store.store.getKey('client.pem')
     caKey = store.store.getKey('ca.pem')
-
-    capath = '/home/damouse/Documents/python/scratch/oldkeys/ca-private-cert.pem'
-    keypath = '/home/damouse/Documents/python/scratch/oldkeys/b.client.private.pem'
-
-    # caPem, pem = store.store.getKey('ca.pem'), store.store.getKey('client.pem')
-    with open(capath, 'r') as f:
-        ca = f.read()
-
-    with open(keypath, 'r') as f:
-        key = f.read()
-
-    # ca, key = ca.strip(), key.strip()
 
     # Testing...
     riffle.portal.addRealm(u'pds.production', riffle.Realm(ServerPerspective))
@@ -126,6 +107,15 @@ def echo(reactor, host, port):
 # Riffle Convenience Methods
 ###############################################################################
 
+class ServerPerspective(riffle.RifflePerspective):
+
+    def perspective_echo(self, arg):
+        print 'Client: server called echo'
+        return arg
+
+
 def connectServer():
     ''' Quick refactor method, returns a riffle client ready to communicate with the server '''
+    riffle.portal.addRealm(u'pds.production', riffle.Realm(ServerPerspective))
+
     return riffle.Riffle('localhost', 4322).connect(store.KEY_PATH)
