@@ -44,23 +44,41 @@ class Riffle(object):
         self.host, self.port = host, port
         self.secure = secure
 
-    def _serverContext(self, path):
-        # with open(path) as f:
-        #     pemBytes = f.read()
-        #     ca = pemBytes
+    def _serverContext(self, pem):
+        '''
+        NOTE: Incomplete!
 
-        pemBytes = FilePath(path).getContent()
-        ca = Certificate.loadPEM(pemBytes)
-        myCertificate = PrivateCertificate.loadPEM(pemBytes)
+        Serves on the preset port with the supplied credientials.
+
+        :param pem: certificate authority certificate
+        :type caCert: str.
+        '''
+
+        # with open(caCert) as f:
+        #     pemBytes = f.read()
+
+        # pemBytes = FilePath(path).getContent()
+        ca = Certificate.loadPEM(pem)
+        myCertificate = PrivateCertificate.loadPEM(pem)
 
         return SSL4ServerEndpoint(reactor, self.port, myCertificate.options(ca))
 
-    def _clientContext(self, path):
-        certname = b"pd.damouse.client.private.pem"
+    def _clientContext(self, caCert, keys):
+        '''
+        Serves on the preset port with the supplied credientials. 
 
-        pem = FilePath(path.encode('utf-8') + '/' + certname).getContent()
-        caPem = FilePath(path.encode('utf-8') + '/' + b"ca-private-cert.pem").getContent()
-        ctx = optionsForClientTLS(u"the-authority", Certificate.loadPEM(caPem), PrivateCertificate.loadPEM(pem))
+        :param caCert: certificate authority certificate
+        :type caCert: str.
+        :param keys: this clients keys
+        :type keys: str.
+        '''
+
+        # certname = b"pd.damouse.client.private.pem"
+
+        # pem = FilePath(path.encode('utf-8') + '/' + certname).getContent()
+        # caPem = FilePath(path.encode('utf-8') + '/' + b"ca-private-cert.pem").getContent()
+
+        ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(caCert), PrivateCertificate.loadPEM(keys))
 
         return SSL4ClientEndpoint(reactor, self.host, self.port, ctx,)
 
@@ -69,8 +87,8 @@ class Riffle(object):
         serverEndpoint.listen(RiffleServerFactory(portal))
 
     @defer.inlineCallbacks
-    def connect(self, keypath):
-        clientEndpoint = self._clientContext(keypath)
+    def connect(self, caCert, keys):
+        clientEndpoint = self._clientContext(caCert, keys)
 
         factory = RiffleClientFactory()
         clientEndpoint.connect(factory)

@@ -23,8 +23,8 @@ def authCallbacks(f):
 
 def authSuccess(r):
     store.saveConfig('pdid', r['_id'])
-    store.saveKey('client.pem', r['keys'])
-    store.saveKey('ca.pem', r['ca'])
+    store.saveKey(r['keys'], 'client.pem')
+    store.saveKey(r['ca'], 'ca.pem')
 
     print 'You have been successfully logged in.'
 
@@ -50,7 +50,7 @@ def register(reactor):
     client = RpcClient(general.SERVER_HOST, general.SERVER_PORT, '')
     ret = yield client.register(name, email, password)
 
-    #Upon success, ret is a dictionary containing the user's information. Save the keys
+    # Upon success, ret is a dictionary containing the user's information. Save the keys
     with open(os.getcwd() + '/pd.damouse.client.private.pem', 'wb') as f:
         f.write(ret['keys'])
 

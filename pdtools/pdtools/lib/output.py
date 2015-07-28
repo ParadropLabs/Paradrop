@@ -286,8 +286,7 @@ class TwistedException(BaseOutput):
         except Exception:
             package, module, line = "uknown", 'unknown', '??'
 
-
-        # message = 
+        # message =
 
         ret = {'message': str(args['failure'].getTraceback().strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
                'package': package, 'module': module, 'timestamp': time.time(),
@@ -443,8 +442,9 @@ class Output():
         if self.queue is not None:
             self.queue.put(logDict)
 
-        # Write out the human-readable version to out if needed
-        if self.printLogs:
+        # Write out the human-readable version to out if needed (but always print out 
+        # exceptions for testing purposes)
+        if self.printLogs or logDict['type'] == 'ERR':
             res = self.messageToString(logDict)
             self.redirectOut.trueWrite(res)
 

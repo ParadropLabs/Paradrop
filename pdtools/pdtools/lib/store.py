@@ -83,9 +83,10 @@ class Storage(object):
         ''' Save the key with the given name. Overwrites by default '''
         path = KEY_PATH + name
 
-        # Do nothing by default if the key already exists (but perhaps change this behavior)
-        if os.path.isfile(path):
-            pass
+        # Overwrite existing keys when asked for now
+        # if os.path.isfile(path):
+        #     print 'Key already exists!'
+        #     pass
 
         with open(path, 'w') as f:
             f.write(key)
