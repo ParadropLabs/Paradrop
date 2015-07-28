@@ -26,6 +26,9 @@ from pdtools.lib.store import store
 @general.defaultCallbacks
 @defer.inlineCallbacks
 def provisionRouter(r, name, host, port):
+
+    # Bug: if the user sets the name of the router as their username, this will
+    # fail badly
     target = [x for x in store.getConfig('routers') if name in x]
 
     if len(target) == 0:

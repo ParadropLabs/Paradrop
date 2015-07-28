@@ -36,13 +36,43 @@ def authSuccess(r):
 @general.defaultCallbacks
 @defer.inlineCallbacks
 def list(r):
-    '''
-    List the resources this user owns.
-    '''
+    ''' Return the resources this user owns. '''
 
     avatar = yield general.connectServer()
     ret = yield avatar.list()
+
+    # I don't think this is necesary anymore, but keeping it here for now
+    store.saveConfig('chutes', ret['chutes'])
+    store.saveConfig('routers', ret['routers'])
+    store.saveConfig('instances', ret['instances'])
+
     defer.returnValue(ret)
+
+
+@general.failureCallbacks
+@defer.inlineCallbacks
+def createRouter(r, name):
+    '''
+    Create a new router on the server-- do not provision it yet. 
+
+    Like so many other things, this is a temporary method.
+    '''
+
+    avatar = yield general.connectServer()
+    ret = yield avatar.provisionRouter(name)
+
+    # Save that router's keys
+    store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
+    
+    ret = yield avatar.list()
+
+    store.saveConfig('chutes', ret['chutes'])
+    store.saveConfig('routers', ret['routers'])
+    store.saveConfig('instances', ret['instances'])
+
+    printOwned()
+
+    defer.returnValue("Done")
 
 
 ###############################################################################
@@ -87,23 +117,6 @@ def ownership(reactor):
     store.saveConfig('instances', ret['instances'])
 
     printOwned()
-
-    defer.returnValue(ret)
-
-
-@general.failureCallbacks
-@defer.inlineCallbacks
-def createRouter(reactor, name):
-    ''' Get the list of owned resources from the server '''
-    pdid = store.getConfig('pdid')
-
-    client = RpcClient(general.SERVER_HOST, general.SERVER_PORT, '')
-    ret = yield client.provisionRouter(pdid, name)
-
-    print 'Router successfully created. Boot the router and run "provision," specifying the \
-    address with port=14321'
-
-    yield ownership(None)
 
     defer.returnValue(ret)
 
