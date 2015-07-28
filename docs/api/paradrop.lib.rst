@@ -7,10 +7,19 @@ Subpackages
 .. toctree::
 
     paradrop.lib.api
+    paradrop.lib.config
     paradrop.lib.utils
 
 Submodules
 ----------
+
+paradrop.lib.chute module
+-------------------------
+
+.. automodule:: paradrop.lib.chute
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 paradrop.lib.settings module
 ----------------------------

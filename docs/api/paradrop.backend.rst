@@ -6,27 +6,10 @@ Subpackages
 
 .. toctree::
 
+    paradrop.backend.exc
+    paradrop.backend.fc
+    paradrop.backend.pdconfd
     paradrop.backend.pdfcd
-
-Submodules
-----------
-
-paradrop.backend.connection module
-----------------------------------
-
-.. automodule:: paradrop.backend.connection
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-paradrop.backend.main module
-----------------------------
-
-.. automodule:: paradrop.backend.main
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
