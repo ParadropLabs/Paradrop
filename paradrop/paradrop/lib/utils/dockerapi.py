@@ -115,7 +115,7 @@ def build_host_config(update):
         privileged=False,
         dns_search=[],
         volumes_from=None,
-        cap_add=[],
+        cap_add=['NET_ADMIN'],
         cap_drop=[]
     )
 
