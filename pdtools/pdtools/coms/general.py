@@ -109,7 +109,7 @@ def echo(reactor, host, port):
     with open(keypath, 'r') as f:
         key = f.read()
 
-    ca, key = ca.strip(), key.strip()
+    # ca, key = ca.strip(), key.strip()
 
     #Testing...
     riffle.portal.addRealm(u'the-authority', riffle.Realm(ServerPerspective))

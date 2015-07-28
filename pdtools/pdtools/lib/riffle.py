@@ -88,19 +88,28 @@ class Riffle(object):
 
         return SSL4ServerEndpoint(reactor, self.port, myCertificate.options(ca))
 
-    def _clientContext(self, caCert, key):
-        path = '/home/damouse/Documents/python/scratch/oldkeys/b.client.private.pem'
-        path2 = '/home/damouse/Documents/python/scratch/oldkeys/ca-private-cert.pem'
+    def _clientContext(self, caCert, pkey):
+        # path = '/home/damouse/Documents/python/scratch/oldkeys/b.client.private.pem'
+        # path2 = '/home/damouse/Documents/python/scratch/oldkeys/ca-private-cert.pem'
 
-        with open(path, 'r') as f:
-            pem = f.read()
+        # with open(path, 'r') as f:
+        #     pem = f.read()
 
-        with open(path2, 'r') as f:
-            caPem = f.read()
+        # with open(path2, 'r') as f:
+        #     caPem = f.read()
+
+        # import difflib
+        # d = difflib.Differ()
+
+        # if caPem != caCert:
+        #     print 'CA CERT DOESNT MATCH'
+
+        # if pkey != pem:
+        #     print 'PRIVATE KEY DOESNT MATCH'
 
         # pem = FilePath(path).getContent()
         # caPem = FilePath(b"ca-private-cert.pem").getContent()
-        ctx = optionsForClientTLS(u"the-authority", Certificate.loadPEM(caPem), PrivateCertificate.loadPEM(pem))
+        ctx = optionsForClientTLS(u"the-authority", Certificate.loadPEM(caCert), PrivateCertificate.loadPEM(pkey))
 
         return SSL4ClientEndpoint(reactor, self.host, self.port, ctx,)
 
