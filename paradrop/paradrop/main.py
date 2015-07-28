@@ -52,7 +52,7 @@ def onShutdown():
     ''' Get notified of system shutdown from Twisted '''
 
     # Clears the print buffer, closes the logfile
-    output.out.endFileLogging()
+    output.out.endLogging()
 
     # TODO: inform the server
 
@@ -93,8 +93,10 @@ def main():
     store.configureLocalPaths()
     store.store = store.Storage()
 
-    # Inform output it should being logging to file
-    output.out.startFileLogging(store.LOG_PATH)
+    # initialize output. If filepath is set, logs to file.
+    # If stealStdio is set intercepts all stderr and stdout and interprets it internally
+    # If printToConsole is set (defaults True) all final output is rendered to stdout
+    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=True, printToConsole=True)
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
@@ -112,4 +114,5 @@ def main():
         pdfcd.server.setup(args)
 
 if __name__ == "__main__":
+
     main()

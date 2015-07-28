@@ -31,10 +31,11 @@ def isHexString(data):
 
 def sortCommands(commands):
     """
-    Return a sorted list of prioritized commands.
+    Return commands in order by priority.
 
-    The list is actually a heap.  In order to execute the commands in order, it
-    is important to use the heappop function.
+    The input should be a list of (priority, command) tuples.  The output will
+    be just the command part in order according to priority (ascending).  For
+    ties, the order from the original list is maintained.
     """
     result = list()
 
@@ -53,7 +54,9 @@ def sortCommands(commands):
         i = len(result)
         heapq.heappush(result, (n * prio + i, cmd))
 
-    return result
+    while len(result) > 0:
+        prio, cmd = heapq.heappop(result)
+        yield cmd
 
 
 class ConfigObject(object):
@@ -284,6 +287,17 @@ class ConfigInterface(ConfigObject):
 
             updown = "up" if self.enabled else "down"
             cmd = ["ip", "link", "set", "dev", self.ifname, updown]
+            commands.append((PRIO_CONFIG_IFACE, cmd))
+
+        return commands
+
+    def undoCommands(self, allConfigs):
+        commands = list()
+        if self.proto == "static":
+            # Remove the IP address that we added.
+            cmd = ["ip", "addr", "del",
+                   "{}/{}".format(self.ipaddr, self.netmask),
+                   "dev", self.ifname]
             commands.append((PRIO_CONFIG_IFACE, cmd))
 
         return commands
@@ -623,6 +637,7 @@ class ConfigManager(object):
         # Make sure directory exists.
         pdosq.makedirs(writeDir)
 
+        self.previousCommands = list()
         self.currentConfig = dict()
         self.nextSectionId = 0
 
@@ -646,22 +661,21 @@ class ConfigManager(object):
                 out.add(config)
         return out
 
-    def execute(self, commands, execute=True):
-        # Sort the commands by priority.
-        commands = sortCommands(commands)
+    def getPreviousCommands(self):
+        """
+        Get the most recent command list.
+        """
+        return sortCommands(self.previousCommands)
 
-        while len(commands) > 0:
-            prio, cmd = heapq.heappop(commands)
-            if execute:
-                try:
-                    result = subprocess.call(cmd)
-                except OSError as e:
-                    out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
-                    out.exception(e, True)
-            else:
-                result = "N/A"
-            out.info('Command (prio {}) "{}" Returned {}\n'.format(
-                prio, " ".join(cmd), result))
+    def execute(self, commands):
+        for cmd in sortCommands(commands):
+            try:
+                result = subprocess.call(cmd)
+                out.info('Command "{}" Returned {}\n'.format(
+                    " ".join(cmd), result))
+            except OSError as e:
+                out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
+                out.exception(e, True)
 
     def findMatchingConfig(self, config, byName=False):
         """
@@ -776,8 +790,10 @@ class ConfigManager(object):
             commands.extend(config.commands(allConfigs))
 
         # Finally, execute the commands.
-        self.execute(commands, execute)
+        if execute:
+            self.execute(commands)
 
+        self.previousCommands = commands
         self.currentConfig = allConfigs
         return True
 
@@ -837,16 +853,9 @@ class ConfigManager(object):
             commands.extend(config.undoCommands(self.currentConfig))
 
         # Finally, execute the commands.
-        self.execute(commands, execute)
+        if execute:
+            self.execute(commands)
 
+        self.previousCommands = commands
         self.currentConfig = dict()
         return True
-
-if __name__ == "__main__":
-    manager = ConfigManager(writeDir="/tmp")
-    print("Loading configuration files:")
-    manager.loadConfig(execute=False)
-    print("\nReloading configuration files:")
-    manager.loadConfig(execute=False)
-    print("\nUnloading configuration files:")
-    manager.unload(execute=False)

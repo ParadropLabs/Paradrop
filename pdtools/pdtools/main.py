@@ -30,9 +30,7 @@ from pdtools.lib.store import store
 
 def main():
     # For now, don't grab STDIO and don't write random log noise to conosle
-    # output.out.startLogging()
-    output.out.stealStdio(False)
-    output.out.logToConsole(False)
+    output.out.startLogging(stealStdio=False, printToConsole=False)
 
     args = docopt(__doc__, version='Paradrop build tools v0.1')
 

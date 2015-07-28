@@ -1,12 +1,18 @@
 import ipaddress
 import itertools
 
+from paradrop.lib import settings
 from paradrop.lib.config import configservice, uciutils
+from paradrop.lib.config.pool import NetworkPool
 from paradrop.lib.utils import addresses, uci
 from pdtools.lib.output import out
 from pdtools.lib import pdutils
 
 MAX_INTERFACE_NAME_LEN = 15
+
+
+# Pool of addresses available for chutes that request dynamic addressing.
+networkPool = NetworkPool(settings.DYNAMIC_NETWORK_POOL)
 
 
 def getNetworkConfig(update):
@@ -46,31 +52,26 @@ def getNetworkConfig(update):
             raise Exception("Interface name too long")
 
         # Check for required fields.
-        res = pdutils.check(cfg, dict,
-                            ['ipaddr', 'intfName', 'type', 'netmask'])
+        res = pdutils.check(cfg, dict, ['intfName', 'type'])
         if(res):
             out.warn('Network interface definition {}\n'.format(res))
             raise Exception("Interface definition missing field(s)")
 
-        # verify that this chute can have the IP provided
-        if(not addresses.isIpValid(cfg['ipaddr'])):
-            out.warn('IP address ({}) not valid for {}'.format(
-                cfg['ipaddr'], name))
-            raise Exception("IP address not valid")
+        # Claim a subnet for this interface from the pool.
+        subnet = networkPool.next()
+        hosts = subnet.hosts()
 
-        # Verify that no other interfaces on other chutes are using this IP address
-        if(not addresses.isIpAvailable(cfg['ipaddr'], update.chuteStor, update.new.name)):
-            out.warn('IP address ({}) requested by {} already in use'.format(
-                cfg['ipaddr'], name))
-            raise Exception("IP address in use")
-
-        iface = {
-            'name': name,                     # Name (not used?)
-            'netType': cfg['type'],           # Type (wan, lan, wifi)
-            'internalIntf': cfg['intfName'],  # Interface name in chute
-            'netmask': cfg['netmask'],        # Netmask in host and chute
-            'externalIpaddr': cfg['ipaddr']   # IP address in host
-        }
+        # Generate internal (in the chute) and external (in the host)
+        # addresses.
+        #
+        # Example:
+        # subnet: 192.168.30.0/24
+        # netmask: 255.255.255.0
+        # external: 192.168.30.1
+        # internal: 192.168.30.2
+        netmask = str(subnet.netmask)
+        externalIpaddr = str(hosts.next())
+        internalIpaddr = str(hosts.next())
 
         # Generate a name for the new interface in the host by combining the
         # chute name and the interface name.  Note it does not really matter
@@ -78,17 +79,21 @@ def getNetworkConfig(update):
         # check to make sure it is unique, though.
         prefixLen = MAX_INTERFACE_NAME_LEN - len(cfg['intfName']) - 1
         externalIntf = "{}.{}".format(update.new.name[0:prefixLen], cfg['intfName'])
-        iface['externalIntf'] = externalIntf
 
-        # Generate the internal (inside chute) IP address by incrementing.
-        internalIpaddr = str(ipaddress.ip_address(unicode(cfg['ipaddr'])) + 1)
-        iface['internalIpaddr'] = internalIpaddr
+        # Generate the internal IP address with prefix length (x.x.x.x/y) for
+        # convenience of other code that expect that format (e.g. pipework).
+        ipaddrWithPrefix = "{}/{}".format(internalIpaddr, subnet.prefixlen)
 
-        # Also store the internal IP address with prefix len (x.x.x.x/y) for
-        # tools that expect that format (eg. pipework).
-        ifaceAddr = ipaddress.ip_interface(u"{}/{}".format(internalIpaddr,
-                                                           cfg['netmask']))
-        iface['ipaddrWithPrefix'] = str(ifaceAddr.with_prefixlen)
+        iface = {
+            'name': name,                           # Name (not used?)
+            'netType': cfg['type'],                 # Type (wan, lan, wifi)
+            'externalIntf': externalIntf,           # Interface name in host
+            'internalIntf': cfg['intfName'],        # Interface name in chute
+            'netmask': netmask,                     # Netmask in host and chute
+            'externalIpaddr': externalIpaddr,       # IP address in host
+            'internalIpaddr': internalIpaddr,       # IP address in chute
+            'ipaddrWithPrefix': ipaddrWithPrefix    # Internal IP (x.x.x.x/y)
+        }
 
         # Add extra fields for WiFi devices.
         if cfg['type'] == "wifi":

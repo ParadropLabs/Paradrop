@@ -16,6 +16,7 @@ import Queue
 import threading
 import time
 import colorama
+import traceback
 
 from pdtools.lib import pdutils
 
@@ -61,14 +62,23 @@ def silentLogPrefix(stepsUp):
     try:
         trace = sys._getframe(stepsUp).f_code.co_filename
         line = sys._getframe(stepsUp).f_lineno
-        path = trace.split('/')
-        module = path[-1].replace('.py', '')
-        package = path[-2]
+        module, package = parseLogPrefix(trace)
     except:
-        print 'Could not follow trace!'
-        return 'None', 'None,', 'None'
+        return 'unknown', 'unknown', '??'
 
     return package, module, line
+
+
+def parseLogPrefix(tb):
+    '''
+    Takes a traceback returned by 'extract_tb' and returns the package, module, 
+    and line number
+    '''
+    path = tb.split('/')
+    module = path[-1].replace('.py', '')
+    package = path[-2]
+
+    return module, package
 
 
 class PrintLogThread(threading.Thread):
@@ -143,7 +153,7 @@ class OutputRedirect(object):
 
         package, module, line = silentLogPrefix(2)
 
-        ret = {'message': str(contents), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
+        ret = {'message': str(contents.strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
                'package': package, 'module': module, 'timestamp': time.time(),
                'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
 
@@ -192,6 +202,10 @@ class BaseOutput(object):
         '''
         package, module, line = silentLogPrefix(3)
 
+        # String newlines
+        if args[-1] == '\n':
+            args = args.strip()
+
         ret = {'message': str(args), 'type': self.type['name'], 'extra': {},
                'package': package, 'module': module, 'timestamp': time.time(),
                'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
@@ -222,18 +236,27 @@ class TwistedOutput(BaseOutput):
         will be in there. 
         '''
 
+        # there is another class responsible for handling error messages. Ignore these.
         if args['isError'] == 1:
             return None
 
-        # print args
-
         # Start with the default message, but just grab the whole thing if it doesn't work
         try:
-            ret = super(TwistedOutput, self).__call__(args['message'][0])
+            message = args['message'][0]
         except:
-            ret = super(TwistedOutput, self).__call__(str(args))
+            message = str(args)
 
-        # print ret
+        # NOTE: This code gets the REAL twisted stack trace-- but it seems to
+        # make things more noisy without actually helping
+        # package, module, line = silentLogPrefix(5)
+
+        # ret = {'message': message, 'type': self.type['name'], 'extra': {},
+        #        'package': package, 'module': module, 'timestamp': time.time(),
+        #        'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+
+        ret = {'message': message, 'type': self.type['name'], 'extra': {},
+               'package': 'twisted', 'module': 'internal', 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': '??', 'pdid': 'pd.damouse.example'}
 
         return ret
 
@@ -253,67 +276,24 @@ class TwistedException(BaseOutput):
         if args['isError'] == 0:
             return None
 
-        print 'que'
-        # Temporary so we can still see the messages while I get this working
-        print colorama.Fore.RED + args['failure'].getBriefTraceback()
-        args['failure'].printTraceback()
-        # out.trueOut.trueWrite(colorama.Front.RED + args['failure'].getBriefTraceback())
-        # print args['failure'].getErrorMessage()
-        return None
+        # special handling of exception prefix logging
+        try:
+            tb = args['failure'].getTracebackObject()
+            stacktrace = traceback.extract_tb(tb)[-1]
 
-        # print args
-        # Start with the default message
-        # ret = super(TwistedOutput, self).__call__('Exception')
+            package, module = parseLogPrefix(stacktrace[0])
+            line = stacktrace[1]
+        except Exception:
+            package, module, line = "uknown", 'unknown', '??'
 
-        ret = {'message': str(contents), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
-               'package': None, 'module': None, 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': None, 'pdid': 'pd.damouse.example'}
+
+        # message = 
+
+        ret = {'message': str(args['failure'].getTraceback().strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
+               'package': package, 'module': module, 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
 
         return ret
-
-# Kept for posterity, but not currently used
-class OutException(BaseOutput):
-
-    """
-        This is a special call (out.exception()) that helps print exceptions
-        quickly, easily and in the same format.
-        Arguments:
-            Exception object
-            bool to print traceback
-            logPrefix string
-            kwargs : other important args you want us to know
-    """
-
-    def __init__(self, color=None, other_out_types=None):
-        self.color = color
-        if(other_out_types and type(other_out_types) is not list):
-            other_out_types = [other_out_types]
-        self.other_out = other_out_types
-
-    def __call__(self, prefix, e, printTraceback, **kwargs):
-        theTrace = "None"
-        argStr = "None"
-        if(kwargs):
-            argStr = jsonPretty(kwargs)
-        if(printTraceback):
-            theTrace = traceback.format_exc()
-
-        msg = "!! %s\nException: %s\nArguments: %s\nTraceback: %s\n" % (
-            prefix, str(e), argStr, theTrace)
-
-        # Format the message in a reasonable way
-        msg = msg.replace('\n', '\n    ') + '\n'
-        # Save the part without color for passing to other_out objects.
-        msg_only = msg
-        if(self.color):
-            msg = self.color + msg + Colors.END
-
-        sys.stderr.write(msg)
-        sys.stderr.flush()
-        if self.other_out:
-            for item in self.other_out:
-                obj = item
-                obj(msg_only)
 
 
 class Output():
@@ -365,7 +345,9 @@ class Output():
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
 
-        # The raw dict of tags and output objects
+        # Setattr wraps the output objects in a
+        # decorator that allows this class to intercept their output, This dict holds the
+        # original objects.
         self.__dict__['outputMappings'] = {}
 
         for name, func in kwargs.iteritems():
@@ -388,8 +370,7 @@ class Output():
             self.handlePrint(result)
             return result
 
-        # WARNING you cannot call setattr() here, it would recursively call
-        # back into this function
+        # can't call setattr here (which normally looks like self.name = inner)
         self.__dict__[name] = inner
 
         # Save the original function (unwrapped) under the tag its registered with
@@ -399,16 +380,26 @@ class Output():
     def __repr__(self):
         return "REPR"
 
-    def startLogging(self, filePath=None):
+    def startLogging(self, filePath=None, stealStdio=False, printToConsole=True):
         '''
-        By default the tools automatically starts logging, but this means anyone who 
-        imports pdtools will get all twisted and stdio captures, which is not ideal. 
+        Begin logging. The output class is ready to go out of the box, but in order
+        to prevent mere imports from stealing stdio or console logging to vanish
+        these must be manually turned on.
 
-        If path is provided, starts file logging. 
+        :param filePath: if provided, begin logging to the given directory. If 
+            not provided, do not write out logs.
+        :type filePath: str
+        :param stealStdio: choose to intercept stdio (including vanilla print
+            statements) or allow it to passthrough
+        :type stealStdio: bool.
+        :param printToConsole: output the results of all logging to the console. This
+            is primarily a performance consideration when running in production
+        :type printToConsole: bool.
+
         '''
         # by default, stdio gets captures. This can be toggled off
-        self.stealStdio(True)
-        self.logToConsole(True)
+        self.stealStdio(stealStdio)
+        self.logToConsole(printToConsole)
 
         # Override twisted logging (allows us to cleanly catch all exceptions)
         # This must come after the setattr calls so we get the wrapped object
@@ -417,10 +408,10 @@ class Output():
 
         if filePath is not None:
             self.__dict__['queue'] = Queue.Queue()
-            self.__dict__['printer'] = PrintLogThread(path, self.queue)
+            self.__dict__['printer'] = PrintLogThread(filePath, self.queue)
             self.printer.start()
 
-    def endFileLogging(self):
+    def endLogging(self):
         '''
         Ask the printing thread to flush and end, then return.
         '''
