@@ -197,7 +197,8 @@ class ConfigDhcp(ConfigObject):
         {"name": "interface", "type": str, "required": True, "default": None},
         {"name": "leasetime", "type": str, "required": True, "default": "12h"},
         {"name": "limit", "type": int, "required": True, "default": 150},
-        {"name": "start", "type": int, "required": True, "default": 100}
+        {"name": "start", "type": int, "required": True, "default": 100},
+        {"name": "dhcp_option", "type": str, "required": False, "default": ""}
     ]
 
     def commands(self, allConfigs):
@@ -231,6 +232,12 @@ class ConfigDhcp(ConfigObject):
             outputFile.write("dhcp-range={},{},{}\n".format(
                 str(firstAddress), str(lastAddress), self.leasetime))
             outputFile.write("dhcp-leasefile={}\n".format(leaseFile))
+
+            # Write options sections to the config file.
+            if self.dhcp_option:
+                options = self.dhcp_option.split(" ")
+                for option in options:
+                    outputFile.write("dhcp-option={}\n".format(option))
 
             # TODO: Bind interfaces allows us to have multiple instances of
             # dnsmasq running, but it would probably be better to have one

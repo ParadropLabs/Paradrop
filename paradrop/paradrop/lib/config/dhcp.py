@@ -34,7 +34,11 @@ def getVirtDHCPSettings(update):
             'interface': iface['externalIntf'],
             'start': dhcp['start'],
             'limit': dhcp['limit'],
-            'leasetime': dhcp['lease']
+            'leasetime': dhcp['lease'],
+
+            # This last one tells clients that the router is the interface
+            # inside the chute not the one in the host.
+            'dhcp_option': "option:router,{}".format(iface['internalIpaddr'])
         }
 
         dhcpSettings.append((config, options))
