@@ -6,7 +6,10 @@
 from pdtools.lib.output import out
 import docker
 import json
+import os
 import subprocess
+
+from paradrop.lib import settings
 
 
 def startChute(update):
@@ -17,7 +20,7 @@ def startChute(update):
     name = update.name
 
     host_config = build_host_config(update)
-    
+
     c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
 
     #Get Id's of current images for comparison upon failure
@@ -49,7 +52,7 @@ def startChute(update):
         currImages = c.images(quiet=True, all=False)
         for img in currImages:
             if not img in validImages:
-                out.info('-- %s Removing Invalid image with id: %s' % (logPrefix(), str(img)))
+                out.info('Removing Invalid image with id: %s' % str(img))
                 c.remove_image(image=img)
 
         #Notify user and throw exception
@@ -63,7 +66,9 @@ def startChute(update):
 
     c.start(container.get('Id'))
     out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
+
     setup_net_interfaces(update)
+
 
 def removeChute(update):
     out.info('Attempting to remove chute %s\n' % (update.name))
@@ -114,6 +119,7 @@ def build_host_config(update):
         cap_drop=[]
     )
 
+
 def setup_net_interfaces(update):
     interfaces = update.new.getCache('networkInterfaces')
     for iface in interfaces:
@@ -124,9 +130,24 @@ def setup_net_interfaces(update):
         else:
             continue
 
-        cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i', internalIntf, update.name,  IP]
+        # Construct environment for pipework call.  It only seems to require
+        # the PATH variable to include the directory containing the docker
+        # client.  On Snappy this was not happening by default, which is why
+        # this code is here.
+        env = {"PATH": os.environ.get("PATH", "")}
+        if settings.DOCKER_BIN_DIR not in env['PATH']:
+            env['PATH'] += ":" + settings.DOCKER_BIN_DIR
+
+        cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i',
+               internalIntf, update.name,  IP]
+        out.info("Calling: {}\n".format(" ".join(cmd)))
         try:
-            result = subprocess.call(cmd)
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, env=env)
+            for line in proc.stdout:
+                out.info("pipework: {}\n".format(line.strip()))
+            for line in proc.stderr:
+                out.warn("pipework: {}\n".format(line.strip()))
         except OSError as e:
             out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
             out.exception(e, True)
