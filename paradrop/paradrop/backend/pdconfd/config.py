@@ -64,6 +64,10 @@ class ConfigObject(object):
     typename = None
     options = []
 
+    # Subclass can set to a class instance if there can be a default object for
+    # that subclass.
+    default = None
+
     def __init__(self):
         self.id = ConfigObject.nextId
         ConfigObject.nextId += 1
@@ -71,6 +75,9 @@ class ConfigObject(object):
         self.source = None
         self.name = "s{:08x}".format(self.id)
         self.dependents = set()
+
+        for option in self.options:
+            setattr(self, option['name'], option['default'])
 
     def __hash__(self):
         return hash(self.getTypeAndName())
@@ -99,7 +106,8 @@ class ConfigObject(object):
         """
         return (self.typename, self.name)
 
-    def lookup(self, allConfigs, sectionType, sectionName, addDependent=True):
+    def lookup(self, allConfigs, sectionType, sectionName, addDependent=True,
+               tryDefault=False):
         """
         Look up a section by type and name.
 
@@ -107,8 +115,21 @@ class ConfigObject(object):
         a dependent of the found section.
 
         Will raise an exception if the section is not found.
+
+        tryDefault: If True and no section of the given name is found, we will
+        check if a default anonymous section exists and return that section.
+        For example, this is used with the 'dnsmasq' section type, where we
+        allow a default anonymous section ("config dnsmasq") and named sections
+        ("config dnsmasq 'wifiX'").
         """
-        config = allConfigs[(sectionType, sectionName)]
+        try:
+            config = allConfigs[(sectionType, sectionName)]
+        except KeyError as e:
+            # Try returning the default object if it exists.
+            if tryDefault and self.default is not None:
+                config = self.default
+            else:
+                raise e
         if addDependent:
             config.addDependent(self)
         return config
@@ -140,7 +161,7 @@ class ConfigObject(object):
         Arguments:
         source -- file containing this configuration section
         name -- name of the configuration section
-                If None, a unique name will be generated. 
+                If None, a unique name will be generated.
         options -- dictionary of options loaded from the section
         """
         obj = cls()
@@ -149,6 +170,13 @@ class ConfigObject(object):
 
         if name is not None:
             obj.name = name
+        else:
+            # No-name (anonymous) sections can become the default returned by
+            # the lookup method.
+            #
+            # TODO: If we are replacing a different object, that one may have
+            # dependencies that should be reloaded.
+            cls.default = obj
 
         for opdef in cls.options:
             found = False
@@ -207,6 +235,11 @@ class ConfigDhcp(ConfigObject):
         # Look up the interface - may fail.
         interface = self.lookup(allConfigs, "interface", self.interface)
 
+        # Look up dnsmasq settings.  This should not fail because we have
+        # defined a default dnsmasq object.
+        dnsmasq = self.lookup(allConfigs, "dnsmasq", self.interface,
+                              tryDefault=True)
+
         network = ipaddress.IPv4Network(u"{}/{}".format(
             interface.ipaddr, interface.netmask), strict=False)
 
@@ -239,6 +272,13 @@ class ConfigDhcp(ConfigObject):
                 for option in options:
                     outputFile.write("dhcp-option={}\n".format(option))
 
+            if dnsmasq.noresolv:
+                outputFile.write("no-resolv\n")
+
+            if dnsmasq.server:
+                for server in dnsmasq.server:
+                    outputFile.write("server={}\n".format(server))
+
             # TODO: Bind interfaces allows us to have multiple instances of
             # dnsmasq running, but it would probably be better to have one
             # running and reconfigure it when we want to add or remove
@@ -268,6 +308,19 @@ class ConfigDhcp(ConfigObject):
             return []
 
         return commands
+
+
+class ConfigDnsmasq(ConfigObject):
+    typename = "dnsmasq"
+
+    options = [
+        {"name": "interface", "type": list, "required": False, "default": None},
+        {"name": "noresolv", "type": bool, "required": False, "default": False},
+        {"name": "server", "type": list, "required": False, "default": None}
+    ]
+
+# Lookups will return this default object if no named object is found.
+ConfigDnsmasq.default = ConfigDnsmasq()
 
 
 class ConfigInterface(ConfigObject):
@@ -607,7 +660,7 @@ for cls in ConfigObject.__subclasses__():
 
 def findConfigFiles(search=None):
     """
-    Look for and return a list of configuration files.  
+    Look for and return a list of configuration files.
 
     The behavior depends on whether the search argument is a file, a directory,
     or None.
@@ -722,7 +775,7 @@ class ConfigManager(object):
          - No -> Add section, apply changes, and stop.
          - Yes -> Continue.
         Section is identical to the one in the current config (by option values)?
-         - No -> Revert current section, mark any affected dependents, 
+         - No -> Revert current section, mark any affected dependents,
                  add new section, apply changes, and stop.
          - Yes -> Continue.
         Section has not changed but one of its dependencies has?
