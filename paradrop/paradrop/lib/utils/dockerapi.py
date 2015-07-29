@@ -14,7 +14,6 @@ from paradrop.lib import settings
 
 def startChute(update):
     out.info('Attempting to start new Chute %s \n' % (update.name))
-    print update.__dict__
 
     repo = update.name + ":latest"
     dockerfile = update.dockerfile
@@ -27,7 +26,6 @@ def startChute(update):
     #Get Id's of current images for comparison upon failure
     validImages = c.images(quiet=True, all=False)
     validContainers = c.containers(quiet=True, all=True)
-    out.warn(validContainers)
 
     buildFailed = False
     for line in c.build(rm=True, tag=repo, fileobj=dockerfile):
@@ -46,7 +44,7 @@ def startChute(update):
 
     #If we failed to build skip creating and starting clean up and fail
     if buildFailed:
-        failAndCleanUpDocker(validImages)
+        failAndCleanUpDocker(validImages, validContainers, update)
 
     try:
         container = c.create_container(
@@ -54,21 +52,23 @@ def startChute(update):
         )
         c.start(container.get('Id'))
     except Exception as e:
-        pass
-        #failAndCleanUpDocker(validImages)
+        failAndCleanUpDocker(validImages, validContainers, update)
     
     out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
 
     setup_net_interfaces(update)
 
-def failAndCleanUpDocker(validImages):
+def failAndCleanUpDocker(validImages, validContainers, update):
     c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-    #Clean up docker container from failed build/start
-    rmv = c.containers(latest=True)
-    for cntr in rmv:
-        c.remove_container(container=cntr.get('Id'))
 
-    #Clean up image from failed build
+    #Clean up containers from failed build/start
+    currContainers = c.containers(quiet=True, all=True)
+    for cntr in currContainers:
+        if not cntr in validContainers:
+            out.info('Removing Invalid container with id: %s' % str(cntr.get('Id')))
+            c.remove_container(container=cntr.get('Id'))
+
+    #Clean up images from failed build
     currImages = c.images(quiet=True, all=False)
     for img in currImages:
         if not img in validImages:
