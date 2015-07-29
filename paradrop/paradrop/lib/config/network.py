@@ -37,6 +37,7 @@ def getNetworkConfig(update):
     interfaces = list()
 
     if(not hasattr(update, 'net')):
+        update.new.setCache('networkInterfaces', interfaces)
         return None
 
     devices = update.new.getCache('networkDevices')
@@ -87,6 +88,7 @@ def getNetworkConfig(update):
 
         iface = {
             'name': name,                           # Name (not used?)
+            'subnet': subnet,                       # Allocated subnet object
             'netType': cfg['type'],                 # Type (wan, lan, wifi)
             'externalIntf': externalIntf,           # Interface name in host
             'internalIntf': cfg['intfName'],        # Interface name in chute
@@ -151,12 +153,17 @@ def getOSNetworkConfig(update):
     #
     # old code under lib.internal.chs.chutelxc same function name
 
+    # Make a dictionary of old interfaces, then remove them as we go
+    # through the new interfaces.  Anything remaining should be freed.
+    if update.old is not None:
+        oldInterfaces = update.old.getCache('networkInterfaces')
+        removedInterfaces = {iface['name']: iface for iface in oldInterfaces}
+    else:
+        removedInterfaces = dict()
+
     interfaces = update.new.getCache('networkInterfaces')
 
     osNetwork = list()
-
-    if(interfaces is None):
-        return None
 
     for iface in interfaces:
         # A basic set of things must exist for all interfaces
@@ -173,6 +180,14 @@ def getOSNetworkConfig(update):
 
         # Add to our OS Network
         osNetwork.append((config, options))
+
+        # This interface is still in use.
+        if iface['name'] in removedInterfaces:
+            del removedInterfaces[iface['name']]
+
+    for iface in removedInterfaces.values():
+        # Release the subnet so another chute can use it.
+        networkPool.release(iface['subnet'])
 
     update.new.setCache('osNetworkConfig', osNetwork)
 
