@@ -25,6 +25,7 @@ def startChute(update):
 
     #Get Id's of current images for comparison upon failure
     validImages = c.images(quiet=True, all=False)
+    validContainers = c.containers(quiet=True, all=True)
 
     buildFailed = False
     for line in c.build(rm=True, tag=repo, fileobj=dockerfile):
@@ -43,31 +44,39 @@ def startChute(update):
 
     #If we failed to build skip creating and starting clean up and fail
     if buildFailed:
-        #Clean up docker container from failed build
-        rmv = c.containers(latest=True)
-        for cntr in rmv:
-            c.remove_container(container=cntr.get('Id'), force=True)
+        failAndCleanUpDocker(validImages, validContainers, update)
 
-        #Clean up image from failed build
-        currImages = c.images(quiet=True, all=False)
-        for img in currImages:
-            if not img in validImages:
-                out.info('Removing Invalid image with id: %s' % str(img))
-                c.remove_image(image=img)
-
-        #Notify user and throw exception
-        update.complete(success=False, message ="Build process failed check your Dockerfile for errors.")
-        raise Exception('Building of docker image failed.')
-        return
-
-    container = c.create_container(
-        image=repo, name=name, host_config=host_config
-    )
-
-    c.start(container.get('Id'))
+    try:
+        container = c.create_container(
+            image=repo, name=name, host_config=host_config
+        )
+        c.start(container.get('Id'))
+    except Exception as e:
+        failAndCleanUpDocker(validImages, validContainers, update)
+    
     out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
 
     setup_net_interfaces(update)
+
+def failAndCleanUpDocker(validImages, validContainers, update):
+    c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+
+    #Clean up containers from failed build/start
+    currContainers = c.containers(quiet=True, all=True)
+    for cntr in currContainers:
+        if not cntr in validContainers:
+            out.info('Removing Invalid container with id: %s' % str(cntr.get('Id')))
+            c.remove_container(container=cntr.get('Id'))
+
+    #Clean up images from failed build
+    currImages = c.images(quiet=True, all=False)
+    for img in currImages:
+        if not img in validImages:
+            out.info('Removing Invalid image with id: %s' % str(img))
+            c.remove_image(image=img)
+    #Notify user and throw exception
+    update.complete(success=False, message ="Build or starting your container failed check your Dockerfile for errors.")
+    raise Exception('Building or starting of docker image failed.')
 
 
 def removeChute(update):
@@ -96,10 +105,11 @@ def restartChute(update):
         c.start(container=update.name)
     except Exception as e:
         update.complete(success=False, message= e.explanation)
+    setup_net_interfaces(update)
 
 def build_host_config(update):
 
-    return docker.utils.create_host_config(
+    host_conf = docker.utils.create_host_config(
         #TO support
         port_bindings=update.host_config.get('port_bindings'),
         binds=update.host_config.get('binds'),
@@ -118,6 +128,7 @@ def build_host_config(update):
         cap_add=['NET_ADMIN'],
         cap_drop=[]
     )
+    return host_conf
 
 
 def setup_net_interfaces(update):
