@@ -80,8 +80,6 @@ class Portal(portal.Portal):
     '''
     Bi-directional portal. Stores connections and is responsible for allocating
     new connections with appropriate avatars.
-
-    Currently takes a dict, but this isn't ideal
     '''
 
     def __init__(self):
