@@ -109,12 +109,17 @@ def restartChute(update):
 
 def build_host_config(update):
 
+    if not hasattr(update, 'host_config') or update.host_config == None:
+        config = dict()
+    else:
+        config = update.host_config
+
     host_conf = docker.utils.create_host_config(
         #TO support
-        port_bindings=update.host_config.get('port_bindings'),
-        binds=update.host_config.get('binds'),
-        links=update.host_config.get('links'),
-        dns=update.host_config.get('dns'),
+        port_bindings=config.get('port_bindings'),
+        binds=config.get('binds'),
+        links=config.get('links'),
+        dns=config.get('dns'),
         #not supported/managed by us
         #network_mode=update.host_config.get('network_mode'),
         #extra_hosts=update.host_config.get('extra_hosts'),

@@ -56,7 +56,7 @@ def installChute(host, port, config):
         return
 
     # Verify the config provided in some way.
-    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str, 'host_config': dict})
+    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str })
     if cfg_verf:
         print 'ERROR: ' + cfg_verf
         return
