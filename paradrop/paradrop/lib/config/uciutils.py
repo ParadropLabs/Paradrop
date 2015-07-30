@@ -4,6 +4,40 @@ from paradrop.lib.utils import uci
 from pdtools.lib.output import out
 
 
+def appendListItem(options, name, value):
+    """
+    Add a list item to UCI options.
+
+    The way we store lists for UCI options is rather bizarre, so this function
+    takes care of that.
+
+    options: dictionary of options for a UCI section
+    name: string name of the list option
+    value: string value to append
+    """
+    if 'list' not in options:
+        options['list'] = dict()
+    if name not in options['list']:
+        options['list'][name] = list()
+    options['list'][name].append(value)
+
+
+def setList(options, name, values):
+    """
+    Set a list item in UCI options.
+
+    The way we store lists for UCI options is rather bizarre, so this function
+    takes care of that.
+
+    options: dictionary of options for a UCI section
+    name: string name of the list option
+    values: list of string values
+    """
+    if 'list' not in options:
+        options['list'] = dict()
+    options['list'][name] = values
+
+
 def setConfig(chute, old, cacheKeys, filepath):
     """
         Helper function used to modify config file of each various setting in /etc/config/

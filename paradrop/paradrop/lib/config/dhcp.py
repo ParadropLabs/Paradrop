@@ -37,24 +37,24 @@ def getVirtDHCPSettings(update):
             out.warn('DHCP server definition {}\n'.format(res))
             raise Exception("DHCP server definition missing field(s)")
 
-        # NOTE: Having one dnsmasq section for each interface deviates from how
-        # OpenWRT does things, where they assume a single instance of dnsmasq
-        # will be handling all DHCP and DNS needs.
-        config = {'type': 'dnsmasq', 'name': iface['externalIntf']}
-        options = {
-            'list': {'interface': [iface['externalIntf']]}
-        }
-
         # Optional: developer can pass in a list of DNS nameservers to use
         # instead of the system default.
         #
         # This path -> clients query our dnsmasq server; dnsmasq uses the
         # specified nameservers and caches the results.
         if DNSMASQ_CACHE_ENABLED and 'dns' in dhcp:
-            options['noresolv'] = '1'
-            options['list'] = {'server': dhcp['dns']}
+            # NOTE: Having one dnsmasq section for each interface deviates from how
+            # OpenWRT does things, where they assume a single instance of dnsmasq
+            # will be handling all DHCP and DNS needs.
+            config = {'type': 'dnsmasq', 'name': iface['externalIntf']}
+            options = {
+                'noresolv': '1'
+            }
 
-        dhcpSettings.append((config, options))
+            uciutils.setList(options, 'interface', [iface['externalIntf']])
+            uciutils.setList(options, 'server', dhcp['dns'])
+
+            dhcpSettings.append((config, options))
 
         config = {'type': 'dhcp', 'name': iface['externalIntf']}
         options = {
@@ -62,14 +62,12 @@ def getVirtDHCPSettings(update):
             'start': dhcp['start'],
             'limit': dhcp['limit'],
             'leasetime': dhcp['lease'],
-
-            # This last one tells clients that the router is the interface
-            # inside the chute not the one in the host.
-            'list': {
-                'dhcp_option': ["option:router,{}".format(
-                                iface['internalIpaddr'])]
-            }
         }
+
+        # This option tells clients that the router is the interface inside the
+        # chute not the one in the host.
+        uciutils.setList(options, 'dhcp_option', ["option:router,{}".format(
+                                                    iface['internalIpaddr'])])
 
         # Optional: developer can pass in a list of DNS nameservers to use
         # instead of the system default.
@@ -77,7 +75,7 @@ def getVirtDHCPSettings(update):
         # This path -> clients receive the list of DNS servers and query them
         # directly.
         if not DNSMASQ_CACHE_ENABLED and 'dns' in dhcp:
-            options['list']['dhcp_option'].append(
+            uciutils.appendListItem(options, 'dhcp_option',
                     ",".join(["option:dns-server"] + dhcp['dns']))
 
         dhcpSettings.append((config, options))
