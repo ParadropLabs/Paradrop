@@ -14,7 +14,7 @@ class ConfigDhcp(ConfigObject):
         {"name": "leasetime", "type": str, "required": True, "default": "12h"},
         {"name": "limit", "type": int, "required": True, "default": 150},
         {"name": "start", "type": int, "required": True, "default": 100},
-        {"name": "dhcp_option", "type": str, "required": False, "default": ""}
+        {"name": "dhcp_option", "type": list, "required": False, "default": ""}
     ]
 
     def commands(self, allConfigs):
@@ -56,8 +56,7 @@ class ConfigDhcp(ConfigObject):
 
             # Write options sections to the config file.
             if self.dhcp_option:
-                options = self.dhcp_option.split(" ")
-                for option in options:
+                for option in self.dhcp_option:
                     outputFile.write("dhcp-option={}\n".format(option))
 
             if dnsmasq.noresolv:

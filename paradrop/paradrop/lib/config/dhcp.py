@@ -4,6 +4,14 @@ from pdtools.lib.output import out
 from pdtools.lib import pdutils
 
 
+# Should dnsmasq be used to cache DNS lookup results or should clients send
+# their queries directly to specified nameserver(s)?  This question only
+# applies if the developer explicitly specified DNS nameservers.  Otherwise,
+# dnsmasq acts as a cache and uses whatever nameserver(s) the host
+# /etc/resolv.conf file specifies.
+DNSMASQ_CACHE_ENABLED = True
+
+
 def getVirtDHCPSettings(update):
     """
     Looks at the runtime rules the developer defined to see if they want a dhcp
@@ -39,7 +47,10 @@ def getVirtDHCPSettings(update):
 
         # Optional: developer can pass in a list of DNS nameservers to use
         # instead of the system default.
-        if 'dns' in dhcp:
+        #
+        # This path -> clients query our dnsmasq server; dnsmasq uses the
+        # specified nameservers and caches the results.
+        if DNSMASQ_CACHE_ENABLED and 'dns' in dhcp:
             options['noresolv'] = '1'
             options['list'] = {'server': dhcp['dns']}
 
@@ -54,8 +65,20 @@ def getVirtDHCPSettings(update):
 
             # This last one tells clients that the router is the interface
             # inside the chute not the one in the host.
-            'dhcp_option': "option:router,{}".format(iface['internalIpaddr'])
+            'list': {
+                'dhcp_option': ["option:router,{}".format(
+                                iface['internalIpaddr'])]
+            }
         }
+
+        # Optional: developer can pass in a list of DNS nameservers to use
+        # instead of the system default.
+        #
+        # This path -> clients receive the list of DNS servers and query them
+        # directly.
+        if not DNSMASQ_CACHE_ENABLED and 'dns' in dhcp:
+            options['list']['dhcp_option'].append(
+                    ",".join(["option:dns-server"] + dhcp['dns']))
 
         dhcpSettings.append((config, options))
 
