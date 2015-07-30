@@ -20,7 +20,7 @@ from txdbus.interface import DBusInterface, Method
 
 import sys
 
-from config import ConfigManager
+from .config.manager import ConfigManager
 
 service_name="com.paradrop.config"
 service_path="/"
