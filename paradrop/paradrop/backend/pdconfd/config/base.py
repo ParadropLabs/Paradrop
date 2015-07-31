@@ -3,10 +3,6 @@ class ConfigObject(object):
     typename = None
     options = []
 
-    # Subclass can set to a class instance if there can be a default object for
-    # that subclass.
-    default = None
-
     def __init__(self):
         self.id = ConfigObject.nextId
         ConfigObject.nextId += 1
@@ -45,8 +41,7 @@ class ConfigObject(object):
         """
         return (self.typename, self.name)
 
-    def lookup(self, allConfigs, sectionType, sectionName, addDependent=True,
-               tryDefault=False):
+    def lookup(self, allConfigs, sectionType, sectionName, addDependent=True):
         """
         Look up a section by type and name.
 
@@ -54,21 +49,8 @@ class ConfigObject(object):
         a dependent of the found section.
 
         Will raise an exception if the section is not found.
-
-        tryDefault: If True and no section of the given name is found, we will
-        check if a default anonymous section exists and return that section.
-        For example, this is used with the 'dnsmasq' section type, where we
-        allow a default anonymous section ("config dnsmasq") and named sections
-        ("config dnsmasq 'wifiX'").
         """
-        try:
-            config = allConfigs[(sectionType, sectionName)]
-        except KeyError as e:
-            # Try returning the default object if it exists.
-            if tryDefault and self.default is not None:
-                config = self.default
-            else:
-                raise e
+        config = allConfigs[(sectionType, sectionName)]
         if addDependent:
             config.addDependent(self)
         return config

@@ -37,24 +37,23 @@ def getVirtDHCPSettings(update):
             out.warn('DHCP server definition {}\n'.format(res))
             raise Exception("DHCP server definition missing field(s)")
 
+        # NOTE: Having one dnsmasq section for each interface deviates from how
+        # OpenWRT does things, where they assume a single instance of dnsmasq
+        # will be handling all DHCP and DNS needs.
+        config = {'type': 'dnsmasq'}
+        options = {}
+        uciutils.setList(options, 'interface', [iface['externalIntf']])
+
         # Optional: developer can pass in a list of DNS nameservers to use
         # instead of the system default.
         #
         # This path -> clients query our dnsmasq server; dnsmasq uses the
         # specified nameservers and caches the results.
         if DNSMASQ_CACHE_ENABLED and 'dns' in dhcp:
-            # NOTE: Having one dnsmasq section for each interface deviates from how
-            # OpenWRT does things, where they assume a single instance of dnsmasq
-            # will be handling all DHCP and DNS needs.
-            config = {'type': 'dnsmasq', 'name': iface['externalIntf']}
-            options = {
-                'noresolv': '1'
-            }
-
-            uciutils.setList(options, 'interface', [iface['externalIntf']])
+            options['noresolv'] = '1'
             uciutils.setList(options, 'server', dhcp['dns'])
 
-            dhcpSettings.append((config, options))
+        dhcpSettings.append((config, options))
 
         config = {'type': 'dhcp', 'name': iface['externalIntf']}
         options = {
