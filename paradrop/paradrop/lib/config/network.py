@@ -3,16 +3,21 @@ import itertools
 
 from paradrop.lib import settings
 from paradrop.lib.config import configservice, uciutils
-from paradrop.lib.config.pool import NetworkPool
+from paradrop.lib.config.pool import NetworkPool, NamePool
 from paradrop.lib.utils import addresses, uci
 from pdtools.lib.output import out
 from pdtools.lib import pdutils
+
 
 MAX_INTERFACE_NAME_LEN = 15
 
 
 # Pool of addresses available for chutes that request dynamic addressing.
 networkPool = NetworkPool(settings.DYNAMIC_NETWORK_POOL)
+
+
+# Pool of names for virtual interfaces.
+interfaceNamePool = NamePool()
 
 
 def getNetworkConfig(update):
@@ -74,13 +79,11 @@ def getNetworkConfig(update):
         externalIpaddr = str(hosts.next())
         internalIpaddr = str(hosts.next())
 
-        # Generate a name for the new interface in the host by combining the
-        # chute name and the interface name.  Note it does not really matter
-        # what this name is, since the developer will not see it.  We should
-        # check to make sure it is unique, though.
-        prefixLen = MAX_INTERFACE_NAME_LEN - len(cfg['intfName']) - 1
-        externalIntf = "{}.{}".format(update.new.name[0:prefixLen],
-                                      cfg['intfName'])
+        # Generate a name for the new interface in the host.
+        externalIntf = interfaceNamePool.next(prefix=cfg['intfName'] + ".")
+        if len(externalIntf) > MAX_INTERFACE_NAME_LEN:
+            out.warn("Interface name ({}) is too long\n".format(externalIntf))
+            raise Exception("Interface name is too long")
 
         # Generate the internal IP address with prefix length (x.x.x.x/y) for
         # convenience of other code that expect that format (e.g. pipework).
@@ -186,6 +189,10 @@ def getOSNetworkConfig(update):
             del removedInterfaces[iface['name']]
 
     for iface in removedInterfaces.values():
+        # Release the external interface name.
+        interfaceNamePool.release(iface['externalIntf'],
+                                  prefix=iface['internalIntf'] + ".")
+
         # Release the subnet so another chute can use it.
         networkPool.release(iface['subnet'])
 
