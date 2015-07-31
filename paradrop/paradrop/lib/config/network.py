@@ -79,8 +79,16 @@ def getNetworkConfig(update):
         externalIpaddr = str(hosts.next())
         internalIpaddr = str(hosts.next())
 
+        # Generate initial portion (prefix) of interface name.
+        #
+        # NOTE: We add a "v" in front of the interface name to avoid triggering
+        # the udev persistent net naming rules, which are hard-coded to certain
+        # typical strings such as "eth*" and "wlan*" but not "veth*" or
+        # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
+        extIntfPrefix = "v" + cfg['intfName'] + "."
+
         # Generate a name for the new interface in the host.
-        externalIntf = interfaceNamePool.next(prefix=cfg['intfName'] + ".")
+        externalIntf = interfaceNamePool.next(prefix=extIntfPrefix)
         if len(externalIntf) > MAX_INTERFACE_NAME_LEN:
             out.warn("Interface name ({}) is too long\n".format(externalIntf))
             raise Exception("Interface name is too long")
@@ -98,7 +106,8 @@ def getNetworkConfig(update):
             'netmask': netmask,                     # Netmask in host and chute
             'externalIpaddr': externalIpaddr,       # IP address in host
             'internalIpaddr': internalIpaddr,       # IP address in chute
-            'ipaddrWithPrefix': ipaddrWithPrefix    # Internal IP (x.x.x.x/y)
+            'ipaddrWithPrefix': ipaddrWithPrefix,   # Internal IP (x.x.x.x/y)
+            'extIntfPrefix': extIntfPrefix          # Interface name prefix
         }
 
         # Add extra fields for WiFi devices.
@@ -200,7 +209,7 @@ def getOSNetworkConfig(update):
     for iface in removedInterfaces.values():
         # Release the external interface name.
         interfaceNamePool.release(iface['externalIntf'],
-                                  prefix=iface['internalIntf'] + ".")
+                                  prefix=iface['extIntfPrefix'])
 
         # Release the subnet so another chute can use it.
         networkPool.release(iface['subnet'])
