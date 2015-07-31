@@ -120,11 +120,20 @@ def getNetworkConfig(update):
 
             iface['ssid'] = cfg['ssid']
 
-            # Option encryption settings
-            if 'encryption' in cfg:
-                iface['encryption'] = cfg['encryption']
+            # Optional encryption settings
+            #
+            # If 'key' is present, but 'encryption' is not, then default to
+            # psk2.  If 'key' is not present, and 'encryption' is not none,
+            # then we have an error.
             if 'key' in cfg:
                 iface['key'] = cfg['key']
+                iface['encryption'] = 'psk2' # default to psk2
+            if 'encryption' in cfg:
+                iface['encryption'] = cfg['encryption']
+                if cfg['encryption'] != "none" and 'key' not in cfg:
+                    out.warn("Key field must be defined "
+                             "when encryption is enabled.")
+                    raise Exception("No key field defined for WiFi encryption")
 
             # Give a warning if the dhcp block is missing, since it is likely
             # that developers will want a DHCP server to go with their AP.
