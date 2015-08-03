@@ -41,25 +41,25 @@ def getNetworkConfig(update):
 
     interfaces = list()
 
-    if(not hasattr(update, 'net')):
+    if not hasattr(update, 'net'):
         update.new.setCache('networkInterfaces', interfaces)
         return None
 
     devices = update.new.getCache('networkDevices')
-    wifiIter = itertools.cycle(devices['wifi'])
+    devIters = {t: itertools.cycle(devices[t]) for t in devices.keys()}
 
     for name, cfg in update.net.iteritems():
         # First we must check the length of the name string, it cannot be
         # longer then 16-6 This is because the veth pair name for lxc cannot be
         # longer then 16, and we prepend "vc####" to that interface name
-        if(len(name) > 10):
+        if len(name) > 10:
             out.warn('The network interface name ({}) cannot be longer than '
                      '10 characters.\n'.format(name))
             raise Exception("Interface name too long")
 
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['intfName', 'type'])
-        if(res):
+        if res:
             out.warn('Network interface definition {}\n'.format(res))
             raise Exception("Interface definition missing field(s)")
 
@@ -79,20 +79,6 @@ def getNetworkConfig(update):
         externalIpaddr = str(hosts.next())
         internalIpaddr = str(hosts.next())
 
-        # Generate initial portion (prefix) of interface name.
-        #
-        # NOTE: We add a "v" in front of the interface name to avoid triggering
-        # the udev persistent net naming rules, which are hard-coded to certain
-        # typical strings such as "eth*" and "wlan*" but not "veth*" or
-        # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
-        extIntfPrefix = "v" + cfg['intfName'] + "."
-
-        # Generate a name for the new interface in the host.
-        externalIntf = interfaceNamePool.next(prefix=extIntfPrefix)
-        if len(externalIntf) > MAX_INTERFACE_NAME_LEN:
-            out.warn("Interface name ({}) is too long\n".format(externalIntf))
-            raise Exception("Interface name is too long")
-
         # Generate the internal IP address with prefix length (x.x.x.x/y) for
         # convenience of other code that expect that format (e.g. pipework).
         ipaddrWithPrefix = "{}/{}".format(internalIpaddr, subnet.prefixlen)
@@ -101,29 +87,43 @@ def getNetworkConfig(update):
             'name': name,                           # Name (not used?)
             'subnet': subnet,                       # Allocated subnet object
             'netType': cfg['type'],                 # Type (wan, lan, wifi)
-            'externalIntf': externalIntf,           # Interface name in host
             'internalIntf': cfg['intfName'],        # Interface name in chute
             'netmask': netmask,                     # Netmask in host and chute
             'externalIpaddr': externalIpaddr,       # IP address in host
             'internalIpaddr': internalIpaddr,       # IP address in chute
-            'ipaddrWithPrefix': ipaddrWithPrefix,   # Internal IP (x.x.x.x/y)
-            'extIntfPrefix': extIntfPrefix          # Interface name prefix
+            'ipaddrWithPrefix': ipaddrWithPrefix    # Internal IP (x.x.x.x/y)
         }
+
+        # Try to find a physical device of the requested type.
+        try:
+            device = devIters[cfg['type']].next()
+            iface['device'] = device['name']
+        except (KeyError, StopIteration):
+            out.warn("Request for {} device cannot be fulfilled".
+                     format(cfg['type']))
+            raise Exception("Missing device(s) requested by chute")
+
+        # Generate initial portion (prefix) of interface name.
+        #
+        # NOTE: We add a "v" in front of the interface name to avoid triggering
+        # the udev persistent net naming rules, which are hard-coded to certain
+        # typical strings such as "eth*" and "wlan*" but not "veth*" or
+        # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
+        iface['extIntfPrefix'] = "v" + iface['device'] + "."
+
+        # Generate a name for the new interface in the host.
+        iface['externalIntf'] = interfaceNamePool.next(
+            prefix=iface['extIntfPrefix'])
+        if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
+            out.warn("Interface name ({}) is too long\n".
+                     format(iface['externalIntf']))
+            raise Exception("Interface name is too long")
 
         # Add extra fields for WiFi devices.
         if cfg['type'] == "wifi":
-            # Pick a WiFi device for this interface.  Then a virtual interface
-            # will be made from it.
-            try:
-                device = wifiIter.next()
-                iface['device'] = device['name']
-            except StopIteration:
-                out.warn("Request for WiFi device cannot be fulfilled")
-                raise Exception("Missing WiFi device(s) requested by chute")
-
             # Check for required fields.
             res = pdutils.check(cfg, dict, ['ssid'])
-            if(res):
+            if res:
                 out.warn('WiFi network interface definition {}\n'.format(res))
                 raise Exception("Interface definition missing field(s)")
 
@@ -136,7 +136,7 @@ def getNetworkConfig(update):
             # then we have an error.
             if 'key' in cfg:
                 iface['key'] = cfg['key']
-                iface['encryption'] = 'psk2' # default to psk2
+                iface['encryption'] = 'psk2'  # default to psk2
             if 'encryption' in cfg:
                 iface['encryption'] = cfg['encryption']
                 if cfg['encryption'] != "none" and 'key' not in cfg:
