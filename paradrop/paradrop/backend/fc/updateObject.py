@@ -152,9 +152,10 @@ class UpdateChute(UpdateObject):
 
         super(UpdateChute, self).__init__(obj)
 
-        #for start updates we need to get the config info from the old config
+        #for start updates we need to get the config info from the old config without overwriting new update info
         if self.updateType == "start":
-            self.new.__dict__.update(self.old.__dict__)
+            for k in set(self.old.__dict__.keys()).difference(set(self.new.__dict__.keys())):
+                self.new.__dict__.update({k: self.old.__dict__.get(k)})
 
     def saveState(self):
         """

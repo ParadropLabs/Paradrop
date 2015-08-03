@@ -97,22 +97,25 @@ def stopChute(update):
         c.stop(container=update.name)
     except Exception as e:
         update.complete(success=False, message= e.explanation)
+        raise e
 
 def restartChute(update):
-    out.info('Attempting to start chute %s\n' % (update.name))
+    out.info('Attempting to restart chute %s\n' % (update.name))
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     try:
         c.start(container=update.name)
     except Exception as e:
         update.complete(success=False, message= e.explanation)
+        raise e
+
     setup_net_interfaces(update)
 
 def build_host_config(update):
 
-    if not hasattr(update, 'host_config') or update.host_config == None:
+    if not hasattr(update.new, 'host_config') or update.new.host_config == None:
         config = dict()
     else:
-        config = update.host_config
+        config = update.new.host_config
 
     host_conf = docker.utils.create_host_config(
         #TO support
