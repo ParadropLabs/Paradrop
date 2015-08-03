@@ -41,14 +41,14 @@ def getNetworkConfig(update):
 
     interfaces = list()
 
-    if not hasattr(update, 'net'):
+    if not hasattr(update.new, 'net'):
         update.new.setCache('networkInterfaces', interfaces)
         return None
 
     devices = update.new.getCache('networkDevices')
     devIters = {t: itertools.cycle(devices[t]) for t in devices.keys()}
 
-    for name, cfg in update.net.iteritems():
+    for name, cfg in update.new.net.iteritems():
         # First we must check the length of the name string, it cannot be
         # longer then 16-6 This is because the veth pair name for lxc cannot be
         # longer then 16, and we prepend "vc####" to that interface name
