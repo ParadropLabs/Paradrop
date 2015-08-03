@@ -117,11 +117,7 @@ class UpdateObject(object):
             return
 
         # Now save the new state if we are all ok
-        try:
-            self.saveState()
-        except KeyError:
-            self.complete(success=False, message='No chute with that name.')
-            return
+        self.saveState()
 
         # Respond to the API server to let them know the result
         self.complete(success=True, message='Chute {} {} success'.format(
@@ -155,6 +151,10 @@ class UpdateChute(UpdateObject):
             obj['state'] = chute.STATE_STOPPED
 
         super(UpdateChute, self).__init__(obj)
+
+        #for start updates we need to get the config info from the old config
+        if self.updateType == "start":
+            self.new.__dict__.update(self.old.__dict__)
 
     def saveState(self):
         """
