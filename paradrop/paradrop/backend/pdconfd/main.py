@@ -55,9 +55,12 @@ class ConfigService(objects.DBusObject):
 
 @defer.inlineCallbacks
 def listen():
+    service = ConfigService()
+    service.configManager.loadConfig()
+
     try:
         conn = yield client.connect(reactor, busAddress="system")
-        conn.exportObject(ConfigService())
+        conn.exportObject(service)
         yield conn.requestBusName(service_name)
     except error.DBusException as e:
         print("Failed to export DBus object: {}".format(e))
