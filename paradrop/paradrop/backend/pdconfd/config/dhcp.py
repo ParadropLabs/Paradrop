@@ -6,6 +6,12 @@ from .base import ConfigObject
 from .command import Command
 
 
+def get_all_dhcp_interfaces(allConfigs):
+    for key in allConfigs.keys():
+        if key[0] == "dhcp":
+            yield allConfigs[key].interface
+
+
 class ConfigDhcp(ConfigObject):
     typename = "dhcp"
 
@@ -17,30 +23,25 @@ class ConfigDhcp(ConfigObject):
         {"name": "dhcp_option", "type": list, "required": False, "default": ""}
     ]
 
+
+class ConfigDnsmasq(ConfigObject):
+    typename = "dnsmasq"
+
+    options = [
+        {"name": "interface", "type": list, "required": False, "default": None},
+        {"name": "noresolv", "type": bool, "required": False, "default": False},
+        {"name": "server", "type": list, "required": False, "default": None}
+    ]
+
     def commands(self, allConfigs):
         commands = list()
 
-        # Look up the interface - may fail.
-        interface = self.lookup(allConfigs, "interface", self.interface)
-
-        # Look up dnsmasq settings.  This should not fail because we have
-        # defined a default dnsmasq object.
-        dnsmasq = self.lookup(allConfigs, "dnsmasq", self.interface,
-                              tryDefault=True)
-
-        network = ipaddress.IPv4Network(u"{}/{}".format(
-            interface.ipaddr, interface.netmask), strict=False)
-
-        # TODO: Error checking!
-        firstAddress = network.network_address + self.start
-        lastAddress = firstAddress + self.limit
-
         leaseFile = "{}/dnsmasq-{}.leases".format(
-            self.manager.writeDir, self.interface)
+            self.manager.writeDir, self.name)
         pidFile = "{}/dnsmasq-{}.pid".format(
-            self.manager.writeDir, self.interface)
+            self.manager.writeDir, self.name)
         outputPath = "{}/dnsmasq-{}.conf".format(
-            self.manager.writeDir, self.interface)
+            self.manager.writeDir, self.name)
 
         with open(outputPath, "w") as outputFile:
             outputFile.write("#" * 80 + "\n")
@@ -49,30 +50,56 @@ class ConfigDhcp(ConfigObject):
             outputFile.write("# Section: config {} {}\n".format(
                 ConfigDhcp.typename, self.name))
             outputFile.write("#" * 80 + "\n")
-            outputFile.write("interface={}\n".format(interface.ifname))
-            outputFile.write("dhcp-range={},{},{}\n".format(
-                str(firstAddress), str(lastAddress), self.leasetime))
+            outputFile.write("\n")
             outputFile.write("dhcp-leasefile={}\n".format(leaseFile))
 
-            # Write options sections to the config file.
-            if self.dhcp_option:
-                for option in self.dhcp_option:
-                    outputFile.write("dhcp-option={}\n".format(option))
-
-            if dnsmasq.noresolv:
+            if self.noresolv:
                 outputFile.write("no-resolv\n")
 
-            if dnsmasq.server:
-                for server in dnsmasq.server:
+            if self.server:
+                for server in self.server:
                     outputFile.write("server={}\n".format(server))
+
+            if self.interface is None:
+                interfaces = get_all_dhcp_interfaces(allConfigs)
+            else:
+                interfaces = self.interface
 
             # TODO: Bind interfaces allows us to have multiple instances of
             # dnsmasq running, but it would probably be better to have one
             # running and reconfigure it when we want to add or remove
             # interfaces.  It is not very disruptive to reconfigure and restart
             # dnsmasq.
+            outputFile.write("\n")
             outputFile.write("except-interface=lo\n")
             outputFile.write("bind-interfaces\n")
+
+            for intfName in interfaces:
+                interface = self.lookup(allConfigs, "interface", intfName)
+                outputFile.write("\n")
+                outputFile.write("# Options for section interface {}\n".
+                                 format(interface.name))
+                outputFile.write("interface={}\n".format(interface.ifname))
+
+                network = ipaddress.IPv4Network(u"{}/{}".format(
+                    interface.ipaddr, interface.netmask), strict=False)
+
+                dhcp = self.lookup(allConfigs, "dhcp", intfName)
+
+                # TODO: Error checking!
+                firstAddress = network.network_address + dhcp.start
+                lastAddress = firstAddress + dhcp.limit
+
+                outputFile.write("\n")
+                outputFile.write("# Options for section dhcp {}\n".
+                                 format(interface.name))
+                outputFile.write("dhcp-range={},{},{}\n".format(
+                    str(firstAddress), str(lastAddress), dhcp.leasetime))
+
+                # Write options sections to the config file.
+                if dhcp.dhcp_option:
+                    for option in dhcp.dhcp_option:
+                        outputFile.write("dhcp-option={}\n".format(option))
 
         cmd = ["/apps/bin/dnsmasq", "--conf-file={}".format(outputPath),
                "--pid-file={}".format(pidFile)]
@@ -95,17 +122,3 @@ class ConfigDhcp(ConfigObject):
             return []
 
         return commands
-
-
-class ConfigDnsmasq(ConfigObject):
-    typename = "dnsmasq"
-
-    options = [
-        {"name": "interface", "type": list, "required": False, "default": None},
-        {"name": "noresolv", "type": bool, "required": False, "default": False},
-        {"name": "server", "type": list, "required": False, "default": None}
-    ]
-
-
-# Lookups will return this default object if no named object is found.
-ConfigDnsmasq.default = ConfigDnsmasq()
