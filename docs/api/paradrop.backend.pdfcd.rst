@@ -12,6 +12,14 @@ paradrop.backend.pdfcd.apichute module
     :undoc-members:
     :show-inheritance:
 
+paradrop.backend.pdfcd.apiinternal module
+-----------------------------------------
+
+.. automodule:: paradrop.backend.pdfcd.apiinternal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 paradrop.backend.pdfcd.apiutils module
 --------------------------------------
 

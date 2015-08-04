@@ -118,6 +118,7 @@ docs() {
     virtualenv buildenv/env
     source buildenv/env/bin/activate
 
+    rm docs/requirements.txt
     pip install -e ./paradrop
     pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
 }

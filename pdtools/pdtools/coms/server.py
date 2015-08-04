@@ -23,8 +23,8 @@ def authCallbacks(f):
 
 def authSuccess(r):
     store.saveConfig('pdid', r['_id'])
-    store.saveKey('public.pem', r['publicKey'])
-    store.saveKey('private.pem', r['privateKey'])
+    store.saveKey(r['keys'], 'client.pem')
+    store.saveKey(r['ca'], 'ca.pem')
 
     print 'You have been successfully logged in.'
 
