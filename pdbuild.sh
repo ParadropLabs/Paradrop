@@ -4,6 +4,9 @@
 # in the case of errors
 COLOR='\033[01;33m' 
 
+DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
+HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
+
 #Show help if no args passed
 if [ $# -lt 1 ]
 then
@@ -41,15 +44,6 @@ killvm() {
     else
         echo -e "${COLOR}Snappy virtual machine is not running" && tput sgr0
     fi
-}
-
-build_dnsmasq() {
-    test -d third-party || mkdir third-party
-    test -d third-party/dnsmasq || git clone git://thekelleys.org.uk/dnsmasq.git third-party/dnsmasq
-    pushd third-party/dnsmasq
-    LDFLAGS=-static make
-    popd
-    cp third-party/dnsmasq/src/dnsmasq snap/bin/
 }
 
 ###
@@ -109,8 +103,6 @@ build() {
 
     pex --disable-cache paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
     rm -rf *.egg-info
-
-    build_dnsmasq
 }
 
 # Generates docs 
@@ -141,6 +133,23 @@ run() {
     fi
 
     snap/bin/pd
+}
+
+install_deps() {
+    #assuming all snappy dev tools are installed if this one is (snappy-remote, for example)
+    if ! type "snappy" > /dev/null; then
+        echo 'Snappy development tools not installed. Try:'
+        echo "$0 setup"
+        exit
+    fi
+
+    wget $DNSMASQ_SNAP
+    snappy-remote --url=ssh://localhost:8022 install dnsmasq*.snap
+    rm dnsmasq*.snap
+
+    wget $HOSTAPD_SNAP
+    snappy-remote --url=ssh://localhost:8022 install hostapd*.snap
+    rm hostapd*.snap
 }
 
 install() {
@@ -260,6 +269,7 @@ case "$1" in
     "build") build;;
     # "clean") clean;;
     "run") run;;
+    "install_deps") install_deps;;
     "install") install;;
     "setup") setup;;
     "up") up;;
