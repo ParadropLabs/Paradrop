@@ -6,7 +6,10 @@
 from pdtools.lib.output import out
 import docker
 import json
+import os
 import subprocess
+
+from paradrop.lib import settings
 
 
 def startChute(update):
@@ -17,11 +20,12 @@ def startChute(update):
     name = update.name
 
     host_config = build_host_config(update)
-    
+
     c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
 
     #Get Id's of current images for comparison upon failure
     validImages = c.images(quiet=True, all=False)
+    validContainers = c.containers(quiet=True, all=True)
 
     buildFailed = False
     for line in c.build(rm=True, tag=repo, fileobj=dockerfile):
@@ -40,30 +44,40 @@ def startChute(update):
 
     #If we failed to build skip creating and starting clean up and fail
     if buildFailed:
-        #Clean up docker container from failed build
-        rmv = c.containers(latest=True)
-        for cntr in rmv:
-            c.remove_container(container=cntr.get('Id'), force=True)
+        failAndCleanUpDocker(validImages, validContainers, update)
 
-        #Clean up image from failed build
-        currImages = c.images(quiet=True, all=False)
-        for img in currImages:
-            if not img in validImages:
-                out.info('-- %s Removing Invalid image with id: %s' % (logPrefix(), str(img)))
-                c.remove_image(image=img)
-
-        #Notify user and throw exception
-        update.complete(success=False, message ="Build process failed check your Dockerfile for errors.")
-        raise Exception('Building of docker image failed.')
-        return
-
-    container = c.create_container(
-        image=repo, name=name, host_config=host_config
-    )
-
-    c.start(container.get('Id'))
+    try:
+        container = c.create_container(
+            image=repo, name=name, host_config=host_config
+        )
+        c.start(container.get('Id'))
+    except Exception as e:
+        failAndCleanUpDocker(validImages, validContainers, update)
+    
     out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
+
     setup_net_interfaces(update)
+
+def failAndCleanUpDocker(validImages, validContainers, update):
+    c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+
+    #Clean up containers from failed build/start
+    currContainers = c.containers(quiet=True, all=True)
+    for cntr in currContainers:
+        if not cntr in validContainers:
+            out.info('Removing Invalid container with id: %s' % str(cntr.get('Id')))
+            c.remove_container(container=cntr.get('Id'))
+
+    #Clean up images from failed build
+    currImages = c.images(quiet=True, all=False)
+    for img in currImages:
+        if not img in validImages:
+            out.info('Removing Invalid image with id: %s' % str(img))
+            c.remove_image(image=img)
+    #Notify user and throw exception
+    update.complete(success=False, message ="Build or starting your container failed check your Dockerfile for errors.")
+    raise Exception('Building or starting of docker image failed.')
+
 
 def removeChute(update):
     out.info('Attempting to remove chute %s\n' % (update.name))
@@ -83,23 +97,32 @@ def stopChute(update):
         c.stop(container=update.name)
     except Exception as e:
         update.complete(success=False, message= e.explanation)
+        raise e
 
 def restartChute(update):
-    out.info('Attempting to start chute %s\n' % (update.name))
+    out.info('Attempting to restart chute %s\n' % (update.name))
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     try:
         c.start(container=update.name)
     except Exception as e:
         update.complete(success=False, message= e.explanation)
+        raise e
+
+    setup_net_interfaces(update)
 
 def build_host_config(update):
 
-    return docker.utils.create_host_config(
+    if not hasattr(update.new, 'host_config') or update.new.host_config == None:
+        config = dict()
+    else:
+        config = update.new.host_config
+
+    host_conf = docker.utils.create_host_config(
         #TO support
-        port_bindings=update.host_config.get('port_bindings'),
-        binds=update.host_config.get('binds'),
-        links=update.host_config.get('links'),
-        dns=update.host_config.get('dns'),
+        port_bindings=config.get('port_bindings'),
+        binds=config.get('binds'),
+        links=config.get('links'),
+        dns=config.get('dns'),
         #not supported/managed by us
         #network_mode=update.host_config.get('network_mode'),
         #extra_hosts=update.host_config.get('extra_hosts'),
@@ -110,9 +133,11 @@ def build_host_config(update):
         privileged=False,
         dns_search=[],
         volumes_from=None,
-        cap_add=[],
+        cap_add=['NET_ADMIN'],
         cap_drop=[]
     )
+    return host_conf
+
 
 def setup_net_interfaces(update):
     interfaces = update.new.getCache('networkInterfaces')
@@ -124,9 +149,24 @@ def setup_net_interfaces(update):
         else:
             continue
 
-        cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i', internalIntf, update.name,  IP]
+        # Construct environment for pipework call.  It only seems to require
+        # the PATH variable to include the directory containing the docker
+        # client.  On Snappy this was not happening by default, which is why
+        # this code is here.
+        env = {"PATH": os.environ.get("PATH", "")}
+        if settings.DOCKER_BIN_DIR not in env['PATH']:
+            env['PATH'] += ":" + settings.DOCKER_BIN_DIR
+
+        cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i',
+               internalIntf, update.name,  IP]
+        out.info("Calling: {}\n".format(" ".join(cmd)))
         try:
-            result = subprocess.call(cmd)
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, env=env)
+            for line in proc.stdout:
+                out.info("pipework: {}\n".format(line.strip()))
+            for line in proc.stderr:
+                out.warn("pipework: {}\n".format(line.strip()))
         except OSError as e:
             out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
             out.exception(e, True)

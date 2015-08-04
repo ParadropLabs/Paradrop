@@ -63,6 +63,9 @@ LOG_PATH = '/var/run/' #Not supposed to be for log files but will work for now.
 # Pool of address available for chutes that request dynamic addresses.
 DYNAMIC_NETWORK_POOL = "192.168.128.0/17"
 
+# Directory containing "docker" binary.
+DOCKER_BIN_DIR = "/apps/bin"
+
 
 ###############################################################################
 # Helper functions

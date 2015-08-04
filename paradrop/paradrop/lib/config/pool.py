@@ -2,7 +2,66 @@ import ipaddress
 import itertools
 
 
-class NetworkPool(object):
+class ResourcePool(object):
+    def __init__(self, values, numValues):
+        """
+        Initialize resource pool.
+
+        values - must be iterable, such as a list or generator
+        numValues - number of values, since len need not be defined
+        """
+        self.values = values
+        self.numValues = numValues
+
+        self.cycle = itertools.cycle(values)
+
+        self.recentlyReleased = list()
+        self.used = set()
+
+    def next(self):
+        if len(self.used) >= self.numValues:
+            raise Exception("No items left in pool")
+
+        while len(self.recentlyReleased) > 0:
+            item = self.recentlyReleased.pop(0)
+            if item not in self.used:
+                self.used.add(item)
+                return item
+
+        # The for loop puts a limit on the number of iterations that we spend
+        # looking for a free subnet.  Passing the check above should imply that
+        # there is at least one available item, but we want to be extra
+        # careful to avoid a busy loop.
+        for i in range(self.numValues):
+            item = self.cycle.next()
+            if item not in self.used:
+                self.used.add(item)
+                return item
+
+        # There is a bug if we hit this line.
+        raise Exception("No items left in pool (BUG)")
+
+    def release(self, item):
+        if item in self.used:
+            self.used.remove(item)
+            self.recentlyReleased.append(item)
+        else:
+            raise Exception("Trying to release unreserved item")
+
+    def reserve(self, item, strict=True):
+        """
+        Mark item as used.
+
+        If strict is True, raises an exception if the item is already used.
+        """
+        if item in self.used:
+            if strict:
+                raise Exception("Trying to reserve a used item")
+        else:
+            self.used.add(item)
+
+
+class NetworkPool(ResourcePool):
     def __init__(self, network, subnetSize=24):
         """
         network should be a string with network size in slash notation or as a
@@ -16,39 +75,21 @@ class NetworkPool(object):
         if subnetSize < self.network.prefixlen:
             raise Exception("Invalid subnetSize {} for network {}".format(
                 subnetSize, network))
-        self.subnets = itertools.cycle(self.network.subnets(
-            new_prefix=subnetSize))
-        self.numSubnets = 2 ** (subnetSize - self.network.prefixlen)
-        self.used = set()
 
-    def next(self):
-        """
-        Get an available subnet from the pool.
+        subnets = self.network.subnets(new_prefix=subnetSize)
+        numSubnets = 2 ** (subnetSize - self.network.prefixlen)
 
-        Returns an ipaddress network object.  Raises an exception if no subnets
-        are left.
-        """
-        if len(self.used) >= self.numSubnets:
-            raise Exception("No subnets left in pool")
+        super(NetworkPool, self).__init__(subnets, numSubnets)
 
-        # The for loop puts a limit on the number of iterations that we spend
-        # looking for a free subnet.  Passing the check above should imply that
-        # there is at least one available subnet, but we want to be extra
-        # careful to avoid a busy loop.
-        for i in range(self.numSubnets):
-            subnet = self.subnets.next()
-            if subnet not in self.used:
-                self.used.add(subnet)
-                return subnet
 
-        # There is a bug if we hit this line.
-        raise Exception("No subnets left in pool (BUG)")
+class NumericPool(ResourcePool):
+    def __init__(self, digits=4):
+        self.digits = digits
 
-    def release(self, subnet):
-        """
-        Release a previously claimed subnet.
+        # NOTE: Using base 16 for string representation.  It might be nice to
+        # use a larger base ([0-9a-z] would allow base 36) for more possible
+        # values for the same length.
+        numNames = 16 ** digits
+        values = range(numNames)
 
-        It may then be claimed by a subsequent call to nextSubnet.
-        """
-        if subnet in self.used:
-            self.used.remove(subnet)
+        super(NumericPool, self).__init__(values, numNames)

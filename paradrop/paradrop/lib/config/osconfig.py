@@ -7,12 +7,14 @@
         we need to support only this module would change.
 """
 
+from paradrop.lib.config.uciutils import restoreConfigFile
 from pdtools.lib.output import out
 
 
 def revertConfig(update, theType):
-    out.warn('TODO implement me')
-    # look at lib.internal.chs.chutedefault.py, function: resetOSNetworkConfig
-    # Basically the UCI system saves a backup of the original config file,
-    # if we need to revert changes at all, we can just tell our UCI module to
-    # revert back using that backup copy.
+    """
+    Basically the UCI system saves a backup of the original config file, if
+    we need to revert changes at all, we can just tell our UCI module to
+    revert back using that backup copy.
+    """
+    restoreConfigFile(update.new, theType)

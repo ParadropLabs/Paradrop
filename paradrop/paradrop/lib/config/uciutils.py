@@ -4,6 +4,40 @@ from paradrop.lib.utils import uci
 from pdtools.lib.output import out
 
 
+def appendListItem(options, name, value):
+    """
+    Add a list item to UCI options.
+
+    The way we store lists for UCI options is rather bizarre, so this function
+    takes care of that.
+
+    options: dictionary of options for a UCI section
+    name: string name of the list option
+    value: string value to append
+    """
+    if 'list' not in options:
+        options['list'] = dict()
+    if name not in options['list']:
+        options['list'][name] = list()
+    options['list'][name].append(value)
+
+
+def setList(options, name, values):
+    """
+    Set a list item in UCI options.
+
+    The way we store lists for UCI options is rather bizarre, so this function
+    takes care of that.
+
+    options: dictionary of options for a UCI section
+    name: string name of the list option
+    values: list of string values
+    """
+    if 'list' not in options:
+        options['list'] = dict()
+    options['list'][name] = values
+
+
 def setConfig(chute, old, cacheKeys, filepath):
     """
         Helper function used to modify config file of each various setting in /etc/config/
@@ -50,7 +84,7 @@ def setConfig(chute, old, cacheKeys, filepath):
             out.info('configs dont match, changing chutes and reloading.\n')
             cfgFile.delConfigs(oldconfigs)
             cfgFile.addConfigs(newconfigs)
-            cfgFile.save(internalid=chute.name)
+            cfgFile.save(backupToken="paradrop", internalid=chute.name)
             return True
     except Exception as e:
         out.err('Error: %s\n%s\n' % (str(e), traceback.format_exc()))
@@ -71,7 +105,21 @@ def removeConfigs(chute, cacheKeys, filepath):
             out.warn('CONFIG: %r\nOPTIONS: %r\n' % (c, o))
             cfgFile.delConfig(c, o)
 
-        cfgFile.save(internalid=chute.name)
+        cfgFile.save(backupToken="paradrop", internalid=chute.name)
 
     except Exception as e:
         out.err('Error: %s\n%s\n' % (str(e), traceback.format_exc()))
+
+
+def restoreConfigFile(chute, configname):
+    """
+    Restore a system config file from backup.
+
+    This can only be used during a chute update operation to revert changes
+    that were made during that update operation.
+
+    configname: name of configuration file ("network", "wireless", etc.)
+    """
+    filepath = uci.getSystemPath(configname)
+    cfgFile = uci.UCIConfig(filepath)
+    cfgFile.restore(backupToken="paradrop", saveBackup=False)

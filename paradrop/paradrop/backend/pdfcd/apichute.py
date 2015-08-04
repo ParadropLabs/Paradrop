@@ -37,9 +37,8 @@ class ChuteAPI:
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='create',
                       tok=timeint(), pkg=apiPkg, func=self.rest.complete)
-        import datetime
-        update.update(apiPkg.inputArgs.get('config'))
 
+        update.update(apiPkg.inputArgs.get('config'))
         self.rest.configurer.updateList(**update)
 
         # Tell our system we aren't done yet (the configurer will deal with

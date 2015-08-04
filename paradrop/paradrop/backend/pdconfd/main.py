@@ -20,7 +20,7 @@ from txdbus.interface import DBusInterface, Method
 
 import sys
 
-from config import ConfigManager
+from .config.manager import ConfigManager
 
 service_name="com.paradrop.config"
 service_path="/"
@@ -31,7 +31,8 @@ class ConfigService(objects.DBusObject):
             Method("Reload", arguments="s", returns="b"),
             Method("ReloadAll", returns="b"),
             Method("Test", returns="s"),
-            Method("UnloadAll", returns="b"))
+            Method("UnloadAll", returns="b"),
+            Method("WaitSystemUp", returns="s"))
     ]
 
     def __init__(self):
@@ -53,11 +54,18 @@ class ConfigService(objects.DBusObject):
         print("Asked to unload configuration.")
         return self.configManager.unload()
 
+    def dbus_WaitSystemUp(self):
+        print("Waiting for system to be up.")
+        return self.configManager.waitSystemUp()
+
 @defer.inlineCallbacks
 def listen():
+    service = ConfigService()
+    service.configManager.loadConfig()
+
     try:
         conn = yield client.connect(reactor, busAddress="system")
-        conn.exportObject(ConfigService())
+        conn.exportObject(service)
         yield conn.requestBusName(service_name)
     except error.DBusException as e:
         print("Failed to export DBus object: {}".format(e))
