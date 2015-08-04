@@ -10,7 +10,7 @@ class Command(object):
     PRIO_ADD_IPTABLES = 40
     PRIO_DELETE_IFACE = 50
 
-    def __init__(self, priority, command, parent):
+    def __init__(self, priority, command, parent=None):
         """
         Construct command object.
 
@@ -40,7 +40,10 @@ class Command(object):
             out.info('Command "{}" raised exception {}\n'.format(
                      " ".join(self.command), e))
             self.result = e
-        self.parent.executed.append(self)
+
+        if self.parent is not None:
+            self.parent.executed.append(self)
+
         return (self.result == 0)
 
     def success(self):
