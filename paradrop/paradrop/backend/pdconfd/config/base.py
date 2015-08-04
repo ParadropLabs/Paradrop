@@ -9,7 +9,12 @@ class ConfigObject(object):
 
         self.source = None
         self.name = "s{:08x}".format(self.id)
+        self.comment = None
         self.dependents = set()
+
+        # Will be a running list of commands executed by request of this config
+        # object.
+        self.executed = list()
 
         for option in self.options:
             setattr(self, option['name'], option['default'])
@@ -31,7 +36,7 @@ class ConfigObject(object):
         """
         Return a list of commands to execute.
 
-        Each one is a tuple (priority, command).
+        Each one is a Command object.
         """
         return []
 
@@ -59,7 +64,7 @@ class ConfigObject(object):
         """
         Return a list of commands to execute.
 
-        Each one is a tuple (priority, command).
+        Each one is a Command object.
         """
         return []
 
@@ -75,7 +80,7 @@ class ConfigObject(object):
         return True
 
     @classmethod
-    def build(cls, manager, source, name, options):
+    def build(cls, manager, source, name, options, comment):
         """
         Build a config object instance from the UCI section.
 
@@ -84,10 +89,12 @@ class ConfigObject(object):
         name -- name of the configuration section
                 If None, a unique name will be generated.
         options -- dictionary of options loaded from the section
+        comment -- comment string or None
         """
         obj = cls()
         obj.manager = manager
         obj.source = source
+        obj.comment = comment
 
         if name is not None:
             obj.name = name

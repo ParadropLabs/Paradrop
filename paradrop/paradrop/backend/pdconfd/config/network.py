@@ -17,16 +17,16 @@ class ConfigInterface(ConfigObject):
         commands = list()
         if self.proto == "static":
             cmd = ["ip", "addr", "flush", "dev", self.ifname]
-            commands.append((Command.PRIO_CONFIG_IFACE, cmd))
+            commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
 
             cmd = ["ip", "addr", "add",
                    "{}/{}".format(self.ipaddr, self.netmask),
                    "dev", self.ifname]
-            commands.append((Command.PRIO_CONFIG_IFACE, cmd))
+            commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
 
             updown = "up" if self.enabled else "down"
             cmd = ["ip", "link", "set", "dev", self.ifname, updown]
-            commands.append((Command.PRIO_CONFIG_IFACE, cmd))
+            commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
 
         return commands
 
@@ -37,6 +37,6 @@ class ConfigInterface(ConfigObject):
             cmd = ["ip", "addr", "del",
                    "{}/{}".format(self.ipaddr, self.netmask),
                    "dev", self.ifname]
-            commands.append((Command.PRIO_CONFIG_IFACE, cmd))
+            commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
 
         return commands

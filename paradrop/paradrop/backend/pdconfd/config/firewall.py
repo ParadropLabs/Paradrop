@@ -56,16 +56,19 @@ class ConfigRedirect(ConfigObject):
                 if self.dest_ip is not None:
                     if self.dest_port is not None:
                         cmd.extend(["--jump", "DNAT", "--to-destination",
-                                    "{}:{}".format(self.dest_ip, self.dest_port)])
+                                    "{}:{}".format(
+                                        self.dest_ip, self.dest_port)])
                     else:
-                        cmd.extend(["--jump", "DNAT", "--to-destination", self.dest_ip])
+                        cmd.extend(["--jump", "DNAT", "--to-destination",
+                                   self.dest_ip])
                 elif self.dest_port is not None:
-                    cmd.extend(["--jump", "REDIRECT", "--to-port", self.dest_port])
+                    cmd.extend(["--jump", "REDIRECT", "--to-port",
+                               self.dest_port])
 
                 cmd.extend(["--match", "comment", "--comment",
                             "pdconfd {} {}".format(self.typename, self.name)])
 
-                commands.append((Command.PRIO_ADD_IPTABLES, cmd))
+                commands.append(Command(Command.PRIO_ADD_IPTABLES, cmd, self))
 
         return commands
 
@@ -89,7 +92,7 @@ class ConfigRedirect(ConfigObject):
         if self.manager.forwardingCount == 1:
             cmd = ["sysctl", "--write",
                    "net.ipv4.conf.all.forwarding=1"]
-            commands.append((Command.PRIO_ADD_IPTABLES, cmd))
+            commands.append(Command(Command.PRIO_ADD_IPTABLES, cmd, self))
 
         return commands
 
@@ -105,7 +108,7 @@ class ConfigRedirect(ConfigObject):
         if self.manager.forwardingCount == 0:
             cmd = ["sysctl", "--write",
                    "net.ipv4.conf.all.forwarding=0"]
-            commands.append((Command.PRIO_ADD_IPTABLES, cmd))
+            commands.append(Command(Command.PRIO_ADD_IPTABLES, cmd, self))
 
         return commands
 
@@ -143,7 +146,7 @@ class ConfigZone(ConfigObject):
                        "--jump", "MASQUERADE",
                        "--match", "comment", "--comment",
                        "pdconfd {} {}".format(self.typename, self.name)]
-                commands.append((Command.PRIO_ADD_IPTABLES, cmd))
+                commands.append(Command(Command.PRIO_ADD_IPTABLES, cmd, self))
 
         return commands
 
@@ -155,7 +158,7 @@ class ConfigZone(ConfigObject):
             if self.manager.forwardingCount == 1:
                 cmd = ["sysctl", "--write",
                        "net.ipv4.conf.all.forwarding=1"]
-                commands.append((Command.PRIO_ADD_IPTABLES, cmd))
+                commands.append(Command(Command.PRIO_ADD_IPTABLES, cmd, self))
 
         return commands
 
@@ -167,5 +170,5 @@ class ConfigZone(ConfigObject):
             if self.manager.forwardingCount == 0:
                 cmd = ["sysctl", "--write",
                        "net.ipv4.conf.all.forwarding=0"]
-                commands.append((Command.PRIO_ADD_IPTABLES, cmd))
+                commands.append(Command(Command.PRIO_ADD_IPTABLES, cmd, self))
         return commands
