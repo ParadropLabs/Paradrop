@@ -257,11 +257,6 @@ def setOSNetworkConfig(update):
                                  cacheKeys=['osNetworkConfig'],
                                  filepath=uci.getSystemPath("network"))
 
-    # If we didn't change anything, then return the function to reloadNetwork
-    # so we can save ourselves from that call
-    if(not changed):
-        return configservice.reloadNetwork
-
 
 def getVirtNetworkConfig(update):
     out.warn('TODO implement me\n')

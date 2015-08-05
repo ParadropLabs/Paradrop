@@ -89,8 +89,3 @@ def setVirtDHCPSettings(update):
     changed = uciutils.setConfig(update.new, update.old,
                                  cacheKeys=['virtDHCPSettings'],
                                  filepath=uci.getSystemPath("dhcp"))
-
-    # If we didn't change anything, then return the function to reloadDHCP so
-    # we can save ourselves from that call.
-    if not changed:
-        return configservice.reloadDHCP
