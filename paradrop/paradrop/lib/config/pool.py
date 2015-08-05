@@ -27,6 +27,8 @@ class ResourcePool(object):
         while len(self.recentlyReleased) > 0:
             item = self.recentlyReleased.pop(0)
             if item not in self.used:
+                out.info("Claiming recently released {} from pool {}\n".format(
+                         str(item), self.__class__.__name__))
                 self.used.add(item)
                 return item
 
@@ -37,6 +39,8 @@ class ResourcePool(object):
         for i in range(self.numValues):
             item = self.cycle.next()
             if item not in self.used:
+                out.info("Claiming new item {} from pool {}\n".format(
+                         str(item), self.__class__.__name__))
                 self.used.add(item)
                 return item
 
@@ -44,7 +48,7 @@ class ResourcePool(object):
         raise Exception("No items left in pool (BUG)")
 
     def release(self, item):
-        out.info("Trying to release {} from pool {}".format(str(item),
+        out.info("Trying to release {} from pool {}\n".format(str(item),
                  self.__class__.__name__))
         if item in self.used:
             self.used.remove(item)
@@ -58,7 +62,7 @@ class ResourcePool(object):
 
         If strict is True, raises an exception if the item is already used.
         """
-        out.info("Trying to reserve {} from pool {}".format(str(item),
+        out.info("Trying to reserve {} from pool {}\n".format(str(item),
                  self.__class__.__name__))
         if item in self.used:
             if strict:
