@@ -3,7 +3,9 @@ import threading
 from twisted.internet import reactor, defer
 from txdbus import client, error
 
-from main import service_name, service_path
+from .main import service_name, service_path
+from pdtools.lib.output import out
+
 
 @defer.inlineCallbacks
 def callDeferredMethod(method, *args):
@@ -13,12 +15,13 @@ def callDeferredMethod(method, *args):
         result = yield robj.callRemote(method, *args)
         defer.returnValue(result)
     except error.DBusException as e:
-        print("D-Bus error: {}".format(e))
+        out.err("D-Bus error: {}\n".format(e))
+
 
 class Blocking(object):
     """
-    Uses threading.Event to implement blocking on a twisted deferred object.  
-    
+    Uses threading.Event to implement blocking on a twisted deferred object.
+
     The wait method will wait for its completion and return its result.
     """
     def __init__(self, deferred):
@@ -38,17 +41,44 @@ class Blocking(object):
         self.event.wait()
         return self.result
 
+
 def reloadAll():
+    """
+    Reload all files from the system configuration directory.
+
+    This function blocks until the request completes.  On completion it returns
+    a status string, which is a JSON list of loaded configuration sections with
+    a 'success' field.  For critical errors such as failure to connect to the
+    D-Bus service, it will return None.
+    """
     d = callDeferredMethod("ReloadAll")
     blocking = Blocking(d)
     return blocking.wait()
 
+
 def reload(path):
+    """
+    Reload file(s) specified by path.
+
+    This function blocks until the request completes.  On completion it returns
+    a status string, which is a JSON list of loaded configuration sections with
+    a 'success' field.  For critical errors such as failure to connect to the
+    D-Bus service, it will return None.
+    """
     d = callDeferredMethod("Reload", path)
     blocking = Blocking(d)
     return blocking.wait()
 
+
 def waitSystemUp():
+    """
+    Wait for the configuration daemon to finish its first load.
+
+    This function blocks until the request completes.  On completion it returns
+    a status string, which is a JSON list of loaded configuration sections with
+    a 'success' field.  For critical errors such as failure to connect to the
+    D-Bus service, it will return None.
+    """
     d = callDeferredMethod("WaitSystemUp")
     blocking = Blocking(d)
     return blocking.wait()
