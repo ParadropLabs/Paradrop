@@ -26,7 +26,13 @@ def generatePlans(update):
     update.plans.addPlans(plangraph.RUNTIME_SET_VIRT_DHCP, (config.dhcp.setVirtDHCPSettings, ))
 
     # Reload configuration files
-    update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, (config.configservice.reloadAll, ))
+    todoPlan = (config.configservice.reloadAll, )
+    abtPlan = [(config.osconfig.revertConfig, "dhcp"),
+               (config.osconfig.revertConfig, "firewall"),
+               (config.osconfig.revertConfig, "network"),
+               (config.osconfig.revertConfig, "wireless"),
+               (config.configservice.reloadAll, )]
+    update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)
 
     return None
 

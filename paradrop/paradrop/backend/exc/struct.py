@@ -46,22 +46,5 @@ def generatePlans(update):
     abtPlan = (config.osconfig.revertConfig, 'wireless')
     update.plans.addPlans(plangraph.STRUCT_SET_OS_WIRELESS, todoPlan, abtPlan)
 
-    # Now deal with reloading the network
-    todoPlan = (config.configservice.reloadNetwork, )
-    # If we need to abort, we first need to undo the OS Network config changes we made, so the abort plan is a list here
-    abtPlan = [(config.osconfig.revertConfig, 'wireless'),
-                (config.osconfig.revertConfig, 'network'),
-                (config.configservice.reloadNetwork, )]
-    
-    update.plans.addPlans(plangraph.STRUCT_RELOAD_NETWORK, todoPlan, abtPlan)
-    
-    # Now deal with reloading wifi, NOTE that reloadNetwork does a wifi call too, so we only expect wifi to be
-    # called in cases when network was NOT called, this is required to deal with issues of when the developer changes
-    # wifi settings only (like SSID) but no network settings
-    todoPlan = (config.configservice.reloadWireless, )
-    # If we need to abort, we first need to undo the OS Wireless config changes we made, so the abort plan is a list here
-    abtPlan = [(config.osconfig.revertConfig, 'wireless'), (config.configservice.reloadWireless, )]
-    update.plans.addPlans(plangraph.STRUCT_RELOAD_WIFI, todoPlan, abtPlan)
-
     return None
 

@@ -32,12 +32,6 @@ def generatePlans(update):
     abtPlan = (config.osconfig.revertConfig, "firewall")
     update.plans.addPlans(plangraph.TRAFFIC_SET_OS_FIREWALL, todoPlan, abtPlan)
     
-    # Reload firewall based on rule changes
-    todoPlan = (config.configservice.reloadFirewall, )
-    # To abort we first have to revert changes we made
-    abtPlan = [(config.osconfig.revertConfig, "firewall"), (config.configservice.reloadFirewall, )]
-    update.plans.addPlans(plangraph.TRAFFIC_RELOAD_FIREWALL, todoPlan, abtPlan)
-    
     return None
 
 ###########################################################################################################
