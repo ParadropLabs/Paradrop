@@ -92,6 +92,7 @@ def getNetworkConfig(update):
                 # using and move on to the next interface.
                 interfaceNumberPool.reserve(oldIface['extIntfNumber'])
                 networkPool.reserve(oldIface['subnet'])
+                interfaces.append(oldIface)
                 continue
 
         # Claim a subnet for this interface from the pool.
