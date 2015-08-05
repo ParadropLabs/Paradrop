@@ -20,13 +20,17 @@ def generatePlans(update):
             True: abort the plan generation process
     """
     out.verbose("%r\n" % (update))
+    '''
+    print update.old.__dict__
+    print update.new.__dict__
+    '''
 
     # If this chute is new (no old version)
     if(update.old is None):
         out.verbose('new chute\n')
 
-        # If it's a stop, start, or restart command go ahead and fail right now since we don't have a record of it
-        if update.updateType == 'stop' or update.updateType == 'start' or update.updateType == 'restart':
+        # If it's a stop, start, delete, or restart command go ahead and fail right now since we don't have a record of it
+        if update.updateType in ['stop', 'start', 'delete', 'restart']:
             update.failure = "No chute found with id: " + update.name
             return True
         # If we are now running then everything has to be setup for the first time
