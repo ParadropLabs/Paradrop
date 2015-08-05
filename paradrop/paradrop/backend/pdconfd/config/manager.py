@@ -255,7 +255,7 @@ class ConfigManager(object):
         # Wake up anything that was waiting for the first load to complete.
         self.systemUp.set()
 
-        return True
+        return self.statusString()
 
     def readConfig(self, files):
         """

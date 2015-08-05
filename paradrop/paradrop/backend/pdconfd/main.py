@@ -28,8 +28,8 @@ service_path="/"
 class ConfigService(objects.DBusObject):
     dbusInterfaces = [
         DBusInterface(service_name, 
-            Method("Reload", arguments="s", returns="b"),
-            Method("ReloadAll", returns="b"),
+            Method("Reload", arguments="s", returns="s"),
+            Method("ReloadAll", returns="s"),
             Method("Test", returns="s"),
             Method("UnloadAll", returns="b"),
             Method("WaitSystemUp", returns="s"))
