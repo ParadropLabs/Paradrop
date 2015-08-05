@@ -10,6 +10,7 @@ from pdtools.lib.output import out
 from pdtools.lib.pdutils import timeint, str2json
 
 from paradrop.lib import settings
+from paradrop.lib.utils.restart import reloadChutes
 
 from . import updateObject
 
@@ -84,6 +85,15 @@ class PDConfigurer:
                     if more exist it calls itself again more quickly
                     else it puts itself to sleep for a little while
         """
+
+        #add any chutes that should already be running to the front of the update queue before processing any updates
+        startQueue = reloadChutes()
+        self.updateLock.acquire()
+        # insert the data into the front of our update queue so that all old chutes restart befor new ones are processed
+        for updateObj in startQueue:
+            self.updateQueue.insert(0, updateObj)
+        self.updateLock.release()
+
         # Always perform this work
         while(self.reactor.running):
             # Check for new updates

@@ -12,17 +12,55 @@ starting chutes.
 
 from pdtools.lib.output import out
 from paradrop.backend.fc import chutestorage
-from pdtools.lib.pdutils import timeint
+from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
+from paradrop.backend.pdconfd.client import waitSystemUp
+import time
 
-def reloadChutes(configurer):
+def reloadChutes():
     chuteStore = chutestorage.ChuteStorage()
     chutes = [ ch for ch in chuteStore.getChuteList() if ch.state == 'running']
+    print chutes
+
+    #We need to make sure confd is up and all interfaces have been brought up properly
+    confdup = False
+    while not confdup:
+        confdInfo = waitSystemUp()
+        if confdInfo == None:
+            time.sleep(1)
+            continue
+        confdup = True
+        confdInfo = str2json(confdInfo)
+
+    #Remove any chutes from the restart queue if confd failed to bring up the proper interfaces
+    failedChutes = []
+    for iface in confdInfo:
+        print iface.get('success')
+        print iface.get('comment')
+        if iface.get('success') == False:
+            while iface.get('comment') in chutes: 
+                #TODO stop the chute and add error message to it
+                chutes.remove(iface.get('comment'))
+            if iface.get('comment') not in failedChutes:
+                failedChutes.append(iface.get('comment'))
+
+    #First stop all chutes that failed to bring up interfaces according to pdconfd then start successful ones
+    #We do this because pdfcd needs to handle cleaning up uci files and then tell pdconfd 
+    updates = []
+    for ch in failedChutes:
+        update = dict(updateClass='CHUTE', updateType='stop', name=ch,
+                      tok=timeint(), func=failure ) #, pkg=apiPkg, func=self.rest.complete)
+        updates.append(update)
 
     for ch in chutes:
         update = dict(updateClass='CHUTE', updateType='restart', name=ch.name,
                       tok=timeint(), func=success ) #, pkg=apiPkg, func=self.rest.complete)
+        updates.append(update)
 
-        configurer.updateList(**update)
+    print updates
+    return updates
 
 def success(arg):
-    print arg.failure
+    print arg.__dict__
+
+def failure(arg):
+    print arg.__dict__

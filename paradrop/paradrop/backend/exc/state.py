@@ -20,10 +20,6 @@ def generatePlans(update):
             True: abort the plan generation process
     """
     out.verbose("%r\n" % (update))
-    '''
-    print update.old.__dict__
-    print update.new.__dict__
-    '''
 
     # If this chute is new (no old version)
     if(update.old is None):

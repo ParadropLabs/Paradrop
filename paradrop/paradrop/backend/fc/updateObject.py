@@ -145,6 +145,8 @@ class UpdateChute(UpdateObject):
             obj['state'] = chute.STATE_RUNNING
         elif(obj.get('updateType', None) == "start"):
             obj['state'] = chute.STATE_RUNNING
+        elif(obj.get('updateType', None) == "restart"):
+            obj['state'] = chute.STATE_RUNNING
         elif(obj.get('updateType', None) == "delete"):
             obj['state'] = chute.STATE_STOPPED
         elif(obj.get('updateType', None) == "stop"):
@@ -152,8 +154,8 @@ class UpdateChute(UpdateObject):
 
         super(UpdateChute, self).__init__(obj)
 
-        #for start updates we need to get the config info from the old config without overwriting new update info
-        if self.updateType == "start":
+        #for start and restart updates we need to get the config info from the old config without overwriting new update info
+        if self.updateType == "start" or self.updateType == "restart":
             for k in set(self.old.__dict__.keys()).difference(set(self.new.__dict__.keys())):
                 self.new.__dict__.update({k: self.old.__dict__.get(k)})
 
