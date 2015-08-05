@@ -50,8 +50,12 @@ def getNetworkConfig(update):
 
     interfaces = list()
 
+    # Put the list in the cache now (shared reference), so that if we fail out
+    # of this function after partial completion, the abort function can take
+    # care of what made it into the list.
+    update.new.setCache('networkInterfaces', interfaces)
+
     if not hasattr(update.new, 'net'):
-        update.new.setCache('networkInterfaces', interfaces)
         return None
 
     # Make a dictionary of old interfaces.  Any new interfaces that are
@@ -95,6 +99,18 @@ def getNetworkConfig(update):
                 interfaces.append(oldIface)
                 continue
 
+        # Try to find a physical device of the requested type.
+        #
+        # Note: we try this first because it can fail, and then we will not try
+        # to allocate any resources for it.
+        try:
+            device = devIters[cfg['type']].next()
+            iface['device'] = device['name']
+        except (KeyError, StopIteration):
+            out.warn("Request for {} device cannot be fulfilled".
+                     format(cfg['type']))
+            raise Exception("Missing device(s) requested by chute")
+
         # Claim a subnet for this interface from the pool.
         subnet = networkPool.next()
         hosts = subnet.hosts()
@@ -116,15 +132,6 @@ def getNetworkConfig(update):
         # convenience of other code that expect that format (e.g. pipework).
         iface['ipaddrWithPrefix'] = "{}/{}".format(
                 iface['internalIpaddr'], subnet.prefixlen)
-
-        # Try to find a physical device of the requested type.
-        try:
-            device = devIters[cfg['type']].next()
-            iface['device'] = device['name']
-        except (KeyError, StopIteration):
-            out.warn("Request for {} device cannot be fulfilled".
-                     format(cfg['type']))
-            raise Exception("Missing device(s) requested by chute")
 
         # Generate initial portion (prefix) of interface name.
         #
@@ -181,6 +188,18 @@ def getNetworkConfig(update):
         interfaces.append(iface)
 
     update.new.setCache('networkInterfaces', interfaces)
+
+
+def abortNetworkConfig(update):
+    """
+    Release resources claimed by chute network configuration.
+    """
+    # Any interfaces in the cache need to go down, so we will release the
+    # interface number and subnet that were allocated to them.
+    interfaces = update.new.getCache('networkInterfaces')
+    for iface in interfaces:
+        interfaceNumberPool.release(iface['extIntfNumber'])
+        networkPool.release(iface['subnet'])
 
 
 def getOSNetworkConfig(update):

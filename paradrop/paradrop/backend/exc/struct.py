@@ -21,11 +21,22 @@ def generatePlans(update):
     # Detect system devices and set up basic configuration for them (WAN
     # interface, wireless devices).  These steps do not need to be reverted on
     # abort.
-    update.plans.addPlans(plangraph.STRUCT_GET_SYSTEM_DEVICES, (config.devices.getSystemDevices, ))
-    update.plans.addPlans(plangraph.STRUCT_SET_SYSTEM_DEVICES, (config.devices.setSystemDevices, ))
+    #
+    # abortNetworkConfig is added as an abort command here so that it runs when
+    # config.network.getNetworkConfig or just about anything else fails.
+    #
+    # reloadAll is added as an abort command here so that it runs when any of
+    # the set* plans fail and back out.
+    update.plans.addPlans(plangraph.STRUCT_GET_SYSTEM_DEVICES,
+                          (config.devices.getSystemDevices, ),
+                          (config.network.abortNetworkConfig, ))
+    update.plans.addPlans(plangraph.STRUCT_SET_SYSTEM_DEVICES,
+                          (config.devices.setSystemDevices, ),
+                          (config.configservice.reloadAll, ))
     
     # Save current network configuration into chute cache (key: 'networkInterfaces')
-    update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK, (config.network.getNetworkConfig, ))
+    update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK,
+                          (config.network.getNetworkConfig, ))
 
     # Setup changes to push into OS config files (key: 'osNetworkConfig')
     update.plans.addPlans(plangraph.STRUCT_GET_OS_NETWORK, (config.network.getOSNetworkConfig, ))  
