@@ -73,15 +73,13 @@ def setConfig(chute, old, cacheKeys, filepath):
         # This is to improve reliability  - sometimes the file isn't changed it should be
         # because we have reset the board, messed with chutes, etc. and the new/old chuteobjects are identical
         oldconfigs = cfgFile.getChuteConfigs(chute.name)
-        out.info('oldconfigs: %s\n' % (oldconfigs))
-        out.info('newconfigs: %s\n' % (newconfigs))
 
         if (uci.chuteConfigsMatch(oldconfigs, newconfigs)):
-            out.info('configs match skipping reloading.\n')
+            # configs match, skipping reloading
             return False
         else:
             # We need to make changes so delete old configs, load new configs
-            out.info('configs dont match, changing chutes and reloading.\n')
+            # configs don't match, changing chutes and reloading
             cfgFile.delConfigs(oldconfigs)
             cfgFile.addConfigs(newconfigs)
             cfgFile.save(backupToken="paradrop", internalid=chute.name)

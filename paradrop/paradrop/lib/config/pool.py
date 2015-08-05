@@ -1,6 +1,8 @@
 import ipaddress
 import itertools
 
+from pdtools.lib.output import out
+
 
 class ResourcePool(object):
     def __init__(self, values, numValues):
@@ -42,6 +44,8 @@ class ResourcePool(object):
         raise Exception("No items left in pool (BUG)")
 
     def release(self, item):
+        out.info("Trying to release {} from pool {}".format(str(item),
+                 self.__class__.__name__))
         if item in self.used:
             self.used.remove(item)
             self.recentlyReleased.append(item)
@@ -54,6 +58,8 @@ class ResourcePool(object):
 
         If strict is True, raises an exception if the item is already used.
         """
+        out.info("Trying to reserve {} from pool {}".format(str(item),
+                 self.__class__.__name__))
         if item in self.used:
             if strict:
                 raise Exception("Trying to reserve a used item")

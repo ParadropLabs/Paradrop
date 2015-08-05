@@ -20,6 +20,15 @@ networkPool = NetworkPool(settings.DYNAMIC_NETWORK_POOL)
 interfaceNumberPool = NumericPool()
 
 
+def interfaceDefsEqual(iface1, iface2):
+    check = ["name", "netType", "internalIntf"]
+    for key in check:
+        # Note: it would be a bug if key is missing in either definition.
+        if iface1[key] != iface2[key]:
+            return False
+    return True
+
+
 def getNetworkConfig(update):
     """
     For the Chute provided, return the dict object of a 100% filled out
@@ -45,6 +54,13 @@ def getNetworkConfig(update):
         update.new.setCache('networkInterfaces', interfaces)
         return None
 
+    # Make a dictionary of old interfaces.  Any new interfaces that are
+    # identical to an old one do not need to be changed.
+    oldInterfaces = dict()
+    if update.old is not None:
+        cachedInterfaces = update.old.getCache('networkInterfaces')
+        oldInterfaces = {iface['name']: iface for iface in cachedInterfaces}
+
     devices = update.new.getCache('networkDevices')
     devIters = {t: itertools.cycle(devices[t]) for t in devices.keys()}
 
@@ -63,6 +79,21 @@ def getNetworkConfig(update):
             out.warn('Network interface definition {}\n'.format(res))
             raise Exception("Interface definition missing field(s)")
 
+        iface = {
+            'name': name,                           # Name (not used?)
+            'netType': cfg['type'],                 # Type (wan, lan, wifi)
+            'internalIntf': cfg['intfName']         # Interface name in chute
+        }
+
+        if iface['name'] in oldInterfaces:
+            oldIface = oldInterfaces[iface['name']]
+            if interfaceDefsEqual(iface, oldIface):
+                # If old interface is the same, then claim the resources it was
+                # using and move on to the next interface.
+                interfaceNumberPool.reserve(oldIface['extIntfNumber'])
+                networkPool.reserve(oldIface['subnet'])
+                continue
+
         # Claim a subnet for this interface from the pool.
         subnet = networkPool.next()
         hosts = subnet.hosts()
@@ -75,24 +106,15 @@ def getNetworkConfig(update):
         # netmask: 255.255.255.0
         # external: 192.168.30.1
         # internal: 192.168.30.2
-        netmask = str(subnet.netmask)
-        externalIpaddr = str(hosts.next())
-        internalIpaddr = str(hosts.next())
+        iface['subnet'] = subnet
+        iface['netmask'] = str(subnet.netmask)
+        iface['externalIpaddr'] = str(hosts.next())
+        iface['internalIpaddr'] = str(hosts.next())
 
         # Generate the internal IP address with prefix length (x.x.x.x/y) for
         # convenience of other code that expect that format (e.g. pipework).
-        ipaddrWithPrefix = "{}/{}".format(internalIpaddr, subnet.prefixlen)
-
-        iface = {
-            'name': name,                           # Name (not used?)
-            'subnet': subnet,                       # Allocated subnet object
-            'netType': cfg['type'],                 # Type (wan, lan, wifi)
-            'internalIntf': cfg['intfName'],        # Interface name in chute
-            'netmask': netmask,                     # Netmask in host and chute
-            'externalIpaddr': externalIpaddr,       # IP address in host
-            'internalIpaddr': internalIpaddr,       # IP address in chute
-            'ipaddrWithPrefix': ipaddrWithPrefix    # Internal IP (x.x.x.x/y)
-        }
+        iface['ipaddrWithPrefix'] = "{}/{}".format(
+                iface['internalIpaddr'], subnet.prefixlen)
 
         # Try to find a physical device of the requested type.
         try:
