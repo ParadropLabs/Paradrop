@@ -126,7 +126,7 @@ def build_host_config(update):
         #not supported/managed by us
         #network_mode=update.host_config.get('network_mode'),
         #extra_hosts=update.host_config.get('extra_hosts'),
-        restart_policy={'MaximumRetryCount': 5, 'Name': 'always'},
+        restart_policy={'MaximumRetryCount': 5, 'Name': 'on-failure'},
         devices=[],
         lxc_conf={},
         publish_all_ports=False,

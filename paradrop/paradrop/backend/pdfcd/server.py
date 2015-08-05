@@ -18,6 +18,7 @@ from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
 from paradrop.lib.api import pdrest
 from paradrop.lib import settings
+from paradrop.lib.utils.restart import reloadChutes
 
 from paradrop.backend import fc
 
@@ -256,6 +257,9 @@ def setup(args=None):
     else:
         thePort = settings.PDFCD_PORT
         site.displayTracebacks = False
+
+    #add any chutes that should already be running to the update queue before starting the server
+    reloadChutes(api.configurer)
 
     # Setup the port we listen on
     out.info('Establishing API server, port: %d' % (thePort))
