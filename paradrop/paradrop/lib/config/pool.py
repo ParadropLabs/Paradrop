@@ -2,7 +2,66 @@ import ipaddress
 import itertools
 
 
-class NetworkPool(object):
+class ResourcePool(object):
+    def __init__(self, values, numValues):
+        """
+        Initialize resource pool.
+
+        values - must be iterable, such as a list or generator
+        numValues - number of values, since len need not be defined
+        """
+        self.values = values
+        self.numValues = numValues
+
+        self.cycle = itertools.cycle(values)
+
+        self.recentlyReleased = list()
+        self.used = set()
+
+    def next(self):
+        if len(self.used) >= self.numValues:
+            raise Exception("No items left in pool")
+
+        while len(self.recentlyReleased) > 0:
+            item = self.recentlyReleased.pop(0)
+            if item not in self.used:
+                self.used.add(item)
+                return item
+
+        # The for loop puts a limit on the number of iterations that we spend
+        # looking for a free subnet.  Passing the check above should imply that
+        # there is at least one available item, but we want to be extra
+        # careful to avoid a busy loop.
+        for i in range(self.numValues):
+            item = self.cycle.next()
+            if item not in self.used:
+                self.used.add(item)
+                return item
+
+        # There is a bug if we hit this line.
+        raise Exception("No items left in pool (BUG)")
+
+    def release(self, item):
+        if item in self.used:
+            self.used.remove(item)
+            self.recentlyReleased.append(item)
+        else:
+            raise Exception("Trying to release unreserved item")
+
+    def reserve(self, item, strict=True):
+        """
+        Mark item as used.
+
+        If strict is True, raises an exception if the item is already used.
+        """
+        if item in self.used:
+            if strict:
+                raise Exception("Trying to reserve a used item")
+        else:
+            self.used.add(item)
+
+
+class NetworkPool(ResourcePool):
     def __init__(self, network, subnetSize=24):
         """
         network should be a string with network size in slash notation or as a
@@ -16,101 +75,21 @@ class NetworkPool(object):
         if subnetSize < self.network.prefixlen:
             raise Exception("Invalid subnetSize {} for network {}".format(
                 subnetSize, network))
-        self.subnets = itertools.cycle(self.network.subnets(
-            new_prefix=subnetSize))
-        self.numSubnets = 2 ** (subnetSize - self.network.prefixlen)
-        self.used = set()
 
-    def next(self):
-        """
-        Get an available subnet from the pool.
+        subnets = self.network.subnets(new_prefix=subnetSize)
+        numSubnets = 2 ** (subnetSize - self.network.prefixlen)
 
-        Returns an ipaddress network object.  Raises an exception if no subnets
-        are left.
-        """
-        if len(self.used) >= self.numSubnets:
-            raise Exception("No subnets left in pool")
-
-        # The for loop puts a limit on the number of iterations that we spend
-        # looking for a free subnet.  Passing the check above should imply that
-        # there is at least one available subnet, but we want to be extra
-        # careful to avoid a busy loop.
-        for i in range(self.numSubnets):
-            subnet = self.subnets.next()
-            if subnet not in self.used:
-                self.used.add(subnet)
-                return subnet
-
-        # There is a bug if we hit this line.
-        raise Exception("No subnets left in pool (BUG)")
-
-    def release(self, subnet):
-        """
-        Release a previously claimed subnet.
-
-        It may then be claimed by a subsequent call to nextSubnet.
-        """
-        if subnet in self.used:
-            self.used.remove(subnet)
+        super(NetworkPool, self).__init__(subnets, numSubnets)
 
 
-class NamePool(object):
-    def __init__(self, length=4):
-        self.length = length
-
-        # Store next value for each (prefix, suffix) tuple.
-        self.nextValue = dict()
-
-        # List of freed names for each (prefix, suffix) tuple.
-        self.freedNames = dict()
+class NumericPool(ResourcePool):
+    def __init__(self, digits=4):
+        self.digits = digits
 
         # NOTE: Using base 16 for string representation.  It might be nice to
         # use a larger base ([0-9a-z] would allow base 36) for more possible
         # values for the same length.
-        self.maxValue = (16 ** length) - 1
+        numNames = 16 ** digits
+        values = range(numNames)
 
-    def getNextValue(self, key):
-        if key not in self.nextValue:
-            self.nextValue[key] = 0
-
-        nextValue = self.nextValue[key]
-
-        # We cannot recover from this, but why is the system making so many
-        # interfaces without ever releasing them?  It is most likely a bug.
-        if nextValue > self.maxValue:
-            raise Exception("Overflow occurred")
-
-        self.nextValue[key] += 1
-
-        return nextValue
-
-    def next(self, prefix="", suffix=""):
-        """
-        Get a name from the pool.
-
-        The name is constructed as prefix+X+suffix, where X is a fixed-length
-        unique string (currently hexadecimal).
-        """
-        key = (prefix, suffix)
-        if key in self.freedNames:
-            if len(self.freedNames[key]) > 0:
-                return self.freedNames[key].pop(0)
-
-        nextValue = self.getNextValue(key)
-        name = "{}{:0{}x}{}".format(prefix, nextValue, self.length, suffix)
-
-        return name
-
-    def release(self, name, prefix="", suffix=""):
-        """
-        Release a name allocated from the pool.
-
-        NOTE: There is no error-checking.  Please be sure to release only
-        things there were returned from the next() method, do not double
-        release, etc.
-        """
-        key = (prefix, suffix)
-        if key not in self.freedNames:
-            self.freedNames[key] = list()
-
-        self.freedNames[key].append(name)
+        super(NumericPool, self).__init__(values, numNames)

@@ -12,15 +12,20 @@ success or failure. All failed calls return an exception which should be
 suitable for printing. 
 '''
 
+import re
+
 from twisted.internet import defer
 
 from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
 from pdtools.lib import pdutils
+from pdtools.lib import store
+from pdtools.lib import riffle
 
 # SERVER_HOST = 'paradrop.io'
 SERVER_HOST = 'localhost'
 SERVER_PORT = 8015
+SERVER_RIFFLE_PORT = 8016
 
 ###############################################################################
 # Default Callbacks
@@ -89,6 +94,29 @@ def logs(reactor, host, port):
 @defaultCallbacks
 @defer.inlineCallbacks
 def echo(reactor, host, port):
-    client = RpcClient(host, port, 'internal')
-    res = yield client.echo('Hello!')
-    defer.returnValue(res)
+    clientKey = store.store.getKey('client.pem')
+    caKey = store.store.getKey('ca.pem')
+
+    riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
+
+    avatar = yield riffle.Riffle(host, int(port)).connect(caKey, clientKey)
+    result = yield avatar.echo('Hello from a client!')
+    defer.returnValue(result)
+
+
+###############################################################################
+# Riffle Convenience Methods
+###############################################################################
+
+class ServerPerspective(riffle.RifflePerspective):
+
+    def perspective_echo(self, arg):
+        print 'Client: server called echo'
+        return arg
+
+
+def connectServer():
+    ''' Quick refactor method, returns a riffle client ready to communicate with the server '''
+    riffle.portal.addRealm(u'pds.production', riffle.Realm(ServerPerspective))
+
+    return riffle.Riffle('localhost', 4322).connect(store.KEY_PATH)

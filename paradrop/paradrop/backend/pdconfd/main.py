@@ -31,7 +31,8 @@ class ConfigService(objects.DBusObject):
             Method("Reload", arguments="s", returns="b"),
             Method("ReloadAll", returns="b"),
             Method("Test", returns="s"),
-            Method("UnloadAll", returns="b"))
+            Method("UnloadAll", returns="b"),
+            Method("WaitSystemUp", returns="s"))
     ]
 
     def __init__(self):
@@ -52,6 +53,10 @@ class ConfigService(objects.DBusObject):
     def dbus_UnloadAll(self):
         print("Asked to unload configuration.")
         return self.configManager.unload()
+
+    def dbus_WaitSystemUp(self):
+        print("Waiting for system to be up.")
+        return self.configManager.waitSystemUp()
 
 @defer.inlineCallbacks
 def listen():

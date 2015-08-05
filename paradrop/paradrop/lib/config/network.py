@@ -3,7 +3,7 @@ import itertools
 
 from paradrop.lib import settings
 from paradrop.lib.config import configservice, uciutils
-from paradrop.lib.config.pool import NetworkPool, NamePool
+from paradrop.lib.config.pool import NetworkPool, NumericPool
 from paradrop.lib.utils import addresses, uci
 from pdtools.lib.output import out
 from pdtools.lib import pdutils
@@ -16,8 +16,8 @@ MAX_INTERFACE_NAME_LEN = 15
 networkPool = NetworkPool(settings.DYNAMIC_NETWORK_POOL)
 
 
-# Pool of names for virtual interfaces.
-interfaceNamePool = NamePool()
+# Pool of numbers for virtual interfaces.
+interfaceNumberPool = NumericPool()
 
 
 def getNetworkConfig(update):
@@ -110,10 +110,11 @@ def getNetworkConfig(update):
         # typical strings such as "eth*" and "wlan*" but not "veth*" or
         # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
         iface['extIntfPrefix'] = "v" + iface['device'] + "."
+        iface['extIntfNumber'] = interfaceNumberPool.next()
 
         # Generate a name for the new interface in the host.
-        iface['externalIntf'] = interfaceNamePool.next(
-            prefix=iface['extIntfPrefix'])
+        iface['externalIntf'] = "{}{:04x}".format(
+            iface['extIntfPrefix'], iface['extIntfNumber'])
         if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
             out.warn("Interface name ({}) is too long\n".
                      format(iface['externalIntf']))
@@ -208,8 +209,7 @@ def getOSNetworkConfig(update):
 
     for iface in removedInterfaces.values():
         # Release the external interface name.
-        interfaceNamePool.release(iface['externalIntf'],
-                                  prefix=iface['extIntfPrefix'])
+        interfaceNumberPool.release(iface['extIntfNumber'])
 
         # Release the subnet so another chute can use it.
         networkPool.release(iface['subnet'])

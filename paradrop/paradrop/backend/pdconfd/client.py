@@ -48,3 +48,7 @@ def reload(path):
     blocking = Blocking(d)
     return blocking.wait()
 
+def waitSystemUp():
+    d = callDeferredMethod("WaitSystemUp")
+    blocking = Blocking(d)
+    return blocking.wait()

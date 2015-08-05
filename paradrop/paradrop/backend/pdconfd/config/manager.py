@@ -1,6 +1,8 @@
 import heapq
+import json
 import os
 import subprocess
+import threading
 
 from pdtools.lib.output import out
 from paradrop.lib.utils import pdosq
@@ -61,26 +63,21 @@ def sortCommands(commands):
     """
     Return commands in order by priority.
 
-    The input should be a list of (priority, command) tuples.  The output will
-    be just the command part in order according to priority (ascending).  For
-    ties, the order from the original list is maintained.
+    The input should be a list of command objects.  The output will be just the
+    command part in order according to priority (ascending).  For ties, the
+    order from the original list is maintained.
     """
     result = list()
 
-    # First check to make sure the commands are proper tuples.
-    for item in commands:
-        if len(item) != 2:
-            raise Exception("Command ({}) not a (priority, command) tuple.".format(item))
-
     n = len(commands)
-    for prio, cmd in commands:
+    for cmd in commands:
         # This math (n * prio + i) ensures that the commands are sorted by
         # priority level first, and by order added within each priority level.
         # This is functionally identical to keeping separate FIFO queues for
         # each priority level.  It is just nicer to deal with a single command
         # queue than a bunch of them.
         i = len(result)
-        heapq.heappush(result, (n * prio + i, cmd))
+        heapq.heappush(result, (n * cmd.priority + i, cmd))
 
     while len(result) > 0:
         prio, cmd = heapq.heappop(result)
@@ -104,9 +101,14 @@ class ConfigManager(object):
         # If ==0, we can probably disable.
         self.forwardingCount = 0
 
+        # Allow threads to wait for first load to complete.  This will be set
+        # after the first load completes and will remain set thereafter.
+        self.systemUp = threading.Event()
+
     def changingSet(self, files):
         """
-        Return the sections from the current configuration that may have changed.
+        Return the sections from the current configuration that may have
+        changed.
 
         This checks which sections from the current configuration came from
         files in the given file list.  These are sections that may be changed
@@ -127,13 +129,7 @@ class ConfigManager(object):
 
     def execute(self, commands):
         for cmd in sortCommands(commands):
-            try:
-                result = subprocess.call(cmd)
-                out.info('Command "{}" Returned {}\n'.format(
-                    " ".join(cmd), result))
-            except OSError as e:
-                out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
-                out.exception(e, True)
+            cmd.execute()
 
     def findMatchingConfig(self, config, byName=False):
         """
@@ -172,7 +168,8 @@ class ConfigManager(object):
         Section exists in current config (by type and name)?
          - No -> Add section, apply changes, and stop.
          - Yes -> Continue.
-        Section is identical to the one in the current config (by option values)?
+        Section is identical to the one in the current config (by option
+        values)?
          - No -> Revert current section, mark any affected dependents,
                  add new section, apply changes, and stop.
          - Yes -> Continue.
@@ -186,7 +183,8 @@ class ConfigManager(object):
 
         # Manage sets of configuration sections.
         # newConfigs: completely new or new versions of existing sections.
-        # affectedConfigs: sections that are affected due to dependency changing.
+        # affectedConfigs: sections that are affected due to dependency
+        # changing.
         # undoConfigs: old sections that need to be undone before proceeding.
         newConfigs = set()
         affectedConfigs = set()
@@ -253,6 +251,10 @@ class ConfigManager(object):
 
         self.previousCommands = commands
         self.currentConfig = allConfigs
+
+        # Wake up anything that was waiting for the first load to complete.
+        self.systemUp.set()
+
         return True
 
     def readConfig(self, files):
@@ -282,6 +284,9 @@ class ConfigManager(object):
                 else:
                     name = None
 
+                # Get section comment string (optional, but Paradop uses it).
+                comment = section.get('comment', None)
+
                 try:
                     cls = configTypeMap[section['type']]
                 except:
@@ -290,19 +295,45 @@ class ConfigManager(object):
                     continue
 
                 try:
-                    obj = cls.build(self, fn, name, options)
+                    obj = cls.build(self, fn, name, options, comment)
                 except:
-                    out.warn("Error building object from section {}:{} in {}\n".format(
-                        section['type'], name, fn))
+                    out.warn("Error building object from section {}:{} in "
+                             "{}\n".format(section['type'], name, fn))
                     continue
 
                 key = obj.getTypeAndName()
                 if key in usedHeaders:
-                    out.warn("Section {}:{} from {} overrides section in {}\n".format(
-                        section['type'], name, fn, usedHeaders[key]))
+                    out.warn("Section {}:{} from {} overrides section in "
+                             "{}\n".format(section['type'], name, fn,
+                                           usedHeaders[key]))
                 usedHeaders[key] = fn
 
                 yield obj
+
+    def statusString(self):
+        """
+        Return a JSON string representing status of the system.
+        
+        The format will be a list of dictionaries.  Each dictionary
+        corresponds to a configuration block and contains at the following
+        fields.
+
+        type: interface, wifi-device, etc.
+        name: name of the section (may be autogenerated for some configs)
+        comment: comment from the configuration file or None
+        success: True if all setup commands succeeded
+        """
+        status = list()
+        for key, config in self.currentConfig.iteritems():
+            success = all(cmd.success() for cmd in config.executed)
+            configStatus = {
+                'type': config.typename,
+                'name': config.name,
+                'comment': config.comment,
+                'success': success
+            }
+            status.append(configStatus)
+        return json.dumps(status)
 
     def unload(self, execute=True):
         commands = list()
@@ -317,3 +348,10 @@ class ConfigManager(object):
         self.previousCommands = commands
         self.currentConfig = dict()
         return True
+
+    def waitSystemUp(self):
+        """
+        Wait for the first load to complete and return system status string.
+        """
+        self.systemUp.wait()
+        return self.statusString()
