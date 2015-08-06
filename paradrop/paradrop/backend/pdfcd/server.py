@@ -228,6 +228,12 @@ class ParadropAPIServer(pdrest.APIResource):
         self.failprocess(ip, request, (ip, self.defaultFailures), None, (tictoc, None), pdapi.ERR_BADMETHOD)
         return ""
 
+def checkStartRiffle():
+    '''
+    Temporary function. Do not start serving or connecting over riffle
+    until we have our keys (which occurs during currently optional provisioning)
+    '''
+    pass
 
 ###############################################################################
 # Main function
@@ -245,11 +251,14 @@ def setup(args=None):
     site = Site(api, timeout=None)
 
     # Setup riffle-style calls. Temporary. 
-    # import re
 
     # riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(apiinternal.ServerPerspective))
 
     #Check for keys, do not start serving if they do not exist
+    
+
+    #Riffle init
+    # riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(pdserver.core.hub.UserPerspective))
     # riffle.Riffle()
 
     # Development mode

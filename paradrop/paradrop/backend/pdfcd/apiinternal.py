@@ -1,18 +1,5 @@
 '''
 API exposed to pdtools and pdserver. 
-
-These calls are not meant for user consumption and as such are SOAPy. This is a topic 
-for debate. I believe this implementation is cleaner for developers without loss of 
-functionality. 
-
-These functions are inconsistent with the current api as defined, and because 
-of this one or the other should be brought in line. The location of 
-the API contents are not important (in terms of the route) since its easily moved, 
-but consistency would be nice. 
-
-I have done this in the interest of time and development speed. 
-- Mickey
-
 '''
 
 ###############################################################################

@@ -507,6 +507,16 @@ class Output():
         ''' Removes the given subscriber '''
         self.subscribers.remove(target)
 
+    def logsSinceTime(self, time):
+        '''
+        Returns all of the logs saved to file that occur after the given time.
+
+        :param time: the timestamp to check the logs against. If None, 
+            returns all logs
+        :type time: float.
+        '''
+        pass
+
     ###############################################################################
     # Reconfiguration
     ###############################################################################

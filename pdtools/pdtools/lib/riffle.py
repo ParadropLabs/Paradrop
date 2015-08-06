@@ -28,19 +28,23 @@ from twisted.internet.ssl import PrivateCertificate, Certificate, optionsForClie
 
 from pdtools.lib.output import out
 
+# Default security and port considerations
+CERT_CA = None
+KEY_PRIVATE = None
+DEFAULT_PORT = 8016
 
 class Riffle(object):
 
-    def __init__(self, host, port, secure=True):
+    def __init__(self, host, port=DEFAULT_PORT, secure=True):
         '''
         This is not a Twisted style 'protocol', its a wrapper around a modified PB. 
-        The Riffle object makes creating new riffle sessions easier. 
+        The Riffle object is a convenience warpper for servers and clients 
 
         :param host: the hostname to connect/listen to 
         :type host: str.
         :param port: port to connect/listen to
         :type port: int
-        :param secure: should riffle connect over TLS or not? This is a temporary thing
+        :param secure: should riffle connect over TLS or not? This is a temporary thing.
         :type secure: bool.
         '''
         self.host, self.port = host, port
@@ -56,13 +60,14 @@ class Riffle(object):
         ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(caCert), PrivateCertificate.loadPEM(pkey))
         return SSL4ClientEndpoint(reactor, self.host, self.port, ctx,)
 
-    def serve(self, keypath):
-        serverEndpoint = self._serverContext(keypath)
+    def serve(self, caCert=CERT_CA):
+        serverEndpoint = self._serverContext(CERT_CA)
         serverEndpoint.listen(RiffleServerFactory(portal))
 
     @defer.inlineCallbacks
-    def connect(self, caCert, keys):
-        clientEndpoint = self._clientContext(caCert, keys)
+    def connect(self, caCert=CERT_CA, keys=KEY_PRIVATE):
+        ''' WARNING: the positonal arguments are no longer used, PASS NOTHING '''
+        clientEndpoint = self._clientContext(CERT_CA, KEY_PRIVATE)
 
         factory = RiffleClientFactory()
         clientEndpoint.connect(factory)

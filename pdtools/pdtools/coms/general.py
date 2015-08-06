@@ -94,15 +94,15 @@ def logs(reactor, host, port):
 @defaultCallbacks
 @defer.inlineCallbacks
 def echo(reactor, host, port):
-    key, ca = 'client.pem', 'ca.pem'
-    # key, ca = 'public', 'private'
+    # key, ca = 'client.pem', 'ca.pem'
+    key, ca = 'public', 'private'
 
     clientKey = store.store.getKey(key)
     caKey = store.store.getKey(ca)
 
     riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
 
-    avatar = yield riffle.Riffle(host, int(port)).connect(caKey, clientKey)
+    avatar = yield riffle.Riffle(host).connect()
     result = yield avatar.echo('Hello from a client!')
     defer.returnValue(result)
 

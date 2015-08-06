@@ -1,10 +1,6 @@
 from pdtools.lib import output
 
 
-def testPdtoolsImportable():
-    import pdtools
-
-
 def test_subscriptionWorks():
     output.out.startLogging(stealStdio=False, printToConsole=True)
 

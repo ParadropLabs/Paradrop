@@ -101,9 +101,18 @@ def main():
     # TESTING
     from pdtools.coms import general
     from twisted.internet import task
+    from pdtools.lib import riffle
+
+    clientKey = store.store.getKey('public')
+    caKey = store.store.getKey('private')
+
+    riffle.CERT_CA = caKey
+    riffle.KEY_PRIVATE = clientKey
 
     task.react(general.echo, ('localhost', 8016,))
     return
+    # END TESTING
+
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
