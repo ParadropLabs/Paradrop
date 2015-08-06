@@ -286,8 +286,6 @@ class TwistedException(BaseOutput):
         except Exception:
             package, module, line = "uknown", 'unknown', '??'
 
-        # message =
-
         ret = {'message': str(args['failure'].getTraceback().strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
                'package': package, 'module': module, 'timestamp': time.time(),
                'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
@@ -296,9 +294,9 @@ class TwistedException(BaseOutput):
 
 
 class ExceptionOutput(BaseOutput):
-
-    def function():
-        pass
+    '''
+    Handle vanilla exceptions passed directly to us using out.exception
+    '''
 
     def __call__(self, exception, random):
         '''
