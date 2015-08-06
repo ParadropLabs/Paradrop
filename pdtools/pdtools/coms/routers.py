@@ -29,15 +29,20 @@ def provisionRouter(r, name, host, port):
 
     # Bug: if the user sets the name of the router as their username, this will
     # fail badly
-    target = [x for x in store.getConfig('routers') if name in x]
+    target = [x for x in store.getConfig('routers') if name in x['_id']]
 
     if len(target) == 0:
         print 'Router with name ' + name + ' not found.'
         yield 1
         defer.returnValue(None)
 
-    client = RpcClient(host, port, '')
-    ret = yield client.provision(target['_id'], target['publicKey'], target['privateKey'])
+    target = target[0]
+
+    pkey = store.getKey(target['_id'] + '.client.pem')
+    cacert = store.getKey('ca.pem')
+
+    client = RpcClient(host, port, 'internal')
+    ret = yield client.provision(target['_id'], pkey, cacert)
 
 
 ###############################################################################
@@ -59,7 +64,7 @@ def installChute(host, port, config):
         return
 
     # Verify the config provided in some way.
-    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str })
+    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str})
     if cfg_verf:
         print 'ERROR: ' + cfg_verf
         return

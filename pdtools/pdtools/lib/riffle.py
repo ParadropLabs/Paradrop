@@ -165,7 +165,7 @@ class Realm:
 
 class Levy(object):
 
-    ''' Wraps a remote object reference to allow __getattr__ magic '''
+    ''' Wraps a remote object reference to allow getattr magic '''
 
     def __init__(self, remote):
         self.remote = remote
@@ -177,7 +177,7 @@ class Levy(object):
         return wrap
 
     def printValue(self, value):
-        print repr(value)
+        # print repr(value)
         return value
 
     def printError(self, error):

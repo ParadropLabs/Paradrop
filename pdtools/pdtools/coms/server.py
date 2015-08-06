@@ -28,12 +28,11 @@ def authSuccess(r):
 
     print 'You have been successfully logged in.'
 
+
 ###############################################################################
 # Riffle Implementation
 ###############################################################################
 
-
-@general.defaultCallbacks
 @defer.inlineCallbacks
 def list(r):
     ''' Return the resources this user owns. '''
@@ -45,6 +44,8 @@ def list(r):
     store.saveConfig('chutes', ret['chutes'])
     store.saveConfig('routers', ret['routers'])
     store.saveConfig('instances', ret['instances'])
+
+    printOwned()
 
     defer.returnValue(ret)
 
@@ -63,7 +64,7 @@ def createRouter(r, name):
 
     # Save that router's keys
     store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
-    
+
     ret = yield avatar.list()
 
     store.saveConfig('chutes', ret['chutes'])
@@ -102,30 +103,13 @@ def register(reactor):
     ret = yield client.register(name, email, password)
     defer.returnValue(ret)
 
-
-@general.failureCallbacks
-@defer.inlineCallbacks
-def ownership(reactor):
-    ''' Get the list of owned resources from the server '''
-    pdid = store.getConfig('pdid')
-    client = RpcClient(general.SERVER_HOST, general.SERVER_PORT, '')
-    ret = yield client.ownership(pdid)
-
-    # Add these items to the store
-    store.saveConfig('chutes', ret['chutes'])
-    store.saveConfig('routers', ret['routers'])
-    store.saveConfig('instances', ret['instances'])
-
-    printOwned()
-
-    defer.returnValue(ret)
-
-
 ###############################################################################
 # Utils
 ###############################################################################
 
 # Show this individuallye (once for each type)
+
+
 def printOwned():
     chutes = store.getConfig('chutes')
     routers = store.getConfig('routers')

@@ -12,7 +12,7 @@ from twisted.web.server import Site
 from twisted.internet import reactor
 
 from pdtools.lib.output import out
-from pdtools.lib import store, riffle
+from pdtools.lib import store, riffle, names
 
 from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
@@ -245,7 +245,12 @@ def setup(args=None):
     site = Site(api, timeout=None)
 
     # Setup riffle-style calls. Temporary. 
-    # PORT = 8016
+    # import re
+
+    # riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(apiinternal.ServerPerspective))
+
+    #Check for keys, do not start serving if they do not exist
+    # riffle.Riffle()
 
     # Development mode
     if(args and args.development):

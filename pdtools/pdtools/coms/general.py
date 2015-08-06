@@ -94,8 +94,11 @@ def logs(reactor, host, port):
 @defaultCallbacks
 @defer.inlineCallbacks
 def echo(reactor, host, port):
-    clientKey = store.store.getKey('client.pem')
-    caKey = store.store.getKey('ca.pem')
+    key, ca = 'client.pem', 'ca.pem'
+    # key, ca = 'public', 'private'
+
+    clientKey = store.store.getKey(key)
+    caKey = store.store.getKey(ca)
 
     riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
 

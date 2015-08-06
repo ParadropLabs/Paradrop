@@ -59,7 +59,6 @@ def onShutdown():
     # TODO: inform pdconfd
 
 
-
 ##########################################################################
 # Main Function
 ##########################################################################
@@ -99,6 +98,13 @@ def main():
     # If printToConsole is set (defaults True) all final output is rendered to stdout
     output.out.startLogging(filePath=store.LOG_PATH, stealStdio=True, printToConsole=True)
 
+    # TESTING
+    from pdtools.coms import general
+    from twisted.internet import task
+
+    task.react(general.echo, ('localhost', 8016,))
+    return
+
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
 
@@ -113,6 +119,7 @@ def main():
 
         # Now setup the RESTful API server for Paradrop
         pdfcd.server.setup(args)
+
 
 if __name__ == "__main__":
 

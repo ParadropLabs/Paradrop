@@ -25,11 +25,18 @@ from twisted.internet import defer, utils
 from pdtools.coms.client import RpcClient
 
 from pdtools.lib.output import out
-from pdtools.lib import store
+from pdtools.lib import store, riffle
+
 
 ###############################################################################
 # New Riffle Additions
 ###############################################################################
+
+class ServerPerspective(riffle.RifflePerspective):
+
+    def perspective_echo(self, arg):
+        print 'Client: server called echo'
+        return arg
 
 
 ###############################################################################
@@ -67,17 +74,20 @@ def api_provision(pdid, publicKey, privateKey):
 
     # Handshake with the server, ensuring the name is valid
     client = RpcClient('paradrop.io', 8015, '')
-    # ret = yield client.
 
     store.store.saveConfig('pdid', pdid)
-    store.store.saveKey('private', privateKey)
-    store.store.saveKey('public', publicKey)
+    store.store.saveKey(privateKey, 'private')
+    store.store.saveKey(publicKey, 'public')
+
+    yield 1
+    defer.returnValue(None)
 
     # Return success to the user
 
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.
 ###############################################################################
+
 
 class Base(xmlrpc.XMLRPC):
 
