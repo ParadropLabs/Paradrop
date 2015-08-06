@@ -27,10 +27,10 @@ SERVER_HOST = 'localhost'
 SERVER_PORT = 8015
 SERVER_RIFFLE_PORT = 8016
 
+
 ###############################################################################
 # Default Callbacks
 ###############################################################################
-
 
 def failureCallbacks(f):
     def w(*args, **kwargs):

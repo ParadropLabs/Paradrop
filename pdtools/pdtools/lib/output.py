@@ -244,7 +244,7 @@ class TwistedOutput(BaseOutput):
         try:
             message = args['message'][0]
         except:
-            # For now, lets ignore the big messages (ones without a well-defined message, 
+            # For now, lets ignore the big messages (ones without a well-defined message,
             # generally these are internal twisted messages we may not care about)
             return None
             print 'Trying args!'
@@ -290,6 +290,7 @@ class TwistedException(BaseOutput):
 
 
 class ExceptionOutput(BaseOutput):
+
     '''
     Handle vanilla exceptions passed directly to us using out.exception
     '''
@@ -424,6 +425,9 @@ class Output():
         self.stealStdio(stealStdio)
         self.logToConsole(printToConsole)
 
+        # A list of listeners that will receive raw logs as they come in
+        self.__dict__['subscribers'] = set()
+
         # Override twisted logging (allows us to cleanly catch all exceptions)
         # This must come after the setattr calls so we get the wrapped object
         log.startLoggingWithObserver(self.twisted, setStdout=False)
@@ -466,11 +470,15 @@ class Output():
         if self.queue is not None:
             self.queue.put(logDict)
 
+        res = self.messageToString(logDict)
+
         # Write out the human-readable version to out if needed (but always print out
         # exceptions for testing purposes)
         if self.printLogs or logDict['type'] == 'ERR':
-            res = self.messageToString(logDict)
             self.redirectOut.trueWrite(res)
+
+        for s in self.subscribers:
+            s(res)
 
     def messageToString(self, message):
         '''
@@ -485,9 +493,24 @@ class Output():
         outputObject = self.outputMappings[message['type'].lower()]
         return outputObject.formatOutput(message)
 
+    def addSubscriber(self, target):
+        '''
+        Accepts the given function as a subscriber. The function will be called with new logs
+        messages as they come in. 
+
+        TODO:
+            Add priority level filtering on subscription
+        '''
+        self.subscribers.add(target)
+
+    def removeSubscriber(self, target):
+        ''' Removes the given subscriber '''
+        self.subscribers.remove(target)
+
     ###############################################################################
     # Reconfiguration
     ###############################################################################
+
     def stealStdio(self, newStatus):
         self.__dict__['stealIo'] = newStatus
 
