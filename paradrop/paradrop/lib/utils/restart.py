@@ -14,12 +14,18 @@ from pdtools.lib.output import out
 from paradrop.backend.fc import chutestorage
 from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.backend.pdconfd.client import waitSystemUp
+from paradrop.lib.config.network import reclaimNetworkResources
 import time
 
 def reloadChutes():
     chuteStore = chutestorage.ChuteStorage()
     chutes = [ ch for ch in chuteStore.getChuteList() if ch.state == 'running']
     print chutes
+
+    # Part of restoring the chute to its previously running state is reclaiming
+    # IP addresses, interface names, etc. that it had previously.
+    for chute in chutes:
+        reclaimNetworkResources(chute)
 
     #We need to make sure confd is up and all interfaces have been brought up properly
     confdup = False
