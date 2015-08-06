@@ -10,6 +10,7 @@ STATE_DISABLED = "disabled"
 STATE_RUNNING = "running"
 STATE_FROZEN = "frozen"
 STATE_STOPPED = "stopped"
+FAILURE_WARNING = "**********WARNING**********\nThis chute failed to start properly for some reason. Perhaps hardware on the device has changed? The chute has been stopped and will need to be started.\n"
 
 class Chute(object):
     """
@@ -19,6 +20,7 @@ class Chute(object):
         # Set these first so we don't have to worry about it later
         self.name = None
         self.state = None
+        self.warning = None
 
         self._cache = {}
         

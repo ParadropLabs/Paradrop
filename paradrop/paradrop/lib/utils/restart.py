@@ -14,12 +14,12 @@ from pdtools.lib.output import out
 from paradrop.backend.fc import chutestorage
 from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.backend.pdconfd.client import waitSystemUp
+from paradrop.lib import chute
 import time
 
 def reloadChutes():
     chuteStore = chutestorage.ChuteStorage()
     chutes = [ ch for ch in chuteStore.getChuteList() if ch.state == 'running']
-    print chutes
 
     #We need to make sure confd is up and all interfaces have been brought up properly
     confdup = False
@@ -34,8 +34,6 @@ def reloadChutes():
     #Remove any chutes from the restart queue if confd failed to bring up the proper interfaces
     failedChutes = []
     for iface in confdInfo:
-        print iface.get('success')
-        print iface.get('comment')
         if iface.get('success') == False:
             while iface.get('comment') in chutes: 
                 #TODO stop the chute and add error message to it
@@ -48,7 +46,7 @@ def reloadChutes():
     updates = []
     for ch in failedChutes:
         update = dict(updateClass='CHUTE', updateType='stop', name=ch,
-                      tok=timeint(), func=failure ) #, pkg=apiPkg, func=self.rest.complete)
+                      tok=timeint(), func=failure, warning=chute.FAILURE_WARNING) #, pkg=apiPkg, func=self.rest.complete)
         updates.append(update)
 
     for ch in chutes:
@@ -56,7 +54,6 @@ def reloadChutes():
                       tok=timeint(), func=success ) #, pkg=apiPkg, func=self.rest.complete)
         updates.append(update)
 
-    print updates
     return updates
 
 def success(arg):
