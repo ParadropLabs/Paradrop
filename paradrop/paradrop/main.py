@@ -59,8 +59,6 @@ def onShutdown():
     # TODO: inform pdconfd
 
 
-def throwThing():
-    1 / 0
 
 ##########################################################################
 # Main Function
@@ -101,12 +99,6 @@ def main():
     # If stealStdio is set intercepts all stderr and stdout and interprets it internally
     # If printToConsole is set (defaults True) all final output is rendered to stdout
     output.out.startLogging(filePath=store.LOG_PATH, stealStdio=False, printToConsole=True)
-
-    # TESTING
-    try:
-        throwThing()
-    except Exception, e:
-        output.out.exception(e, True)
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)

@@ -244,15 +244,11 @@ class TwistedOutput(BaseOutput):
         try:
             message = args['message'][0]
         except:
+            # For now, lets ignore the big messages (ones without a well-defined message, 
+            # generally these are internal twisted messages we may not care about)
+            return None
+            print 'Trying args!'
             message = str(args)
-
-        # NOTE: This code gets the REAL twisted stack trace-- but it seems to
-        # make things more noisy without actually helping
-        # package, module, line = silentLogPrefix(5)
-
-        # ret = {'message': message, 'type': self.type['name'], 'extra': {},
-        #        'package': package, 'module': module, 'timestamp': time.time(),
-        #        'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
 
         ret = {'message': message, 'type': self.type['name'], 'extra': {},
                'package': 'twisted', 'module': 'internal', 'timestamp': time.time(),
