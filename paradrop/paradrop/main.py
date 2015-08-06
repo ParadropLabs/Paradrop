@@ -59,9 +59,13 @@ def onShutdown():
     # TODO: inform pdconfd
 
 
+def throwThing():
+    1 / 0
+
 ##########################################################################
 # Main Function
 ##########################################################################
+
 
 def main():
     """
@@ -100,7 +104,7 @@ def main():
 
     # TESTING
     try:
-        1 / 0
+        throwThing()
     except Exception, e:
         output.out.exception(e, True)
 

@@ -304,36 +304,25 @@ class ExceptionOutput(BaseOutput):
         '''
         The variable 'Random' is a leftover from the previous implementation and should be removed.
         '''
-        print type(exception)
-        # print exception.__traceback__
+
+        # print exception.__traceback_
         ex_type, ex, tb = sys.exc_info()
-        traceback.print_tb(tb)
-        return BaseOutput.__call__(self, exception)
+        trace = traceback.extract_tb(tb)
+        lastFrame = trace[-1]
 
-    # def __call__(self, args, logPrefixLevel=3):
-    #     '''
-    #     Called as an attribute on out. This method takes the passed params and builds a log dict,
-    #     returning it.
+        package, module = parseLogPrefix(lastFrame[0])
+        line = lastFrame[1]
 
-    #     Subclasses can customize args to include whatever they'd like, adding content
-    #     under the key 'extras.' The remaining keys should stay in place.
-    #     '''
-    # ex_type, ex, tb = sys.exc_info()
-    # traceback.print_tb(tb)
-    # del tb
+        message = type(exception).__name__ + ': ' + str(exception) + '\n'
 
-    # print args.__traceback__
+        for x in trace:
+            message += '  File "%s", line %d, in %s\n\t%s\n' % (x[0], x[1], x[2], x[3])
 
-    #     package, module, line = silentLogPrefix(3)
+        ret = {'message': message, 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
+               'package': package, 'module': module, 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
 
-    #     if args[-1] == '\n':
-    #         args = args.strip()
-
-    #     ret = {'message': str(args), 'type': self.type['name'], 'extra': {},
-    #            'package': package, 'module': module, 'timestamp': time.time(),
-    #            'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
-
-    #     return ret
+        return ret
 
 
 class Output():
