@@ -12,7 +12,7 @@ from twisted.web.server import Site
 from twisted.internet import reactor
 
 from pdtools.lib.output import out
-from pdtools.lib import store
+from pdtools.lib import store, riffle
 
 from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
@@ -243,6 +243,10 @@ def setup(args=None):
     api = ParadropAPIServer(reactor)
     api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
+
+    # Setup riffle-style calls. Temporary. 
+    # PORT = 8016
+
     # Development mode
     if(args and args.development):
         thePort = settings.PDFCD_PORT + 10000

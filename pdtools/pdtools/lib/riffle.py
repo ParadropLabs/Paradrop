@@ -26,6 +26,8 @@ from zope.interface import implements
 from twisted.internet.endpoints import SSL4ClientEndpoint
 from twisted.internet.ssl import PrivateCertificate, Certificate, optionsForClientTLS
 
+from pdtools.lib.output import out
+
 
 class Riffle(object):
 
@@ -113,7 +115,6 @@ class Portal(portal.Portal):
         raise KeyError("No matcher was found to handle ", credential)
 
     def login(self, credentials, mind):
-        print str(credentials) + ' attempting to login'
         target = self.findRealm(credentials)
         return target.requestAvatar(credentials, mind)
 
@@ -158,7 +159,7 @@ class Realm:
 
     def connectionClosed(self, avatar):
         ''' An avatar disconnected '''
-        print 'Connection lost'
+        out.info('Connection lost: ' + str(avatar.name))
         self.connections.remove(avatar)
 
 
@@ -239,9 +240,7 @@ class RiffleClientFactory(pb.PBClientFactory):
         # Have to add connection to the portal
         self.portal = portal
 
-        print 'Requesting root object'
         root = yield self.getRootObject()
-        print 'Got root:', root
 
         peerCertificate = Certificate.peerFromTransport(self._broker.transport)
         pdid = peerCertificate.getSubject().commonName.decode('utf-8')
@@ -274,11 +273,9 @@ class _RifflePortalWrapper(pb._PortalWrapper):
 
     @defer.inlineCallbacks
     def remote_login(self, client):
-        print 'Received a request for a remote login'
-
         peerCertificate = Certificate.peerFromTransport(self.broker.transport)
         pdid = peerCertificate.getSubject().commonName.decode('utf-8')
-        print 'Got pdid', pdid
+        out.info('New connection: ' + pdid)
 
         avatar, logout = yield self.portal.login(pdid, client)
         avatar = pb.AsReferenceable(avatar, "perspective")

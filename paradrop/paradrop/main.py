@@ -64,7 +64,6 @@ def onShutdown():
 # Main Function
 ##########################################################################
 
-
 def main():
     """
     This function does something. Right now what its doing is demonstrating
@@ -98,7 +97,7 @@ def main():
     # initialize output. If filepath is set, logs to file.
     # If stealStdio is set intercepts all stderr and stdout and interprets it internally
     # If printToConsole is set (defaults True) all final output is rendered to stdout
-    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=False, printToConsole=True)
+    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=True, printToConsole=True)
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
