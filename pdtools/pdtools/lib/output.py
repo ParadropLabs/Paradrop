@@ -159,10 +159,10 @@ class OutputRedirect(object):
 
         self.callback(ret)
 
+
 ###############################################################################
 # Output Classes
 ###############################################################################
-
 
 class BaseOutput(object):
 
@@ -293,6 +293,47 @@ class TwistedException(BaseOutput):
                'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
 
         return ret
+
+
+class ExceptionOutput(BaseOutput):
+
+    def function():
+        pass
+
+    def __call__(self, exception, random):
+        '''
+        The variable 'Random' is a leftover from the previous implementation and should be removed.
+        '''
+        print type(exception)
+        # print exception.__traceback__
+        ex_type, ex, tb = sys.exc_info()
+        traceback.print_tb(tb)
+        return BaseOutput.__call__(self, exception)
+
+    # def __call__(self, args, logPrefixLevel=3):
+    #     '''
+    #     Called as an attribute on out. This method takes the passed params and builds a log dict,
+    #     returning it.
+
+    #     Subclasses can customize args to include whatever they'd like, adding content
+    #     under the key 'extras.' The remaining keys should stay in place.
+    #     '''
+    # ex_type, ex, tb = sys.exc_info()
+    # traceback.print_tb(tb)
+    # del tb
+
+    # print args.__traceback__
+
+    #     package, module, line = silentLogPrefix(3)
+
+    #     if args[-1] == '\n':
+    #         args = args.strip()
+
+    #     ret = {'message': str(args), 'type': self.type['name'], 'extra': {},
+    #            'package': package, 'module': module, 'timestamp': time.time(),
+    #            'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+
+    #     return ret
 
 
 class Output():
@@ -442,7 +483,7 @@ class Output():
         if self.queue is not None:
             self.queue.put(logDict)
 
-        # Write out the human-readable version to out if needed (but always print out 
+        # Write out the human-readable version to out if needed (but always print out
         # exceptions for testing purposes)
         if self.printLogs or logDict['type'] == 'ERR':
             res = self.messageToString(logDict)
@@ -488,7 +529,7 @@ out = Output(
     perf=BaseOutput(LOG_TYPES['PERF']),
     warn=BaseOutput(LOG_TYPES['WARN']),
     err=BaseOutput(LOG_TYPES['ERR']),
-    exception=BaseOutput(LOG_TYPES['ERR']),
+    exception=ExceptionOutput(LOG_TYPES['ERR']),
     security=BaseOutput(LOG_TYPES['SECURITY']),
     fatal=BaseOutput(LOG_TYPES['FATAL']),
     twisted=TwistedOutput(LOG_TYPES['INFO']),
