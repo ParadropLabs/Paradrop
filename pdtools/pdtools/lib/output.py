@@ -557,7 +557,6 @@ class Output():
             if purge and f is not 'log':
                 os.remove(path)
 
-        print 'Loaded', len(ret), 'lines'
         return ret
 
     ###############################################################################

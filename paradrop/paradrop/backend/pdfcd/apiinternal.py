@@ -22,8 +22,19 @@ from pdtools.lib import store, riffle, names
 class ServerPerspective(riffle.RifflePerspective):
 
     def perspective_echo(self, arg):
-        print 'Client: server called echo'
+        print 'Client: server called echoo'
         return arg
+
+    @defer.inlineCallbacks
+    def perspective_subscribeLogs(self):
+        '''
+        Fetch all logs since the target time. Stream all new logs
+        to the server as they come in. 
+        '''
+        print 'Server asking for logs'
+        logs = yield out.getLogsSince(None)
+
+        defer.returnValue(logs)
 
 
 class ToolsPerspective(riffle.RifflePerspective):
@@ -48,7 +59,7 @@ def connectToServer(host):
     ''' Yet another temporary method '''
     avatar = yield riffle.portal.connect(host)
     result = yield avatar.echo('Hello from a client!')
-    yield avatar.newLogs(['I am a log'])
+    # yield avatar.newLogs(['I am a log'])
 
     defer.returnValue(avatar)
 
