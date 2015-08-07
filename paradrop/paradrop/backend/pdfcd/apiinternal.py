@@ -77,12 +77,6 @@ def checkStartRiffle():
     from twisted.internet import reactor
     reactor.callLater(1, connectToServer, 'localhost')
 
-    # Open a connection to the server
-
-    # TESTING
-    # from twisted.internet import task
-    # return task.react(echo, ('localhost',))
-
 
 ###############################################################################
 # Old

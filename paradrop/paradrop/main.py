@@ -64,18 +64,6 @@ def onShutdown():
 ##########################################################################
 
 def main():
-    """
-    This function does something. Right now what its doing is demonstrating
-    a docstring with sphinxy additions.
-
-    :param name: The name to use.
-    :type name: str.
-    :param state: Current state to be in.
-    :type state: bool.
-    :returns: int -- the return code.
-    :raises: AttributeError, KeyError
-    """
-
     # Setup the signal handler for verbose
     signal.signal(signal.SIGUSR1, caughtSIGUSR1)
 
@@ -96,7 +84,10 @@ def main():
     # initialize output. If filepath is set, logs to file.
     # If stealStdio is set intercepts all stderr and stdout and interprets it internally
     # If printToConsole is set (defaults True) all final output is rendered to stdout
-    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=True, printToConsole=True)
+    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=False, printToConsole=True)
+
+    # TESTINT
+    return output.out.getLogs()
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)

@@ -17,6 +17,7 @@ import threading
 import time
 import colorama
 import traceback
+import os
 
 from pdtools.lib import pdutils
 
@@ -421,6 +422,16 @@ class Output():
         :type printToConsole: bool.
 
         '''
+
+        #Initialize printer thread
+        self.__dict__['logpath'] = None
+
+        if filePath is not None:
+            self.__dict__['queue'] = Queue.Queue()
+            self.__dict__['printer'] = PrintLogThread(filePath, self.queue)
+            self.__dict__['logpath'] = filePath
+            self.printer.start()
+
         # by default, stdio gets captures. This can be toggled off
         self.stealStdio(stealStdio)
         self.logToConsole(printToConsole)
@@ -432,11 +443,6 @@ class Output():
         # This must come after the setattr calls so we get the wrapped object
         log.startLoggingWithObserver(self.twisted, setStdout=False)
         log.startLoggingWithObserver(self.twistedErr, setStdout=False)
-
-        if filePath is not None:
-            self.__dict__['queue'] = Queue.Queue()
-            self.__dict__['printer'] = PrintLogThread(filePath, self.queue)
-            self.printer.start()
 
     def endLogging(self):
         '''
@@ -469,6 +475,8 @@ class Output():
         # write out the log message to file
         if self.queue is not None:
             self.queue.put(logDict)
+        else:
+            print 'Empty output queue!'
 
         res = self.messageToString(logDict)
 
@@ -507,15 +515,38 @@ class Output():
         ''' Removes the given subscriber '''
         self.subscribers.remove(target)
 
-    def logsSinceTime(self, time):
+    def getLogs(self, purge=False):
         '''
-        Returns all of the logs saved to file that occur after the given time.
+        Reads all logs and returns their contents. The current log file is not touched. 
+        Removes old log files if 'purge' is set (though this is a topic for debate...)
 
-        :param time: the timestamp to check the logs against. If None, 
-            returns all logs
-        :type time: float.
+        The server will be most interested in this call, but it needs to register for 
+        new logs first, else there's a good chance to see duplicates. 
+
+        :param purge: delete the old log files
+        :type purge: bool.
         '''
-        pass
+
+        if not self.logpath:
+            out.warn('Asked for log files, but this instance of the output class \
+                is not currently configured for file logging. Please pass in a \
+                log directory in startLogging so I know where to look for the logs.')
+            return
+
+        ret = []
+
+        for f in os.listdir(self.logpath):
+            path = self.logpath + '/' + f
+
+            with open(path, 'r') as x:
+                ret += x.readlines()
+
+            # Heuristic check for current logfile... a little silly
+            if purge and f is not 'log':
+                os.remove(path)
+
+        print 'Ret size:', len(ret)
+        return ret
 
     ###############################################################################
     # Reconfiguration
