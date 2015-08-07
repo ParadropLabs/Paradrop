@@ -21,9 +21,9 @@ from pdtools.lib import store, riffle, names
 
 class ServerPerspective(riffle.RifflePerspective):
 
-    def perspective_echo(self, arg):
-        print 'Client: server called echoo'
-        return arg
+    # @defer.inlineCallbacks
+    # def initialize(self):
+    #     yield 1
 
     @defer.inlineCallbacks
     def perspective_subscribeLogs(self):
@@ -31,20 +31,24 @@ class ServerPerspective(riffle.RifflePerspective):
         Fetch all logs since the target time. Stream all new logs
         to the server as they come in. 
         '''
-        print 'Server asking for logs'
+
+        # out.addSubscriber(self.remote.newLogs)
+        # print self
+
         logs = yield out.getLogsSince(None)
+        print 'Returning %s logs' % len(logs)
+
+        # yield self.remote.echo('Recursive callbaks!')
 
         defer.returnValue(logs)
 
 
 class ToolsPerspective(riffle.RifflePerspective):
-
-    def perspective_echo(self, arg):
-        print 'Client: server called echo'
-        return arg
-
+    pass
 
 # @defaultCallbacks
+
+
 @defer.inlineCallbacks
 def echo(reactor, host):
 

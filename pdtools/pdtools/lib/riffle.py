@@ -133,12 +133,6 @@ class Portal(twistedPortal.Portal):
         target = self.findRealm(credentials)
         return target.requestPartialAvatar(credentials)
 
-    def addConnectionCallback(self, target):
-        '''
-        WIP
-        '''
-        pass
-
     def connectionForName(self, credentials):
         '''
         Find the connection that has the given credentials.
@@ -200,10 +194,14 @@ class Realm:
         '''
         avatar = self.avatar(avatarID, self)
         avatar.attached(mind)
-        yield avatar.initialize()
 
         self.connections.add(avatar)
         out.info('Connected: ' + avatar.name)
+
+        # yield mind.callRemote('echo', '')
+
+        # deferred since initialization may require database operations
+        yield avatar.initialize()
 
         # move detached from the avatar to here?
         defer.returnValue((avatar, lambda a=avatar: a.detached(mind)))
@@ -252,7 +250,6 @@ class RifflePerspective(pb.Avatar):
         related tasks needed to initialize this avatar. This method is meant to be subclassed. 
         '''
         yield 1
-        defer.returnValue(None)
 
     def attached(self, mind):
         self.remote = Levy(mind)
@@ -260,6 +257,10 @@ class RifflePerspective(pb.Avatar):
     def detached(self, mind):
         self.remote = None
         self.realm.connectionClosed(self)
+
+    def perspective_echo(self, arg):
+        print 'Echo from %s: "%s"' % (self.name, arg)
+        return arg
 
 
 class RiffleReferencable(pb.Referenceable):
@@ -290,18 +291,25 @@ class RiffleClientFactory(pb.PBClientFactory):
         # Have to add connection to the portal
         self.portal = portal
 
+        # Get the portal or portal-like object from remote
         root = yield self.getRootObject()
 
+        # Extract the name from credentials
         peerCertificate = Certificate.peerFromTransport(self._broker.transport)
         pdid = peerCertificate.getSubject().commonName.decode('utf-8')
 
         # Returns the server's avatar based on the client's interpretation
-        client = self.portal.partialLogin(pdid)
-        client = pb.AsReferenceable(client, "perspective")
+        # 'other' is the other end of the connection.
+        other = self.portal.partialLogin(pdid)
+        other = pb.AsReferenceable(other, "perspective")
 
-        avatar = yield root.callRemote('login', client)
+        # Avatar is the remotely described API object
+        avatar = yield root.callRemote('login', other)
 
         self.portal.login(pdid, avatar)
+
+        # print avatar
+        # print avatar.remote
 
         defer.returnValue(avatar)
 

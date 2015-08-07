@@ -495,6 +495,7 @@ class Output():
             self.redirectOut.trueWrite(res)
 
         for s in self.subscribers:
+            print 'Sending %s to subscribers' % res
             s(res)
 
     def messageToString(self, message):
