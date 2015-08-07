@@ -96,6 +96,15 @@ class Portal(twistedPortal.Portal):
 
         defer.returnValue(Levy(avatar))
 
+    def close(self):
+        '''
+        Close all connections in all realms.
+        '''
+        out.info("Portal closing all connections")
+        for k, v in self.realms.iteritems():
+            for c in v.connections:
+                c.destroy()
+
     def addRealm(self, matcher, realm):
         '''
         Add a realm to this portal with its corresponding matcher. This can be done after
@@ -211,6 +220,18 @@ class Realm:
         # move detached from the avatar to here?
         defer.returnValue((avatar, lambda a=avatar: a.detached(mind)))
 
+    def attach(self, avatar, mind):
+        '''
+        Temp method. Performs the other half of the partial avatar method.
+
+        Leaving the requestAvatar method is most likely a bad, bad idea.
+        The more riffle diverges from PB the greater chance for bugs across the board.
+        '''
+        avatar.attached(mind)
+
+        self.connections.add(avatar)
+        out.info('Connected: ' + avatar.name)
+
     def requestPartialAvatar(self, avatarID):
         return self.avatar(avatarID, self)
 
@@ -236,16 +257,15 @@ class Levy(object):
 
         return wrap
 
-    def __repr__(self):
-        return 'Levy wrapping:\n\t' + repr(self.remote)
+    # def __repr__(self):
+    #     return 'Levy wrapping:\n\t' + repr(self.remote)
 
     def printValue(self, value):
         # print repr(value)
         return value
 
     def printError(self, error):
-        print 'Error Callback'
-        print 'error', error
+        out.warn('Default riffle error trap: ' + str(error))
 
 
 class RifflePerspective(pb.Avatar):
@@ -267,8 +287,24 @@ class RifflePerspective(pb.Avatar):
         '''
         yield 1
 
+    def destroy(self):
+        '''
+        Dealloc and destroy. This is most likely called for Bad Reasons, 
+        but for now its a catch all for all dealloc. 
+
+        TODO: drop the connection (from twisted's perspective)
+        '''
+        pass
+
     def perspective_handshake(self):
-        print 'Handshake on ' + self.__class__.__name__
+        '''
+        Utility method. Called when both ends of the connection have come online. 
+        Only purpose is to call the initialize method.
+
+        Note: malicious endpoints can easily call this repeatedly. Add a check 
+        to ensure init is only called once. 
+        '''
+        self.initialize()
 
     def attached(self, mind):
         self.remote = Levy(mind)
@@ -331,8 +367,8 @@ class RiffleClientFactory(pb.PBClientFactory):
         avatar = yield root.callRemote('login', referencibleOther)
         other.remote = Levy(avatar)
 
-        # print 'Return Avatar: ' + str(avatar)
-        # print 'Other Remote: ' + str(other.remote)
+        print 'Return Avatar: ' + str(avatar)
+        print 'Other Remote: ' + str(other)
         # print 'Not returned avatar: ' + str(a)
         # print ': ' + str(a.remote)
         # print 'Returned Mind: ' + str(other)
@@ -344,7 +380,14 @@ class RiffleClientFactory(pb.PBClientFactory):
 
         # This is absolutely not needed. The point of this method is to registers
         # the new connections with the portal, but we already have all the pieces.
-        a, b = yield self.portal.login(pdid, avatar)
+        # a, b = yield self.portal.login(pdid, avatar)
+
+        # tttteeeemmmpppppoooorrraaaarrryyy
+        realm = self.portal.findRealm(pdid)
+        realm.attach(other, avatar)
+        # a, b = self.portal.
+
+        # print 'Realm Object: ' + str(a)
 
         # Bit hacky, but should be cleaned up in a refactor
         # a.remote = avatar

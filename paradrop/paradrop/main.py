@@ -6,7 +6,7 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-from pdtools.lib import output, store
+from pdtools.lib import output, store, riffle
 from paradrop.lib import settings
 
 from twisted.internet import reactor
@@ -53,6 +53,9 @@ def onShutdown():
 
     # Clears the print buffer, closes the logfile
     output.out.endLogging()
+
+    # Have the portal close all existing connections (gracefully, if possible)
+    riffle.portal.close()
 
     # TODO: inform the server
 

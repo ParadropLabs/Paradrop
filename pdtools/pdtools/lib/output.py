@@ -460,6 +460,9 @@ class Output():
         Ask the printing thread to flush and end, then return.
         '''
 
+        out.info('Removing subscribers')
+        self.__dict__['subscribers'] = set()
+
         out.info('Asking file logger to close')
         self.queue.join()
 
@@ -522,7 +525,8 @@ class Output():
 
     def removeSubscriber(self, target):
         ''' Removes the given subscriber '''
-        self.subscribers.remove(target)
+        if target in self.subscribers:
+            self.subscribers.remove(target)
 
     def getLogsSince(self, target, purge=False):
         '''

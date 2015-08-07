@@ -29,31 +29,29 @@ def intermediate(logs):
 
 class ServerPerspective(riffle.RifflePerspective):
 
-    @defer.inlineCallbacks
     def initialize(self):
-        print 'SP initializing'
-        yield 1
+        # The function target that subscribes to output events
+        self.subscribed = None
+
+    def destroy(self):
+        # Remove the log subscriber when the connection goes down.
+        if self.subscribed is not None:
+            out.removeSubscriber(self.subscribed)
 
     @defer.inlineCallbacks
-    def perspective_handshake(self):
-        yield riffle.RifflePerspective.perspective_handshake(self)
-
-    @defer.inlineCallbacks
-    def perspective_subscribeLogs(self):
+    def perspective_subscribeLogs(self, target):
         '''
         Fetch all logs since the target time. Stream all new logs
         to the server as they come in. 
         '''
 
+        # Adds the target function (newLogs) to out's streaming subscription set
+        # Do not do this without the user's consent
         out.addSubscriber(self.remote.newLogs)
+        self.subscribed = self.remote.newLogs
 
-        out.info('SEND SOMETHING')
-
-        logs = yield out.getLogsSince(None)
+        logs = yield out.getLogsSince(target)
         print 'Returning %s logs' % len(logs)
-
-        print 'Server Perspective: ' + str(self)
-        print 'SP Remote: ' + str(self.remote)
 
         defer.returnValue(logs)
 
