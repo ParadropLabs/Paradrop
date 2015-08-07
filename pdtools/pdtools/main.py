@@ -8,7 +8,7 @@ Usage:
     paradrop start <host> <port> <chute-name>
     paradrop stop <host> <port> <chute-name>
     paradrop snap-install <host> <port>
-    paradrop router-create <name>
+    paradrop router-create
     paradrop router-provision <name> <host> <port>
     paradrop list
     paradrop logs <name>
@@ -87,7 +87,7 @@ def main():
         task.react(server.list)
 
     if args['router-create']:
-        task.react(server.createRouter, (args['<name>'],))
+        task.react(general.test)
 
     if args['router-provision']:
         task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))

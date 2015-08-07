@@ -87,7 +87,7 @@ class Portal(twistedPortal.Portal):
         cert = cert if cert else self.certCa
         key = key if key else self.keyPrivate  # ???
 
-        # the first term is the name the server is using in the cert
+        # the first term is the name the server is using in the cert (for now)
         ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(cert), PrivateCertificate.loadPEM(key))
 
         factory = RiffleClientFactory()
@@ -176,7 +176,7 @@ def dumpRealms(portal=portal):
         s += '\tRealm: %s\n' % v.avatar.__name__
 
         for c in v.connections:
-            s += '\t\t%s\n' % str(c.name)
+            s += '\t\t%s\n' % c.name
 
     print s
 

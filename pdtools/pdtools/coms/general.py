@@ -67,3 +67,14 @@ def echo(reactor, host, port):
     avatar = yield riffle.portal.connect(host=host, port=port)
     response = yield avatar.echo("Hello!")
     defer.returnValue(response)
+
+
+@defer.inlineCallbacks
+def test(r):
+    avatar = yield riffle.portal.connect()
+    response = yield avatar.test()
+
+    contents = yield response.callRemote('stuff')
+    print contents
+
+    defer.returnValue(response)
