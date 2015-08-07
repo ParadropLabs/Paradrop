@@ -18,6 +18,7 @@ from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
 from paradrop.lib.api import pdrest
 from paradrop.lib import settings
+from paradrop.lib.utils import dockerapi
 
 from paradrop.backend import fc
 
@@ -230,6 +231,17 @@ class ParadropAPIServer(pdrest.APIResource):
 
 
 ###############################################################################
+# Initialization
+###############################################################################
+
+def initializeSystem():
+    """
+    Perform some initialization steps such as writing important configuration.
+    """
+    dockerapi.writeDockerConfig()
+
+
+###############################################################################
 # Main function
 ###############################################################################
 
@@ -256,6 +268,7 @@ def setup(args=None):
     else:
         thePort = settings.PDFCD_PORT
         site.displayTracebacks = False
+        initializeSystem()
 
     # Setup the port we listen on
     out.info('Establishing API server, port: %d' % (thePort))
