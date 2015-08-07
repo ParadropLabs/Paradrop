@@ -98,13 +98,6 @@ class ConfigObject(object):
 
         if name is not None:
             obj.name = name
-        else:
-            # No-name (anonymous) sections can become the default returned by
-            # the lookup method.
-            #
-            # TODO: If we are replacing a different object, that one may have
-            # dependencies that should be reloaded.
-            cls.default = obj
 
         for opdef in cls.options:
             found = False

@@ -30,7 +30,7 @@ class ConfigService(objects.DBusObject):
         DBusInterface(service_name, 
             Method("Reload", arguments="s", returns="s"),
             Method("ReloadAll", returns="s"),
-            Method("Test", returns="s"),
+            Method("Test", returns="b"),
             Method("UnloadAll", returns="b"),
             Method("WaitSystemUp", returns="s"))
     ]
@@ -40,22 +40,18 @@ class ConfigService(objects.DBusObject):
         self.configManager = ConfigManager()
 
     def dbus_Reload(self, name):
-        print("Asked to reload {}.".format(name))
         return self.configManager.loadConfig(name)
 
     def dbus_ReloadAll(self):
-        print("Asked to reload configuration files.")
         return self.configManager.loadConfig()
 
     def dbus_Test(self):
-        return "D-Bus is working!"
+        return True
 
     def dbus_UnloadAll(self):
-        print("Asked to unload configuration.")
         return self.configManager.unload()
 
     def dbus_WaitSystemUp(self):
-        print("Waiting for system to be up.")
         return self.configManager.waitSystemUp()
 
 @defer.inlineCallbacks
