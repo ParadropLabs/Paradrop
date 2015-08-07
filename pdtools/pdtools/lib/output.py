@@ -475,8 +475,6 @@ class Output():
         # write out the log message to file
         if self.queue is not None:
             self.queue.put(logDict)
-        else:
-            print 'Empty output queue!'
 
         res = self.messageToString(logDict)
 

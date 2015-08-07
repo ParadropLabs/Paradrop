@@ -84,7 +84,7 @@ def main():
     # initialize output. If filepath is set, logs to file.
     # If stealStdio is set intercepts all stderr and stdout and interprets it internally
     # If printToConsole is set (defaults True) all final output is rendered to stdout
-    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=False, printToConsole=True)
+    output.out.startLogging(stealStdio=False, printToConsole=True)
 
     # TESTINT
     return output.out.getLogs()
