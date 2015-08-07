@@ -27,6 +27,34 @@ SERVER_RIFFLE_PORT = 8016
 
 
 ###############################################################################
+# Riffle Convenience Methods
+###############################################################################
+
+class ServerPerspective(riffle.RifflePerspective):
+    ''' Operations the server can perform on this local set of tools. None by default. '''
+    def perspective_echo(self, arg):
+        print 'Client: server called echo'
+        return arg
+
+class RouterPerspective(riffle.RifflePerspective):
+    ''' Operations the server can perform on this local set of tools. None by default. '''
+    
+    def perspective_echo(self, arg):
+        print 'Client: server called echo'
+        return arg
+
+
+def connectServer():
+    ''' Quick refactor method, returns a riffle client ready to communicate with the server '''
+    riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
+
+    clientKey = store.store.getKey('client.pem')
+    caKey = store.store.getKey('ca.pem')
+
+    return riffle.Riffle(SERVER_HOST, SERVER_RIFFLE_PORT).connect(caKey, clientKey)
+
+
+###############################################################################
 # Default Callbacks
 ###############################################################################
 
@@ -102,30 +130,3 @@ def echo(reactor, host, port):
     avatar = yield riffle.Riffle(host, port=int(port)).connect()
     result = yield avatar.echo('Hello from a client!')
     defer.returnValue(result)
-
-
-###############################################################################
-# Riffle Convenience Methods
-###############################################################################
-
-class ServerPerspective(riffle.RifflePerspective):
-
-    def perspective_echo(self, arg):
-        print 'Client: server called echo'
-        return arg
-
-class RouterPerspective(riffle.RifflePerspective):
-
-    def perspective_echo(self, arg):
-        print 'Client: server called echo'
-        return arg
-
-
-def connectServer():
-    ''' Quick refactor method, returns a riffle client ready to communicate with the server '''
-    riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
-
-    clientKey = store.store.getKey('client.pem')
-    caKey = store.store.getKey('ca.pem')
-
-    return riffle.Riffle(SERVER_HOST, SERVER_RIFFLE_PORT).connect(caKey, clientKey)
