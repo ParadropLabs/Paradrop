@@ -227,9 +227,17 @@ class BaseOutput(object):
 
 class TwistedOutput(BaseOutput):
 
+    # There's a host of things we simply don't care about. This is bad form
+    # and not great for performance. Alternatives welcome.
+    blacklist = [
+        'Starting factory',
+        'Stopping factory',
+        'Log opened'
+    ]
+
     def __call__(self, args):
         '''
-        Catch twisted logs and make them fall inline with our logs.
+        Catch twisted logs and make them fall in line with our logs.
 
         Ignore exceptions (those get their own handler)
 
@@ -248,8 +256,11 @@ class TwistedOutput(BaseOutput):
             # For now, lets ignore the big messages (ones without a well-defined message,
             # generally these are internal twisted messages we may not care about)
             return None
-            print 'Trying args!'
             message = str(args)
+
+        for x in TwistedOutput.blacklist:
+            if x in message:
+                return None
 
         ret = {'message': message, 'type': self.type['name'], 'extra': {},
                'package': 'twisted', 'module': 'internal', 'timestamp': time.time(),
@@ -278,7 +289,7 @@ class TwistedException(BaseOutput):
             tb = args['failure'].getTracebackObject()
             stacktrace = traceback.extract_tb(tb)[-1]
 
-            package, module = parseLogPrefix(stacktrace[0])
+            module, package = parseLogPrefix(stacktrace[0])
             line = stacktrace[1]
         except Exception:
             package, module, line = "uknown", 'unknown', '??'
@@ -423,7 +434,7 @@ class Output():
 
         '''
 
-        #Initialize printer thread
+        # Initialize printer thread
         self.__dict__['logpath'] = None
 
         if filePath is not None:
@@ -513,7 +524,7 @@ class Output():
         ''' Removes the given subscriber '''
         self.subscribers.remove(target)
 
-    def getLogs(self, purge=False):
+    def getLogsSince(self, target, purge=False):
         '''
         Reads all logs and returns their contents. The current log file is not touched. 
         Removes old log files if 'purge' is set (though this is a topic for debate...)
@@ -521,14 +532,17 @@ class Output():
         The server will be most interested in this call, but it needs to register for 
         new logs first, else there's a good chance to see duplicates. 
 
+        This is a little sloppy out of time constraints-- middle parameter should screen for 
+        logs after the given time.
+
         :param purge: delete the old log files
         :type purge: bool.
         '''
 
         if not self.logpath:
-            out.warn('Asked for log files, but this instance of the output class \
-                is not currently configured for file logging. Please pass in a \
-                log directory in startLogging so I know where to look for the logs.')
+            out.warn('Asked for log files, but this instance of the output class '
+                     'is not currently configured for file logging. '
+                     'Call startLogging with a directory first! ')
             return
 
         ret = []
@@ -543,7 +557,7 @@ class Output():
             if purge and f is not 'log':
                 os.remove(path)
 
-        print 'Ret size:', len(ret)
+        print 'Loaded', len(ret), 'lines'
         return ret
 
     ###############################################################################

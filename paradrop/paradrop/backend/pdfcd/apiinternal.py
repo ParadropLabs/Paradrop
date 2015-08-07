@@ -36,12 +36,8 @@ class ToolsPerspective(riffle.RifflePerspective):
 # @defaultCallbacks
 @defer.inlineCallbacks
 def echo(reactor, host):
-    # this is the (stupid) name of the router's keys. Temporary.
-    key, ca = 'public', 'private'
 
-    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
-
-    avatar = yield riffle.Riffle(host).connect()
+    avatar = yield riffle.portal.connect(host)
     result = yield avatar.echo('Hello from a client!')
     defer.returnValue(result)
 
@@ -49,7 +45,7 @@ def echo(reactor, host):
 @defer.inlineCallbacks
 def connectToServer(host):
     ''' Yet another temporary method '''
-    avatar = yield riffle.Riffle(host).connect()
+    avatar = yield riffle.portal.connect(host)
     result = yield avatar.echo('Hello from a client!')
     yield avatar.newLogs(['I am a log'])
 
@@ -62,7 +58,7 @@ def checkStartRiffle():
     until we have our keys (which occurs during currently optional provisioning)
     '''
 
-    if not riffle.CERT_CA:
+    if not riffle.portal.certCa:
         out.warn("Cannot start riffle server, no CA certificate found")
         return
 
@@ -71,11 +67,11 @@ def checkStartRiffle():
     riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
     riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(ToolsPerspective))
 
-    riffle.Riffle('localhost', port=8017).serve()
+    # riffle.Riffle('localhost', port=8017).serve()
 
-    # Open connection to the router
+    # Open connection to the server
     from twisted.internet import reactor
-    reactor.callLater(1, connectToServer, 'localhost')
+    reactor.callLater(.1, connectToServer, 'localhost')
 
 
 ###############################################################################

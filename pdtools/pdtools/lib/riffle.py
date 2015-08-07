@@ -33,6 +33,7 @@ CERT_CA = None
 KEY_PRIVATE = None
 DEFAULT_PORT = 8016
 
+
 class Riffle(object):
 
     def __init__(self, host, port=DEFAULT_PORT, secure=True):
@@ -85,18 +86,66 @@ class Riffle(object):
 class Portal(portal.Portal):
 
     '''
-    Bi-directional portal. Stores connections and is responsible for allocating
-    new connections with appropriate avatars.
+    This is a portal for bi-directional communication between two parites. Both sides
+    must have set up a portal in order to initiate communication. 
+
+    Portals assign incoming connections to Realm objects based on the name assigned
+    to the remote connection. Realms create avatars and return them across the wire. 
+
+    Do not instantiate more than one portal-- don't instantiate it at all, actually.
+    When serving or connecting, the global portal object in this class holds *all* 
+    active connections.
+
+    There are three instances where you may need to interact with the portal
+        - initialization: set matchers and realms
+        - access: find the connection with the given name or type
+        - callback: assignable callbacks called when a new connection is made
+            (Under consideration)
     '''
 
     def __init__(self):
         self.realms = {}
+        self.host, self.port = 'localhost', DEFAULT_PORT
+
+        self.certCa = None
+        self.keyPrivate = None
+        self.keyPublic = None
+
+    def open(self, host, port=None, cert=None):
+        '''
+        Listen for connections on the given port. 
+        '''
+        port = port if port else self.port
+        cert = cert if cert else self.certCa
+
+        ca = Certificate.loadPEM(cert)
+        myCertificate = PrivateCertificate.loadPEM(cert)
+
+        SSL4ServerEndpoint(reactor, port, myCertificate.options(ca)).listen(RiffleServerFactory(portal))
+
+    @defer.inlineCallbacks
+    def connect(self, host, port=None, cert=None, key=None):
+        '''
+        Connect to another portal.
+        '''
+
+        port = port if port else self.port
+        cert = cert if cert else self.certCa
+        key = key if key else self.keyPrivate  # ???
+
+        ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(cert), PrivateCertificate.loadPEM(key))
+
+        factory = RiffleClientFactory()
+        SSL4ClientEndpoint(reactor, host, port, ctx,).connect(factory)
+
+        avatar = yield factory.login(self)
+
+        defer.returnValue(Levy(avatar))
 
     def addRealm(self, matcher, realm):
         '''
-        Add a realm to this portal with its corresponding matcher. This must be done
-        before the server is started or connections are made, else requesting peers
-        may fail to connect. 
+        Add a realm to this portal with its corresponding matcher. This can be done after
+        the portal has been opened.
 
         :param realm: the realm object that will handle the incoming connections
         :type realm: riffle.Realm
@@ -110,8 +159,6 @@ class Portal(portal.Portal):
         Find the appropriate realm for the given credential. Matches are found using
         re filters. 
         '''
-        # print self.realms
-        # return self.realms[credential]
 
         for k, v in self.realms.iteritems():
             if k.match(credential):
@@ -131,6 +178,35 @@ class Portal(portal.Portal):
         '''
         target = self.findRealm(credentials)
         return target.requestPartialAvatar(credentials)
+
+    def addConnectionCallback(self, target):
+        '''
+        WIP
+        '''
+        pass
+
+    def connectionForName(self, credentials):
+        '''
+        Find the connection that has the given credentials.
+
+        :param credentials: object to query for
+        :type credentials: str.
+        :return: the connection avatar or None
+        '''
+
+        # print 'Looking for connection with name:', credentials
+
+        r = self.findRealm(credentials)
+        # print r
+        # print 'Connections:', len(r.connections)
+
+        for c in r.connections:
+            # print c
+
+            if c.name == credentials:
+                return c
+
+        return None
 
 
 class Realm:
