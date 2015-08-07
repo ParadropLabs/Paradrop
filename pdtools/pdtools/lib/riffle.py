@@ -64,7 +64,7 @@ class Portal(twistedPortal.Portal):
         self.keyPrivate = None
         self.keyPublic = None
 
-    def open(self, host, port=None, cert=None):
+    def open(self, port=None, cert=None):
         '''
         Listen for connections on the given port. 
         '''
@@ -77,11 +77,12 @@ class Portal(twistedPortal.Portal):
         SSL4ServerEndpoint(reactor, port, myCertificate.options(ca)).listen(RiffleServerFactory(self))
 
     @defer.inlineCallbacks
-    def connect(self, host, port=None, cert=None, key=None):
+    def connect(self, host=None, port=None, cert=None, key=None):
         '''
         Connect to another portal.
         '''
 
+        host = host if host else self.host
         port = port if port else self.port
         cert = cert if cert else self.certCa
         key = key if key else self.keyPrivate  # ???
@@ -239,7 +240,6 @@ class Realm:
         return self.avatar(avatarID, self)
 
     def connectionClosed(self, avatar):
-        ''' An avatar disconnected '''
         out.info('Disconnected: ' + str(avatar.name))
         self.connections.remove(avatar)
 
@@ -285,7 +285,7 @@ class RifflePerspective(pb.Avatar):
         the other end of the connection is finished loading by the time this end of the connection
         is. Register for portal callbacks instead: this is a model and init method.
         '''
-        yield 1
+        yield
 
     def destroy(self):
         '''
@@ -296,6 +296,7 @@ class RifflePerspective(pb.Avatar):
         '''
         pass
 
+    @defer.inlineCallbacks
     def perspective_handshake(self):
         '''
         Utility method. Called when both ends of the connection have come online. 
@@ -304,7 +305,8 @@ class RifflePerspective(pb.Avatar):
         Note: malicious endpoints can easily call this repeatedly. Add a check 
         to ensure init is only called once. 
         '''
-        self.initialize()
+        # return self.initialize()
+        yield self.initialize()
 
     def attached(self, mind):
         self.remote = Levy(mind)
@@ -367,8 +369,8 @@ class RiffleClientFactory(pb.PBClientFactory):
         avatar = yield root.callRemote('login', referencibleOther)
         other.remote = Levy(avatar)
 
-        print 'Return Avatar: ' + str(avatar)
-        print 'Other Remote: ' + str(other)
+        # print 'Return Avatar: ' + str(avatar)
+        # print 'Other Remote: ' + str(other)
         # print 'Not returned avatar: ' + str(a)
         # print ': ' + str(a.remote)
         # print 'Returned Mind: ' + str(other)

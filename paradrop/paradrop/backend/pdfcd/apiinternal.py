@@ -15,17 +15,9 @@ from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names
 
 
-actual = None
-
-
-def intermediate(logs):
-    print 'Got some new logs!'
-    actual(logs)
-
 ###############################################################################
 # New Riffle Additions
 ###############################################################################
-
 
 class ServerPerspective(riffle.RifflePerspective):
 

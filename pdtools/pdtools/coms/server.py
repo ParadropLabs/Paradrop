@@ -2,42 +2,31 @@
 Communication with the server
 '''
 
+import getpass
+
+from twisted.internet import defer
+
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
-
-from twisted.internet import defer
-import getpass
-
-###############################################################################
-# Authentication Callbacks
-###############################################################################
-
-
-def authCallbacks(f):
-    def w(*args, **kwargs):
-        return f(*args, **kwargs).addCallbacks(authSuccess, general.printFailure)
-
-    return w
-
-
-def authSuccess(r):
-    store.saveConfig('pdid', r['_id'])
-    store.saveKey(r['keys'], 'client.pem')
-    store.saveKey(r['ca'], 'ca.pem')
-
-    print 'You have been successfully logged in.'
+from pdtools.lib import riffle, names
 
 
 ###############################################################################
 # Riffle Implementation
 ###############################################################################
+class ServerPerspective(riffle.RifflePerspective):
+
+    def perspective_logs(self, logs):
+        ''' New logs coming in from the server '''
+        print 'New Logs!'
+
 
 @defer.inlineCallbacks
 def list(r):
     ''' Return the resources this user owns. '''
 
-    avatar = yield general.connectServer()
+    avatar = yield riffle.portal.connect()
     ret = yield avatar.list()
 
     # I don't think this is necesary anymore, but keeping it here for now
@@ -50,6 +39,7 @@ def list(r):
     defer.returnValue(ret)
 
 
+# Merge this with provision!
 @general.failureCallbacks
 @defer.inlineCallbacks
 def createRouter(r, name):
@@ -75,6 +65,40 @@ def createRouter(r, name):
 
     defer.returnValue("Done")
 
+
+@defer.inlineCallbacks
+def logs(r, pdid):
+    '''
+    Query the server for all logs that the given pdid has access to. Must be a fully qualified name.
+
+    NOTE: this method is in progress. For now, just pass the name of a router. 
+    '''
+
+    # Let the validation occur serverside (or skip it for now)
+    pdid = store.getConfig('pdid') + '.' + pdid
+
+    avatar = yield riffle.portal.connect()
+    ret = yield avatar.logs(pdid)
+
+
+###############################################################################
+# Authentication Callbacks
+###############################################################################
+
+
+def authCallbacks(f):
+    def w(*args, **kwargs):
+        return f(*args, **kwargs).addCallbacks(authSuccess, general.printFailure)
+
+    return w
+
+
+def authSuccess(r):
+    store.saveConfig('pdid', r['_id'])
+    store.saveKey(r['keys'], 'client.pem')
+    store.saveKey(r['ca'], 'ca.pem')
+
+    print 'You have been successfully logged in.'
 
 ###############################################################################
 # RPC Implementation

@@ -20,42 +20,9 @@ from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
 from pdtools.lib import pdutils, store, riffle, names
 
-# SERVER_HOST = 'paradrop.io'
-SERVER_HOST = 'localhost'
-SERVER_PORT = 8015
-SERVER_RIFFLE_PORT = 8016
-
 
 ###############################################################################
-# Riffle Convenience Methods
-###############################################################################
-
-class ServerPerspective(riffle.RifflePerspective):
-    ''' Operations the server can perform on this local set of tools. None by default. '''
-    def perspective_echo(self, arg):
-        print 'Client: server called echo'
-        return arg
-
-class RouterPerspective(riffle.RifflePerspective):
-    ''' Operations the server can perform on this local set of tools. None by default. '''
-    
-    def perspective_echo(self, arg):
-        print 'Client: server called echo'
-        return arg
-
-
-def connectServer():
-    ''' Quick refactor method, returns a riffle client ready to communicate with the server '''
-    riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
-
-    clientKey = store.store.getKey('client.pem')
-    caKey = store.store.getKey('ca.pem')
-
-    return riffle.Riffle(SERVER_HOST, SERVER_RIFFLE_PORT).connect(caKey, clientKey)
-
-
-###############################################################################
-# Default Callbacks
+# Boilerplate Callbacks
 ###############################################################################
 
 def failureCallbacks(f):
@@ -82,11 +49,12 @@ def printSuccess(r):
             print x
     else:
         print r
+    return r
 
 
 def printFailure(r):
-    print 'Operation Failed!'
     print r
+    return r
 
 
 ###############################################################################
@@ -95,38 +63,7 @@ def printFailure(r):
 
 @defaultCallbacks
 @defer.inlineCallbacks
-def logs(reactor, host, port):
-    ''' Connect to the named device and ask for logs. '''
-    client = RpcClient(host, port, 'internal')
-    res = yield client.log()
-
-    # comes back raw from the file, have to convert back to dics
-    # converted = [pdutils.str2json(x) for x in res.strip().split('\n')]
-    # for a in [out.messageToString(x) for x in converted]:
-    #     print a
-
-    # Cant do this more succintly until we find the encoding bugs
-    for x in res.strip().split('\n'):
-        try:
-            j = pdutils.str2json(x)
-            s = out.messageToString(j)
-            print s
-        except:
-            print 'Malformed line, raw output: ' + x
-
-    defer.returnValue('Done')
-
-
-@defaultCallbacks
-@defer.inlineCallbacks
 def echo(reactor, host, port):
-
-    riffle.KEY_PRIVATE = store.store.getKey('client.pem')
-    riffle.CERT_CA = store.store.getKey('ca.pem')
-
-    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
-    riffle.portal.addRealm(names.matchers[names.NameTypes.router], riffle.Realm(RouterPerspective))
-
-    avatar = yield riffle.Riffle(host, port=int(port)).connect()
-    result = yield avatar.echo('Hello from a client!')
-    defer.returnValue(result)
+    avatar = yield riffle.portal.connect(host=host, port=port)
+    response = yield avatar.echo("Hello!")
+    defer.returnValue(response)

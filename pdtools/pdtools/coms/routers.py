@@ -2,26 +2,25 @@
 Communication with routers
 '''
 
+import requests
+import json
+import urllib
 import os
 import yaml
+from os.path import expanduser
 
+from twisted.internet import defer
 
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
-
-from twisted.internet import defer
-
-from os.path import expanduser
+from pdtools.lib import pdutils, riffle
 from pdtools.lib.output import out
 
-import requests
-import json
-import urllib
 
-from pdtools.lib import pdutils
-from pdtools.lib.store import store
-
+###############################################################################
+# Riffle and Non-riffle implementations
+###############################################################################
 
 @general.defaultCallbacks
 @defer.inlineCallbacks
