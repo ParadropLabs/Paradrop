@@ -15,15 +15,28 @@ from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names
 
 
+actual = None
+
+
+def intermediate(logs):
+    print 'Got some new logs!'
+    actual(logs)
+
 ###############################################################################
 # New Riffle Additions
 ###############################################################################
 
+
 class ServerPerspective(riffle.RifflePerspective):
 
-    # @defer.inlineCallbacks
-    # def initialize(self):
-    #     yield 1
+    @defer.inlineCallbacks
+    def initialize(self):
+        print 'SP initializing'
+        yield 1
+
+    @defer.inlineCallbacks
+    def perspective_handshake(self):
+        yield riffle.RifflePerspective.perspective_handshake(self)
 
     @defer.inlineCallbacks
     def perspective_subscribeLogs(self):
@@ -32,13 +45,15 @@ class ServerPerspective(riffle.RifflePerspective):
         to the server as they come in. 
         '''
 
-        # out.addSubscriber(self.remote.newLogs)
-        # print self
+        out.addSubscriber(self.remote.newLogs)
+
+        out.info('SEND SOMETHING')
 
         logs = yield out.getLogsSince(None)
         print 'Returning %s logs' % len(logs)
 
-        # yield self.remote.echo('Recursive callbaks!')
+        print 'Server Perspective: ' + str(self)
+        print 'SP Remote: ' + str(self.remote)
 
         defer.returnValue(logs)
 
@@ -46,24 +61,15 @@ class ServerPerspective(riffle.RifflePerspective):
 class ToolsPerspective(riffle.RifflePerspective):
     pass
 
-# @defaultCallbacks
-
-
-@defer.inlineCallbacks
-def echo(reactor, host):
-
-    avatar = yield riffle.portal.connect(host)
-    result = yield avatar.echo('Hello from a client!')
-    riffle.dumpRealms()
-    defer.returnValue(result)
-
 
 @defer.inlineCallbacks
 def connectToServer(host):
     ''' Yet another temporary method '''
     avatar = yield riffle.portal.connect(host)
-    result = yield avatar.echo('Hello from a client!')
-    # yield avatar.newLogs(['I am a log'])
+
+    # result = yield avatar.newLogs(['Hello from a client!'])
+
+    # riffle.dumpRealms()
 
     defer.returnValue(avatar)
 
@@ -93,6 +99,17 @@ def checkStartRiffle():
 ###############################################################################
 # Old
 ###############################################################################
+
+# @defaultCallbacks
+
+@defer.inlineCallbacks
+def echo(reactor, host):
+
+    avatar = yield riffle.portal.connect(host)
+    result = yield avatar.echo('Hello from a client!')
+    riffle.dumpRealms()
+    defer.returnValue(result)
+
 
 @defer.inlineCallbacks
 def api_echo(message):

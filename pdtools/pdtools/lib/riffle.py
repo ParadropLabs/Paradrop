@@ -193,7 +193,11 @@ class Realm:
         any needed initialization (which should be a deferred)
         '''
         avatar = self.avatar(avatarID, self)
+
+        # print 'Attaching %s to %s' % (mind, avatar)
         avatar.attached(mind)
+
+        # print avatar.remote
 
         self.connections.add(avatar)
         out.info('Connected: ' + avatar.name)
@@ -201,10 +205,14 @@ class Realm:
         # yield mind.callRemote('echo', '')
 
         # deferred since initialization may require database operations
-        yield avatar.initialize()
+        # yield avatar.initialize()
+        yield 1
 
         # move detached from the avatar to here?
         defer.returnValue((avatar, lambda a=avatar: a.detached(mind)))
+
+    def requestPartialAvatar(self, avatarID):
+        return self.avatar(avatarID, self)
 
     def requestPartialAvatar(self, avatarID):
         return self.avatar(avatarID, self)
@@ -228,6 +236,9 @@ class Levy(object):
 
         return wrap
 
+    def __repr__(self):
+        return 'Levy wrapping:\n\t' + repr(self.remote)
+
     def printValue(self, value):
         # print repr(value)
         return value
@@ -242,14 +253,22 @@ class RifflePerspective(pb.Avatar):
     def __init__(self, name, realm):
         self.name = name
         self.realm = realm
+        self.remote = None
 
     @defer.inlineCallbacks
     def initialize(self):
         '''
         An initialization method that may hit the database or perform other model
         related tasks needed to initialize this avatar. This method is meant to be subclassed. 
+
+        NEVER make riffle calls here. There is no guarantee
+        the other end of the connection is finished loading by the time this end of the connection
+        is. Register for portal callbacks instead: this is a model and init method.
         '''
         yield 1
+
+    def perspective_handshake(self):
+        print 'Handshake on ' + self.__class__.__name__
 
     def attached(self, mind):
         self.remote = Levy(mind)
@@ -291,7 +310,7 @@ class RiffleClientFactory(pb.PBClientFactory):
         # Have to add connection to the portal
         self.portal = portal
 
-        # Get the portal or portal-like object from remote
+        # Returns a _RifflePortalWrapper remote reference
         root = yield self.getRootObject()
 
         # Extract the name from credentials
@@ -301,15 +320,39 @@ class RiffleClientFactory(pb.PBClientFactory):
         # Returns the server's avatar based on the client's interpretation
         # 'other' is the other end of the connection.
         other = self.portal.partialLogin(pdid)
-        other = pb.AsReferenceable(other, "perspective")
+
+        # Convert to remote referentiable for transmission
+        referencibleOther = pb.AsReferenceable(other, "perspective")
+
+        # Here is the problem. The login call triggers the init call, and that
+        # starts the chain of riffle callbacks, but this object won't be back in time by then!
 
         # Avatar is the remotely described API object
-        avatar = yield root.callRemote('login', other)
+        avatar = yield root.callRemote('login', referencibleOther)
+        other.remote = Levy(avatar)
 
-        self.portal.login(pdid, avatar)
+        # print 'Return Avatar: ' + str(avatar)
+        # print 'Other Remote: ' + str(other.remote)
+        # print 'Not returned avatar: ' + str(a)
+        # print ': ' + str(a.remote)
+        # print 'Returned Mind: ' + str(other)
 
-        # print avatar
-        # print avatar.remote
+        # Signal we're done cleaning up
+        # print 'Calling Handshake'
+
+        # other.remote.callRemote('echo', 'boo')
+
+        # This is absolutely not needed. The point of this method is to registers
+        # the new connections with the portal, but we already have all the pieces.
+        a, b = yield self.portal.login(pdid, avatar)
+
+        # Bit hacky, but should be cleaned up in a refactor
+        # a.remote = avatar
+
+        # other.remote = avatar
+
+        avatar.callRemote('handshake')
+        other.perspective_handshake()
 
         defer.returnValue(avatar)
 
