@@ -228,13 +228,6 @@ class ParadropAPIServer(pdrest.APIResource):
         self.failprocess(ip, request, (ip, self.defaultFailures), None, (tictoc, None), pdapi.ERR_BADMETHOD)
         return ""
 
-def checkStartRiffle():
-    '''
-    Temporary function. Do not start serving or connecting over riffle
-    until we have our keys (which occurs during currently optional provisioning)
-    '''
-    pass
-
 ###############################################################################
 # Main function
 ###############################################################################
@@ -250,16 +243,15 @@ def setup(args=None):
     api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
 
-    # Setup riffle-style calls. Temporary. 
+    # Asssign global riffle keys
+    riffle.KEY_PRIVATE = store.store.getKey('public')
+    riffle.CERT_CA = store.store.getKey('private')
 
-    # riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(apiinternal.ServerPerspective))
-
-    #Check for keys, do not start serving if they do not exist
-    
-
-    #Riffle init
-    # riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(pdserver.core.hub.UserPerspective))
-    # riffle.Riffle()
+    # Setup riffle-style calls. Temporary. Eventually the routers cannot be started without 
+    # already having been given keys, but for now this method checks for keys and attempts to start
+    # the server. 
+    # Once that is done, functionality from that method will be moved here. 
+    apiinternal.checkStartRiffle()
 
     # Development mode
     if(args and args.development):

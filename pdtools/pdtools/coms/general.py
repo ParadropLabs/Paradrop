@@ -18,9 +18,7 @@ from twisted.internet import defer
 
 from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
-from pdtools.lib import pdutils
-from pdtools.lib import store
-from pdtools.lib import riffle
+from pdtools.lib import pdutils, store, riffle, names
 
 # SERVER_HOST = 'paradrop.io'
 SERVER_HOST = 'localhost'
@@ -94,15 +92,14 @@ def logs(reactor, host, port):
 @defaultCallbacks
 @defer.inlineCallbacks
 def echo(reactor, host, port):
-    # key, ca = 'client.pem', 'ca.pem'
-    key, ca = 'public', 'private'
 
-    clientKey = store.store.getKey(key)
-    caKey = store.store.getKey(ca)
+    riffle.KEY_PRIVATE = store.store.getKey('client.pem')
+    riffle.CERT_CA = store.store.getKey('ca.pem')
 
-    riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
+    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
+    riffle.portal.addRealm(names.matchers[names.NameTypes.router], riffle.Realm(RouterPerspective))
 
-    avatar = yield riffle.Riffle(host).connect()
+    avatar = yield riffle.Riffle(host, port=int(port)).connect()
     result = yield avatar.echo('Hello from a client!')
     defer.returnValue(result)
 
@@ -112,6 +109,12 @@ def echo(reactor, host, port):
 ###############################################################################
 
 class ServerPerspective(riffle.RifflePerspective):
+
+    def perspective_echo(self, arg):
+        print 'Client: server called echo'
+        return arg
+
+class RouterPerspective(riffle.RifflePerspective):
 
     def perspective_echo(self, arg):
         print 'Client: server called echo'

@@ -12,7 +12,7 @@ from twisted.internet import defer, utils
 from pdtools.coms.client import RpcClient
 
 from pdtools.lib.output import out
-from pdtools.lib import store, riffle
+from pdtools.lib import store, riffle, names
 
 
 ###############################################################################
@@ -24,6 +24,50 @@ class ServerPerspective(riffle.RifflePerspective):
     def perspective_echo(self, arg):
         print 'Client: server called echo'
         return arg
+
+class ToolsPerspective(riffle.RifflePerspective):
+
+    def perspective_echo(self, arg):
+        print 'Client: server called echo'
+        return arg
+
+
+# @defaultCallbacks
+@defer.inlineCallbacks
+def echo(reactor, host):
+    # key, ca = 'client.pem', 'ca.pem'
+    key, ca = 'public', 'private'
+
+    clientKey = store.store.getKey(key)
+    caKey = store.store.getKey(ca)
+
+    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
+
+    avatar = yield riffle.Riffle(host).connect()
+    result = yield avatar.echo('Hello from a client!')
+    defer.returnValue(result)
+
+
+def checkStartRiffle():
+    '''
+    Temporary function. Do not start serving or connecting over riffle
+    until we have our keys (which occurs during currently optional provisioning)
+    '''
+
+    if not riffle.CERT_CA:
+        out.warn("Cannot start riffle server, no CA certificate found")
+        return
+
+    # riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(apiinternal.ServerPerspective))
+
+    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
+    riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(ToolsPerspective))
+
+    riffle.Riffle('localhost', port=8017).serve()
+
+    # TESTING
+    # from twisted.internet import task
+    # return task.react(echo, ('localhost',))
 
 
 ###############################################################################
@@ -65,6 +109,9 @@ def api_provision(pdid, publicKey, privateKey):
     store.store.saveConfig('pdid', pdid)
     store.store.saveKey(privateKey, 'private')
     store.store.saveKey(publicKey, 'public')
+
+    # If we are being provisioned for the first time, start riffle services
+    checkStartRiffle()
 
     yield 1
     defer.returnValue(None)
