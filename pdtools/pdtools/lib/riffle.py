@@ -19,7 +19,7 @@ from twisted.internet.task import react
 from twisted.internet import reactor
 from twisted.internet import defer
 from twisted.spread import pb
-from twisted.cred import portal
+from twisted.cred import portal as twistedPortal
 
 from zope.interface import implements
 
@@ -28,62 +28,15 @@ from twisted.internet.ssl import PrivateCertificate, Certificate, optionsForClie
 
 from pdtools.lib.output import out
 
-# Default security and port considerations
-CERT_CA = None
-KEY_PRIVATE = None
+
 DEFAULT_PORT = 8016
 
 
-class Riffle(object):
-
-    def __init__(self, host, port=DEFAULT_PORT, secure=True):
-        '''
-        This is not a Twisted style 'protocol', its a wrapper around a modified PB. 
-        The Riffle object is a convenience warpper for servers and clients 
-
-        :param host: the hostname to connect/listen to 
-        :type host: str.
-        :param port: port to connect/listen to
-        :type port: int
-        :param secure: should riffle connect over TLS or not? This is a temporary thing.
-        :type secure: bool.
-        '''
-        self.host, self.port = host, port
-        self.secure = secure
-
-    def _serverContext(self, pem):
-        ca = Certificate.loadPEM(pem)
-        myCertificate = PrivateCertificate.loadPEM(pem)
-
-        return SSL4ServerEndpoint(reactor, self.port, myCertificate.options(ca))
-
-    def _clientContext(self, caCert, pkey):
-        ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(caCert), PrivateCertificate.loadPEM(pkey))
-        return SSL4ClientEndpoint(reactor, self.host, self.port, ctx,)
-
-    def serve(self, caCert=CERT_CA):
-        serverEndpoint = self._serverContext(CERT_CA)
-        serverEndpoint.listen(RiffleServerFactory(portal))
-
-    @defer.inlineCallbacks
-    def connect(self, caCert=CERT_CA, keys=KEY_PRIVATE):
-        ''' WARNING: the positonal arguments are no longer used, PASS NOTHING '''
-        clientEndpoint = self._clientContext(CERT_CA, KEY_PRIVATE)
-
-        factory = RiffleClientFactory()
-        clientEndpoint.connect(factory)
-
-        avatar = yield factory.login(portal)
-
-        defer.returnValue(Levy(avatar))
-
-
 ############################################################
-# Realms, Portals, and Wrappers
-# These classes are not meant to be subclassed
+# Portal and Utility methods
 ############################################################
 
-class Portal(portal.Portal):
+class Portal(twistedPortal.Portal):
 
     '''
     This is a portal for bi-directional communication between two parites. Both sides
@@ -121,7 +74,7 @@ class Portal(portal.Portal):
         ca = Certificate.loadPEM(cert)
         myCertificate = PrivateCertificate.loadPEM(cert)
 
-        SSL4ServerEndpoint(reactor, port, myCertificate.options(ca)).listen(RiffleServerFactory(portal))
+        SSL4ServerEndpoint(reactor, port, myCertificate.options(ca)).listen(RiffleServerFactory(self))
 
     @defer.inlineCallbacks
     def connect(self, host, port=None, cert=None, key=None):
@@ -133,6 +86,7 @@ class Portal(portal.Portal):
         cert = cert if cert else self.certCa
         key = key if key else self.keyPrivate  # ???
 
+        # the first term is the name the server is using in the cert
         ctx = optionsForClientTLS(u"pds.production", Certificate.loadPEM(cert), PrivateCertificate.loadPEM(key))
 
         factory = RiffleClientFactory()
@@ -208,13 +162,31 @@ class Portal(portal.Portal):
 
         return None
 
+portal = Portal()
+
+
+def dumpRealms(portal=portal):
+    s = 'Dumping all connections\n'
+
+    for k, v in portal.realms.iteritems():
+        s += '\tRealm: %s\n' % v.avatar.__name__
+
+        for c in v.connections:
+            s += '\t\t%s\n' % str(c.name)
+
+    print s
+
+
+############################################################
+# Realms, Avatars, and Levies
+############################################################
 
 class Realm:
 
     '''
     Wraps a type of avatar and all connections for that avatar type
     '''
-    implements(portal.IRealm)
+    implements(twistedPortal.IRealm)
 
     def __init__(self, avatar):
         self.avatar = avatar
@@ -231,6 +203,7 @@ class Realm:
         yield avatar.initialize()
 
         self.connections.add(avatar)
+        out.info('Connected: ' + avatar.name)
 
         # move detached from the avatar to here?
         defer.returnValue((avatar, lambda a=avatar: a.detached(mind)))
@@ -240,7 +213,7 @@ class Realm:
 
     def connectionClosed(self, avatar):
         ''' An avatar disconnected '''
-        out.info('Connection lost: ' + str(avatar.name))
+        out.info('Disconnected: ' + str(avatar.name))
         self.connections.remove(avatar)
 
 
@@ -266,10 +239,6 @@ class Levy(object):
         print 'error', error
 
 
-############################################################
-# Avatar, Referencable, and Viewable base classes
-############################################################
-
 class RifflePerspective(pb.Avatar):
 
     def __init__(self, name, realm):
@@ -286,7 +255,7 @@ class RifflePerspective(pb.Avatar):
         defer.returnValue(None)
 
     def attached(self, mind):
-        self.remote = mind
+        self.remote = Levy(mind)
 
     def detached(self, mind):
         self.remote = None
@@ -356,7 +325,6 @@ class _RifflePortalWrapper(pb._PortalWrapper):
     def remote_login(self, client):
         peerCertificate = Certificate.peerFromTransport(self.broker.transport)
         pdid = peerCertificate.getSubject().commonName.decode('utf-8')
-        out.info('New connection: ' + pdid)
 
         avatar, logout = yield self.portal.login(pdid, client)
         avatar = pb.AsReferenceable(avatar, "perspective")
@@ -380,19 +348,3 @@ class _RifflePortalWrapper(pb._PortalWrapper):
         self.broker.notifyOnDisconnect(maybeLogout)
 
         defer.returnValue(avatar)
-
-
-############################################################
-# Utility Methods
-############################################################
-
-def dumpRealms(portal):
-    for k, v in portal.realms.iteritems():
-
-        for c in v.connections:
-            print '\t', c
-
-# Globally exposed portal object. Anyone using this class is going to need a portal,
-# hence why its exposed
-
-portal = Portal()

@@ -39,6 +39,7 @@ def echo(reactor, host):
 
     avatar = yield riffle.portal.connect(host)
     result = yield avatar.echo('Hello from a client!')
+    riffle.dumpRealms()
     defer.returnValue(result)
 
 
