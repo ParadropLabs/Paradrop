@@ -88,6 +88,7 @@ def executePlans(update):
         except Exception as e:
             out.exception(e, True) #, plans=str(update.plans)) # Removed because breaks new out.exception call
             update.responses.append({'exception': str(e), 'traceback': traceback.format_exc()})
+            update.failure = str(e)
             return True
 
         # The functions we call here can return other functions, if they do these are functions that should

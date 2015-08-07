@@ -74,7 +74,7 @@ def installChute(host, port, config):
         print 'ERROR: No Dockerfile specified in config file.'
         return
 
-    print 'Installing chute...'
+    print 'Installing chute...\n'
     params = {'config': config_json}
     r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/create', data=json.dumps(params), stream=True)
     for line in r.iter_lines():
@@ -94,16 +94,21 @@ def deleteChute(host, port, name):
     Remove chute with given name from host with pdfcd running on specified port.
     '''
 
-    print 'Removing chute...'
+    print 'Removing chute...\n'
 
     params = {'name': name}
-    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/delete', data=json.dumps(params))
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/delete', data=json.dumps(params), stream=True)
 
-    res = json.loads(r._content)
-    if res.get('success'):
-        print res.get('message')
-    else:
-        print 'ERROR: Failed to delete chute.(' + urllib.unquote(str(res.get('message'))) + ')'
+    for line in r.iter_lines():
+        if line:
+            try:
+                line = json.loads(line)
+                if line.get('success'):
+                    print line.get('message')
+                else:
+                    print 'ERROR: Failed to delete chute.(' + urllib.unquote(str(line.get('message'))) + ')'
+            except Exception as e:
+                print line
 
 
 def stopChute(host, port, name):
@@ -111,16 +116,21 @@ def stopChute(host, port, name):
     Stop chute with given name from host with pdfcd running on specified port.
     '''
 
-    print 'Stopping chute...'
+    print 'Stopping chute...\n'
 
     params = {'name': name}
-    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/stop', data=json.dumps(params))
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/stop', data=json.dumps(params), stream=True)
 
-    res = json.loads(r._content)
-    if res.get('success'):
-        print res.get('message')
-    else:
-        print 'ERROR: Failed to stop chute.(' + urllib.unquote(str(res.get('message'))) + ')'
+    for line in r.iter_lines():
+        if line:
+            try:
+                line = json.loads(line)
+                if line.get('success'):
+                    print line.get('message')
+                else:
+                    print 'ERROR: Failed to stop chute.(' + urllib.unquote(str(line.get('message'))) + ')'
+            except Exception as e:
+                print line
 
 
 def startChute(host, port, name):
@@ -128,13 +138,18 @@ def startChute(host, port, name):
     Start chute with given name from host with pdfcd running on specified port.
     '''
 
-    print 'Starting chute...'
+    print 'Starting chute...\n'
 
     params = {'name': name}
-    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/start', data=json.dumps(params))
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/start', data=json.dumps(params), stream=True)
 
-    res = json.loads(r._content)
-    if res.get('success'):
-        print res.get('message')
-    else:
-        print 'ERROR: Failed to start chute.(' + urllib.unquote(str(res.get('message'))) + ')'
+    for line in r.iter_lines():
+        if line:
+            try:
+                line = json.loads(line)
+                if line.get('success'):
+                    print line.get('message')
+                else:
+                    print 'ERROR: Failed to start chute.(' + urllib.unquote(str(line.get('message'))) + ')'
+            except Exception as e:
+                print line

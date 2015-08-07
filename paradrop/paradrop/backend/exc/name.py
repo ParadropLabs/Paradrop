@@ -19,7 +19,7 @@ def generatePlans(update):
 
     #print any warnings from previous update if they exist
     if hasattr(update, 'pkg') and update.old != None and update.old.warning != None:
-        update.pkg.request.write(update.old.warning)
+        update.pkg.request.write(update.old.warning + '\n')
 
     # TODO: Create a directory for the chute for us to hold onto things (dockerfile, OS config stuff)
 

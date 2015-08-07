@@ -18,7 +18,24 @@ from paradrop.lib import chute
 from paradrop.lib.config.network import reclaimNetworkResources
 import time
 
+FAILURE_WARNING = """
+    ************************WARNING************************
+    This chute failed to start on a previous attempt for some reason. 
+    Perhaps hardware on the device has changed? 
+    The chute has been stopped and will need to be started.
+    """
+
 def reloadChutes():
+    """
+    This function is called to restart any chutes that were running prior to the system being restarted.
+    It waits for pdconfd to come up and report whether or not it failed to bring up any of the interfaces
+    that existed before the power cycle. If pdconfd indicates something failed we then force a stop update
+    in order to bring down all interfaces associated with that chute and mark it with a warning. 
+    If the stop fails we mark the chute with a warning manually and change its state to stopped and save to 
+    storage this isn't great as it could mean our system still has interfaces up associated with that chute.
+    If pdconfd doesn't report failure we attempt to start the chute and if this fails we trust the abort process
+    to restore the system to a consistent state and we manually mark the chute as stopped and add a warning to it.
+    """
     chuteStore = chutestorage.ChuteStorage()
     chutes = [ ch for ch in chuteStore.getChuteList() if ch.state == 'running']
 
@@ -36,34 +53,36 @@ def reloadChutes():
             continue
         confdup = True
         confdInfo = str2json(confdInfo)
+        print confdInfo
 
     #Remove any chutes from the restart queue if confd failed to bring up the proper interfaces
     failedChutes = []
     for iface in confdInfo:
         if iface.get('success') == False:
-            while iface.get('comment') in chutes: 
-                #TODO stop the chute and add error message to it
-                chutes.remove(iface.get('comment'))
-            if iface.get('comment') not in failedChutes:
-                failedChutes.append(iface.get('comment'))
+            for ch in chutes:
+                if ch.name == iface.get('comment'): chutes.remove(ch)
+            if iface.get('comment') not in failedChutes: failedChutes.append(iface.get('comment'))
 
     #First stop all chutes that failed to bring up interfaces according to pdconfd then start successful ones
     #We do this because pdfcd needs to handle cleaning up uci files and then tell pdconfd 
     updates = []
     for ch in failedChutes:
-        update = dict(updateClass='CHUTE', updateType='stop', name=ch,
-                      tok=timeint(), func=failure, warning=chute.FAILURE_WARNING) #, pkg=apiPkg, func=self.rest.complete)
-        updates.append(update)
+        updates.append(dict(updateClass='CHUTE', updateType='stop', name=ch, tok=timeint(), func=updateStatus, warning=FAILURE_WARNING))
 
     for ch in chutes:
-        update = dict(updateClass='CHUTE', updateType='restart', name=ch.name,
-                      tok=timeint(), func=success ) #, pkg=apiPkg, func=self.rest.complete)
-        updates.append(update)
+        updates.append(dict(updateClass='CHUTE', updateType='restart', name=ch.name, tok=timeint(), func=updateStatus))
 
     return updates
 
-def success(arg):
-    print arg.__dict__
-
-def failure(arg):
-    print arg.__dict__
+def updateStatus(update):
+    """
+    This function is a callback for the updates we do upon restarting the system.
+    It checks whether or not the update completed successfully and if not it
+    changes the state of the chute to stopped and adds a warning.
+    """
+    chuteStore = chutestorage.ChuteStorage()
+    if not update.result.get('success'):
+        print 'INSIDE IF STATEMENT UPDATESTATUS'
+        update.old.state = 'stopped'
+        update.old.warning = FAILURE_WARNING
+        chuteStore.saveChute(update.old)
