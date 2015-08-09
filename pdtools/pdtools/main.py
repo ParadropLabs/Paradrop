@@ -1,6 +1,5 @@
-"""Paradrop build tools.
-
-Usage:
+'''
+usage:
     paradrop login
     paradrop register
     paradrop install <host> <port> <path-to-config> 
@@ -16,10 +15,23 @@ Usage:
     paradrop (-h | --help)
     paradrop --version
 
-Options:
+options:
     -h --help     Show this screen.
     --version     Show version.
-"""
+
+The most commonly used paradrop commands are:
+   add        Add file contents to the index
+   branch     List, create, or delete branches
+   checkout   Checkout a branch or paths to the working tree
+   clone      Clone a repository into a new directory
+   commit     Record changes to the repository
+   push       Update remote refs along with associated objects
+   remote     Manage set of tracked repositories
+
+See 'paradrop help <command>' for more information on a specific command.
+'''
+
+from pkg_resources import get_distribution
 
 from docopt import docopt
 from twisted.internet import task
@@ -39,7 +51,7 @@ def main():
     output.out.startLogging(stealStdio=False, printToConsole=False)
 
     # show the documentation and extract host and port if provided (since they are commonly used)
-    args = docopt(__doc__, version='Paradrop build tools v0.1')
+    args = docopt(__doc__, version=get_distribution('pdtools').version)
     host, port = args['<host>'], args['<port>']
     port = int(port) if port else None
 
