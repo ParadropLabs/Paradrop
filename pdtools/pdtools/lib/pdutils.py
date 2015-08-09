@@ -8,11 +8,16 @@ lib.utils.output.
 Helper for formatting output from Paradrop.
 """
 
-import time, json, urllib
+import time
+import json
+import urllib
 
 timeflt = lambda: time.time()
 timeint = lambda: int(time.time())
 timestr = lambda x=None: time.asctime(time.localtime(x)) if x else time.asctime()
+
+# Convert localtime to gmtime! Serious!
+
 
 def timedur(x):
     """
@@ -32,7 +37,7 @@ def timedur(x):
                 res.append((lbl[:-1], int(rm)))
             else:
                 res.append((lbl, int(rm)))
-    
+
     # anything left over is seconds
     x = int(x)
     if(x == 1):
@@ -41,8 +46,9 @@ def timedur(x):
         pass
     else:
         res.append(("seconds", x))
-    
+
     return ", ".join(["%d %s" % (x[1], x[0]) for x in res])
+
 
 def convertUnicode(elem):
     """Converts all unicode strings back into UTF-8 (str) so everything works.
@@ -54,11 +60,12 @@ def convertUnicode(elem):
         return [convertUnicode(element) for element in elem]
     elif isinstance(elem, unicode):
         return elem.encode('utf-8')
-    #DFW: Not sure if this has to be here, but deal with possible "null" MySQL strings
+    # DFW: Not sure if this has to be here, but deal with possible "null" MySQL strings
     elif(elem == 'null'):
         return None
     else:
         return elem
+
 
 def urlEncodeMe(elem, safe=' '):
     """
@@ -78,6 +85,7 @@ def urlEncodeMe(elem, safe=' '):
     else:
         return elem
 
+
 def urlDecodeMe(elem):
     """
         Converts any values that would cause JSON parsing to fail into URL percent encoding equivalents.
@@ -96,12 +104,33 @@ def urlDecodeMe(elem):
     else:
         return elem
 
+
 def jsonPretty(j):
     """
         Returns a string of a JSON object in 'pretty print' format fully indented, and sorted.
     """
     return json.dumps(j, sort_keys=True, indent=4, separators=(',', ': '))
 
+'''
+These two methods are outrageously slow.
+
+Example with 50k records in var 'logs':
+    from pdtools.lib import pdutils
+    import json
+
+    with pdutils.Timer() as t:
+        [pdutils.str2json(x) for x in logs]
+
+    with pdutils.Timer() as t:
+        [json.loads(x) for x in logs]
+
+    >> time: 12814.471006 ms
+    >> time: 0.007868 ms
+
+Vanilla, sanitized benches do not show the same performance issues. Not sure why, 
+it might have to do with the content of the dictionaries or the complexity of the underlying
+data? They're still slower, but only by one or two magnitudes.
+'''
 def json2str(j, safe=' '):
     """
         Properly converts and encodes all data related to the JSON object into a string format
@@ -112,6 +141,7 @@ def json2str(j, safe=' '):
     """
     return json.dumps(urlEncodeMe(j, safe), separators=(',', ':'))
 
+
 def str2json(s):
     t = json.loads(s, object_hook=convertUnicode)
     # If t is a list, object_hook was never called (by design of json.loads)
@@ -121,17 +151,20 @@ def str2json(s):
     # Make sure to still decode any strings
     return urlDecodeMe(t)
 
+
 class dict2obj(object):
+
     def __init__(self, aDict=None, **kwargs):
         if(aDict is not None):
             aDict.update(kwargs)
         else:
             self.__dict__.update(kwargs)
 
+
 def check(pkt, pktType, keyMatches=None, **valMatches):
     """This function takes an object that was expected to come from a packet (after it has been JSONized)
         and compares it against the arg requirements so you don't have to have 10 if() statements to look for keys in a dict, etc..
-        
+
         Args:
             @pkt             : object to look at
             @pktType         : object type expected (dict, list, etc..)
@@ -140,21 +173,21 @@ def check(pkt, pktType, keyMatches=None, **valMatches):
                               the value can be data (like 5) OR a type (like this value must be a @list@).
         Returns:
             None if everything matches, otherwise it returns a string as to why it failed."""
-    #First check that the pkt type is equal to the input type
+    # First check that the pkt type is equal to the input type
     if(type(pkt) is not pktType):
         return 'expected %s' % str(pktType)
 
     if(keyMatches):
         # Convert the keys to a set
         keyMatches = set(keyMatches)
-        #The keyMatches is expected to be an array of the minimum keys we want to see in the pkt if the type is dict
+        # The keyMatches is expected to be an array of the minimum keys we want to see in the pkt if the type is dict
         if(type(pkt) is dict):
             if(not keyMatches.issubset(pkt.keys())):
                 return 'missing, "%s"' % ', '.join(list(keyMatches - set(pkt.keys())))
         else:
             return None
 
-    #Finally for anything in the valMatches find those values
+    # Finally for anything in the valMatches find those values
     if(valMatches):
         # Pull out the dict object from the "valMatches" key
         if('valMatches' in valMatches.keys()):
@@ -163,21 +196,22 @@ def check(pkt, pktType, keyMatches=None, **valMatches):
             matchObj = valMatches
 
         for k, v in matchObj.iteritems():
-            #Check for the key
+            # Check for the key
             if(k not in pkt.keys()):
                 return 'key missing "%s"' % k
 
-            #See how we should be comparing it:
+            # See how we should be comparing it:
             if(type(v) is type):
                 if(type(pkt[k]) is not v):
                     return 'key "%s", bad value type, "%s", expected "%s"' % (k, type(pkt[k]), v)
 
             else:
-                #If key exists check value
+                # If key exists check value
                 if(v != pkt[k]):
                     return 'key "%s", bad value data, "%s", expected "%s"' % (k, pkt[k], v)
 
     return None
+
 
 def explode(pkt, *args):
     """This function takes a dict object and explodes it into the tuple requested.
@@ -201,3 +235,28 @@ def explode(pkt, *args):
     # If a key is missing, the pkt.get(a, None) returns None rather than raising an Exception
     return tuple([pkt.get(a, None) for a in args])
 
+
+class Timer(object):
+    '''
+    A timer object for simple benchmarking. 
+
+    Usage:
+        with Timer(key='Name of this test') as t:
+            do.someCode(thatTakes=aWhile)
+
+    Once the code finishes executing the time is output. 
+    '''
+    def __init__(self, key="", verbose=True):
+        self.verbose = verbose
+        self.key = key
+
+    def __enter__(self):
+        self.start = time.time()
+        return self
+
+    def __exit__(self, *args):
+        self.end = time.time()
+        self.secs = self.end - self.start
+        self.msecs = self.secs * 1000  # millisecs
+        if self.verbose:
+            print self.key + ' elapsed time: %f ms' % self.msecs

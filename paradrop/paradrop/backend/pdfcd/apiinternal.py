@@ -1,18 +1,5 @@
 '''
 API exposed to pdtools and pdserver. 
-
-These calls are not meant for user consumption and as such are SOAPy. This is a topic 
-for debate. I believe this implementation is cleaner for developers without loss of 
-functionality. 
-
-These functions are inconsistent with the current api as defined, and because 
-of this one or the other should be brought in line. The location of 
-the API contents are not important (in terms of the route) since its easily moved, 
-but consistency would be nice. 
-
-I have done this in the interest of time and development speed. 
-- Mickey
-
 '''
 
 ###############################################################################
@@ -25,7 +12,92 @@ from twisted.internet import defer, utils
 from pdtools.coms.client import RpcClient
 
 from pdtools.lib.output import out
-from pdtools.lib import store
+from pdtools.lib import store, riffle, names
+
+
+###############################################################################
+# New Riffle Additions
+###############################################################################
+
+class ServerPerspective(riffle.RifflePerspective):
+
+    def initialize(self):
+        # The function target that subscribes to output events
+        self.subscribed = None
+
+    def destroy(self):
+        # Remove the log subscriber when the connection goes down.
+        if self.subscribed is not None:
+            out.removeSubscriber(self.subscribed)
+
+    @defer.inlineCallbacks
+    def perspective_subscribeLogs(self, target):
+        '''
+        Fetch all logs since the target time. Stream all new logs
+        to the server as they come in. 
+        '''
+
+        # Adds the target function (newLogs) to out's streaming subscription set
+        # Do not do this without the user's consent
+        out.addSubscriber(self.remote.newLogs)
+        self.subscribed = self.remote.newLogs
+
+        logs = yield out.getLogsSince(target)
+
+        defer.returnValue(logs)
+
+
+class ToolsPerspective(riffle.RifflePerspective):
+    pass
+
+
+@defer.inlineCallbacks
+def connectToServer(host):
+    ''' Yet another temporary method '''
+    avatar = yield riffle.portal.connect(host)
+
+    # result = yield avatar.newLogs(['Hello from a client!'])
+
+    # riffle.dumpRealms()
+
+    defer.returnValue(avatar)
+
+
+def checkStartRiffle():
+    '''
+    Temporary function. Do not start serving or connecting over riffle
+    until we have our keys (which occurs during currently optional provisioning)
+    '''
+
+    if not riffle.portal.certCa:
+        out.warn("Cannot start riffle server, no CA certificate found")
+        return
+
+    # Check to make sure we are not already listening!
+
+    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
+    riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(ToolsPerspective))
+
+    # riffle.Riffle('localhost', port=8017).serve()
+
+    # Open connection to the server
+    from twisted.internet import reactor
+    reactor.callLater(.1, connectToServer, 'localhost')
+
+
+###############################################################################
+# Old
+###############################################################################
+
+# @defaultCallbacks
+
+@defer.inlineCallbacks
+def echo(reactor, host):
+
+    avatar = yield riffle.portal.connect(host)
+    result = yield avatar.echo('Hello from a client!')
+    riffle.dumpRealms()
+    defer.returnValue(result)
 
 
 @defer.inlineCallbacks
@@ -59,11 +131,16 @@ def api_provision(pdid, publicKey, privateKey):
 
     # Handshake with the server, ensuring the name is valid
     client = RpcClient('paradrop.io', 8015, '')
-    # ret = yield client.
 
     store.store.saveConfig('pdid', pdid)
-    store.store.saveKey('private', privateKey)
-    store.store.saveKey('public', publicKey)
+    store.store.saveKey(privateKey, 'private')
+    store.store.saveKey(publicKey, 'public')
+
+    # If we are being provisioned for the first time, start riffle services
+    checkStartRiffle()
+
+    yield 1
+    defer.returnValue(None)
 
     # Return success to the user
 
