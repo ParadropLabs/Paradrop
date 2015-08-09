@@ -6,13 +6,13 @@ from setuptools import setup, find_packages
 
 setup(
     name="pdtools",
-    version="0.1.39",
+    version="0.1.40",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
     install_requires=[
         'docopt',
         'requests',
-        'twisted',
+        'twisted>=14.2',
         'bcrypt',
         'service-identity',
         'colorama',
