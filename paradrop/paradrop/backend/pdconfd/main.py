@@ -13,12 +13,12 @@ Operation:
 Reference:
 http://excid3.com/blog/an-actually-decent-python-dbus-tutorial/
 """
+import atexit
+import sys
 
 from twisted.internet import reactor, defer
 from txdbus import client, objects, error
 from txdbus.interface import DBusInterface, Method
-
-import sys
 
 from .config.manager import ConfigManager
 
@@ -30,7 +30,7 @@ class ConfigService(objects.DBusObject):
         DBusInterface(service_name, 
             Method("Reload", arguments="s", returns="s"),
             Method("ReloadAll", returns="s"),
-            Method("Test", returns="s"),
+            Method("Test", returns="b"),
             Method("UnloadAll", returns="b"),
             Method("WaitSystemUp", returns="s"))
     ]
@@ -40,27 +40,31 @@ class ConfigService(objects.DBusObject):
         self.configManager = ConfigManager()
 
     def dbus_Reload(self, name):
-        print("Asked to reload {}.".format(name))
         return self.configManager.loadConfig(name)
 
     def dbus_ReloadAll(self):
-        print("Asked to reload configuration files.")
         return self.configManager.loadConfig()
 
     def dbus_Test(self):
-        return "D-Bus is working!"
+        return True
 
     def dbus_UnloadAll(self):
-        print("Asked to unload configuration.")
         return self.configManager.unload()
 
     def dbus_WaitSystemUp(self):
-        print("Waiting for system to be up.")
         return self.configManager.waitSystemUp()
 
 @defer.inlineCallbacks
 def listen():
     service = ConfigService()
+
+    # Things get messy if pdconfd is restarted with running chutes.  Then it
+    # will try to reconfigure the system.  One easy solution is to unload the
+    # configuration before exiting.
+    reactor.addSystemEventTrigger('before', 'shutdown',
+                                  service.configManager.unload)
+
+    # Now load all of the configuration for the first time.
     service.configManager.loadConfig()
 
     try:

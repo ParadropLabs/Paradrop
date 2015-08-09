@@ -19,6 +19,7 @@ class Chute(object):
         # Set these first so we don't have to worry about it later
         self.name = None
         self.state = None
+        self.warning = None
 
         self._cache = {}
         

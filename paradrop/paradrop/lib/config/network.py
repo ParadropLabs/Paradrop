@@ -20,6 +20,23 @@ networkPool = NetworkPool(settings.DYNAMIC_NETWORK_POOL)
 interfaceNumberPool = NumericPool()
 
 
+def reclaimNetworkResources(chute):
+    """
+    Reclaim network resources for a previously running chute.
+
+    This function only applies to the special case in which pd starts up and
+    loads a list of chutes that were running.  This function marks their IP
+    addresses and interface names as taken so that new chutes will not use the
+    same values.
+    """
+    interfaces = chute.getCache('networkInterfaces')
+    if interfaces is None:
+        return
+    for iface in interfaces:
+        interfaceNumberPool.reserve(iface['extIntfNumber'])
+        networkPool.reserve(iface['subnet'])
+
+
 def interfaceDefsEqual(iface1, iface2):
     check = ["name", "netType", "internalIntf"]
     for key in check:
@@ -92,10 +109,7 @@ def getNetworkConfig(update):
         if iface['name'] in oldInterfaces:
             oldIface = oldInterfaces[iface['name']]
             if interfaceDefsEqual(iface, oldIface):
-                # If old interface is the same, then claim the resources it was
-                # using and move on to the next interface.
-                interfaceNumberPool.reserve(oldIface['extIntfNumber'])
-                networkPool.reserve(oldIface['subnet'])
+                # If old interface is the same, then keep it and move on.
                 interfaces.append(oldIface)
                 continue
 
