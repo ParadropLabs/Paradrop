@@ -497,7 +497,7 @@ class Output():
         # Write out the human-readable version to out if needed (but always print out
         # exceptions for testing purposes)
         if self.printLogs or logDict['type'] == 'ERR':
-            self.redirectOut.trueWrite(logDict)
+            self.redirectOut.trueWrite(res)
 
         for s in self.subscribers:
             s(logDict)
@@ -545,7 +545,7 @@ class Output():
         :type target: float.
         :param purge: deletes the old log files (except today's) if set
         :type purge: bool.
-        :returns: a list of dictionaries containing log information orderd ascending
+        :returns: a list of dictionaries containing log information. Not ordered.
         '''
 
         if not self.logpath:
@@ -602,17 +602,10 @@ class Output():
         return ret
         '''
 
-        # strptime with filenames and dont touch old ones
-        # delete them all after
-        # convert to dict
-        # run filter() on the result with the target time
-
         ret = []
 
         for f in os.listdir(self.logpath):
             path = self.logpath + '/' + f
-
-            print f
 
             # the current log file is treated differently (no date, no delete)
             if f != LOG_NAME:
@@ -632,11 +625,9 @@ class Output():
                 with open(path, 'r') as f:
                     ret += [json.loads(y) for y in f.readlines()]
 
-        print len(ret)
         ret = filter(lambda x: x['timestamp'] > target, ret)
 
         return ret
-        
 
     ###############################################################################
     # Reconfiguration
