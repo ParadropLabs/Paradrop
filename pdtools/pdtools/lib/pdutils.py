@@ -111,7 +111,26 @@ def jsonPretty(j):
     """
     return json.dumps(j, sort_keys=True, indent=4, separators=(',', ': '))
 
+'''
+These two methods are outrageously slow.
 
+Example with 50k records in var 'logs':
+    from pdtools.lib import pdutils
+    import json
+
+    with pdutils.Timer() as t:
+        [pdutils.str2json(x) for x in logs]
+
+    with pdutils.Timer() as t:
+        [json.loads(x) for x in logs]
+
+    >> time: 12814.471006 ms
+    >> time: 0.007868 ms
+
+Vanilla, sanitized benches do not show the same performance issues. Not sure why, 
+it might have to do with the content of the dictionaries or the complexity of the underlying
+data? They're still slower, but only by one or two magnitudes.
+'''
 def json2str(j, safe=' '):
     """
         Properly converts and encodes all data related to the JSON object into a string format
@@ -215,3 +234,29 @@ def explode(pkt, *args):
     # Now just step through the args and pop off everything from the packet
     # If a key is missing, the pkt.get(a, None) returns None rather than raising an Exception
     return tuple([pkt.get(a, None) for a in args])
+
+
+class Timer(object):
+    '''
+    A timer object for simple benchmarking. 
+
+    Usage:
+        with Timer(key='Name of this test') as t:
+            do.someCode(thatTakes=aWhile)
+
+    Once the code finishes executing the time is output. 
+    '''
+    def __init__(self, key="", verbose=True):
+        self.verbose = verbose
+        self.key = key
+
+    def __enter__(self):
+        self.start = time.time()
+        return self
+
+    def __exit__(self, *args):
+        self.end = time.time()
+        self.secs = self.end - self.start
+        self.msecs = self.secs * 1000  # millisecs
+        if self.verbose:
+            print self.key + ' elapsed time: %f ms' % self.msecs

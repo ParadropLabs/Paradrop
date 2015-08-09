@@ -1,32 +1,43 @@
 import os
+import time
 import shutil
+import json
 
 from pdtools.lib import output
 
-PATH = os.getcwd() + '/TESTLOGS'
+PATH = os.getcwd() + '/TESTLOGS/'
 
 
 def setup():
-    assert not os.path.exists(PATH)
     os.makedirs(PATH)
 
-    # mocks = {
-    #     'log':'{"package":"pdfcd","timestamp":1437511829.055573,"extra":{"details":"floating print statement"},"module":"server","owner":"UNSET","message":"None","type":"VERBOSE","line":247,"pdid":"pd.damouse.example"}\n{"package":"pdfcd","timestamp":1437511829.05581,"extra":{},"module":"server","owner":"UNSET","message":"Establishing API server%2C port%3A 14321","type":"INFO","line":264,"pdid":"pd.damouse.example"}\n{"package":"lib","timestamp":1437511829.056349,"extra":{},"module":"output","owner":"UNSET","message":"Site starting on 14321","type":"INFO","line":385,"pdid":"pd.damouse.example"}\n{"package":"lib","timestamp":1437511829.056546,"extra":{},"module":"output","owner":"UNSET","message":"Starting factory %3Ctwisted.web.server.Site instance at 0x7f80689039e0%3E","type":"INFO","line":385,"pdid":"pd.damouse.example"}\n{"package":"lib","timestamp":1437511830.974387,"extra":{},"module":"output","owner":"UNSET","message":"Received SIGINT%2C shutting down.","type":"INFO","line":385,"pdid":"pd.damouse.example"}\n{"package":"lib","timestamp":1437511830.975079,"extra":{},"module":"output","owner":"UNSET","message":"Asking file logger to close","type":"INFO","line":416,"pdid":"pd.damouse.example"}\n{"package":"paradrop","timestamp":1437519443.939309,"extra":{"details":"floating print statement"},"module":"main","owner":"UNSET","message":"Look%2C print statements are ok now%21","type":"VERBOSE","line":101,"pdid":"pd.damouse.example"}'
-    # }
+    mockOut = {'extra': {}, 'owner': 'UNSET', 'message': 'Establishing API server, port: 14321', 'package': 'pdfcd', 'type': 'INFO', 'line': 272, 'module': 'server', 'pdid': 'pd.damouse.example'}
+    
+    days = [[mockOut] * 3 for x in range(3)]
+    hour, day = 60 * 60, 24 * 60 * 60
 
-    # Make three testing files
-    # for k, v in mocks.iteritems():
+    for i in range(0, len(days)):
+        name = output.LOG_NAME
 
-    # with open(path + '/log') as f:
+        if i != 0:
+            name += '.' + time.strftime('%Y_%m_%d', time.localtime(time.time() - i * day))
+
+        with open(PATH + name, 'w') as f:
+            for k in range(0, len(days[i])):
+                days[i][k]['timestamp'] = time.time() - i * day + k * hour
+
+                d = json.dumps(days[i][k])
+                f.write(d + '\n')
+
+    output.out.startLogging(filePath=PATH, stealStdio=False, printToConsole=True)
 
 
 def teardown():
+    output.out.endLogging()
     shutil.rmtree(PATH)
 
 
 def test_subscriptionWorks():
-    output.out.startLogging(filePath=PATH, stealStdio=False, printToConsole=True)
-
     class Sub(object):
 
         def __init__(self):
@@ -52,5 +63,28 @@ def test_subscriptionWorks():
     assert s.last is None
 
 
-def test_getLogsOrdered():
-    output.out.startLogging(filePath=PATH, stealStdio=False, printToConsole=True)
+def test_logsOrdered():
+    logs = output.out.getLogsSince(0)
+
+    x = None
+
+    assert len(logs) == 9
+
+if __name__ == '__main__':
+    try:
+        setup()
+
+        test_logsOrdered()
+    finally:
+        teardown()
+        pass
+
+    # from pdtools.lib import pdutils
+
+    # dicts = [dict(a=1, b=2, c=3, d=4)] * 10000
+
+    # with pdutils.Timer('Our conversion') as t:
+    #     [pdutils.json2str(x) for x in dicts]
+
+    # with pdutils.Timer('Native') as t:
+    #     [json.dumps(x) for x in dicts]

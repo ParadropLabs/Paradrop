@@ -18,6 +18,7 @@ import time
 import colorama
 import traceback
 import os
+import json
 
 from pdtools.lib import pdutils
 
@@ -111,7 +112,7 @@ class PrintLogThread(threading.Thread):
             result = self.queue.get(block=True)
 
             try:
-                writable = pdutils.json2str(result)
+                writable = json.dumps(result)
                 self.writer.write(writable + '\n')
                 self.writer.flush()
             except:
@@ -496,7 +497,7 @@ class Output():
         # Write out the human-readable version to out if needed (but always print out
         # exceptions for testing purposes)
         if self.printLogs or logDict['type'] == 'ERR':
-            self.redirectOut.trueWrite(res)
+            self.redirectOut.trueWrite(logDict)
 
         for s in self.subscribers:
             s(logDict)
@@ -544,6 +545,7 @@ class Output():
         :type target: float.
         :param purge: deletes the old log files (except today's) if set
         :type purge: bool.
+        :returns: a list of dictionaries containing log information orderd ascending
         '''
 
         if not self.logpath:
@@ -552,6 +554,7 @@ class Output():
                      'Call startLogging with a directory first! ')
             return
 
+        '''
         nameContents = []  # tuples of file name and their contents
         last = None  # the last logfile
 
@@ -572,6 +575,11 @@ class Output():
 
         # Hooray for magic methods!
         # splits the name of the file, converts it to a time object, and sorts it time ascending
+
+        for x in nameContents:
+            print x
+            print x[0]
+
         nameContents = sorted(nameContents, key=lambda d: time.strptime(d[0].split('.')[1], '%Y_%m_%d'))
 
         # Once sorted, zip the lists into one
@@ -579,9 +587,12 @@ class Output():
         allSort += last
         [allSort.extend(x[1]) for x in nameContents]
 
+        # for x in allSort: 
+        #     print pdutils.str2json(x)['timestamp']
+
         for i in range(0, len(allSort)):
             # well this seems needlessly expensive...
-            y = pdutils.str2json(allSort[i])
+            y = json.loads(allSort[i])
 
             # slice remaining contents when the target time is found
             if y['timestamp'] > target:
@@ -589,6 +600,43 @@ class Output():
 
         # fall through in case no slice point found, something bad happens, etc
         return ret
+        '''
+
+        # strptime with filenames and dont touch old ones
+        # delete them all after
+        # convert to dict
+        # run filter() on the result with the target time
+
+        ret = []
+
+        for f in os.listdir(self.logpath):
+            path = self.logpath + '/' + f
+
+            print f
+
+            # the current log file is treated differently (no date, no delete)
+            if f != LOG_NAME:
+                t = time.strptime(f.split('.')[1], '%Y_%m_%d')
+
+                # dont load those with times earlier than target
+                if t >= target:
+                    with open(path, 'r') as x:
+                        ret += [json.loads(y) for y in x.readlines()]
+
+                # delete all files except log once read
+                if purge:
+                    os.remove(path)
+
+            # current log file is always loaded
+            else:
+                with open(path, 'r') as f:
+                    ret += [json.loads(y) for y in f.readlines()]
+
+        print len(ret)
+        ret = filter(lambda x: x['timestamp'] > target, ret)
+
+        return ret
+        
 
     ###############################################################################
     # Reconfiguration
