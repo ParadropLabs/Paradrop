@@ -145,6 +145,9 @@ class OutputRedirect(object):
 
         self.trueOut.write(formatted)
 
+    def flush():
+        self.trueOut.flush()
+
     def write(self, contents):
         '''
         Intercept output to the assigned target and callback with it. The true output is
