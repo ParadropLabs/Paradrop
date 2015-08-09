@@ -10,6 +10,7 @@ from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
 from pdtools.lib import riffle, names
+from pdtools.lib.output import out
 
 
 ###############################################################################
@@ -20,6 +21,8 @@ class ServerPerspective(riffle.RifflePerspective):
     def perspective_logs(self, logs):
         ''' New logs coming in from the server '''
         print 'New Logs!'
+        for x in logs:
+            print out.messageToString(x)
 
 
 @defer.inlineCallbacks
@@ -71,7 +74,7 @@ def logs(r, pdid):
     '''
     Query the server for all logs that the given pdid has access to. Must be a fully qualified name.
 
-    NOTE: this method is in progress. For now, just pass the name of a router. 
+    NOTE: this method is in progress. For now, just pass the name of one of your routers.
     '''
 
     # Let the validation occur serverside (or skip it for now)

@@ -15,6 +15,7 @@ Usage:
     paradrop echo <host> <port>
     paradrop (-h | --help)
     paradrop --version
+
 Options:
     -h --help     Show this screen.
     --version     Show version.
@@ -22,6 +23,7 @@ Options:
 
 from docopt import docopt
 from twisted.internet import task
+from twisted.internet import reactor
 
 from pdtools.lib import output, riffle, names
 from pdtools.coms import routers, general, server
@@ -36,6 +38,7 @@ def main():
     # For now, don't grab STDIO and don't write random log noise to conosle
     output.out.startLogging(stealStdio=False, printToConsole=False)
 
+    # show the documentation and extract host and port if provided (since they are commonly used)
     args = docopt(__doc__, version='Paradrop build tools v0.1')
     host, port = args['<host>'], args['<port>']
     port = int(port) if port else None
@@ -46,8 +49,8 @@ def main():
     riffle.portal.host = SERVER_HOST
     # NOTE: riffle serves on its own default port. This is a different port from the const above
 
-    # Register Realms
-    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(riffle.RifflePerspective))
+    # Register realms. See riffle documentation for Realm in pdtools.lib.riffle
+    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(server.ServerPerspective))
     riffle.portal.addRealm(names.matchers[names.NameTypes.router], riffle.Realm(riffle.RifflePerspective))
 
     # Make it happen.
@@ -78,7 +81,9 @@ def main():
         return
 
     if args['logs']:
-        task.react(server.logs, (args['<name>'],))
+        reactor.callLater(.1, server.logs, None, args['<name>'])
+        reactor.run()
+        return
 
     if args['echo']:
         task.react(general.echo, (host, port))

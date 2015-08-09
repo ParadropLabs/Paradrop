@@ -43,7 +43,6 @@ class ServerPerspective(riffle.RifflePerspective):
         self.subscribed = self.remote.newLogs
 
         logs = yield out.getLogsSince(target)
-        print 'Returning %s logs' % len(logs)
 
         defer.returnValue(logs)
 
