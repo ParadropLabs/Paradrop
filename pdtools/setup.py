@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pdtools",
-    version="0.1.40",
+    version="0.1.41",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
     install_requires=[
