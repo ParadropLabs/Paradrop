@@ -312,6 +312,7 @@ class RifflePerspective(pb.Avatar):
         self.remote = Levy(mind)
 
     def detached(self, mind):
+        self.destroy()
         self.remote = None
         self.realm.connectionClosed(self)
 
