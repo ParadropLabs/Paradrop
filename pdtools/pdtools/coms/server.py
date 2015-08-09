@@ -20,7 +20,6 @@ class ServerPerspective(riffle.RifflePerspective):
 
     def perspective_logs(self, logs):
         ''' New logs coming in from the server '''
-        print 'New Logs!'
         for x in logs:
             print out.messageToString(x)
 
