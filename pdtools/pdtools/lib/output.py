@@ -29,6 +29,7 @@ verbose = False
 
 # colorama package does colors but doesn't do style, so keeping this for now
 BOLD = '\033[1m'
+LOG_NAME = 'log'
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
@@ -97,7 +98,7 @@ class PrintLogThread(threading.Thread):
     The path must exist before DailyLog runs for the first time.
     '''
 
-    def __init__(self, path, queue, name='log'):
+    def __init__(self, path, queue, name):
         threading.Thread.__init__(self)
         self.queue = queue
         self.writer = DailyLogFile(name, path)
@@ -386,6 +387,9 @@ class Output():
         # original objects.
         self.__dict__['outputMappings'] = {}
 
+        # listeners that will receive raw logs as they come in
+        self.__dict__['subscribers'] = set()
+
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
 
@@ -439,16 +443,13 @@ class Output():
 
         if filePath is not None:
             self.__dict__['queue'] = Queue.Queue()
-            self.__dict__['printer'] = PrintLogThread(filePath, self.queue)
+            self.__dict__['printer'] = PrintLogThread(filePath, self.queue, LOG_NAME)
             self.__dict__['logpath'] = filePath
             self.printer.start()
 
         # by default, stdio gets captures. This can be toggled off
         self.stealStdio(stealStdio)
         self.logToConsole(printToConsole)
-
-        # A list of listeners that will receive raw logs as they come in
-        self.__dict__['subscribers'] = set()
 
         # Override twisted logging (allows us to cleanly catch all exceptions)
         # This must come after the setattr calls so we get the wrapped object
@@ -536,10 +537,12 @@ class Output():
         The server will be most interested in this call, but it needs to register for 
         new logs first, else there's a good chance to see duplicates. 
 
-        This is a little sloppy out of time constraints-- middle parameter should screen for 
-        logs after the given time.
+        NOTE: don't open all log files, check to open only the ones that might be relevant.
+        This is certainly a bug and can cause memory issues. 
 
-        :param purge: delete the old log files
+        :param target: seconds since the GMT epoch. Method returns logs that have timestamps later than this.
+        :type target: float.
+        :param purge: deletes the old log files (except today's) if set
         :type purge: bool.
         '''
 
@@ -549,18 +552,42 @@ class Output():
                      'Call startLogging with a directory first! ')
             return
 
-        ret = []
+        nameContents = []  # tuples of file name and their contents
+        last = None  # the last logfile
 
         for f in os.listdir(self.logpath):
             path = self.logpath + '/' + f
 
             with open(path, 'r') as x:
-                ret += x.readlines()
 
-            # Heuristic check for current logfile... a little silly
-            if purge and f is not 'log':
+                # dont put the current logfile in the list-- we will never delete it
+                if f == LOG_NAME:
+                    last = x.readlines()
+                else:
+                    nameContents.append((f, x.readlines()))
+
+            # conditionally remove the target file
+            if purge and f is not LOG_NAME:
                 os.remove(path)
 
+        # Hooray for magic methods!
+        # splits the name of the file, converts it to a time object, and sorts it time ascending
+        nameContents = sorted(nameContents, key=lambda d: time.strptime(d[0].split('.')[1], '%Y_%m_%d'))
+
+        # Once sorted, zip the lists into one
+        allSort, ret = [], []
+        allSort += last
+        [allSort.extend(x[1]) for x in nameContents]
+
+        for i in range(0, len(allSort)):
+            # well this seems needlessly expensive...
+            y = pdutils.str2json(allSort[i])
+
+            # slice remaining contents when the target time is found
+            if y['timestamp'] > target:
+                return allSort[i:]
+
+        # fall through in case no slice point found, something bad happens, etc
         return ret
 
     ###############################################################################
