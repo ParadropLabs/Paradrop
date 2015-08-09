@@ -73,23 +73,22 @@ def checkStartRiffle():
         out.warn("Cannot start riffle server, no CA certificate found")
         return
 
+    out.info('Received certs, opening riffle portal')
     # Check to make sure we are not already listening!
 
     riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
     riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(ToolsPerspective))
 
-    # riffle.Riffle('localhost', port=8017).serve()
-
     # Open connection to the server
     from twisted.internet import reactor
+    
+    # reactor.callLater(.1, connectToServer, 'paradrop.io')
     reactor.callLater(.1, connectToServer, 'localhost')
 
 
 ###############################################################################
 # Old
 ###############################################################################
-
-# @defaultCallbacks
 
 @defer.inlineCallbacks
 def echo(reactor, host):
@@ -135,6 +134,10 @@ def api_provision(pdid, publicKey, privateKey):
     store.store.saveConfig('pdid', pdid)
     store.store.saveKey(privateKey, 'private')
     store.store.saveKey(publicKey, 'public')
+
+    # init keys 
+    riffle.portal.keyPrivate = store.store.getKey('public')
+    riffle.portal.certCa = store.store.getKey('private')
 
     # If we are being provisioned for the first time, start riffle services
     checkStartRiffle()

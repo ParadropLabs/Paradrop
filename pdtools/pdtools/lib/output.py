@@ -145,7 +145,7 @@ class OutputRedirect(object):
 
         self.trueOut.write(formatted)
 
-    def flush():
+    def flush(self):
         self.trueOut.flush()
 
     def write(self, contents):

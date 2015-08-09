@@ -51,7 +51,7 @@ def createRouter(r, name):
     Like so many other things, this is a temporary method.
     '''
 
-    avatar = yield general.connectServer()
+    avatar = yield riffle.portal.connect()
     ret = yield avatar.provisionRouter(name)
 
     # Save that router's keys
@@ -63,6 +63,7 @@ def createRouter(r, name):
     store.saveConfig('routers', ret['routers'])
     store.saveConfig('instances', ret['instances'])
 
+    print 'New router successfully created'
     printOwned()
 
     defer.returnValue("Done")
@@ -109,23 +110,23 @@ def authSuccess(r):
 
 @authCallbacks
 @defer.inlineCallbacks
-def login(reactor):
+def login(reactor, host, port):
     name, password = None, None
 
     name = raw_input("Username: ")
     password = getpass.getpass()
 
-    client = RpcClient(general.SERVER_HOST, general.SERVER_PORT, '')
+    client = RpcClient(host, port, '')
     ret = yield client.login(name, password)
     defer.returnValue(ret)
 
 
 @authCallbacks
 @defer.inlineCallbacks
-def register(reactor):
+def register(reactor, host, port):
     name, email, password = raw_input("Username: "), raw_input("Email: "), getpass.getpass()
 
-    client = RpcClient(general.SERVER_HOST, general.SERVER_PORT, '')
+    client = RpcClient(host, port, '')
     ret = yield client.register(name, email, password)
     defer.returnValue(ret)
 

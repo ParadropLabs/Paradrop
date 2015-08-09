@@ -7,7 +7,7 @@ usage:
     paradrop start <host> <port> <chute-name>
     paradrop stop <host> <port> <chute-name>
     paradrop snap-install <host> <port>
-    paradrop router-create
+    paradrop router-create <name>
     paradrop router-provision <name> <host> <port>
     paradrop list
     paradrop logs <name>
@@ -32,7 +32,7 @@ from pdtools.lib.store import store
 
 # SERVER_HOST = 'paradrop.io'
 SERVER_HOST = 'localhost'
-SERVER_PORT = 8015
+SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
 
 
 def main():
@@ -60,10 +60,10 @@ def main():
         print 'Not implemented. Sorry, love.'
 
     if args['login']:
-        task.react(server.login)
+        task.react(server.login, (SERVER_HOST, SERVER_PORT,))
 
     if args['register']:
-        task.react(server.register)
+        task.react(server.register, (SERVER_HOST, SERVER_PORT,))
 
     # logged in calls
     if not store.loggedIn():
@@ -82,7 +82,7 @@ def main():
         task.react(server.list)
 
     if args['router-create']:
-        task.react(general.test)
+        task.react(server.createRouter, (args['<name>'],))
 
     if args['router-provision']:
         task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
