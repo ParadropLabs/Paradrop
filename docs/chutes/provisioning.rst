@@ -24,26 +24,29 @@ or if you already have pdtools installed::
 
 Please choose usernames and passwords that are at least 8 characters. 
 
-Create a new router with the server. All of your routers have to have unique names::
+Create a new router with the server. All of your routers have to have unique names, but
+lets use aardvark::
 
-    paradrop router-create <name>
+    paradrop router-create aardvark
 
 Once the creation process is finished see all of your owned chutes and routers with::
 
     paradrop list
 
 If this is your first time, You'll only see your single new router as part of its ``pdid`` (Link forthcoming.)
-This is the id of your router to the rest of the world.
+This is the id of your router to the rest of the world::
 
-At this point, however, that identity hasn't made it onto the router yet. When you use ``router-create`` to 
-name your new router, the server transmitted a wealth of information. To get that information to the router::
+    routers
+        pd.joe.aardvark
 
-    paradrop router-provision <name> <host> <port>
+At this point, however, that identity hasn't made it onto the router yet. When you used ``router-create`` to 
+name your new router, the server transmitted a wealth of information. To get that information to the router you need to know the host and port of the device. When running locally, ::
+
+    paradrop router-provision aardvark localhost 14231
 
 
 To see the logs of your router while its running, try::
 
-    paradrop logs <name>
+    paradrop logs aardvark
 
-But be warned! At this point in paradrop's developement you can only read the logs on routers that are 
-currently active (not for too much longer!)
+But be warned! Currently they'll only respond if the router is awake.
