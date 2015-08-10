@@ -16,8 +16,8 @@ def callDeferredMethod(method, *args):
         defer.returnValue(result)
     except error.DBusException as e:
         # This is murdering my local db, sorry! Doing all my work on local runs, not 
-        # snappy, so 1 log per second... 
-        # out.err("D-Bus error: {}".format(e))
+        # snappy, so 1 log per second... its annoying
+        out.err("D-Bus error: {}".format(e))
         pass
 
 

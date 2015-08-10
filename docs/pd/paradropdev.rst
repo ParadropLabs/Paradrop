@@ -8,7 +8,6 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
 
    quickstart
    build system
