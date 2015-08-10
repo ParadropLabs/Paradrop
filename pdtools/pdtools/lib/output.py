@@ -557,54 +557,6 @@ class Output():
                      'Call startLogging with a directory first! ')
             return
 
-        '''
-        nameContents = []  # tuples of file name and their contents
-        last = None  # the last logfile
-
-        for f in os.listdir(self.logpath):
-            path = self.logpath + '/' + f
-
-            with open(path, 'r') as x:
-
-                # dont put the current logfile in the list-- we will never delete it
-                if f == LOG_NAME:
-                    last = x.readlines()
-                else:
-                    nameContents.append((f, x.readlines()))
-
-            # conditionally remove the target file
-            if purge and f is not LOG_NAME:
-                os.remove(path)
-
-        # Hooray for magic methods!
-        # splits the name of the file, converts it to a time object, and sorts it time ascending
-
-        for x in nameContents:
-            print x
-            print x[0]
-
-        nameContents = sorted(nameContents, key=lambda d: time.strptime(d[0].split('.')[1], '%Y_%m_%d'))
-
-        # Once sorted, zip the lists into one
-        allSort, ret = [], []
-        allSort += last
-        [allSort.extend(x[1]) for x in nameContents]
-
-        # for x in allSort: 
-        #     print pdutils.str2json(x)['timestamp']
-
-        for i in range(0, len(allSort)):
-            # well this seems needlessly expensive...
-            y = json.loads(allSort[i])
-
-            # slice remaining contents when the target time is found
-            if y['timestamp'] > target:
-                return allSort[i:]
-
-        # fall through in case no slice point found, something bad happens, etc
-        return ret
-        '''
-
         ret = []
 
         for f in os.listdir(self.logpath):

@@ -1,12 +1,3 @@
-'''
-API exposed to pdtools and pdserver. 
-'''
-
-###############################################################################
-# API
-###############################################################################
-
-
 from twisted.web import xmlrpc
 from twisted.internet import defer, utils
 from pdtools.coms.client import RpcClient
@@ -14,10 +5,15 @@ from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names
 
+# Justs the duct tape
+
+# HOST = 'localhost'
+HOST = 'paradrop.io'
 
 ###############################################################################
 # New Riffle Additions
 ###############################################################################
+
 
 class ServerPerspective(riffle.RifflePerspective):
 
@@ -51,18 +47,6 @@ class ToolsPerspective(riffle.RifflePerspective):
     pass
 
 
-@defer.inlineCallbacks
-def connectToServer(host):
-    ''' Yet another temporary method '''
-    avatar = yield riffle.portal.connect(host)
-
-    # result = yield avatar.newLogs(['Hello from a client!'])
-
-    # riffle.dumpRealms()
-
-    defer.returnValue(avatar)
-
-
 def checkStartRiffle():
     '''
     Temporary function. Do not start serving or connecting over riffle
@@ -74,16 +58,15 @@ def checkStartRiffle():
         return
 
     out.info('Received certs, opening riffle portal')
-    # Check to make sure we are not already listening!
+    # Check to make sure we are not already listening
+    # as of this writing we are not checking for previously-provisioned state)
 
     riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
     riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(ToolsPerspective))
 
     # Open connection to the server
     from twisted.internet import reactor
-    
-    # reactor.callLater(.1, connectToServer, 'paradrop.io')
-    reactor.callLater(.1, connectToServer, 'localhost')
+    reactor.callLater(.1, riffle.portal.connect, HOST)
 
 
 ###############################################################################
@@ -135,7 +118,7 @@ def api_provision(pdid, publicKey, privateKey):
     store.store.saveKey(privateKey, 'private')
     store.store.saveKey(publicKey, 'public')
 
-    # init keys 
+    # init keys
     riffle.portal.keyPrivate = store.store.getKey('public')
     riffle.portal.certCa = store.store.getKey('private')
 
