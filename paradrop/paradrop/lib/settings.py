@@ -55,9 +55,7 @@ UCI_CONFIG_DIR = "/etc/config"
 #
 # Output
 #
-
-LOG_NAME = 'paradrop.logs'
-LOG_PATH = '/var/run/' #Not supposed to be for log files but will work for now.
+LOG_PATH = '/var/run/'  # Not supposed to be for log files but will work for now.
 
 
 # Pool of address available for chutes that request dynamic addresses.
@@ -66,10 +64,11 @@ DYNAMIC_NETWORK_POOL = "192.168.128.0/17"
 # Directory containing "docker" binary.
 DOCKER_BIN_DIR = "/apps/bin"
 
-
 ###############################################################################
 # Helper functions
 ###############################################################################
+
+
 def parseValue(key):
     """
     Attempts to parse the key value, so if the string is 'False' it will parse a boolean false.

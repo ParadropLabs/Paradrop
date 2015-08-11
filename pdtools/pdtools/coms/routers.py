@@ -2,39 +2,46 @@
 Communication with routers
 '''
 
+import requests
+import json
+import urllib
 import os
 import yaml
+from os.path import expanduser
 
+from twisted.internet import defer
 
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
-
-from twisted.internet import defer
-
-from os.path import expanduser
+from pdtools.lib import pdutils, riffle
 from pdtools.lib.output import out
 
-import requests
-import json
-import urllib
 
-from pdtools.lib import pdutils
-from pdtools.lib.store import store
-
+###############################################################################
+# Riffle and Non-riffle implementations
+###############################################################################
 
 @general.defaultCallbacks
 @defer.inlineCallbacks
 def provisionRouter(r, name, host, port):
-    target = [x for x in store.getConfig('routers') if name in x]
+
+    # Bug: if the user sets the name of the router as their username, this will
+    # fail badly
+    target = [x for x in store.getConfig('routers') if name in x['_id']]
 
     if len(target) == 0:
         print 'Router with name ' + name + ' not found.'
         yield 1
         defer.returnValue(None)
 
-    client = RpcClient(host, port, '')
-    ret = yield client.provision(target['_id'], target['publicKey'], target['privateKey'])
+    target = target[0]
+
+    pkey = store.getKey(target['_id'] + '.client.pem')
+    cacert = store.getKey('ca.pem')
+
+    client = RpcClient(host, port, 'internal')
+    ret = yield client.provision(target['_id'], pkey, cacert)
 
 
 ###############################################################################
@@ -56,7 +63,7 @@ def installChute(host, port, config):
         return
 
     # Verify the config provided in some way.
-    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str })
+    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str})
     if cfg_verf:
         print 'ERROR: ' + cfg_verf
         return

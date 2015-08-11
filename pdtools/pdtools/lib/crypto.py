@@ -1,5 +1,5 @@
 '''
-Encryption for local use. These functions are shared across multiple libraries.
+All kinds of encryption and security concerns
 '''
 
 import bcrypt

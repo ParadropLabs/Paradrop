@@ -55,13 +55,14 @@ import re
 n = r'[a-zA-Z0-9]{3,32}'
 basic = re.compile(r'pd\.%s' % n)
 
-NameTypes = Enum('NameTypes', 'user, chute, router, instance')
+NameTypes = Enum('NameTypes', 'user, chute, router, instance, server')
 
 matchers = {
     NameTypes.user: re.compile(r'^pd\.%s$' % n),
     NameTypes.chute: re.compile(r'^pd\.%s\.chutes\.%s$' % (n, n)),
     NameTypes.router: re.compile(r'^pd\.%s\.%s$' % (n, n)),
-    NameTypes.instance: re.compile(r'^pd\.%s\.%s\.%s$' % (n, n, n))
+    NameTypes.instance: re.compile(r'^pd\.%s\.%s\.%s$' % (n, n, n)),
+    NameTypes.server: re.compile(r'^pds.production$')
 }
 
 

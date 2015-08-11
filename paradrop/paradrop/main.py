@@ -6,7 +6,7 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-from pdtools.lib import output, store
+from pdtools.lib import output, store, riffle
 from paradrop.lib import settings
 
 from twisted.internet import reactor
@@ -54,6 +54,9 @@ def onShutdown():
     # Clears the print buffer, closes the logfile
     output.out.endLogging()
 
+    # Have the portal close all existing connections (gracefully, if possible)
+    riffle.portal.close()
+
     # TODO: inform the server
 
     # TODO: inform pdconfd
@@ -64,18 +67,6 @@ def onShutdown():
 ##########################################################################
 
 def main():
-    """
-    This function does something. Right now what its doing is demonstrating
-    a docstring with sphinxy additions.
-
-    :param name: The name to use.
-    :type name: str.
-    :param state: Current state to be in.
-    :type state: bool.
-    :returns: int -- the return code.
-    :raises: AttributeError, KeyError
-    """
-
     # Setup the signal handler for verbose
     signal.signal(signal.SIGUSR1, caughtSIGUSR1)
 
@@ -112,6 +103,7 @@ def main():
 
         # Now setup the RESTful API server for Paradrop
         pdfcd.server.setup(args)
+
 
 if __name__ == "__main__":
 

@@ -18,19 +18,12 @@ from twisted.internet import defer
 
 from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
-from pdtools.lib import pdutils
-from pdtools.lib import store
-from pdtools.lib import riffle
+from pdtools.lib import pdutils, store, riffle, names
 
-# SERVER_HOST = 'paradrop.io'
-SERVER_HOST = 'localhost'
-SERVER_PORT = 8015
-SERVER_RIFFLE_PORT = 8016
 
 ###############################################################################
-# Default Callbacks
+# Boilerplate Callbacks
 ###############################################################################
-
 
 def failureCallbacks(f):
     def w(*args, **kwargs):
@@ -56,11 +49,12 @@ def printSuccess(r):
             print x
     else:
         print r
+    return r
 
 
 def printFailure(r):
-    print 'Operation Failed!'
     print r
+    return r
 
 
 ###############################################################################
@@ -69,54 +63,18 @@ def printFailure(r):
 
 @defaultCallbacks
 @defer.inlineCallbacks
-def logs(reactor, host, port):
-    ''' Connect to the named device and ask for logs. '''
-    client = RpcClient(host, port, 'internal')
-    res = yield client.log()
-
-    # comes back raw from the file, have to convert back to dics
-    # converted = [pdutils.str2json(x) for x in res.strip().split('\n')]
-    # for a in [out.messageToString(x) for x in converted]:
-    #     print a
-
-    # Cant do this more succintly until we find the encoding bugs
-    for x in res.strip().split('\n'):
-        try:
-            j = pdutils.str2json(x)
-            s = out.messageToString(j)
-            print s
-        except:
-            print 'Malformed line, raw output: ' + x
-
-    defer.returnValue('Done')
-
-
-@defaultCallbacks
-@defer.inlineCallbacks
 def echo(reactor, host, port):
-    clientKey = store.store.getKey('client.pem')
-    caKey = store.store.getKey('ca.pem')
-
-    riffle.portal.addRealm(re.compile(r'^pds.production$'), riffle.Realm(ServerPerspective))
-
-    avatar = yield riffle.Riffle(host, int(port)).connect(caKey, clientKey)
-    result = yield avatar.echo('Hello from a client!')
-    defer.returnValue(result)
+    avatar = yield riffle.portal.connect(host=host, port=port)
+    response = yield avatar.echo("Hello!")
+    defer.returnValue(response)
 
 
-###############################################################################
-# Riffle Convenience Methods
-###############################################################################
+@defer.inlineCallbacks
+def test(r):
+    avatar = yield riffle.portal.connect()
+    response = yield avatar.test()
 
-class ServerPerspective(riffle.RifflePerspective):
+    contents = yield response.callRemote('stuff')
+    print contents
 
-    def perspective_echo(self, arg):
-        print 'Client: server called echo'
-        return arg
-
-
-def connectServer():
-    ''' Quick refactor method, returns a riffle client ready to communicate with the server '''
-    riffle.portal.addRealm(u'pds.production', riffle.Realm(ServerPerspective))
-
-    return riffle.Riffle('localhost', 4322).connect(store.KEY_PATH)
+    defer.returnValue(response)

@@ -12,7 +12,7 @@ from twisted.web.server import Site
 from twisted.internet import reactor
 
 from pdtools.lib.output import out
-from pdtools.lib import store
+from pdtools.lib import store, riffle, names
 
 from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
@@ -229,7 +229,6 @@ class ParadropAPIServer(pdrest.APIResource):
         self.failprocess(ip, request, (ip, self.defaultFailures), None, (tictoc, None), pdapi.ERR_BADMETHOD)
         return ""
 
-
 ###############################################################################
 # Initialization
 ###############################################################################
@@ -245,6 +244,7 @@ def initializeSystem():
 # Main function
 ###############################################################################
 
+
 def setup(args=None):
     """
     This is the main setup function to establish the TCP listening logic for
@@ -255,6 +255,17 @@ def setup(args=None):
     api = ParadropAPIServer(reactor)
     api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
+
+    # Asssign global riffle keys (Stupid naming, its on the todo list)
+    riffle.portal.keyPrivate = store.store.getKey('public')
+    riffle.portal.certCa = store.store.getKey('private')
+
+    # Setup riffle-style calls. Temporary. Eventually the routers cannot be started without
+    # already having been given keys, but for now this method checks for keys and attempts to start
+    # the server.
+    # Once that is done, functionality from that method will be moved here.
+    apiinternal.checkStartRiffle()
+
     # Development mode
     if(args and args.development):
         thePort = settings.PDFCD_PORT + 10000

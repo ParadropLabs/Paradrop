@@ -17,6 +17,8 @@ import threading
 import time
 import colorama
 import traceback
+import os
+import json
 
 from pdtools.lib import pdutils
 
@@ -28,6 +30,7 @@ verbose = False
 
 # colorama package does colors but doesn't do style, so keeping this for now
 BOLD = '\033[1m'
+LOG_NAME = 'log'
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
@@ -96,7 +99,7 @@ class PrintLogThread(threading.Thread):
     The path must exist before DailyLog runs for the first time.
     '''
 
-    def __init__(self, path, queue, name='log'):
+    def __init__(self, path, queue, name):
         threading.Thread.__init__(self)
         self.queue = queue
         self.writer = DailyLogFile(name, path)
@@ -109,7 +112,7 @@ class PrintLogThread(threading.Thread):
             result = self.queue.get(block=True)
 
             try:
-                writable = pdutils.json2str(result)
+                writable = json.dumps(result)
                 self.writer.write(writable + '\n')
                 self.writer.flush()
             except:
@@ -142,6 +145,9 @@ class OutputRedirect(object):
 
         self.trueOut.write(formatted)
 
+    def flush(self):
+        self.trueOut.flush()
+
     def write(self, contents):
         '''
         Intercept output to the assigned target and callback with it. The true output is
@@ -159,10 +165,10 @@ class OutputRedirect(object):
 
         self.callback(ret)
 
+
 ###############################################################################
 # Output Classes
 ###############################################################################
-
 
 class BaseOutput(object):
 
@@ -226,9 +232,17 @@ class BaseOutput(object):
 
 class TwistedOutput(BaseOutput):
 
+    # There's a host of things we simply don't care about. This is bad form
+    # and not great for performance. Alternatives welcome.
+    blacklist = [
+        'Starting factory',
+        'Stopping factory',
+        'Log opened'
+    ]
+
     def __call__(self, args):
         '''
-        Catch twisted logs and make them fall inline with our logs.
+        Catch twisted logs and make them fall in line with our logs.
 
         Ignore exceptions (those get their own handler)
 
@@ -244,15 +258,14 @@ class TwistedOutput(BaseOutput):
         try:
             message = args['message'][0]
         except:
+            # For now, lets ignore the big messages (ones without a well-defined message,
+            # generally these are internal twisted messages we may not care about)
+            return None
             message = str(args)
 
-        # NOTE: This code gets the REAL twisted stack trace-- but it seems to
-        # make things more noisy without actually helping
-        # package, module, line = silentLogPrefix(5)
-
-        # ret = {'message': message, 'type': self.type['name'], 'extra': {},
-        #        'package': package, 'module': module, 'timestamp': time.time(),
-        #        'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+        for x in TwistedOutput.blacklist:
+            if x in message:
+                return None
 
         ret = {'message': message, 'type': self.type['name'], 'extra': {},
                'package': 'twisted', 'module': 'internal', 'timestamp': time.time(),
@@ -281,14 +294,43 @@ class TwistedException(BaseOutput):
             tb = args['failure'].getTracebackObject()
             stacktrace = traceback.extract_tb(tb)[-1]
 
-            package, module = parseLogPrefix(stacktrace[0])
+            module, package = parseLogPrefix(stacktrace[0])
             line = stacktrace[1]
         except Exception:
             package, module, line = "uknown", 'unknown', '??'
 
-        # message =
-
         ret = {'message': str(args['failure'].getTraceback().strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
+               'package': package, 'module': module, 'timestamp': time.time(),
+               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+
+        return ret
+
+
+class ExceptionOutput(BaseOutput):
+
+    '''
+    Handle vanilla exceptions passed directly to us using out.exception
+    '''
+
+    def __call__(self, exception, random):
+        '''
+        The variable 'Random' is a leftover from the previous implementation and should be removed.
+        '''
+
+        # print exception.__traceback_
+        ex_type, ex, tb = sys.exc_info()
+        trace = traceback.extract_tb(tb)
+        lastFrame = trace[-1]
+
+        package, module = parseLogPrefix(lastFrame[0])
+        line = lastFrame[1]
+
+        message = type(exception).__name__ + ': ' + str(exception) + '\n'
+
+        for x in trace:
+            message += '  File "%s", line %d, in %s\n\t%s\n' % (x[0], x[1], x[2], x[3])
+
+        ret = {'message': message, 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
                'package': package, 'module': module, 'timestamp': time.time(),
                'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
 
@@ -349,6 +391,9 @@ class Output():
         # original objects.
         self.__dict__['outputMappings'] = {}
 
+        # listeners that will receive raw logs as they come in
+        self.__dict__['subscribers'] = set()
+
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
 
@@ -396,6 +441,16 @@ class Output():
         :type printToConsole: bool.
 
         '''
+
+        # Initialize printer thread
+        self.__dict__['logpath'] = None
+
+        if filePath is not None:
+            self.__dict__['queue'] = Queue.Queue()
+            self.__dict__['printer'] = PrintLogThread(filePath, self.queue, LOG_NAME)
+            self.__dict__['logpath'] = filePath
+            self.printer.start()
+
         # by default, stdio gets captures. This can be toggled off
         self.stealStdio(stealStdio)
         self.logToConsole(printToConsole)
@@ -405,15 +460,13 @@ class Output():
         log.startLoggingWithObserver(self.twisted, setStdout=False)
         log.startLoggingWithObserver(self.twistedErr, setStdout=False)
 
-        if filePath is not None:
-            self.__dict__['queue'] = Queue.Queue()
-            self.__dict__['printer'] = PrintLogThread(filePath, self.queue)
-            self.printer.start()
-
     def endLogging(self):
         '''
         Ask the printing thread to flush and end, then return.
         '''
+
+        out.info('Removing subscribers')
+        self.__dict__['subscribers'] = set()
 
         out.info('Asking file logger to close')
         self.queue.join()
@@ -442,11 +495,15 @@ class Output():
         if self.queue is not None:
             self.queue.put(logDict)
 
-        # Write out the human-readable version to out if needed (but always print out 
+        res = self.messageToString(logDict)
+
+        # Write out the human-readable version to out if needed (but always print out
         # exceptions for testing purposes)
         if self.printLogs or logDict['type'] == 'ERR':
-            res = self.messageToString(logDict)
             self.redirectOut.trueWrite(res)
+
+        for s in self.subscribers:
+            s(logDict)
 
     def messageToString(self, message):
         '''
@@ -461,9 +518,76 @@ class Output():
         outputObject = self.outputMappings[message['type'].lower()]
         return outputObject.formatOutput(message)
 
+    def addSubscriber(self, target):
+        '''
+        Accepts the given function as a subscriber. The function will be called with new logs
+        messages as they come in. 
+
+        TODO:
+            Add priority level filtering on subscription
+        '''
+        self.subscribers.add(target)
+
+    def removeSubscriber(self, target):
+        ''' Removes the given subscriber '''
+        if target in self.subscribers:
+            self.subscribers.remove(target)
+
+    def getLogsSince(self, target, purge=False):
+        '''
+        Reads all logs and returns their contents. The current log file is not touched. 
+        Removes old log files if 'purge' is set (though this is a topic for debate...)
+
+        The server will be most interested in this call, but it needs to register for 
+        new logs first, else there's a good chance to see duplicates. 
+
+        NOTE: don't open all log files, check to open only the ones that might be relevant.
+        This is certainly a bug and can cause memory issues. 
+
+        :param target: seconds since the GMT epoch. Method returns logs that have timestamps later than this.
+        :type target: float.
+        :param purge: deletes the old log files (except today's) if set
+        :type purge: bool.
+        :returns: a list of dictionaries containing log information. Not ordered.
+        '''
+
+        if not self.logpath:
+            out.warn('Asked for log files, but this instance of the output class '
+                     'is not currently configured for file logging. '
+                     'Call startLogging with a directory first! ')
+            return
+
+        ret = []
+
+        for f in os.listdir(self.logpath):
+            path = self.logpath + '/' + f
+
+            # the current log file is treated differently (no date, no delete)
+            if f != LOG_NAME:
+                t = time.strptime(f.split('.')[1], '%Y_%m_%d')
+
+                # dont load those with times earlier than target
+                if t >= target:
+                    with open(path, 'r') as x:
+                        ret += [json.loads(y) for y in x.readlines()]
+
+                # delete all files except log once read
+                if purge:
+                    os.remove(path)
+
+            # current log file is always loaded
+            else:
+                with open(path, 'r') as f:
+                    ret += [json.loads(y) for y in f.readlines()]
+
+        ret = filter(lambda x: x['timestamp'] > target, ret)
+
+        return ret
+
     ###############################################################################
     # Reconfiguration
     ###############################################################################
+
     def stealStdio(self, newStatus):
         self.__dict__['stealIo'] = newStatus
 
@@ -488,7 +612,7 @@ out = Output(
     perf=BaseOutput(LOG_TYPES['PERF']),
     warn=BaseOutput(LOG_TYPES['WARN']),
     err=BaseOutput(LOG_TYPES['ERR']),
-    exception=BaseOutput(LOG_TYPES['ERR']),
+    exception=ExceptionOutput(LOG_TYPES['ERR']),
     security=BaseOutput(LOG_TYPES['SECURITY']),
     fatal=BaseOutput(LOG_TYPES['FATAL']),
     twisted=TwistedOutput(LOG_TYPES['INFO']),

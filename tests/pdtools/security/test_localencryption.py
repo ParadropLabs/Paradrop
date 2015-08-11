@@ -1,9 +1,10 @@
-import pdtools.security.localencryption as local
+# import pdtools.security.localencryption as local
+from pdtools.lib import crypto
 
 
 def testPasswordEncrypts():
     password = '123445678'
-    hashed = local.hashPassword(password)
+    hashed = crypto.hashPassword(password)
 
     print hashed
     assert hashed != password
@@ -11,6 +12,6 @@ def testPasswordEncrypts():
 
 def testPasswordRecoverable():
     password = '123445678'
-    hashed = local.hashPassword(password)
+    hashed = crypto.hashPassword(password)
 
-    assert local.checkPassword(password, hashed)
+    assert crypto.checkPassword(password, hashed)
