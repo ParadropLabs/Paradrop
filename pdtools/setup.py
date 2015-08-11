@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pdtools",
-    version="0.1.44",
+    version="0.1.45",
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
     install_requires=[
@@ -17,7 +17,8 @@ setup(
         'service-identity>=14.0.0',
         'colorama>=0.3.3',
         'pyyaml>=3.11',
-        'enum>=0.4.4'
+        'enum>=0.4.4',
+        'enum34>=1.0.0'
     ],
 
     packages=find_packages(),
