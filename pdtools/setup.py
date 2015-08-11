@@ -10,13 +10,14 @@ setup(
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
     install_requires=[
-        'docopt>=0.6.2',
-        'requests>=2.7.0',
-        'twisted>=14.2',
         'bcrypt>=2.0.0',
-        'service-identity>=14.0.0',
+        'cffi>=1.1.2',
         'colorama>=0.3.3',
-        'pyyaml>=3.11'
+        'docopt>=0.6.2',
+        'pyyaml>=3.11',
+        'requests>=2.7.0',
+        'service-identity>=14.0.0',
+        'twisted>=14.2'
     ],
 
     packages=find_packages(),
