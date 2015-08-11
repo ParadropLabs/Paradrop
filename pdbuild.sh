@@ -21,7 +21,7 @@ then
     echo -e "  run\t\t run paradrop locally"
     echo -e "  install \t compile snap and install on local snappy virtual machine."
     echo -e "  setup\t\t prepares environment for local snappy testing"
-    echo -e "  up\t\t starts a local snappy virtual machine"
+    echo -e "  up\t\t starts a local snappy virtual machine, add wifi interface with 'up wifi-BUS-ADDR'"
     echo -e "  down\t\t closes a local snappy virtual machine"
     echo -e "  connect\t connects to a local snappy virtual machine"
 
@@ -223,14 +223,22 @@ up() {
         exit
     fi
 
+    # Check for WiFi arg
+    if [ ! -z "$1" ]; then
+        WIFI=(`echo "$1" | tr "-" " "`)
+        WIFI_BUS="${WIFI[1]}"
+        WIFI_ADDR="${WIFI[2]}"
+        echo "Enabling wifi with $WIFI_BUS:$WIFI_ADDR"
+        WIFI_CMD="-usb -device usb-host,hostbus=$WIFI_BUS,hostaddr=$WIFI_ADDR"
+    else
+        WIFI_CMD=""
+    fi
+
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
     kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321 \
-            -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 snappy-vm.img &
+            -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
 
-    # I can't run this at home, original statement here:
-    # kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::7777-:9000,hostfwd=tcp::9999-:14321 \
-            # -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 snappy-vm.img &
     echo $! > pid.txt
 }
 
@@ -272,7 +280,7 @@ case "$1" in
     "install_deps") install_deps;;
     "install") install;;
     "setup") setup;;
-    "up") up;;
+    "up") up "$2";;
     "down") down;;
     "connect") connect;;
     "docs") docs;;
