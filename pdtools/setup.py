@@ -16,7 +16,7 @@ setup(
         'bcrypt',
         'service-identity',
         'colorama',
-        'pyyaml'
+        'pyyaml','enum'
     ],
 
     packages=find_packages(),
