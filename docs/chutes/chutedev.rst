@@ -1,4 +1,4 @@
-Developing chutes
+Apps on Paradrop
 ====================================
 
 Wondering how to make applications that run on paradrop? Well wonder no more!

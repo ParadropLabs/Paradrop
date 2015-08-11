@@ -47,6 +47,7 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 	@echo "  coverage   to run coverage check of the documentation (if enabled)"
+	@echo "  serve      to serve the local html build on port 5000 for viewing"
 
 clean:
 	rm -rf $(BUILDDIR)/*
@@ -190,3 +191,10 @@ pseudoxml:
 	$(SPHINXBUILD) -b pseudoxml $(ALLSPHINXOPTS) $(BUILDDIR)/pseudoxml
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
+
+serve:
+	if [ ! -d "./$(BUILDDIR)/html" ]; then echo "Build html docs first" && exit 1; fi
+	@echo "Serving html built docs found under './_build/' on port 5000"
+	@cd $(BUILDDIR)/html/
+	@python -m SimpleHTTPServer 5000
+
