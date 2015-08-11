@@ -53,11 +53,10 @@ As of Release 0.1 you must compile using Ubuntu??XXX
 1. Install our `build tools <https://pypi.python.org/pypi/pdtools>`_ (``pip install pdtools``).
 2. Clone our `instance tools <https://github.com/ParadropLabs/Paradrop>`_.
 3. Register an account ``paradrop register``
-4. Login ``paradrop login``
-5. Setup instance tools
-    1. asdf
-    2. qwerty
-6. TODO
+4. Setup instance tools ``pdbuild.sh setup``
+5. Boot local testing VM ``pdbuild.sh up``
+6. Build the tools to go into testing VM ``pdbuild.sh build`` (have to be in Ubuntu rightXXX?)
+7. Push tools into VM ``pdbuild.sh install``
 
 
 
