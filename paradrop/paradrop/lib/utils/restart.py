@@ -35,6 +35,8 @@ def reloadChutes():
     storage this isn't great as it could mean our system still has interfaces up associated with that chute.
     If pdconfd doesn't report failure we attempt to start the chute and if this fails we trust the abort process
     to restore the system to a consistent state and we manually mark the chute as stopped and add a warning to it.
+    :param None
+    :returns: (list) A list of update dicts to be used to create updateObjects that should be run before accepting new updates.
     """
     chuteStore = chutestorage.ChuteStorage()
     chutes = [ ch for ch in chuteStore.getChuteList() if ch.state == 'running']
@@ -79,6 +81,9 @@ def updateStatus(update):
     This function is a callback for the updates we do upon restarting the system.
     It checks whether or not the update completed successfully and if not it
     changes the state of the chute to stopped and adds a warning.
+    :param update: The update object containing information about the chute that was created and whether it was successful or not.
+    :type update: obj
+    :returns: None
     """
     chuteStore = chutestorage.ChuteStorage()
     if not update.result.get('success'):

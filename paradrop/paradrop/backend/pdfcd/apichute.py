@@ -5,9 +5,6 @@ from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.lib.api.pdrest import APIDecorator
 from paradrop.lib.api import pdapi
 
-from paradrop.dock import deployment
-
-
 class ChuteAPI:
 
     """
