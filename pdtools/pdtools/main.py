@@ -27,8 +27,8 @@ from pdtools.coms import routers, general, server
 from pdtools.lib.store import store
 
 
-# SERVER_HOST = 'paradrop.io'
-SERVER_HOST = 'localhost'
+SERVER_HOST = 'paradrop.io'
+# SERVER_HOST = 'localhost'
 SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
 
 

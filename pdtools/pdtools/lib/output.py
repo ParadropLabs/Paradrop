@@ -20,10 +20,12 @@ import traceback
 import os
 import json
 
-from pdtools.lib import pdutils
+from enum import Enum
 
 from twisted.python.logfile import DailyLogFile
 from twisted.python import log
+
+from pdtools.lib import pdutils
 
 # "global" variable all modules should be able to toggle
 verbose = False
@@ -32,16 +34,18 @@ verbose = False
 BOLD = '\033[1m'
 LOG_NAME = 'log'
 
+Level = Enum('NameTypes', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL')
+
 # Represents formatting information for the specified log type
 LOG_TYPES = {
-    'HEADER': {'name': 'HEADER', 'glyph': '==', 'color': colorama.Fore.BLUE},
-    'VERBOSE': {'name': 'VERBOSE', 'glyph': '>>', 'color': colorama.Fore.BLACK},
-    'INFO': {'name': 'INFO', 'glyph': '--', 'color': colorama.Fore.GREEN},
-    'PERF': {'name': 'PERF', 'glyph': '--', 'color': colorama.Fore.WHITE},
-    'WARN': {'name': 'WARN', 'glyph': '**', 'color': colorama.Fore.YELLOW},
-    'ERR': {'name': 'ERR', 'glyph': '!!', 'color': colorama.Fore.RED},
-    'SECURITY': {'name': 'SECURITY', 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
-    'FATAL': {'name': 'FATAL', 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+    Level.HEADER: {'name': Level.HEADER, 'glyph': '==', 'color': colorama.Fore.BLUE},
+    Level.VERBOSE: {'name': Level.VERBOSE, 'glyph': '>>', 'color': colorama.Fore.BLACK},
+    Level.INFO: {'name': Level.INFO, 'glyph': '--', 'color': colorama.Fore.GREEN},
+    Level.PERF: {'name': Level.PERF, 'glyph': '--', 'color': colorama.Fore.WHITE},
+    Level.WARN: {'name': Level.WARN, 'glyph': '**', 'color': colorama.Fore.YELLOW},
+    Level.ERR: {'name': Level.ERR, 'glyph': '!!', 'color': colorama.Fore.RED},
+    Level.SECURITY: {'name': Level.SECURITY, 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
+    Level.FATAL: {'name': Level.FATAL, 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
 }
 
 ###############################################################################
@@ -383,8 +387,8 @@ class Output():
         colorama.init()
 
         # Refactor this as an Output class
-        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
-        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
+        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES[Level.VERBOSE])
+        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES[Level.VERBOSE])
 
         # Setattr wraps the output objects in a
         # decorator that allows this class to intercept their output, This dict holds the
@@ -515,7 +519,7 @@ class Output():
         :returns: str 
         '''
 
-        outputObject = self.outputMappings[message['type'].lower()]
+        outputObject = self.outputMappings[message['type']._name_.lower()]
         return outputObject.formatOutput(message)
 
     def addSubscriber(self, target):
@@ -605,16 +609,16 @@ class Output():
 
 
 out = Output(
-    header=BaseOutput(LOG_TYPES['HEADER']),
-    testing=BaseOutput(LOG_TYPES['VERBOSE']),
-    verbose=BaseOutput(LOG_TYPES['VERBOSE']),
-    info=BaseOutput(LOG_TYPES['INFO']),
-    perf=BaseOutput(LOG_TYPES['PERF']),
-    warn=BaseOutput(LOG_TYPES['WARN']),
-    err=BaseOutput(LOG_TYPES['ERR']),
-    exception=ExceptionOutput(LOG_TYPES['ERR']),
-    security=BaseOutput(LOG_TYPES['SECURITY']),
-    fatal=BaseOutput(LOG_TYPES['FATAL']),
-    twisted=TwistedOutput(LOG_TYPES['INFO']),
-    twistedErr=TwistedException(LOG_TYPES['ERR'])
+    header=BaseOutput(LOG_TYPES[Level.HEADER]),
+    testing=BaseOutput(LOG_TYPES[Level.VERBOSE]),
+    verbose=BaseOutput(LOG_TYPES[Level.VERBOSE]),
+    info=BaseOutput(LOG_TYPES[Level.INFO]),
+    perf=BaseOutput(LOG_TYPES[Level.PERF]),
+    warn=BaseOutput(LOG_TYPES[Level.WARN]),
+    err=BaseOutput(LOG_TYPES[Level.ERR]),
+    exception=ExceptionOutput(LOG_TYPES[Level.ERR]),
+    security=BaseOutput(LOG_TYPES[Level.SECURITY]),
+    fatal=BaseOutput(LOG_TYPES[Level.FATAL]),
+    twisted=TwistedOutput(LOG_TYPES[Level.INFO]),
+    twistedErr=TwistedException(LOG_TYPES[Level.ERR])
 )

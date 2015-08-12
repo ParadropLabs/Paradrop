@@ -111,6 +111,11 @@ def api_provision(pdid, publicKey, privateKey):
     This is a temporary call until the provisioning process is finalized.
     '''
 
+    # temp: check to make sure we're not already provisioned. Do not allow for
+    # multiple provisioning. This is a little hacky-- better to move this into store
+    if riffle.portal.certCa:
+        raise ValueError("This device is already provisioned as " + store.store.getConfig('pdid'))
+
     # Handshake with the server, ensuring the name is valid
     client = RpcClient('paradrop.io', 8015, '')
 
