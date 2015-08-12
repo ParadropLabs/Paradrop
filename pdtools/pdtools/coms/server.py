@@ -86,6 +86,17 @@ def logs(r, pdid):
     ret = yield avatar.logs(pdid)
 
 
+@general.defaultCallbacks
+@defer.inlineCallbacks
+def test(r):
+    ''' Should be able to receive a model when prompted '''
+    avatar = yield riffle.portal.connect(host='localhost')
+    ret = yield avatar.test()
+
+    # print ret.__dict__
+    name = yield ret.callRemote('data')
+    print 'Result from call: ' + name
+
 ###############################################################################
 # Authentication
 ###############################################################################

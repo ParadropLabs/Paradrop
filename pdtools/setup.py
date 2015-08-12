@@ -19,7 +19,8 @@ setup(
         'pyyaml>=3.11',
         'requests>=2.7.0',
         'service-identity>=14.0.0',
-        'twisted>=14.2'
+        'twisted>=14.2',
+        'pypubsub>=3.3.0'
     ],
 
     packages=find_packages(),

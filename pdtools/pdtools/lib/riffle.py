@@ -20,11 +20,12 @@ from twisted.internet import reactor
 from twisted.internet import defer
 from twisted.spread import pb
 from twisted.cred import portal as twistedPortal
-
-from zope.interface import implements
-
 from twisted.internet.endpoints import SSL4ClientEndpoint
 from twisted.internet.ssl import PrivateCertificate, Certificate, optionsForClientTLS
+
+from zope.interface import implements
+from pubsub import pub
+
 
 from pdtools.lib.output import out
 
@@ -130,7 +131,14 @@ class Portal(twistedPortal.Portal):
 
         raise KeyError("No matcher was found to handle ", credential)
 
+    def getRealm(self, matcher):
+        '''
+        Returns a realm based on a broad query for realm types.
+        '''
+        return self.realms[matcher]
+
     def login(self, credentials, mind):
+        # print 'Login request from ' + credentials
         target = self.findRealm(credentials)
         return target.requestAvatar(credentials, mind)
 
@@ -188,7 +196,14 @@ def dumpRealms(portal=portal):
 class Realm:
 
     '''
-    Wraps a type of avatar and all connections for that avatar type
+    Wraps a type of avatar and all connections for that avatar type.
+
+    Broadcasts connection changes using pubsub. To be notfied of new connections:
+        pubsub.pub.subscribe(con, '[avatarName]Connected')
+        pubsub.pub.unsubscribe(dis, '[avatarName]Disconnected')
+
+    where 'dis' and 'con' are method references. Both take keyword arguments 'type'
+    and 'realm'.
     '''
     implements(twistedPortal.IRealm)
 
@@ -211,6 +226,7 @@ class Realm:
 
         self.connections.add(avatar)
         out.info('Connected: ' + avatar.name)
+        pub.sendMessage('%sConnected' % self.avatar.__name__, avatar=avatar, realm=self)
 
         # yield mind.callRemote('echo', '')
 
@@ -241,6 +257,7 @@ class Realm:
 
     def connectionClosed(self, avatar):
         out.info('Disconnected: ' + str(avatar.name))
+        pub.sendMessage('%sDisconnected' % self.avatar.__name__, avatar=avatar, realm=self)
         self.connections.remove(avatar)
 
 
@@ -342,15 +359,31 @@ class RiffleViewable(pb.Viewable):
 # Perspective Broker Monkey Patches
 ############################################################
 
+class _RiffleBroker(pb.Broker):
+
+    def connectionLost(self, reason):
+        '''
+        This triggers many times, but the reason its here now is to 
+        detect invalid certs. Without the print statement, the client isnt warned. This is a 
+        todo item. 
+        '''
+        print 'Connection Lost!', reason
+        return pb.Broker.connectionLost(self, reason)
+
+
 class RiffleClientFactory(pb.PBClientFactory):
+
+    protocol = _RiffleBroker
 
     @defer.inlineCallbacks
     def login(self, portal):
         # Have to add connection to the portal
         self.portal = portal
 
+        # print 'Attempting to login!'
         # Returns a _RifflePortalWrapper remote reference
         root = yield self.getRootObject()
+        # print 'Got the root object!'
 
         # Extract the name from credentials
         peerCertificate = Certificate.peerFromTransport(self._broker.transport)
@@ -405,14 +438,18 @@ class RiffleClientFactory(pb.PBClientFactory):
 
 class RiffleServerFactory(pb.PBServerFactory):
 
+    protocol = _RiffleBroker
+
     def __init__(self, portal):
         pb.PBServerFactory.__init__(self, portal)
+        # print 'Server factory started'
         self.root = _RifflePortalRoot(portal)
 
 
 class _RifflePortalRoot(pb._PortalRoot):
 
     def rootObject(self, broker):
+        # print 'Returning the root object!'
         return _RifflePortalWrapper(self.portal, broker)
 
 
@@ -420,6 +457,7 @@ class _RifflePortalWrapper(pb._PortalWrapper):
 
     @defer.inlineCallbacks
     def remote_login(self, client):
+        # print 'Remote login!'
         peerCertificate = Certificate.peerFromTransport(self.broker.transport)
         pdid = peerCertificate.getSubject().commonName.decode('utf-8')
 
@@ -445,3 +483,34 @@ class _RifflePortalWrapper(pb._PortalWrapper):
         self.broker.notifyOnDisconnect(maybeLogout)
 
         defer.returnValue(avatar)
+
+    def __init__(self, portal, broker):
+        # print 'Root object initializing'
+        self.portal = portal
+        self.broker = broker
+
+        self.broker.notifyOnDisconnect(disc)
+        self.broker.notifyOnFail(fail)
+        self.broker.notifyOnConnect(connect)
+
+    def remote_loginAnonymous(self, mind):
+        # print 'Remote login!'
+        return None
+
+# Do we need these? Who knows. Keeping them around for know, although
+# these are a full level of abstraction below where we want to be, so be careful using them
+
+
+def disc():
+    # print 'CB: Disconnected'
+    pass
+
+
+def fail():
+    # print 'CB: Failed'
+    pass
+
+
+def connect():
+    # print 'CB: Connected'
+    pass

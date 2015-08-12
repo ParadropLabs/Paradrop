@@ -27,8 +27,8 @@ from pdtools.coms import routers, general, server
 from pdtools.lib.store import store
 
 
-SERVER_HOST = 'paradrop.io'
-# SERVER_HOST = 'localhost'
+# SERVER_HOST = 'paradrop.io'
+SERVER_HOST = 'localhost'
 SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
 
 
@@ -50,7 +50,7 @@ commands:
     login      
     register   Not implemented.
     logout
-    
+
 See 'paradrop <command> -h' for more information on a specific command.    
 """
 
@@ -162,13 +162,13 @@ def setup(displayToConsole=False, logLevel=0):
     initialize riffle's portal by creating name to realm assignments
     '''
     # For now, don't grab STDIO and don't write random log noise to conosle
-    output.out.startLogging(stealStdio=False, printToConsole=False)
+    output.out.startLogging(stealStdio=False, printToConsole=displayToConsole)
 
     # Initialize riffle with default values (can be overridden later)
+    # NOTE: riffle serves on its own default port. This is a different port from the const above
     riffle.portal.certCa = store.getKey('ca.pem')
     riffle.portal.keyPrivate = store.getKey('client.pem')
     riffle.portal.host = SERVER_HOST
-    # NOTE: riffle serves on its own default port. This is a different port from the const above
 
     # Register realms. See riffle documentation for Realm in pdtools.lib.riffle
     riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(server.ServerPerspective))
@@ -181,11 +181,16 @@ def main():
     argv = [args['<command>']] + args['<args>']
     command = args['<command>']
 
-    # TODO: Check for verbose flag. If set, turn on the serious logging.
-    setup()
+    # Check for verbose flag. If set, turn on the serious logging.
+    # TODO: set lower level log filters based on the number of '-v's passed in
+    setup(displayToConsole=args['--verbose'])
 
+    # Unpublished functions-- these here for testing purposes
     if command == 'echo':
-        task.react(general.echo, ('paradrop.io', 8016,))
+        task.react(general.echo, (args['<args>'][0], int(args['<args>'][1]),))
+
+    if command == 'test':
+        task.react(server.test)
 
     if command == 'login':
         task.react(server.login, (SERVER_HOST, SERVER_PORT,))
