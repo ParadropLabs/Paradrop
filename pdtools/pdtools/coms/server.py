@@ -137,6 +137,9 @@ def register(reactor, host, port):
 
     client = RpcClient(host, port, '')
     ret = yield client.register(name, email, password)
+    print('By using this software you agree to our Privacy Policy as well as our Terms and Conditions.')
+    print('  Privacy Policy:        https://paradrop.io/privacy-policy')
+    print('  Terms and Conditions:  https://paradrop.io/terms-and-conditions')
     defer.returnValue(ret)
 
 

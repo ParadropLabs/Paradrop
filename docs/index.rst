@@ -57,7 +57,8 @@ Environment setup
 
 0. Prerequisites:
 
-   * Packages: Python 2.7, pip, libffi-dev
+   * Packages: Python 2.7, python-pip, python-dev, libffi-dev, libssl-dev
+   * PyPI: pex
    * When you install build tools you may have to run: ``sudo pip install pypubsub --allow-external pypubsub``
 
 1. Install our `build tools <https://pypi.python.org/pypi/pdtools>`_ (``pip install pdtools``).

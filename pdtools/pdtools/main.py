@@ -47,9 +47,9 @@ commands:
     list       List and search for resources you own
     logs       Query logs
     
-    login      
-    register   Not implemented.
-    logout
+    login      Log into Paradrop account on another computer
+    register   Register for a Paradrop account
+    logout     Logout of account on this computer
 
 See 'paradrop <command> -h' for more information on a specific command.    
 """
@@ -74,7 +74,7 @@ usage:
 commands: 
     start       Start the installed chute with the given name
     stop        Stop the installed chute with the given name
-    install     Install a chute on the given router
+    install     Installs and starts a chute on the given router
     delete      Delete the installed chute on the given router
 """
 
