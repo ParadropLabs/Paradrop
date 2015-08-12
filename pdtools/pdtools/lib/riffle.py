@@ -380,10 +380,10 @@ class RiffleClientFactory(pb.PBClientFactory):
         # Have to add connection to the portal
         self.portal = portal
 
-        # print 'Attempting to login!'
+        print 'Attempting to login!'
         # Returns a _RifflePortalWrapper remote reference
         root = yield self.getRootObject()
-        # print 'Got the root object!'
+        print 'Got the root object!'
 
         # Extract the name from credentials
         peerCertificate = Certificate.peerFromTransport(self._broker.transport)
