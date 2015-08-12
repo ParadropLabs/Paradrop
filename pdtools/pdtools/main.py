@@ -114,59 +114,89 @@ def setup():
 ###################################################################
 
 rootDoc = """
-usage: git [--version] [--exec-path=<path>] [--html-path]
-           [-p|--paginate|--no-pager] [--no-replace-objects]
-           [--bare] [--git-dir=<path>] [--work-tree=<path>]
-           [-c <name>=<value>] [--help]
-           <command> [<args>...]
+usage: paradrop [--version] [--help] <command> [<args>...]
+        
+options:
+   -h, --help
+   
+The most commonly used commands are:
+    router     Manage routers
+    chute      Manage chutes
+    
+    list       List and search for resources you own
+    logs       Query logs
+    
+    login      
+    register
+    logout
+    
+See 'paradrop command -h' for more information on a specific command.    
+"""
+
+routerDoc = """
+usage: paradrop router [<command>]
 
 options:
-   -c <name=value>
-   -h, --help
-   -p, --paginate
+    -v, --verbose         be verbose; must be placed before a subcommand (not implemented)
 
-The most commonly used git commands are:
-   add        Add file contents to the index
-   branch     List, create, or delete branches
-   checkout   Checkout a branch or paths to the working tree
-   clone      Clone a repository into a new directory
-   commit     Record changes to the repository
-   push       Update remote refs along with associated objects
-   remote     Manage set of tracked repositories
-
-See 'git help <command>' for more information on a specific command.
-
-"""
-routerDoc = """
-usage: paradrop router provision
-       paradrop router list
-
-    -v, --verbose         be verbose; must be placed before a subcommand
-
-Other Content!
-    Look!
+commands: 
+    create      Create a new router
 """
 
+chuteDoc = """
+usage: paradrop chute [<command>]
 
-def routerMenu(argv):
+options: 
+    -a, --as    Testing
+
+commands: 
+    start       Start the installed chute with the given name
+    stop        Stop the installed chute with the given name
+    install     Install a chute on the given router
+    delete      Delete the installed chute on the given router
+"""
+
+listDoc = """
+usage: paradrop list
+
+Lists all owned resources.
+"""
+
+logsDoc = """
+usage: paradrop logs <name>
+
+Displays the logs for the provided resource. 
+"""
+
+
+def routerMenu():
     args = docopt(routerDoc)
+    print args
+
+
+def chuteMenu():
+    args = docopt(chuteDoc, options_first=True)
+    print args
+
+
+def listMenu():
+    args = docopt(listDoc)
+    print args
+
+
+def logsMenu():
+    args = docopt(logsDoc)
     print args
 
 
 def main2():
     ''' Show documentation and branch appropriately '''
     # show the documentation and extract host and port if provided (since they are commonly used)
-    args = docopt(rootDoc, version=get_distribution('pdtools').version)
-
-    # host, port = args['<host>'], args['<port>']
-    # port = int(port) if port else None
+    args = docopt(rootDoc, version=get_distribution('pdtools').version, options_first=True)
     argv = [args['<command>']] + args['<args>']
 
-    if args['<command>'] == 'remote':
-        # routerMenu(argv)
-        args = docopt(routerDoc)
-        print args
-
+    if args['<command>'] in 'router chute list logs'.split():
+        eval('%sMenu' % args['<command>'])()
 
 if __name__ == '__main__':
-    main()
+    main2()
