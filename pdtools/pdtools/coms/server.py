@@ -33,7 +33,7 @@ def list(r):
 
     # I don't think this is necesary anymore, but keeping it here for now
     # Have to hit the server every call anyway, so whats the point of saving these
-    # simple lists? User will not be able to do anything offline anyway. 
+    # simple lists? User will not be able to do anything offline anyway.
     store.saveConfig('chutes', ret['chutes'])
     store.saveConfig('routers', ret['routers'])
     store.saveConfig('instances', ret['instances'])
@@ -87,7 +87,7 @@ def logs(r, pdid):
 
 
 ###############################################################################
-# Authentication Callbacks
+# Authentication
 ###############################################################################
 
 
@@ -104,10 +104,6 @@ def authSuccess(r):
     store.saveKey(r['ca'], 'ca.pem')
 
     print 'You have been successfully logged in.'
-
-###############################################################################
-# RPC Implementation
-###############################################################################
 
 
 @authCallbacks
@@ -132,12 +128,10 @@ def register(reactor, host, port):
     ret = yield client.register(name, email, password)
     defer.returnValue(ret)
 
+
 ###############################################################################
 # Utils
 ###############################################################################
-
-# Show this individuallye (once for each type)
-
 
 def printOwned():
     chutes = store.getConfig('chutes')

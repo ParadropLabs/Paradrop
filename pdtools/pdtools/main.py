@@ -1,3 +1,21 @@
+'''
+Entry point for client tools.
+
+This module has two logical sections: extracting and validating arguments, and 
+sending program flow into the correct function.
+
+Structurally there are three sections. In order:
+    - Literal docstrings users see
+    - Subcommand handlers
+    - Entry point
+
+The main method calls docopt, which parses the first positional command given.
+If that command matches a sub-command the correct handler is invoked. 
+
+Docopt will not allow execution to continue if the args matcher fails (in other words:
+dont worry about failure conditions.) Check documentation for more information.
+'''
+
 from pkg_resources import get_distribution
 
 from docopt import docopt
@@ -158,7 +176,6 @@ def setup(displayToConsole=False, logLevel=0):
 
 
 def main():
-    ''' Show documentation and branch appropriately '''
     # present documentation, extract arguments
     args = docopt(rootDoc, version=get_distribution('pdtools').version, options_first=True, help=True)
     argv = [args['<command>']] + args['<args>']
