@@ -26,12 +26,14 @@ class ServerPerspective(riffle.RifflePerspective):
 
 @defer.inlineCallbacks
 def list(r):
-    ''' Return the resources this user owns. '''
+    ''' Return the resources this us4er owns. '''
 
     avatar = yield riffle.portal.connect()
     ret = yield avatar.list()
 
     # I don't think this is necesary anymore, but keeping it here for now
+    # Have to hit the server every call anyway, so whats the point of saving these
+    # simple lists? User will not be able to do anything offline anyway. 
     store.saveConfig('chutes', ret['chutes'])
     store.saveConfig('routers', ret['routers'])
     store.saveConfig('instances', ret['instances'])
