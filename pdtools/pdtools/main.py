@@ -175,7 +175,7 @@ def routerMenu():
 
 
 def chuteMenu():
-    args = docopt(chuteDoc, options_first=True)
+    args = docopt(chuteDoc)
     print args
 
 
