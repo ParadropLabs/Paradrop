@@ -1,25 +1,3 @@
-'''
-usage:
-    paradrop login
-    paradrop register
-    paradrop install <host> <port> <path-to-config> 
-    paradrop delete <host> <port> <chute-name>
-    paradrop start <host> <port> <chute-name>
-    paradrop stop <host> <port> <chute-name>
-    paradrop snap-install <host> <port>
-    paradrop router-create <name>
-    paradrop router-provision <name> <host> <port>
-    paradrop list
-    paradrop logs <name>
-    paradrop echo <host> <port>
-    paradrop (-h | --help)
-    paradrop --version
-
-options:
-    -h --help     Show this screen.
-    --version     Show version.
-'''
-
 from pkg_resources import get_distribution
 
 from docopt import docopt
@@ -35,62 +13,131 @@ SERVER_HOST = 'paradrop.io'
 SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
 
 
-def main():
-    # show the documentation and extract host and port if provided (since they are commonly used)
-    args = docopt(__doc__, version=get_distribution('pdtools').version)
-    host, port = args['<host>'], args['<port>']
-    port = int(port) if port else None
+rootDoc = """
+usage: paradrop [options] <command> [<args>...]
+        
+options:
+   -h, --help
+   --version
+   -v, --verbose    Show verbose internal output       
+   
+commands:
+    router     Manage routers
+    chute      Manage chutes
+    
+    list       List and search for resources you own
+    logs       Query logs
+    
+    login      
+    register   Not implemented.
+    logout
+    
+See 'paradrop <command> -h' for more information on a specific command.    
+"""
 
-    setup()
+routerDoc = """
+usage: 
+    paradrop router create <name> 
+    paradrop router provision <name> <host> <port>
 
-    # Make it happen.
+commands: 
+    create      Create a new router with the given name
+    provision   Assign a newly created router identity to a physical instance
+"""
+
+chuteDoc = """
+usage:
+    paradrop chute install <host> <port> <path-to-config>
+    paradrop chute delete <host> <port> <name>
+    paradrop chute start <host> <port> <name>
+    paradrop chute stop <host> <port> <name>
+
+commands: 
+    start       Start the installed chute with the given name
+    stop        Stop the installed chute with the given name
+    install     Install a chute on the given router
+    delete      Delete the installed chute on the given router
+"""
+
+listDoc = """
+usage: paradrop list
+
+Lists all owned resources.
+"""
+
+logsDoc = """
+usage: paradrop logs <name>
+
+Displays the logs for the provided resource. The resource, commonly a router, 
+must be online.
+"""
+
+
+def routerMenu():
+    args = docopt(routerDoc, options_first=False)
+
+    checkLoggedIn()
+
+    if args['provision']:
+        task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
+
+    elif args['create']:
+        task.react(server.createRouter, (args['<name>'],))
+
+    else:
+        print routerDoc
+
+
+def chuteMenu():
+    args = docopt(chuteDoc, options_first=False)
+
+    checkLoggedIn()
+
     if args['install']:
         return routers.installChute(args['<host>'], args['<port>'], args['<path-to-config>'])
 
     if args['delete']:
-        return routers.deleteChute(args['<host>'], args['<port>'], args['<chute-name>'])
+        return routers.deleteChute(args['<host>'], args['<port>'], args['<name>'])
 
     if args['start']:
-        return routers.startChute(args['<host>'], args['<port>'], args['<chute-name>'])
+        return routers.startChute(args['<host>'], args['<port>'], args['<name>'])
 
     if args['stop']:
-        return routers.stopChute(args['<host>'], args['<port>'], args['<chute-name>'])
+        return routers.stopChute(args['<host>'], args['<port>'], args['<name>'])
 
-    if args['snap-install']:
-        print 'Not implemented. Sorry, love.'
+    print routerDoc
 
-    if args['login']:
-        task.react(server.login, (SERVER_HOST, SERVER_PORT,))
 
-    if args['register']:
-        task.react(server.register, (SERVER_HOST, SERVER_PORT,))
+def listMenu():
+    args = docopt(listDoc)
 
+    checkLoggedIn()
+
+    # currently only one thing to do, but this will get more hefty
+    task.react(server.list)
+
+
+def logsMenu():
+    args = docopt(logsDoc)
+    checkLoggedIn()
+
+    reactor.callLater(.1, server.logs, None, args['<name>'])
+    reactor.run()
+    exit(0)
+
+
+###################################################################
+# Utility and Initialization
+###################################################################
+
+def checkLoggedIn():
     # logged in calls
     if not store.loggedIn():
         print 'You must login first.'
-        return
-
-    if args['logs']:
-        reactor.callLater(.1, server.logs, None, args['<name>'])
-        reactor.run()
-        return
-
-    if args['echo']:
-        task.react(general.echo, (host, port))
-
-    if args['list']:
-        task.react(server.list)
-
-    if args['router-create']:
-        task.react(server.createRouter, (args['<name>'],))
-
-    if args['router-provision']:
-        task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
-
-    print 'Something broke'
+        exit(1)
 
 
-def setup():
+def setup(displayToConsole=False, logLevel=0):
     '''
     Boilerplate setup. Start the logger, give riffle crypto keys, and 
     initialize riffle's portal by creating name to realm assignments
@@ -109,94 +156,30 @@ def setup():
     riffle.portal.addRealm(names.matchers[names.NameTypes.router], riffle.Realm(riffle.RifflePerspective))
 
 
-###################################################################
-# New Docs (currently incomplete)
-###################################################################
-
-rootDoc = """
-usage: paradrop [--version] [--help] <command> [<args>...]
-        
-options:
-   -h, --help
-   
-The most commonly used commands are:
-    router     Manage routers
-    chute      Manage chutes
-    
-    list       List and search for resources you own
-    logs       Query logs
-    
-    login      
-    register
-    logout
-    
-See 'paradrop command -h' for more information on a specific command.    
-"""
-
-routerDoc = """
-usage: paradrop router [<command>]
-
-options:
-    -v, --verbose         be verbose; must be placed before a subcommand (not implemented)
-
-commands: 
-    create      Create a new router
-"""
-
-chuteDoc = """
-usage: paradrop chute [<command>]
-
-options: 
-    -a, --as    Testing
-
-commands: 
-    start       Start the installed chute with the given name
-    stop        Stop the installed chute with the given name
-    install     Install a chute on the given router
-    delete      Delete the installed chute on the given router
-"""
-
-listDoc = """
-usage: paradrop list
-
-Lists all owned resources.
-"""
-
-logsDoc = """
-usage: paradrop logs <name>
-
-Displays the logs for the provided resource. 
-"""
-
-
-def routerMenu():
-    args = docopt(routerDoc)
-    print args
-
-
-def chuteMenu():
-    args = docopt(chuteDoc)
-    print args
-
-
-def listMenu():
-    args = docopt(listDoc)
-    print args
-
-
-def logsMenu():
-    args = docopt(logsDoc)
-    print args
-
-
-def main2():
+def main():
     ''' Show documentation and branch appropriately '''
-    # show the documentation and extract host and port if provided (since they are commonly used)
-    args = docopt(rootDoc, version=get_distribution('pdtools').version, options_first=True)
+    # present documentation, extract arguments
+    args = docopt(rootDoc, version=get_distribution('pdtools').version, options_first=True, help=True)
     argv = [args['<command>']] + args['<args>']
+    command = args['<command>']
 
-    if args['<command>'] in 'router chute list logs'.split():
-        eval('%sMenu' % args['<command>'])()
+    # TODO: Check for verbose flag. If set, turn on the serious logging.
+    setup()
+
+    if command == 'echo':
+        task.react(general.echo, ('paradrop.io', 8016,))
+
+    if command == 'login':
+        task.react(server.login, (SERVER_HOST, SERVER_PORT,))
+
+    if command == 'register':
+        task.react(server.register, (SERVER_HOST, SERVER_PORT,))
+
+    # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
+    if command in 'router chute list logs'.split():
+        return eval('%sMenu' % args['<command>'])()
+
+    exit("%r is not a paradrop command. See 'paradrop -h'." % args['<command>'])
 
 if __name__ == '__main__':
-    main2()
+    main()
