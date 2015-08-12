@@ -202,7 +202,7 @@ class BaseOutput(object):
 
         self.type = logType
 
-    def __call__(self, args, logPrefixLevel=3):
+    def __call__(self, args, logPrefixLevel=3, **extra):
         '''
         Called as an attribute on out. This method takes the passed params and builds a log dict,
         returning it.
@@ -216,7 +216,7 @@ class BaseOutput(object):
         if args[-1] == '\n':
             args = args.strip()
 
-        ret = {'message': str(args), 'type': self.type['name'], 'extra': {},
+        ret = {'message': str(args), 'type': self.type['name'], 'extra': extra,
                'package': package, 'module': module, 'timestamp': time.time(),
                'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
 
@@ -613,6 +613,7 @@ out = Output(
     testing=BaseOutput(LOG_TYPES[Level.VERBOSE]),
     verbose=BaseOutput(LOG_TYPES[Level.VERBOSE]),
     info=BaseOutput(LOG_TYPES[Level.INFO]),
+    usage=BaseOutput(LOG_TYPES[Level.INFO]),
     perf=BaseOutput(LOG_TYPES[Level.PERF]),
     warn=BaseOutput(LOG_TYPES[Level.WARN]),
     err=BaseOutput(LOG_TYPES[Level.ERR]),

@@ -6,6 +6,7 @@ This holds onto the UpdateObject class.
 It allows us to easily abstract away different update types and provide a uniform
 way to interpret the results through a set of basic actionable functions.
 '''
+import time
 
 from paradrop.backend import exc
 from paradrop.backend.fc import chutestorage
@@ -52,6 +53,9 @@ class UpdateObject(object):
         # Grab the old version if it exists
         self.old = self.chuteStor.getChute(self.name)
 
+        # Save a timestamp from when the update object was created.
+        self.createdTime = time.time()
+
     def __repr__(self):
         return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
 
@@ -66,14 +70,25 @@ class UpdateObject(object):
 
     def complete(self, **kwargs):
         """
-            Signal to the API server that any action we need to perform is complete and the API 
-            server can finish its connection with the client that initiated the API request.
+            Signal to the API server that any action we need to perform is
+            complete and the API server can finish its connection with the
+            client that initiated the API request.
         """
+        # Save a timestamp from when we finished execution.
+        self.endTime = time.time()
+
         if(settings.DEBUG_MODE):
             kwargs['responses'] = self.responses
 
         # Set our results
         self.result = kwargs
+
+        message = "Completed {} operation on chute {}: {}".format(
+            self.updateType, self.new.name,
+            "success" if kwargs['success'] else "failure")
+        out.usage(message, chute=self.new.name, updateType=self.updateType,
+                  createdTime=self.createdTime, startTime=self.startTime,
+                  endTime=self.endTime, **kwargs)
 
         # Call the function we were provided
         self.func(self)
@@ -89,6 +104,9 @@ class UpdateObject(object):
         If at any point we fail then this function will directly take care of completing
         the update process with an error state and will close the API connection.
         """
+        # Save a timestamp from when we started execution.
+        self.startTime = time.time()
+
         # Generate the plans we need to setup the chute
         if(exc.executionplan.generatePlans(self)):
             out.warn('Failed to generate plans\n')
