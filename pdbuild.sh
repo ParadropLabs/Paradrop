@@ -6,6 +6,7 @@ COLOR='\033[01;33m'
 
 DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
 HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
+SNAPPY_VERSION="0.1.0"
 
 #Show help if no args passed
 if [ $# -lt 1 ]
@@ -238,7 +239,7 @@ up() {
 
     echo "Starting snappy instance on local ssh port 8022."
     echo "Please wait for the virtual machine to load."
-    kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321 \
+    kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
             -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
 
     echo $! > pid.txt
@@ -259,6 +260,24 @@ connect() {
     ssh -p 8022 ubuntu@localhost
 }
 
+check() {
+    if [ ! -f pid.txt ]; then
+        echo "No Snappy virtual machine running. Try:"
+        echo -e "$0 up"
+        exit 1
+    fi
+    
+    PID=`cat pid.txt`
+    if [[ `ps -a | grep -E "^${PID}.*" | wc -l` -ne 1 ]]; then
+        echo -e "Virtual machine is: DOWN\t\tPID: ${PID}"
+        exit 1
+    else
+        echo "Virtual machine is: UP"
+    fi
+    
+    ssh -p 8022 ubuntu@localhost systemctl status paradrop_pdconfd_${SNAPPY_VERSION}.service
+    ssh -p 8022 ubuntu@localhost systemctl status paradrop_pd_${SNAPPY_VERSION}.service
+}
 
 update-tools() {
     cd pdtools
@@ -285,6 +304,7 @@ case "$1" in
     "up") up "$2";;
     "down") down;;
     "connect") connect;;
+    "check") check;;
     "docs") docs;;
     "update-tools") update-tools;;
     *) echo "Unknown input $1"
