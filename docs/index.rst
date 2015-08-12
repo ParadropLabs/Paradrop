@@ -48,7 +48,17 @@ Getting Started
 
 This will quickly take you through the process of bringing up a Hello World chute in a virtual machine on your computer.
 
-As of Release 0.1 you must compile using Ubuntu??XXX
+*NOTE*: As of release 0.1, pdbuild is built around using Ubuntu. We will eliminate this requirement soon, work arounds can be found at :ref:`no_ubuntu`.
+
+Environment setup
+-------------------
+
+.. TODO: remove need to say install pypubsub once fixed.
+
+0. Prerequisites:
+
+   * Packages: Python 2.7, pip, libffi-dev
+   * When you install build tools you may have to run: ``sudo pip install pypubsub --allow-external pypubsub``
 
 1. Install our `build tools <https://pypi.python.org/pypi/pdtools>`_ (``pip install pdtools``).
 2. Clone our `instance tools <https://github.com/ParadropLabs/Paradrop>`_.
@@ -56,15 +66,43 @@ As of Release 0.1 you must compile using Ubuntu??XXX
 4. Setup instance tools ``pdbuild.sh setup``
 5. Boot local testing VM ``pdbuild.sh up``
 6. Install instance dependencies ``pdbuild.sh install_deps``
-7. Build the tools to go into testing VM ``pdbuild.sh build`` (have to be in Ubuntu rightXXX?)
-8. Push tools into VM ``pdbuild.sh install``
+7. Build the tools to go into testing VM ``pdbuild.sh build``
+8. Push tools into VM ``pdbuild.sh install`` (NOTE: install can fail on occasion, try it again and it usually works)
+9. Check the installation ``pdbuild.sh check``
+
+Installing chutes
+-----------------------
+
+* Clone the Paradrop `example apps <https://github.com/ParadropLabs/Example-Apps>`_.
+
+Install **hello-world** chute::
+
+    cd <apps-repo>/hello-world
+    paradrop chute install localhost 9999 ./config.yaml
+    
+    Result:
+    Chute hello-world create success
+
+As a simple use case, **hello-world** starts an nginx server in the chute. To access this, visit ``localhost:9000`` in any web browser, you should see::
+
+    Hello World from Paradrop!
+
+Running ``paradrop chute stop localhost 9999 hello-world`` will stop the chute, if you refresh the webpage, you should no longer see the Hello World message.
 
 
+Where to go from here?
+====================================
 
-View Get started writing chutes with :doc:`chutes/chutedev`. 
-Learn how to help develop paradrop at :doc:`pd/paradropdev`. 
+We have advanced app examples found under :doc:`chutes/chutedev`.
+If you are interested in working on the instance side of paradrop (our github code) than check out: :doc:`pd/paradropdev`. 
 
 
+.. _no_ubuntu:
 
+What if I don't have Ubuntu?
+====================================
+
+We are actively working on Vagrant, which will allow support across all major operating systems.
+We will also update the docs with notes on how to download precompiled versions of our Paradrop instance tools once they have been fully tested.
 
 
