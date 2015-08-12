@@ -55,8 +55,9 @@ As of Release 0.1 you must compile using Ubuntu??XXX
 3. Register an account ``paradrop register``
 4. Setup instance tools ``pdbuild.sh setup``
 5. Boot local testing VM ``pdbuild.sh up``
-6. Build the tools to go into testing VM ``pdbuild.sh build`` (have to be in Ubuntu rightXXX?)
-7. Push tools into VM ``pdbuild.sh install``
+6. Install instance dependencies ``pdbuild.sh install_deps``
+7. Build the tools to go into testing VM ``pdbuild.sh build`` (have to be in Ubuntu rightXXX?)
+8. Push tools into VM ``pdbuild.sh install``
 
 
 

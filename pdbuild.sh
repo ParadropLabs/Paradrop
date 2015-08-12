@@ -143,11 +143,13 @@ install_deps() {
         exit
     fi
 
-    wget $DNSMASQ_SNAP
+    ssh -p 8022 ubuntu@localhost sudo snappy install docker
+
+    wget --quiet $DNSMASQ_SNAP
     snappy-remote --url=ssh://localhost:8022 install dnsmasq*.snap
     rm dnsmasq*.snap
 
-    wget $HOSTAPD_SNAP
+    wget --quiet $HOSTAPD_SNAP
     snappy-remote --url=ssh://localhost:8022 install hostapd*.snap
     rm hostapd*.snap
 }

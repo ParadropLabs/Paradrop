@@ -59,6 +59,10 @@ Run paradrop locally::
 
 To install paradrop on a snappy virtual machine you must make sure the virtual machine is running following the steps above. Specifically, make sure ``./pdbuild.sh up`` has been run.
 
+To get the full functionality of Paradrop, install some additional packages::
+
+    ./pdbuild.sh install_deps
+
 Install paradrop on snappy::
 
     ./pdbuild.sh install
