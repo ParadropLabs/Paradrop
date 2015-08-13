@@ -18,14 +18,7 @@ services:
  - name: pd
    start: bin/pd
    description: Paradrop main daemon
+   bus-name: com.paradrop.config
    security-policy:
       apparmor: meta/pd.apparmor
       seccomp: meta/pd.seccomp
- - name: pdconfd
-   start: bin/pd --config
-   description: Paradrop configuration daemon
-   bus-name: com.paradrop.config
-   security-policy:
-      apparmor: meta/pdconfd.apparmor
-      seccomp: meta/pdconfd.seccomp
-

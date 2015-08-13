@@ -3,7 +3,7 @@ import threading
 from twisted.internet import reactor, defer
 from txdbus import client, error
 
-from .main import service_name, service_path
+from .main import config_manager, service_name, service_path
 from pdtools.lib.output import out
 
 
@@ -47,7 +47,7 @@ class Blocking(object):
         return self.result
 
 
-def reloadAll():
+def reloadAll(dbus=False):
     """
     Reload all files from the system configuration directory.
 
@@ -56,12 +56,15 @@ def reloadAll():
     a 'success' field.  For critical errors such as failure to connect to the
     D-Bus service, it will return None.
     """
-    d = callDeferredMethod("ReloadAll")
-    blocking = Blocking(d)
-    return blocking.wait()
+    if dbus:
+        d = callDeferredMethod("ReloadAll")
+        blocking = Blocking(d)
+        return blocking.wait()
+    else:
+        config_manager.loadConfig()
 
 
-def reload(path):
+def reload(path, dbus=False):
     """
     Reload file(s) specified by path.
 
@@ -70,12 +73,15 @@ def reload(path):
     a 'success' field.  For critical errors such as failure to connect to the
     D-Bus service, it will return None.
     """
-    d = callDeferredMethod("Reload", path)
-    blocking = Blocking(d)
-    return blocking.wait()
+    if dbus:
+        d = callDeferredMethod("Reload", path)
+        blocking = Blocking(d)
+        return blocking.wait()
+    else:
+        config_manager.loadConfig(path)
 
 
-def waitSystemUp():
+def waitSystemUp(dbus=False):
     """
     Wait for the configuration daemon to finish its first load.
 
@@ -84,6 +90,9 @@ def waitSystemUp():
     a 'success' field.  For critical errors such as failure to connect to the
     D-Bus service, it will return None.
     """
-    d = callDeferredMethod("WaitSystemUp")
-    blocking = Blocking(d)
-    return blocking.wait()
+    if dbus:
+        d = callDeferredMethod("WaitSystemUp")
+        blocking = Blocking(d)
+        return blocking.wait()
+    else:
+        config_manager.waitSystemUp()

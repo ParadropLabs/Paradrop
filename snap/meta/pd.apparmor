@@ -157,4 +157,11 @@
   /sbin/killall5 ixr,
   /sbin/dmsetup ixr,
   /sbin/iptables ixr,
+
+  # /usr/bin/env is required to load our Python script.
+  # Python needs to access a bunch of stuff (devices, /tmp, /usr/local/lib, etc.),
+  # so the easiest thing to do is give it unconfined access with rux.
+  /usr/bin/env rix,
+  /usr/bin/python2.7 rux,
+  /apps/bin/dnsmasq rPx,
 }
