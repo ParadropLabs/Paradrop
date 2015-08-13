@@ -33,6 +33,7 @@ class ServerPerspective(riffle.RifflePerspective):
         to the server as they come in. 
         '''
 
+        print 'Server is asking for logs'
         # Adds the target function (newLogs) to out's streaming subscription set
         # Do not do this without the user's consent
         out.addSubscriber(self.remote.newLogs)
@@ -40,6 +41,7 @@ class ServerPerspective(riffle.RifflePerspective):
 
         logs = yield out.getLogsSince(target)
 
+        print 'Loaded %s logs' % len(logs)
         defer.returnValue(logs)
 
 

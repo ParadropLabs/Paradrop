@@ -230,7 +230,7 @@ class BaseOutput(object):
         printing to console.
         '''
         #TODO: optionally show the long form timestring
-        trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.stimestr(logDict['timestamp']))
+        trace = '[%s.%s#%s @ %s]  ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.stimestr(logDict['timestamp']))
         return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
 
     def __repr__(self):
