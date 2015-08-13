@@ -20,6 +20,8 @@ import traceback
 import os
 import json
 
+from enum import Enum
+
 from twisted.python.logfile import DailyLogFile
 from twisted.python import log
 
@@ -32,22 +34,7 @@ verbose = False
 BOLD = '\033[1m'
 LOG_NAME = 'log'
 
-
-class Level:
-    HEADER = 0
-    VERBOSE = 1
-    INFO = 2
-    PERF = 3
-    WARN = 4
-    ERR = 5
-    SECURITY = 6
-    FATAL = 7
-
-    _ordering = 'HEADER VERBOSE INFO PERF WARN ERR SECURITY FATAL'.split()
-    
-    @classmethod
-    def reverse(clas, key):
-        return Level._ordering[int(key)]
+Level = Enum('NameTypes', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL')
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
@@ -136,8 +123,6 @@ class PrintLogThread(threading.Thread):
                 pass
 
             self.queue.task_done()
-
-        print 'Print thread going down NOW'
 
 
 class OutputRedirect(object):
@@ -242,8 +227,7 @@ class BaseOutput(object):
         Convert a logdict into a custom formatted, human readable version suitable for
         printing to console.
         '''
-        # TODO: optionally show the long form timestring
-        trace = '[%s.%s#%s @ %s]  ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.stimestr(logDict['timestamp']))
+        trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.stimestr(logDict['timestamp']))
         return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
 
     def __repr__(self):
@@ -519,7 +503,7 @@ class Output():
 
         # Write out the human-readable version to out if needed (but always print out
         # exceptions for testing purposes)
-        if self.printLogs or logDict['type'] == Level.ERR:
+        if self.printLogs or logDict['type'] == 'ERR':
             self.redirectOut.trueWrite(res)
 
         for s in self.subscribers:
@@ -535,11 +519,9 @@ class Output():
         :returns: str 
         '''
 
-        #The old version of the logs had log level string in there, the new one has 
-        # the constant. Can't do reverse lookups using the integer!
+        print 'Attempting to print: ' + str(message)
 
-        name = Level.reverse(message['type'])
-        outputObject = self.outputMappings[name.lower()]
+        outputObject = self.outputMappings[message['type']._name_.lower()]
         return outputObject.formatOutput(message)
 
     def addSubscriber(self, target):

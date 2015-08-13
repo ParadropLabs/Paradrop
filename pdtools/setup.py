@@ -18,6 +18,7 @@ setup(
         'requests>=2.7.0',
         'service-identity>=14.0.0',
         'twisted>=14.2',
+        'enum34',
         'pypubsub>=3.3.0'
     ],
 
