@@ -46,6 +46,7 @@ FC_BOUNCE_UPDATE = None
 
 FC_CHUTESTORAGE_SAVE_PATH = "./tmp"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
+RESERVED_CHUTE = "__PARADROP__"
 
 #
 # UCI configuration files
@@ -64,6 +65,7 @@ LOG_PATH = '/var/run/'  # Not supposed to be for log files but will work for now
 # (dnsmasq.conf) will be stored.  It is better to put it in /var/run because
 # /tmp is sandboxed on Snappy.
 PDCONFD_WRITE_DIR = '/var/run/pdconfd'
+PDCONFD_ENABLED = True
 
 # Pool of address available for chutes that request dynamic addresses.
 DYNAMIC_NETWORK_POOL = "192.168.128.0/17"

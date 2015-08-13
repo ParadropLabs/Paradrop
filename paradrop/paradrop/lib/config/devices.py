@@ -16,6 +16,7 @@ import re
 
 from paradrop.lib.utils import uci
 from pdtools.lib.output import out
+from paradrop.lib import settings
 
 SYS_DIR = "/sys/class/net"
 EXCLUDE_IFACES = set(["lo"])
@@ -23,9 +24,6 @@ CHANNELS = [1, 6, 11]
 
 # Strings that identify a virtual interface.
 VIF_MARKERS = [".", "veth"]
-
-# Special chute name that indicates these are system rules.
-SYSTEM_CHUTE = "__PARADROP__"
 
 
 def isVirtual(ifname):
@@ -161,9 +159,9 @@ def setSystemDevices(update):
         options = {"type": "auto", "channel": channels.next()}
         wirelessSections.append((config, options))
 
-    setConfig(SYSTEM_CHUTE, networkSections,
+    setConfig(settings.RESERVED_CHUTE, networkSections,
               uci.getSystemPath("network"))
-    setConfig(SYSTEM_CHUTE, firewallSections,
+    setConfig(settings.RESERVED_CHUTE, firewallSections,
               uci.getSystemPath("firewall"))
-    setConfig(SYSTEM_CHUTE, wirelessSections,
+    setConfig(settings.RESERVED_CHUTE, wirelessSections,
               uci.getSystemPath("wireless"))
