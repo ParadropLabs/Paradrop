@@ -44,14 +44,10 @@ class Level:
     FATAL = 7
 
     _ordering = 'HEADER VERBOSE INFO PERF WARN ERR SECURITY FATAL'.split()
-
-    # @classmethod
-    # def __getitem__(clas, key):
-    #     return _ordering[key]
-
+    
     @classmethod
     def reverse(clas, key):
-        return Level._ordering[key]
+        return Level._ordering[int(key)]
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
@@ -523,7 +519,7 @@ class Output():
 
         # Write out the human-readable version to out if needed (but always print out
         # exceptions for testing purposes)
-        if self.printLogs or logDict['type'] == 'ERR':
+        if self.printLogs or logDict['type'] == Level.ERR:
             self.redirectOut.trueWrite(res)
 
         for s in self.subscribers:
@@ -538,6 +534,9 @@ class Output():
         :type message: dict.
         :returns: str 
         '''
+
+        #The old version of the logs had log level string in there, the new one has 
+        # the constant. Can't do reverse lookups using the integer!
 
         name = Level.reverse(message['type'])
         outputObject = self.outputMappings[name.lower()]

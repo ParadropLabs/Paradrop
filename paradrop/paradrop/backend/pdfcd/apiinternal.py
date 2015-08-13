@@ -5,8 +5,8 @@ from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names
 
-HOST = 'localhost'
-# HOST = 'paradrop.io'
+# HOST = 'localhost'
+HOST = 'paradrop.io'
 
 ###############################################################################
 # New Riffle Additions
