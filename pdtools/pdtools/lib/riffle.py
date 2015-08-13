@@ -30,11 +30,12 @@ from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
 
 DEFAULT_PORT = 8016
-
+TIMEOUT = 5  # seconds to try for a connection
 
 ############################################################
 # Portal and Utility methods
 ############################################################
+
 
 class Portal(twistedPortal.Portal):
 
@@ -269,6 +270,7 @@ class Levy(object):
 
     def __getattr__(self, item):
         def wrap(*args):
+            out.verbose('Riffle calling ' + item)
             return self.remote.callRemote(item, *args).addCallbacks(self.printValue, self.printError)
 
         return wrap
@@ -277,7 +279,7 @@ class Levy(object):
     #     return 'Levy wrapping:\n\t' + repr(self.remote)
 
     def printValue(self, value):
-        # print repr(value)
+        out.verbose('Call success: ' + value)
         return value
 
     def printError(self, error):
@@ -385,11 +387,10 @@ class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
         # Have to add connection to the portal
         self.portal = portal
 
-        # print 'Attempting to login!'
-        # Returns a _RifflePortalWrapper remote reference
-        self.setTimeout(3)
+        # Returns a _RifflePortalWrapper remote reference. Set a timeout
+        # in case the connection is down
+        self.setTimeout(TIMEOUT)
         root = yield self.getRootObject()
-        # print 'Got the root object!'
 
         # Reset the timeout, indicating we've made the connection and are done waiting
         self.setTimeout(None)
