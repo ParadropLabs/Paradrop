@@ -1,7 +1,7 @@
-Installing Paradrop
+Installing Paradrop on hardware
 ====================================
 
-Paradrop is distributed as a "snap," or an application that runs on snappy. You can run snappy on any x86 or armv7 board (Raspberry Pi Gen 2 or Beagleboard Black supported!) 
+Paradrop is distributed as a "snap" or an application that runs on snappy. You can run snappy on any x86 or armv7 board (Raspberry Pi Gen 2 or Beagleboard Black supported!) 
 
 To setup paradrop you need to install snapy on your hardware of choice and then have snappy install paradrop. This is a temporary method until more robust installation tools are finished. 
 
