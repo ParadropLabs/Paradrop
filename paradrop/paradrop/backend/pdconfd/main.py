@@ -26,11 +26,6 @@ from .config.manager import ConfigManager
 service_name = "com.paradrop.config"
 service_path = "/"
 
-# Do not try to use this from outside the pdconfd code.
-# Use the functions in backend.pdconfd.client instead.
-config_manager = None
-
-
 class ConfigService(objects.DBusObject):
     dbusInterfaces = [
         DBusInterface(service_name,
@@ -41,20 +36,25 @@ class ConfigService(objects.DBusObject):
                       Method("WaitSystemUp", returns="s"))
     ]
 
+    configManager = None
+
+    def __init__(self):
+        super(ConfigService, self).__init__(service_path)
+
     def dbus_Reload(self, name):
-        return config_manager.loadConfig(name)
+        return ConfigService.configManager.loadConfig(name)
 
     def dbus_ReloadAll(self):
-        return config_manager.loadConfig()
+        return ConfigService.configManager.loadConfig()
 
     def dbus_Test(self):
         return True
 
     def dbus_UnloadAll(self):
-        return config_manager.unload()
+        return ConfigService.configManager.unload()
 
     def dbus_WaitSystemUp(self):
-        return config_manager.waitSystemUp()
+        return ConfigService.configManager.waitSystemUp()
 
 
 @defer.inlineCallbacks
@@ -65,10 +65,10 @@ def listen():
     # will try to reconfigure the system.  One easy solution is to unload the
     # configuration before exiting.
     reactor.addSystemEventTrigger('before', 'shutdown',
-                                  config_manager.unload)
+                                  ConfigService.configManager.unload)
 
     # Now load all of the configuration for the first time.
-    config_manager.loadConfig()
+    ConfigService.configManager.loadConfig()
 
     try:
         conn = yield client.connect(reactor, busAddress="system")
@@ -76,7 +76,7 @@ def listen():
         yield conn.requestBusName(service_name)
     except error.DBusException as e:
         print("Failed to export DBus object: {}".format(e))
-        reactor.stop()
+#        raise e
 
 
 def run_thread():
@@ -85,7 +85,7 @@ def run_thread():
 
     This function schedules pdconfd to run as a thread and returns immediately.
     """
-    config_manager = ConfigManager()
+    ConfigService.configManager = ConfigManager()
     reactor.callFromThread(listen)
 
 
@@ -95,7 +95,7 @@ def run_pdconfd():
 
     This enters the pdconfd main loop.
     """
-    config_manager = ConfigManager()
+    ConfigService.configManager = ConfigManager()
     reactor.callWhenRunning(listen)
     reactor.run()
 
