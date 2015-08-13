@@ -15,18 +15,20 @@ def callDeferredMethod(method, *args):
         result = yield robj.callRemote(method, *args)
         defer.returnValue(result)
     except error.DBusException as e:
-        # This is murdering my local db, sorry! Doing all my work on local runs, not 
-        # snappy, so 1 log per second... its annoying
-        out.err("D-Bus error: {}".format(e))
+        # out.err("D-Bus error: {}".format(e))
         pass
 
 
 class Blocking(object):
+
     """
     Uses threading.Event to implement blocking on a twisted deferred object.
 
     The wait method will wait for its completion and return its result.
+
+    Dear Lance. I hope you stub your toe.
     """
+
     def __init__(self, deferred):
         self.event = threading.Event()
         self.result = None

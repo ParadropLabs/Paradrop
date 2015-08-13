@@ -25,6 +25,7 @@ class ServerPerspective(riffle.RifflePerspective):
             print out.messageToString(x)
 
 
+@general.failureCallbacks
 @defer.inlineCallbacks
 def list(r):
     ''' Return the resources this us4er owns. '''

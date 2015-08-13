@@ -16,7 +16,8 @@ timeflt = lambda: time.time()
 timeint = lambda: int(time.time())
 timestr = lambda x=None: time.asctime(time.localtime(x)) if x else time.asctime()
 
-# Convert localtime to gmtime! Serious!
+# Short time string
+stimestr = lambda x=None: time.strftime('%a %H:%M', time.localtime(x))
 
 
 def timedur(x):
@@ -131,6 +132,8 @@ Vanilla, sanitized benches do not show the same performance issues. Not sure why
 it might have to do with the content of the dictionaries or the complexity of the underlying
 data? They're still slower, but only by one or two magnitudes.
 '''
+
+
 def json2str(j, safe=' '):
     """
         Properly converts and encodes all data related to the JSON object into a string format
@@ -237,6 +240,7 @@ def explode(pkt, *args):
 
 
 class Timer(object):
+
     '''
     A timer object for simple benchmarking. 
 
@@ -246,6 +250,7 @@ class Timer(object):
 
     Once the code finishes executing the time is output. 
     '''
+
     def __init__(self, key="", verbose=True):
         self.verbose = verbose
         self.key = key

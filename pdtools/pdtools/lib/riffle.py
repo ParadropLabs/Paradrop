@@ -270,7 +270,6 @@ class Levy(object):
 
     def __getattr__(self, item):
         def wrap(*args):
-            out.verbose('Riffle calling ' + item)
             return self.remote.callRemote(item, *args).addCallbacks(self.printValue, self.printError)
 
         return wrap
@@ -279,7 +278,7 @@ class Levy(object):
     #     return 'Levy wrapping:\n\t' + repr(self.remote)
 
     def printValue(self, value):
-        out.verbose('Call success: ' + value)
+        # out.verbose('Call success: ' + str(value))
         return value
 
     def printError(self, error):

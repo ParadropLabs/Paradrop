@@ -103,7 +103,7 @@ class ConfigManager(object):
 
         # Allow threads to wait for first load to complete.  This will be set
         # after the first load completes and will remain set thereafter.
-        self.systemUp = threading.Event()
+        # self.systemUp = threading.Event()
 
     def changingSet(self, files):
         """

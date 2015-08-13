@@ -22,17 +22,18 @@ from txdbus.interface import DBusInterface, Method
 
 from .config.manager import ConfigManager
 
-service_name="com.paradrop.config"
-service_path="/"
+service_name = "com.paradrop.config"
+service_path = "/"
+
 
 class ConfigService(objects.DBusObject):
     dbusInterfaces = [
-        DBusInterface(service_name, 
-            Method("Reload", arguments="s", returns="s"),
-            Method("ReloadAll", returns="s"),
-            Method("Test", returns="b"),
-            Method("UnloadAll", returns="b"),
-            Method("WaitSystemUp", returns="s"))
+        DBusInterface(service_name,
+                      Method("Reload", arguments="s", returns="s"),
+                      Method("ReloadAll", returns="s"),
+                      Method("Test", returns="b"),
+                      Method("UnloadAll", returns="b"),
+                      Method("WaitSystemUp", returns="s"))
     ]
 
     def __init__(self):
@@ -54,8 +55,11 @@ class ConfigService(objects.DBusObject):
     def dbus_WaitSystemUp(self):
         return self.configManager.waitSystemUp()
 
+
 @defer.inlineCallbacks
 def listen():
+    1 / 0
+    defer.returnValue(None)
     service = ConfigService()
 
     # Things get messy if pdconfd is restarted with running chutes.  Then it
@@ -75,10 +79,10 @@ def listen():
         print("Failed to export DBus object: {}".format(e))
         reactor.stop()
 
+
 def run_pdconfd():
     reactor.callWhenRunning(listen)
     reactor.run()
 
-if __name__=="__main__":
+if __name__ == "__main__":
     run_pdconfd()
-

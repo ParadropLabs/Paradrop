@@ -7,8 +7,8 @@ from pdtools.lib import store, riffle, names
 
 # Justs the duct tape
 
-# HOST = 'localhost'
-HOST = 'paradrop.io'
+HOST = 'localhost'
+# HOST = 'paradrop.io'
 
 ###############################################################################
 # New Riffle Additions

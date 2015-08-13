@@ -14,7 +14,6 @@ setup(
         'cffi>=1.1.2',
         'colorama>=0.3.3',
         'docopt>=0.6.2',
-        'enum>=0.4.4',
         'enum34>=1.0.0',
         'pyyaml>=3.11',
         'requests>=2.7.0',

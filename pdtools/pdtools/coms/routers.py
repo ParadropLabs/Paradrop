@@ -32,7 +32,6 @@ def provisionRouter(r, name, host, port):
 
     if len(target) == 0:
         print 'Router with name ' + name + ' not found.'
-        yield 1
         defer.returnValue(None)
 
     target = target[0]

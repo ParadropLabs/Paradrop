@@ -87,7 +87,7 @@ def main():
     # initialize output. If filepath is set, logs to file.
     # If stealStdio is set intercepts all stderr and stdout and interprets it internally
     # If printToConsole is set (defaults True) all final output is rendered to stdout
-    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=True, printToConsole=True)
+    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=False, printToConsole=True)
 
     # Register for the shutdown callback so we can gracefully close logging
     reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
@@ -96,7 +96,7 @@ def main():
         from paradrop.backend import pdconfd
 
         # Start the configuration daemon
-        pdconfd.main.run_pdconfd()
+        # pdconfd.main.run_pdconfd()
 
     else:
         from paradrop.backend import pdfcd
