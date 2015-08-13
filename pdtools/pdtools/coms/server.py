@@ -11,6 +11,7 @@ from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
 from pdtools.lib import riffle, names
 from pdtools.lib.output import out
+from pdtools.lib.exceptions import *
 
 
 ###############################################################################
@@ -133,7 +134,10 @@ def login(reactor, host, port):
 @authCallbacks
 @defer.inlineCallbacks
 def register(reactor, host, port):
-    name, email, password = raw_input("Username: "), raw_input("Email: "), getpass.getpass()
+    name, email, pw, pw2 = raw_input("Username: "), raw_input("Email: "), getpass.getpass(), getpass.getpass(prompt='Reenter Password:')
+
+    if pw != pw2:
+        raise InvalidCredentials('Your passwords do not match.')
 
     client = RpcClient(host, port, '')
     ret = yield client.register(name, email, password)
