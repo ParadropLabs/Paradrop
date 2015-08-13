@@ -99,7 +99,11 @@ def main():
         pdconfd.main.run_pdconfd()
 
     else:
+        from paradrop.backend import pdconfd
         from paradrop.backend import pdfcd
+
+        # Start the configuration service as a thread
+        pdconfd.main.run_thread()
 
         # Now setup the RESTful API server for Paradrop
         pdfcd.server.setup(args)
