@@ -59,7 +59,7 @@ def reloadAll(dbus=False):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        ConfigService.configManager.loadConfig()
+        return ConfigService.configManager.loadConfig()
 
 
 def reload(path, dbus=False):
@@ -76,7 +76,7 @@ def reload(path, dbus=False):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        ConfigService.configManager.loadConfig(path)
+        return ConfigService.configManager.loadConfig(path)
 
 
 def waitSystemUp(dbus=False):
@@ -93,4 +93,4 @@ def waitSystemUp(dbus=False):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        ConfigService.configManager.waitSystemUp()
+        return ConfigService.configManager.waitSystemUp()
