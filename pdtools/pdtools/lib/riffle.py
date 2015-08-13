@@ -26,9 +26,8 @@ from twisted.internet.ssl import PrivateCertificate, Certificate, optionsForClie
 from zope.interface import implements
 from pubsub import pub
 
-
 from pdtools.lib.output import out
-
+from pdtools.lib.exceptions import *
 
 DEFAULT_PORT = 8016
 
@@ -371,19 +370,29 @@ class RiffleViewable(pb.Viewable):
 #         return pb.Broker.connectionLost(self, reason)
 
 
-class RiffleClientFactory(pb.PBClientFactory):
+from twisted.protocols.policies import TimeoutMixin
+from twisted.internet.protocol import Protocol
 
-    # protocol = _RiffleBroker
+
+class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
+
+    def login(self, portal):
+        self.d = self.login2(portal)
+        return self.d
 
     @defer.inlineCallbacks
-    def login(self, portal):
+    def login2(self, portal):
         # Have to add connection to the portal
         self.portal = portal
 
         # print 'Attempting to login!'
         # Returns a _RifflePortalWrapper remote reference
+        self.setTimeout(3)
         root = yield self.getRootObject()
         # print 'Got the root object!'
+
+        # Reset the timeout, indicating we've made the connection and are done waiting
+        self.setTimeout(None)
 
         # Extract the name from credentials
         peerCertificate = Certificate.peerFromTransport(self._broker.transport)
@@ -434,6 +443,10 @@ class RiffleClientFactory(pb.PBClientFactory):
         other.perspective_handshake()
 
         defer.returnValue(avatar)
+
+    def timeoutConnection(self):
+        out.warn('Connection has timed out!')
+        self.d.errback(RiffleError("The remote connection is unavailable."))
 
 
 class RiffleServerFactory(pb.PBServerFactory):

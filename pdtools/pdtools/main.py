@@ -56,8 +56,11 @@ See 'paradrop <command> -h' for more information on a specific command.
 
 routerDoc = """
 usage: 
-    paradrop router create <name> 
-    paradrop router provision <name> <host> <port>
+    paradrop [options] router create <name> 
+    paradrop [options] router provision <name> <host> <port>
+
+options:
+   -v, --verbose    Show verbose internal output       
 
 commands: 
     create      Create a new router with the given name
@@ -79,14 +82,24 @@ commands:
 """
 
 listDoc = """
-usage: paradrop list
+usage: 
+    paradrop list
+
+options:
+   -v, --verbose    Show verbose internal output       
+
 
 Lists all owned resources.
 """
 
 logsDoc = """
-usage: paradrop logs <name>
-
+usage: 
+    paradrop logs <name>
+    
+options:
+   -v, --verbose    Show verbose internal output       
+   
+    
 Displays the logs for the provided resource. The resource, commonly a router, 
 must be online.
 """

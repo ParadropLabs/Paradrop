@@ -5,19 +5,29 @@ TODO: Distill these down and make a heirarchy.
 '''
 
 
-class PdServerException(Exception): pass
+class PdServerException(Exception):
+    pass
 
 
-class InteralException(Exception): pass
+class InteralException(Exception):
+    pass
 
 
-class AuthenticationError(PdServerException): pass
+class AuthenticationError(PdServerException):
+    pass
 
 
-class InvalidCredentials(PdServerException): pass
+class InvalidCredentials(PdServerException):
+    pass
 
 
-class PdidError(PdServerException): pass
+class PdidError(PdServerException):
+    pass
 
 
-class PdidExclusionError(PdServerException): pass
+class PdidExclusionError(PdServerException):
+    pass
+
+
+class RiffleError(PdServerException):
+    pass
