@@ -137,6 +137,9 @@ run() {
     # is writable for unprivileged users.
     export PDCONFD_WRITE_DIR="/tmp/pdconfd"
 
+    # Write UCI config files to /tmp instead of a system config directory.
+    export UCI_CONFIG_DIR="/tmp/config"
+
     snap/bin/pd
 }
 
