@@ -5,10 +5,8 @@ from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names
 
-# Justs the duct tape
-
-HOST = 'localhost'
-# HOST = 'paradrop.io'
+# HOST = 'localhost'
+HOST = 'paradrop.io'
 
 ###############################################################################
 # New Riffle Additions
@@ -33,7 +31,6 @@ class ServerPerspective(riffle.RifflePerspective):
         to the server as they come in. 
         '''
 
-        print 'Server is asking for logs'
         # Adds the target function (newLogs) to out's streaming subscription set
         # Do not do this without the user's consent
         out.addSubscriber(self.remote.newLogs)
@@ -41,7 +38,6 @@ class ServerPerspective(riffle.RifflePerspective):
 
         logs = yield out.getLogsSince(target)
 
-        print 'Loaded %s logs' % len(logs)
         defer.returnValue(logs)
 
 

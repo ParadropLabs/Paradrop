@@ -58,8 +58,6 @@ class ConfigService(objects.DBusObject):
 
 @defer.inlineCallbacks
 def listen():
-    1 / 0
-    defer.returnValue(None)
     service = ConfigService()
 
     # Things get messy if pdconfd is restarted with running chutes.  Then it

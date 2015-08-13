@@ -15,7 +15,7 @@ def callDeferredMethod(method, *args):
         result = yield robj.callRemote(method, *args)
         defer.returnValue(result)
     except error.DBusException as e:
-        # out.err("D-Bus error: {}".format(e))
+        out.err("D-Bus error: {}".format(e))
         pass
 
 

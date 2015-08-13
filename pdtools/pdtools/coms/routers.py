@@ -41,6 +41,7 @@ def provisionRouter(r, name, host, port):
 
     client = RpcClient(host, port, 'internal')
     ret = yield client.provision(target['_id'], pkey, cacert)
+
     print 'Provisioning successful'
 
 
