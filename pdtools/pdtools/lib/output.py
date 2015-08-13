@@ -20,8 +20,6 @@ import traceback
 import os
 import json
 
-from enum import Enum
-
 from twisted.python.logfile import DailyLogFile
 from twisted.python import log
 
@@ -34,18 +32,37 @@ verbose = False
 BOLD = '\033[1m'
 LOG_NAME = 'log'
 
-Level = Enum('NameTypes', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL')
+
+class Level:
+    HEADER = 0
+    VERBOSE = 1
+    INFO = 2
+    PERF = 3
+    WARN = 4
+    ERR = 5
+    SECURITY = 6
+    FATAL = 7
+
+    _ordering = 'HEADER VERBOSE INFO PERF WARN ERR SECURITY FATAL'.split()
+
+    # @classmethod
+    # def __getitem__(clas, key):
+    #     return _ordering[key]
+
+    @classmethod
+    def reverse(clas, key):
+        return Level._ordering[key]
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
-    Level.HEADER.name: {'name': Level.HEADER.value, 'glyph': '==', 'color': colorama.Fore.BLUE},
-    Level.VERBOSE.name: {'name': Level.VERBOSE.value, 'glyph': '>>', 'color': colorama.Fore.BLACK},
-    Level.INFO.name: {'name': Level.INFO.value, 'glyph': '--', 'color': colorama.Fore.GREEN},
-    Level.PERF.name: {'name': Level.PERF.value, 'glyph': '--', 'color': colorama.Fore.WHITE},
-    Level.WARN.name: {'name': Level.WARN.value, 'glyph': '**', 'color': colorama.Fore.YELLOW},
-    Level.ERR.name: {'name': Level.ERR.value, 'glyph': '!!', 'color': colorama.Fore.RED},
-    Level.SECURITY.name: {'name': Level.SECURITY.value, 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
-    Level.FATAL.name: {'name': Level.FATAL.value, 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+    Level.HEADER: {'name': Level.HEADER, 'glyph': '==', 'color': colorama.Fore.BLUE},
+    Level.VERBOSE: {'name': Level.VERBOSE, 'glyph': '>>', 'color': colorama.Fore.BLACK},
+    Level.INFO: {'name': Level.INFO, 'glyph': '--', 'color': colorama.Fore.GREEN},
+    Level.PERF: {'name': Level.PERF, 'glyph': '--', 'color': colorama.Fore.WHITE},
+    Level.WARN: {'name': Level.WARN, 'glyph': '**', 'color': colorama.Fore.YELLOW},
+    Level.ERR: {'name': Level.ERR, 'glyph': '!!', 'color': colorama.Fore.RED},
+    Level.SECURITY: {'name': Level.SECURITY, 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
+    Level.FATAL: {'name': Level.FATAL, 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
 }
 
 ###############################################################################
@@ -229,7 +246,7 @@ class BaseOutput(object):
         Convert a logdict into a custom formatted, human readable version suitable for
         printing to console.
         '''
-        #TODO: optionally show the long form timestring
+        # TODO: optionally show the long form timestring
         trace = '[%s.%s#%s @ %s]  ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.stimestr(logDict['timestamp']))
         return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
 
@@ -390,8 +407,8 @@ class Output():
         colorama.init()
 
         # Refactor this as an Output class
-        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
-        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
+        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES[Level.VERBOSE])
+        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES[Level.VERBOSE])
 
         # Setattr wraps the output objects in a
         # decorator that allows this class to intercept their output, This dict holds the
@@ -522,8 +539,8 @@ class Output():
         :returns: str 
         '''
 
-        level = Level(message['type'])
-        outputObject = self.outputMappings[level.name.lower()]
+        name = Level.reverse(message['type'])
+        outputObject = self.outputMappings[name.lower()]
         return outputObject.formatOutput(message)
 
     def addSubscriber(self, target):
@@ -613,17 +630,17 @@ class Output():
 
 
 out = Output(
-    header=BaseOutput(LOG_TYPES['HEADER']),
-    testing=BaseOutput(LOG_TYPES['VERBOSE']),
-    verbose=BaseOutput(LOG_TYPES['VERBOSE']),
-    info=BaseOutput(LOG_TYPES['INFO']),
-    usage=BaseOutput(LOG_TYPES['INFO']),
-    perf=BaseOutput(LOG_TYPES['PERF']),
-    warn=BaseOutput(LOG_TYPES['WARN']),
-    err=BaseOutput(LOG_TYPES['ERR']),
-    exception=ExceptionOutput(LOG_TYPES['ERR']),
-    security=BaseOutput(LOG_TYPES['SECURITY']),
-    fatal=BaseOutput(LOG_TYPES['FATAL']),
-    twisted=TwistedOutput(LOG_TYPES['INFO']),
-    twistedErr=TwistedException(LOG_TYPES['ERR'])
+    header=BaseOutput(LOG_TYPES[Level.HEADER]),
+    testing=BaseOutput(LOG_TYPES[Level.VERBOSE]),
+    verbose=BaseOutput(LOG_TYPES[Level.VERBOSE]),
+    info=BaseOutput(LOG_TYPES[Level.INFO]),
+    usage=BaseOutput(LOG_TYPES[Level.INFO]),
+    perf=BaseOutput(LOG_TYPES[Level.PERF]),
+    warn=BaseOutput(LOG_TYPES[Level.WARN]),
+    err=BaseOutput(LOG_TYPES[Level.ERR]),
+    exception=ExceptionOutput(LOG_TYPES[Level.ERR]),
+    security=BaseOutput(LOG_TYPES[Level.SECURITY]),
+    fatal=BaseOutput(LOG_TYPES[Level.FATAL]),
+    twisted=TwistedOutput(LOG_TYPES[Level.INFO]),
+    twistedErr=TwistedException(LOG_TYPES[Level.ERR])
 )
