@@ -5,6 +5,7 @@ import subprocess
 import threading
 
 from pdtools.lib.output import out
+from paradrop.lib import settings
 from paradrop.lib.utils import pdosq
 from paradrop.lib.utils.uci import CONFIG_DIR, UCIConfig
 
@@ -24,7 +25,7 @@ for cls in ConfigObject.__subclasses__():
     configTypeMap[cls.typename] = cls
 
 
-WRITE_DIR = "/var/run/pdconfd"
+WRITE_DIR = settings.PDCONFD_WRITE_DIR
 """ Directory for daemon configuration files, PID files, etc. """
 
 

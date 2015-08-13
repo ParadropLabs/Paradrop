@@ -133,6 +133,10 @@ run() {
         exit
     fi
 
+    # Tell it to write to /tmp instead of the default location, so we know it
+    # is writable for unprivileged users.
+    export PDCONFD_WRITE_DIR="/tmp/pdconfd"
+
     snap/bin/pd
 }
 
