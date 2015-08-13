@@ -12,6 +12,7 @@ Contents:
 
    gettingstarted
    tutorials
+   configuration
    installation
    provisioning
 
