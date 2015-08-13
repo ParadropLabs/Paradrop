@@ -359,21 +359,21 @@ class RiffleViewable(pb.Viewable):
 # Perspective Broker Monkey Patches
 ############################################################
 
-class _RiffleBroker(pb.Broker):
+# class _RiffleBroker(pb.Broker):
 
-    def connectionLost(self, reason):
-        '''
-        This triggers many times, but the reason its here now is to 
-        detect invalid certs. Without the print statement, the client isnt warned. This is a 
-        todo item. 
-        '''
-        print 'Connection Lost!', reason
-        return pb.Broker.connectionLost(self, reason)
+#     def connectionLost(self, reason):
+#         '''
+#         This triggers many times, but the reason its here now is to
+#         detect invalid certs. Without the print statement, the client isnt warned. This is a
+#         todo item.
+#         '''
+#         print 'Connection Lost!', reason
+#         return pb.Broker.connectionLost(self, reason)
 
 
 class RiffleClientFactory(pb.PBClientFactory):
 
-    protocol = _RiffleBroker
+    # protocol = _RiffleBroker
 
     @defer.inlineCallbacks
     def login(self, portal):
@@ -438,7 +438,7 @@ class RiffleClientFactory(pb.PBClientFactory):
 
 class RiffleServerFactory(pb.PBServerFactory):
 
-    protocol = _RiffleBroker
+    # protocol = _RiffleBroker
 
     def __init__(self, portal):
         pb.PBServerFactory.__init__(self, portal)
@@ -484,18 +484,18 @@ class _RifflePortalWrapper(pb._PortalWrapper):
 
         defer.returnValue(avatar)
 
-    def __init__(self, portal, broker):
-        # print 'Root object initializing'
-        self.portal = portal
-        self.broker = broker
+    # def __init__(self, portal, broker):
+    # print 'Root object initializing'
+    #     self.portal = portal
+    #     self.broker = broker
 
-        self.broker.notifyOnDisconnect(disc)
-        self.broker.notifyOnFail(fail)
-        self.broker.notifyOnConnect(connect)
+    #     self.broker.notifyOnDisconnect(disc)
+    #     self.broker.notifyOnFail(fail)
+    #     self.broker.notifyOnConnect(connect)
 
-    def remote_loginAnonymous(self, mind):
-        # print 'Remote login!'
-        return None
+    # def remote_loginAnonymous(self, mind):
+    # print 'Remote login!'
+    #     return None
 
 # Do we need these? Who knows. Keeping them around for know, although
 # these are a full level of abstraction below where we want to be, so be careful using them
