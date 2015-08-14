@@ -14,7 +14,7 @@ from pdtools.lib.output import out
 from paradrop.backend.fc import chutestorage
 from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.backend.pdconfd.client import waitSystemUp
-from paradrop.lib import chute
+from paradrop.lib import chute, settings
 from paradrop.lib.config.network import reclaimNetworkResources
 import time
 
@@ -38,6 +38,8 @@ def reloadChutes():
     :param None
     :returns: (list) A list of update dicts to be used to create updateObjects that should be run before accepting new updates.
     """
+    if not settings.PDCONFD_ENABLED:
+        return []
     chuteStore = chutestorage.ChuteStorage()
     chutes = [ ch for ch in chuteStore.getChuteList() if ch.state == 'running']
 
@@ -61,6 +63,9 @@ def reloadChutes():
     failedChutes = []
     for iface in confdInfo:
         if iface.get('success') == False:
+            if iface.get('comment') == settings.RESERVED_CHUTE:
+                out.warn('Failed to load a system config section')
+                continue
             for ch in chutes:
                 if ch.name == iface.get('comment'): chutes.remove(ch)
             if iface.get('comment') not in failedChutes: failedChutes.append(iface.get('comment'))

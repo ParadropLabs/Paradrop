@@ -1,15 +1,19 @@
 Apps on Paradrop
 ====================================
 
-Wondering how to make applications that run on paradrop? Well wonder no more!
+This section of the documentation is devoted to describing the apps that run on Paradrop.
 
-This is a work in progress. Check back later!
-
+If this is your first time seeing Paradrop, please start with the :doc:`gettingstarted` page.
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   gettingstarted
+   tutorials
+   configuration
    installation
    provisioning
+
+

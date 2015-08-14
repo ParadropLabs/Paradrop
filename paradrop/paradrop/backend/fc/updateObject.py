@@ -83,12 +83,15 @@ class UpdateObject(object):
         # Set our results
         self.result = kwargs
 
-        message = "Completed {} operation on chute {}: {}".format(
-            self.updateType, self.new.name,
-            "success" if kwargs['success'] else "failure")
-        out.usage(message, chute=self.new.name, updateType=self.updateType,
-                  createdTime=self.createdTime, startTime=self.startTime,
-                  endTime=self.endTime, **kwargs)
+        try:
+            message = "Completed {} operation on chute {}: {}".format(
+                self.updateType, self.new.name,
+                "success" if kwargs['success'] else "failure")
+            out.usage(message, chute=self.new.name, updateType=self.updateType,
+                      createdTime=self.createdTime, startTime=self.startTime,
+                      endTime=self.endTime, **kwargs)
+        except Exception as e:
+            out.exception(e, True)
 
         # Call the function we were provided
         self.func(self)
