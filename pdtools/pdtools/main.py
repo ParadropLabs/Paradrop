@@ -14,6 +14,10 @@ If that command matches a sub-command the correct handler is invoked.
 
 Docopt will not allow execution to continue if the args matcher fails (in other words:
 dont worry about failure conditions.) Check documentation for more information.
+
+To run this code from the command line:
+    export PDCONFD_WRITE_DIR="/tmp/pdconfd"
+    export UCI_CONFIG_DIR="/tmp/config"
 '''
 
 from pkg_resources import get_distribution
@@ -26,9 +30,8 @@ from pdtools.lib import output, riffle, names
 from pdtools.coms import routers, general, server
 from pdtools.lib.store import store
 
-
-SERVER_HOST = 'paradrop.io'
-# SERVER_HOST = 'localhost'
+# SERVER_HOST = 'paradrop.io'
+SERVER_HOST = 'localhost'
 SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
 
 
@@ -175,7 +178,7 @@ def setup(displayToConsole=False, logLevel=0):
     initialize riffle's portal by creating name to realm assignments
     '''
     # For now, don't grab STDIO and don't write random log noise to conosle
-    output.out.startLogging(stealStdio=False, printToConsole=displayToConsole)
+    output.out.startLogging(stealStdio=False, printToConsole=True)
 
     # Initialize riffle with default values (can be overridden later)
     # NOTE: riffle serves on its own default port. This is a different port from the const above

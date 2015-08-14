@@ -3,7 +3,7 @@ import threading
 from twisted.internet import reactor, defer
 from txdbus import client, error
 
-from .main import config_manager, service_name, service_path
+from .main import ConfigService, service_name, service_path
 from pdtools.lib.output import out
 
 
@@ -61,7 +61,7 @@ def reloadAll(dbus=False):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        config_manager.loadConfig()
+        return ConfigService.configManager.loadConfig()
 
 
 def reload(path, dbus=False):
@@ -78,7 +78,7 @@ def reload(path, dbus=False):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        config_manager.loadConfig(path)
+        return ConfigService.configManager.loadConfig(path)
 
 
 def waitSystemUp(dbus=False):
@@ -95,4 +95,4 @@ def waitSystemUp(dbus=False):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        config_manager.waitSystemUp()
+        return ConfigService.configManager.waitSystemUp()

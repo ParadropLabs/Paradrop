@@ -5,6 +5,7 @@ import subprocess
 import threading
 
 from pdtools.lib.output import out
+from paradrop.lib import settings
 from paradrop.lib.utils import pdosq
 from paradrop.lib.utils.uci import CONFIG_DIR, UCIConfig
 
@@ -24,7 +25,7 @@ for cls in ConfigObject.__subclasses__():
     configTypeMap[cls.typename] = cls
 
 
-WRITE_DIR = "/var/run/pdconfd"
+WRITE_DIR = settings.PDCONFD_WRITE_DIR
 """ Directory for daemon configuration files, PID files, etc. """
 
 
@@ -103,7 +104,7 @@ class ConfigManager(object):
 
         # Allow threads to wait for first load to complete.  This will be set
         # after the first load completes and will remain set thereafter.
-        # self.systemUp = threading.Event()
+        self.systemUp = threading.Event()
 
     def changingSet(self, files):
         """
@@ -313,7 +314,7 @@ class ConfigManager(object):
     def statusString(self):
         """
         Return a JSON string representing status of the system.
-        
+
         The format will be a list of dictionaries.  Each dictionary
         corresponds to a configuration block and contains at the following
         fields.
