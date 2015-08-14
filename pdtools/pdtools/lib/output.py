@@ -34,18 +34,18 @@ verbose = False
 BOLD = '\033[1m'
 LOG_NAME = 'log'
 
-Level = Enum('NameTypes', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL')
+Level = Enum('Level', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL')
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
-    Level.HEADER: {'name': Level.HEADER, 'glyph': '==', 'color': colorama.Fore.BLUE},
-    Level.VERBOSE: {'name': Level.VERBOSE, 'glyph': '>>', 'color': colorama.Fore.BLACK},
-    Level.INFO: {'name': Level.INFO, 'glyph': '--', 'color': colorama.Fore.GREEN},
-    Level.PERF: {'name': Level.PERF, 'glyph': '--', 'color': colorama.Fore.WHITE},
-    Level.WARN: {'name': Level.WARN, 'glyph': '**', 'color': colorama.Fore.YELLOW},
-    Level.ERR: {'name': Level.ERR, 'glyph': '!!', 'color': colorama.Fore.RED},
-    Level.SECURITY: {'name': Level.SECURITY, 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
-    Level.FATAL: {'name': Level.FATAL, 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+    Level.HEADER: {'name': Level.HEADER.value, 'glyph': '==', 'color': colorama.Fore.BLUE},
+    Level.VERBOSE: {'name': Level.VERBOSE.value, 'glyph': '>>', 'color': colorama.Fore.BLACK},
+    Level.INFO: {'name': Level.INFO.value, 'glyph': '--', 'color': colorama.Fore.GREEN},
+    Level.PERF: {'name': Level.PERF.value, 'glyph': '--', 'color': colorama.Fore.WHITE},
+    Level.WARN: {'name': Level.WARN.value, 'glyph': '**', 'color': colorama.Fore.YELLOW},
+    Level.ERR: {'name': Level.ERR.value, 'glyph': '!!', 'color': colorama.Fore.RED},
+    Level.SECURITY: {'name': Level.SECURITY.value, 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
+    Level.FATAL: {'name': Level.FATAL.value, 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
 }
 
 ###############################################################################
@@ -519,9 +519,11 @@ class Output():
         :returns: str 
         '''
 
-        print 'Attempting to print: ' + str(message)
+        # print 'Attempting to print: ' + str(message)
 
-        outputObject = self.outputMappings[message['type']._name_.lower()]
+        level = Level(message['type'])
+        outputObject = self.outputMappings[level.name.lower()]
+        # outputObject = self.outputMappings[message['type']._name_.lower()]
         return outputObject.formatOutput(message)
 
     def addSubscriber(self, target):
