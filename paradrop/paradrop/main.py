@@ -7,7 +7,7 @@ import argparse
 import signal
 
 import smokesignal
-from twisted.internet import reactor
+from twisted.internet import reactor, defer
 
 from pdtools.lib import output, store, riffle, nexus, names
 from paradrop.lib import settings
@@ -31,16 +31,29 @@ class Nexus(nexus.NexusBase):
         riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
         riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
 
-        apiinternal.checkStartRiffle()
+        # We want to initiate a connection immediately, but
+        # reactor.callLater(.1, riffle.portal.connect, HOST)
+        reactor.callLater(.1, self.connect)
 
     def onStop(self):
         super(Nexus, self).onStop()
 
     def serverConnected(self, avatar, realm):
-        output.out.warn('Server Connected!')
+        output.out.info('Server Connected!')
 
     def serverDisconnected(self, avatar, realm):
         output.out.warn('Server Disconnected!')
+        reactor.callLater(.1, self.connect)
+
+    @defer.inlineCallbacks
+    def connect(self):
+        ''' Continuously tries to connect to server '''
+        print 'Trying to connect to server...'
+        try:
+            yield riffle.portal.connect()
+        except:
+            reactor.callLater(.1, self.connect)
+            defer.returnValue(True)
 
 
 def main():

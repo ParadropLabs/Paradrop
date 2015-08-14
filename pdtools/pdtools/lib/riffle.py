@@ -67,7 +67,6 @@ class Portal(twistedPortal.Portal):
         self.certCa = None
         self.keyPrivate = None
         self.keyPublic = None
-        self.polls = set()
 
     def open(self, port=None, cert=None):
         '''
@@ -106,38 +105,6 @@ class Portal(twistedPortal.Portal):
         avatar = yield factory.login(self)
 
         defer.returnValue(Levy(avatar))
-
-    # @defer.inlineCallbacks
-    # def pollConnect(self, cb, host=None, port=None, cert=None, key=None):
-    #     '''
-    #     Attempts to connect to a remote portal. If the suceeds and drops, or doesn't suceed,
-    #     attempt to reconnect. This method returns a deferred, but *it is never fired.*
-
-    #     Bah. This is not a good way to manage this
-
-    #     :param cb: a callback method that is called when the connection succeeds.
-    #     :type cb: callable
-    #     '''
-    #     self.polls.add(cb)
-
-    #     while cb in self.polls:
-    #         try:
-    #             print 'Attempting connection'
-    #             a = yield self.connect(host=host, port=port, cert=cert, key=key)
-    #             cb(a)
-    #             self.polls.remove(cb)
-    #             defer.returnValue(True)
-    #         except:
-    #             print 'Connection failed. NOTE: displayed incorrectly on occasion'
-    #             pass
-
-    #     defer.returnValue(None)
-
-    # def cancelPollConnect(self, cb):
-    #     '''
-    #     Cancel a retrying connection by removing its callback.
-    #     '''
-    #     self.polls.remove(cb)
 
     def close(self):
         '''
@@ -203,15 +170,9 @@ class Portal(twistedPortal.Portal):
         :return: the connection avatar or None
         '''
 
-        # print 'Looking for connection with name:', credentials
-
         r = self.findRealm(credentials)
-        # print r
-        # print 'Connections:', len(r.connections)
 
         for c in r.connections:
-            # print c
-
             if c.name == credentials:
                 return c
 
@@ -279,7 +240,13 @@ class Realm:
 
         avatar = yield self.avatar(avatarID, self)
         self.attach(avatar, mind)
-        defer.returnValue((avatar, lambda a=avatar: a.detached(mind)))
+
+        # Testing different methods of disconnecting the avatars
+        def d(a=avatar):
+            # print 'Detaching from mind'
+            a.detached(mind)
+
+        defer.returnValue((avatar, d))
 
     def attach(self, avatar, mind):
         '''
@@ -364,7 +331,6 @@ class RifflePerspective(pb.Avatar):
         Note: malicious endpoints can easily call this repeatedly. Add a check 
         to ensure init is only called once. 
         '''
-        # return self.initialize()
         yield self.initialize()
 
     def attached(self, mind):
