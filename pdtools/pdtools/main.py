@@ -169,7 +169,7 @@ def checkLoggedIn():
     # logged in calls
     if not store.loggedIn():
         print 'You must login first.'
-        exit(1)
+        exit(0)
 
 
 def setup(displayToConsole=False, logLevel=0):

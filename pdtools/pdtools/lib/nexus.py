@@ -112,7 +112,7 @@ class NexusBase(object):
         self.logPath = self.rootPath + '/logs/'
         self.keyPath = self.rootPath + '/keys/'
         self.miscPath = self.rootPath + '/misc/'
-        self.configPath = self.rootPath + '/config'  # This is the only 'path' that is really a file
+        self.configPath = self.rootPath + '/config'  # this is a path, not a file
 
         # create the paths
         for x in [self.rootPath, self.logPath, self.keyPath, self.miscPath]:
@@ -150,6 +150,7 @@ class NexusBase(object):
 
     def set(self, k, v):
         self.config[k] = v
+        self.save()
 
     def get(self, k):
         return self.config[k]
@@ -214,6 +215,7 @@ class NexusBase(object):
 
     def webPort(self):
         return _incrementingPort(14321, self.mode)
+
 
     #########################################################
     # Path Resolution

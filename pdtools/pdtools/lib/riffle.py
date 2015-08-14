@@ -102,6 +102,7 @@ class Portal(twistedPortal.Portal):
         factory = RiffleClientFactory()
         SSL4ClientEndpoint(reactor, host, port, ctx,).connect(factory)
 
+        print 'Connecting to ' + host + ':' + str(port)
         avatar = yield factory.login(self)
 
         defer.returnValue(Levy(avatar))

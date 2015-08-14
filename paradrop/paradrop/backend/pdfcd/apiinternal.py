@@ -7,8 +7,8 @@ from pdtools.lib import store, riffle, names
 
 from pdtools.lib import nexus
 
-HOST = 'localhost'
-# HOST = 'paradrop.io'
+# HOST = 'localhost'
+HOST = 'paradrop.io'
 
 ###############################################################################
 # New Riffle Additions
@@ -109,6 +109,8 @@ def api_provision(pdid, key, cert):
 
     # If we are being provisioned for the first time, start riffle services
     yield checkStartRiffle()
+
+    nexus.core.connect()
 
     # TEMP
     # logs = yield out.getLogsSince(0)
