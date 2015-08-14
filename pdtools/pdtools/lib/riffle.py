@@ -107,45 +107,42 @@ class Portal(twistedPortal.Portal):
 
         defer.returnValue(Levy(avatar))
 
-    @defer.inlineCallbacks
-    def pollConnect(self, cb, host=None, port=None, cert=None, key=None):
-        ''' 
-        Attempts to connect to a remote portal. If the suceeds and drops, or doesn't suceed, 
-        attempt to reconnect. This method returns a deferred, but *it is never fired.*
+    # @defer.inlineCallbacks
+    # def pollConnect(self, cb, host=None, port=None, cert=None, key=None):
+    #     '''
+    #     Attempts to connect to a remote portal. If the suceeds and drops, or doesn't suceed,
+    #     attempt to reconnect. This method returns a deferred, but *it is never fired.*
 
-        Bah. This is not a good way to manage this
+    #     Bah. This is not a good way to manage this
 
-        :param cb: a callback method that is called when the connection succeeds.
-        :type cb: callable
-        '''
-        # if not
-        self.polls.add(cb)
+    #     :param cb: a callback method that is called when the connection succeeds.
+    #     :type cb: callable
+    #     '''
+    #     self.polls.add(cb)
 
-        while cb in self.polls:
-            try:
-                print 'Attempting connection'
-                a = yield self.connect(host=host, port=port, cert=cert, key=key)
-                cb(a)
-                self.polls.remove(cb)
-                defer.returnValue(True)
-            except:
-                print 'Connection failed. NOTE: displayed incorrectly on occasion'
-                pass
+    #     while cb in self.polls:
+    #         try:
+    #             print 'Attempting connection'
+    #             a = yield self.connect(host=host, port=port, cert=cert, key=key)
+    #             cb(a)
+    #             self.polls.remove(cb)
+    #             defer.returnValue(True)
+    #         except:
+    #             print 'Connection failed. NOTE: displayed incorrectly on occasion'
+    #             pass
 
-        defer.returnValue(None)
+    #     defer.returnValue(None)
 
-    def cancelPollConnect(self, cb):
-        '''
-        Cancel a retrying connection by removing its callback.
-        '''
-        self.polls.remove(cb)
+    # def cancelPollConnect(self, cb):
+    #     '''
+    #     Cancel a retrying connection by removing its callback.
+    #     '''
+    #     self.polls.remove(cb)
 
     def close(self):
         '''
         Close all connections in all realms. Stop all polling connections.
         '''
-
-        self.polls = set()
 
         out.info("Portal closing all connections")
 
@@ -244,12 +241,29 @@ class Realm:
     '''
     Wraps a type of avatar and all connections for that avatar type.
 
-    Broadcasts connection changes using smokesignal. To be notfied of new connections:
-        smokesignal.on('[avatarName]Connected', methodYouWantToCall)
+    Broadcasts chanes in connection using smokesignals: a publish/subscribe 
+    library. Each realm broadcasts using its assigned avatar class (the class
+    that new connections are assigend as perspectives.)
 
-    The method will be called with the passed connection.
+    For example, consider a user connecting to a server. The server declares a subclass
+    of RifflePerspective called 'UserPerspective.' Another module wants to be alerted of 
+    new user connections and disconnections.
 
+    In external module:
+        def newUser(avatar, realm):
+            print 'A new user connected!
+
+        def userLost(avatar, realm):
+            print 'User went away :('
+
+        smokesignal.on('UserPerspectiveConnected', newUser)
+        smokesignal.on('UserPerspectiveDisconnected', userLost)
+
+    The method will be called with the connection in question and this realm.
+
+    Note: the connection will already be down when the second call comes in. 
     '''
+
     implements(twistedPortal.IRealm)
 
     def __init__(self, avatar):
@@ -262,40 +276,30 @@ class Realm:
         Returns an instance of the appropriate avatar. Asks the avatar to perform 
         any needed initialization (which should be a deferred)
         '''
-        avatar = self.avatar(avatarID, self)
-        avatar.attached(mind)
-        self.connections.add(avatar)
 
-        out.info('Connected: ' + avatar.name)
-        smokesignal.emit('Connected')
-
-        yield 1
-
-        # move detached from the avatar to here?
+        avatar = yield self.avatar(avatarID, self)
+        self.attach(avatar, mind)
         defer.returnValue((avatar, lambda a=avatar: a.detached(mind)))
 
     def attach(self, avatar, mind):
         '''
-        Temp method. Performs the other half of the partial avatar method.
+        Completes the riffle association by attaching the avatar to its remote, adding
+        it to the pool of connection stored here, and broadcasting the new connection.
 
-        Leaving the requestAvatar method is most likely a bad, bad idea.
-        The more riffle diverges from PB the greater chance for bugs across the board.
+        To listen for this 
         '''
-        avatar.attached(mind)
 
+        avatar.attached(mind)
         self.connections.add(avatar)
         out.info('Connected: ' + avatar.name)
-
-    def requestPartialAvatar(self, avatarID):
-        return self.avatar(avatarID, self)
+        smokesignal.emit('%sConnected' % self.avatar.__name__, avatar, self)
 
     def requestPartialAvatar(self, avatarID):
         return self.avatar(avatarID, self)
 
     def connectionClosed(self, avatar):
         out.info('Disconnected: ' + str(avatar.name))
-        smokesignal.emit('Connected')
-        # pub.sendMessage('%sDisconnected' % self.avatar.__name__, avatar=avatar, realm=self)
+        smokesignal.emit('%sDisconnected' % self.avatar.__name__, avatar, self)
         self.connections.remove(avatar)
 
 

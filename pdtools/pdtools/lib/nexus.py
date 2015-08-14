@@ -77,6 +77,8 @@ class NexusBase(object):
     def onStop(self):
         self.save()
 
+        riffle.portal.close()
+
         output.out.usage('%s going down' % self.type)
         output.out.endLogging()
 

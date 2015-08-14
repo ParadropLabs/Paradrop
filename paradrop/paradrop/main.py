@@ -24,7 +24,8 @@ class Nexus(nexus.NexusBase):
         super(Nexus, self).onStart()
 
         # register for new server connections
-        smokesignal.on('Connected', self.serverConnected)
+        smokesignal.on('ServerPerspectiveConnected', self.serverConnected)
+        smokesignal.on('ServerPerspectiveDisconnected', self.serverConnected)
 
         # Create riffle realms
         riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
@@ -35,8 +36,11 @@ class Nexus(nexus.NexusBase):
     def onStop(self):
         super(Nexus, self).onStop()
 
-    def serverConnected(self):
-        out.warn('Server Connected!')
+    def serverConnected(self, avatar, realm):
+        output.out.warn('Server Connected!')
+
+    def serverDisconnected(self, avatar, realm):
+        output.out.warn('Server Disconnected!')
 
 
 def main():
