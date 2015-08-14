@@ -28,12 +28,14 @@ store connections yourself-- riffle already does that and you'll screw up the po
 '''
 
 import os
+import yaml
 
 from twisted.internet import reactor
 
 from pdtools.lib import store, riffle, output
 
-# Global singleton. Must be assigned when the object is created
+# Global access. Assign this wherever you instantiate the Nexus object:
+#       nexus.core = MyNexusSubclass()
 core = None
 
 
@@ -52,7 +54,7 @@ class NexusBase(object):
 
         self.type, self.devMode = nexType, devMode
 
-        # initialize the paths
+        # initialize the paths and load existing settings
         self.makePaths()
         self.load()
 
@@ -60,6 +62,10 @@ class NexusBase(object):
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
         # If printToConsole is set (defaults True) all final output is rendered to stdout
         output.out.startLogging(filePath=self.logPath, stealStdio=True, printToConsole=printToConsole)
+
+        # Asssign global riffle keys
+        riffle.portal.keyPrivate = self.getKey('pub')
+        riffle.portal.certCa = self.getKey('ca')
 
         # register onStop for the shutdown call
         reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
@@ -69,8 +75,9 @@ class NexusBase(object):
         output.out.usage('%s coming up' % self.type)
 
     def onStop(self):
-        output.out.usage('%s going down' % self.type)
+        self.save()
 
+        output.out.usage('%s going down' % self.type)
         output.out.endLogging()
 
     def makePaths(self):
@@ -100,29 +107,69 @@ class NexusBase(object):
         self.miscPath = self.rootPath + 'misc/'
         self.configPath = self.rootPath + 'config'  # This is the only 'path' that is really a file
 
-        output.out.err('Using root path: ' + str(self.rootPath))
-
         # create the paths
         for x in [self.rootPath, self.logPath, self.keyPath, self.miscPath]:
             if not os.path.exists(x):
                 os.makedirs(x)
 
     def load(self):
-        pass
+        '''
+        Load our settings/configuration data from the path ivars. Does not check if the paths are None.
+
+        This is a combo of functionality from store and settings. The method of loading is configurable. 
+        Right now its YAML.
+        '''
+
+        # Check to make sure we have a default settings file
+        if not os.path.isfile(self.configPath):
+            createDefaultInfo(self.configPath)
+
+        self.config = loadYaml(self.configPath)
+
+        # Sanity check contents of info and throw it out if bad
+        if not validateInfo(self.config):
+            out.err('Saved configuration data invalid, destroying it.')
+            os.remove(self.configPath)
+            createDefaultInfo(self.configPath)
+            self.config = loadYaml(self.configPath)
 
     def save(self):
         ''' Ehh. Ideally this should happen constantly and asynchronously. '''
-        pass
+        writeYaml(self.config, self.configPath)
 
     #########################################################
     # Settings
     #########################################################
 
-    def setSetting(self, k, v):
-        pass
+    def set(self, k, v):
+        self.config[k] = v
 
-    def getSetting(self, k):
-        pass
+    def get(self, k):
+        return self.config[k]
+
+    def provisioned(self):
+        return True if self.baseConfig['pdid'] else False
+
+    #########################################################
+    # Keys
+    #########################################################
+
+    def saveKey(self, key, name):
+        ''' Save the key with the given name. Overwrites by default '''
+        path = self.keyPath + name
+
+        with open(path, 'wb') as f:
+            f.write(key)
+
+    def getKey(self, name):
+        ''' Returns the given key or None '''
+        path = self.keyPath + name
+
+        if os.path.isfile(path):
+            with open(path, 'rb') as f:
+                return f.read()
+
+        return None
 
     #########################################################
     # Chutes
@@ -145,33 +192,76 @@ class NexusBase(object):
     #########################################################
 
     def serverHost(self):
-        ''' Different in production vs dev, etc. Returns a host, port tuple '''
-        pass
+        ''' Different in production vs dev, etc. Returns hostname '''
+        return 'paradrop.io'
 
     def rifflePort(self):
-        pass
+        return 8016
 
     def insecureRifflePort(self):
         ''' This isnt a thing yet. But it will be. '''
-        pass
+        return 8017
 
     def webPort(self):
         ''' If serving on something other than 80 '''
-        pass
+        return 14321
 
     #########################################################
     # Path Resolution
     #########################################################
 
-    def logPath():
-        pass
+    def logPath(self):
+        return self.logPath
 
-    def keyPath():
-        pass
+    def keyPath(self):
+        return self.keyPath
 
-    def chutePath():
-        pass
+    def chutePath(self):
+        return self.chutePath
 
-    #########################################################
-    # Utils
-    #########################################################
+
+#########################################################
+# Utils
+#########################################################
+
+def createDefaultInfo(path):
+    default = {
+        'version': 1,
+        'pdid': "",
+        'chutes': [],
+        'routers': [],
+        'instances': []
+    }
+
+    writeYaml(default, path)
+
+
+def validateInfo(contents):
+    '''
+    Error checking on the read YAML file. This is a temporary method.
+
+    :param contents: the read-in yaml to check
+    :type contents: dict.
+    :returns: True if valid, else false
+    '''
+    INFO_REQUIRES = ['version', 'pdid', 'chutes', 'routers', 'instances']
+
+    for k in INFO_REQUIRES:
+        if k not in contents:
+            return False
+
+    # Check the validity of the contents
+
+    return True
+
+
+def writeYaml(contents, path):
+    ''' Overwrites content with YAML representation at given path '''
+    with open(path, 'w') as f:
+        f.write(yaml.dump(contents, default_flow_style=False))
+
+
+def loadYaml(path):
+    ''' Return dict from YAML found at path '''
+    with open(path, 'r') as f:
+        return yaml.load(f.read())

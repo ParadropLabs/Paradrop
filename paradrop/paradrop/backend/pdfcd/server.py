@@ -257,16 +257,6 @@ def setup(args=None):
     api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
 
-    # Asssign global riffle keys (Stupid naming, its on the todo list)
-    riffle.portal.keyPrivate = store.store.getKey('public')
-    riffle.portal.certCa = store.store.getKey('private')
-
-    # Setup riffle-style calls. Temporary. Eventually the routers cannot be started without
-    # already having been given keys, but for now this method checks for keys and attempts to start
-    # the server.
-    # Once that is done, functionality from that method will be moved here.
-    apiinternal.checkStartRiffle()
-
     # Development mode
     if(args and args.development):
         thePort = settings.PDFCD_PORT + 10000

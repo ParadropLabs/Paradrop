@@ -5,6 +5,8 @@ from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names
 
+from pdtools.lib import nexus
+
 HOST = 'localhost'
 # HOST = 'paradrop.io'
 
@@ -71,9 +73,6 @@ def checkStartRiffle():
     # Check to make sure we are not already listening
     # as of this writing we are not checking for previously-provisioned state)
 
-    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
-    riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(ToolsPerspective))
-
     # Open connection to the server
     from twisted.internet import reactor
     reactor.callLater(.1, riffle.portal.connect, HOST)
@@ -114,7 +113,7 @@ def api_log(lines=100):
 
 
 @defer.inlineCallbacks
-def api_provision(pdid, publicKey, privateKey):
+def api_provision(pdid, key, cert):
     '''
     Provision this router with an id and a set of keys. 
 
@@ -124,18 +123,14 @@ def api_provision(pdid, publicKey, privateKey):
     # temp: check to make sure we're not already provisioned. Do not allow for
     # multiple provisioning. This is a little hacky-- better to move this into store
     if riffle.portal.certCa:
-        raise ValueError("This device is already provisioned as " + store.store.getConfig('pdid'))
+        raise ValueError("This device is already provisioned as " + nexus.core.get('pdid'))
 
-    # Handshake with the server, ensuring the name is valid
-    # client = RpcClient('paradrop.io', 8015, '')
+    nexus.core.set('pdid', pdid)
+    nexus.core.saveKey(key, 'pub')
+    nexus.core.saveKey(cert, 'ca')
 
-    store.store.saveConfig('pdid', pdid)
-    store.store.saveKey(privateKey, 'private')
-    store.store.saveKey(publicKey, 'public')
-
-    # init keys
-    riffle.portal.keyPrivate = store.store.getKey('public')
-    riffle.portal.certCa = store.store.getKey('private')
+    riffle.portal.keyPrivate = key
+    riffle.portal.certCa = cert
 
     # If we are being provisioned for the first time, start riffle services
     checkStartRiffle()

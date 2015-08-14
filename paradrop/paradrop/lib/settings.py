@@ -144,6 +144,7 @@ def updateSettings(slist=[]):
 
     :returns: None
     """
+
     from types import ModuleType
     # Get a handle to our settings defined above
     mod = sys.modules[__name__]

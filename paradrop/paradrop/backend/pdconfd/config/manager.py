@@ -24,8 +24,7 @@ configTypeMap = dict()
 for cls in ConfigObject.__subclasses__():
     configTypeMap[cls.typename] = cls
 
-
-WRITE_DIR = settings.PDCONFD_WRITE_DIR
+# WRITE_DIR = settings.PDCONFD_WRITE_DIR
 """ Directory for daemon configuration files, PID files, etc. """
 
 
@@ -87,7 +86,7 @@ def sortCommands(commands):
 
 class ConfigManager(object):
 
-    def __init__(self, writeDir=WRITE_DIR):
+    def __init__(self, writeDir):
         self.writeDir = writeDir
 
         # Make sure directory exists.

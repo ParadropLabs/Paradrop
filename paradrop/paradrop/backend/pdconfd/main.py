@@ -20,11 +20,13 @@ import sys
 from twisted.internet import reactor, defer
 from txdbus import client, objects, error
 from txdbus.interface import DBusInterface, Method
+from paradrop.lib import settings
 
 from .config.manager import ConfigManager
 
 service_name = "com.paradrop.config"
 service_path = "/"
+
 
 class ConfigService(objects.DBusObject):
     dbusInterfaces = [
@@ -85,7 +87,7 @@ def run_thread():
 
     This function schedules pdconfd to run as a thread and returns immediately.
     """
-    ConfigService.configManager = ConfigManager()
+    ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR)
     reactor.callFromThread(listen)
 
 
@@ -95,7 +97,7 @@ def run_pdconfd():
 
     This enters the pdconfd main loop.
     """
-    ConfigService.configManager = ConfigManager()
+    ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR)
     reactor.callWhenRunning(listen)
     reactor.run()
 

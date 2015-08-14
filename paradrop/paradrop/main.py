@@ -9,8 +9,9 @@ import signal
 import smokesignal
 from twisted.internet import reactor
 
-from pdtools.lib import output, store, riffle, nexus
+from pdtools.lib import output, store, riffle, nexus, names
 from paradrop.lib import settings
+from paradrop.backend.pdfcd import apiinternal
 
 
 class Nexus(nexus.NexusBase):
@@ -24,6 +25,12 @@ class Nexus(nexus.NexusBase):
 
         # register for new server connections
         smokesignal.on('Connected', self.serverConnected)
+
+        # TEMP- check and see if we have keys, if so open a riffle portal
+        riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
+        riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
+
+        apiinternal.checkStartRiffle()
 
     def onStop(self):
         super(Nexus, self).onStop()
@@ -42,15 +49,21 @@ def main():
                    action='store_true')
     p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
     p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
+    p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
 
     args = p.parse_args()
+
+    # Temp- this should go to nexus (the settings portion of it, at least)
+    if args.local:
+        settings.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
+        settings.UCI_CONFIG_DIR = "/tmp/config"
 
     # Check for settings to overwrite (MOVE TO NEXUS)
     settings.updateSettings(args.settings)
 
     # Globally assign the nexus object so anyone else can access it.
     # Sorry, programming gods. If it makes you feel better this class
-    # reduced half a dozen exising singleton implementations
+    # replaces about half a dozen singletons
     nexus.core = Nexus()
 
     if args.config:
@@ -71,5 +84,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
