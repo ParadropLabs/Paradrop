@@ -228,6 +228,9 @@ class NexusBase(object):
     def chutePath(self):
         return self.chutePath
 
+    def uciPath(self):
+        pass
+
 
 #########################################################
 # Utils

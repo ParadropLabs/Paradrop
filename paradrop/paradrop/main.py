@@ -31,9 +31,6 @@ class Nexus(nexus.NexusBase):
         riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
         riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
 
-        # We want to initiate a connection immediately, but
-        # reactor.callLater(.1, riffle.portal.connect, HOST)
-
         if not self.provisioned():
             output.out.warn('Router has no keys or identity. Waiting to connecto to server.')
         else:
