@@ -30,7 +30,6 @@ import os
 import re
 import sys
 
-
 DEBUG_MODE = False
 VERBOSE = False
 
@@ -49,23 +48,15 @@ FC_CHUTESTORAGE_SAVE_PATH = "./tmp"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
 RESERVED_CHUTE = "__PARADROP__"
 
+#
+# UCI configuration files
+#
+UCI_CONFIG_DIR = "/etc/config"
 
 #
 # Output
 #
 LOG_PATH = '/var/run/'  # Not supposed to be for log files but will work for now.
-
-if False:
-    PDCONFD_WRITE_DIR = "/tmp/pdconfd"
-    UCI_CONFIG_DIR = "/tmp/config"
-else:
-    UCI_CONFIG_DIR = "/etc/config"
-    PDCONFD_WRITE_DIR = '/var/run/pdconfd'
-
-#
-# UCI configuration files
-#
-# UCI_CONFIG_DIR = "/etc/config"
 
 #
 # pdconfd
@@ -73,7 +64,7 @@ else:
 # PDCONFD_WRITE_DIR: Directory where automatically generated config files
 # (dnsmasq.conf) will be stored.  It is better to put it in /var/run because
 # /tmp is sandboxed on Snappy.
-# PDCONFD_WRITE_DIR = '/var/run/pdconfd'
+PDCONFD_WRITE_DIR = '/var/run/pdconfd'
 PDCONFD_ENABLED = True
 
 # Pool of address available for chutes that request dynamic addresses.
