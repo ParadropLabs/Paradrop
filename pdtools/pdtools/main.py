@@ -178,7 +178,7 @@ def setup(displayToConsole=False, logLevel=0):
     initialize riffle's portal by creating name to realm assignments
     '''
     # For now, don't grab STDIO and don't write random log noise to conosle
-    output.out.startLogging(stealStdio=False, printToConsole=True)
+    output.out.startLogging(stealStdio=False, printToConsole=False)
 
     # Initialize riffle with default values (can be overridden later)
     # NOTE: riffle serves on its own default port. This is a different port from the const above
