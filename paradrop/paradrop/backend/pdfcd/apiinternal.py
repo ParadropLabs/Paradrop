@@ -90,6 +90,11 @@ def api_provision(pdid, key, cert):
     This is a temporary call until the provisioning process is finalized.
     '''
 
+    # SO TEMP IT HURTS:
+    # yield
+    # ret = {'root': nexus.core.rootPath, 'logs': nexus.core.logPath}
+    # defer.returnValue(ret)
+
     # temp: check to make sure we're not already provisioned. Do not allow for
     # multiple provisioning. This is a little hacky-- better to move this into store
     if riffle.portal.certCa:
@@ -105,7 +110,7 @@ def api_provision(pdid, key, cert):
     # If we are being provisioned for the first time, start riffle services
     yield checkStartRiffle()
 
-    #TEMP
+    # TEMP
     # logs = yield out.getLogsSince(0)
 
     # defer.returnValue(logs)
