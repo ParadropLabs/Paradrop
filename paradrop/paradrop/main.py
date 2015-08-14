@@ -6,46 +6,39 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-from pdtools.lib import output, store, riffle
-from paradrop.lib import settings
-
 from twisted.internet import reactor
 
+from pdtools.lib import output, store, riffle, nexus
+
+from paradrop.lib import settings
+
+
+class Nexus(nexus.NexusBase):
+
+    def __init__(self):
+        ''' Sets up the local paths, loads old config and parses incoming config '''
+        super(Nexus, self).__init__('router', devMode=False)
 
 ##########################################################################
 # Support Functions
 ##########################################################################
+
+
 def setupArgParse():
     """
     Sets up arguments if backend is called directly for testing.
     """
-    p = argparse.ArgumentParser(
-        description='Paradrop API server running on client')
+    p = argparse.ArgumentParser(description='Paradrop API server running on client')
     p.add_argument('-s', '--settings', help='Overwrite settings, format is "KEY:VALUE"',
                    action='append', type=str, default=[])
     p.add_argument('--development', help='Enable the development environment variables',
                    action='store_true')
     p.add_argument('--config', help='Run as the configuration daemon',
                    action='store_true')
-    p.add_argument(
-        '--unittest', help="Run the server in unittest mode", action='store_true')
-    p.add_argument('--verbose', '-v', help='Enable verbose',
-                   action='store_true')
+    p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
+    p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
+
     return p
-
-
-def caughtSIGUSR1(signum, frame):
-    """
-    Catches SIGUSR1 calls and toggles verbose output
-    """
-    if(isinstance(output.out.verbose, output.FakeOutput)):
-        output.out.header("Activating verbose mode\n")
-        output.out.verbose = output.Stdout(output.Colors.VERBOSE)
-        output.verbose = True
-    else:
-        output.out.header("Deactivating verbose mode\n")
-        output.verbose = False
-        output.out.verbose = output.FakeOutput()
 
 
 def onShutdown():
@@ -67,30 +60,17 @@ def onShutdown():
 ##########################################################################
 
 def main():
-    # Setup the signal handler for verbose
-    signal.signal(signal.SIGUSR1, caughtSIGUSR1)
-
     # Setup args if called directly (testing)
     p = setupArgParse()
     args = p.parse_args()
 
-    # Check for settings to overwrite
+    # Check for settings to overwrite (MOVE TO NEXUS)
     settings.updateSettings(args.settings)
 
-    if(args.verbose or settings.VERBOSE):
-        caughtSIGUSR1(signal.SIGUSR1, None)
-
-    # Ask the shared store to setup (paths can be set up there)
-    store.configureLocalPaths()
-    store.store = store.Storage()
-
-    # initialize output. If filepath is set, logs to file.
-    # If stealStdio is set intercepts all stderr and stdout and interprets it internally
-    # If printToConsole is set (defaults True) all final output is rendered to stdout
-    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=False, printToConsole=True)
-
-    # Register for the shutdown callback so we can gracefully close logging
-    reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
+    # Globally assign the nexus object so anyone else can access it.
+    # Sorry, programming gods. If it makes you feel better this class
+    # reduced half a dozen exising singleton implementations
+    nexus.core = Nexus()
 
     if args.config:
         from paradrop.backend import pdconfd

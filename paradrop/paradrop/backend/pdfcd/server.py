@@ -233,6 +233,7 @@ class ParadropAPIServer(pdrest.APIResource):
 # Initialization
 ###############################################################################
 
+
 def initializeSystem():
     """
     Perform some initialization steps such as writing important configuration.

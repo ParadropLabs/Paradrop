@@ -23,6 +23,9 @@ from twisted.cred import portal as twistedPortal
 from twisted.internet.endpoints import SSL4ClientEndpoint
 from twisted.internet.ssl import PrivateCertificate, Certificate, optionsForClientTLS
 
+from twisted.protocols.policies import TimeoutMixin
+from twisted.internet.protocol import Protocol
+
 from zope.interface import implements
 from pubsub import pub
 
@@ -30,7 +33,7 @@ from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
 
 DEFAULT_PORT = 8016
-TIMEOUT = 5  # seconds to try for a connection
+TIMEOUT = 2  # seconds to try for a connection
 
 ############################################################
 # Portal and Utility methods
@@ -64,6 +67,7 @@ class Portal(twistedPortal.Portal):
         self.certCa = None
         self.keyPrivate = None
         self.keyPublic = None
+        self.polls = set()
 
     def open(self, port=None, cert=None):
         '''
@@ -78,9 +82,11 @@ class Portal(twistedPortal.Portal):
         SSL4ServerEndpoint(reactor, port, myCertificate.options(ca)).listen(RiffleServerFactory(self))
 
     @defer.inlineCallbacks
-    def connect(self, retry=False, host=None, port=None, cert=None, key=None):
+    def connect(self, host=None, port=None, cert=None, key=None):
         '''
-        Connect to another portal somewhere.
+        Connect to another portal somewhere. If retry is set, will attempt to reconnect
+        with the target continuously. As of the time of this writing, you cannot stop a 
+        polling connection without taking down the portal.
 
         :param retry: continuously attempt to connect on drops or rejections
         :type retry: bool.
@@ -97,19 +103,52 @@ class Portal(twistedPortal.Portal):
         factory = RiffleClientFactory()
         SSL4ClientEndpoint(reactor, host, port, ctx,).connect(factory)
 
-        try:
-            avatar = yield factory.login(self)
-        except:
-            print 'Caught the failed connection.'
-            defer.returnValue(False)
+        avatar = yield factory.login(self)
 
         defer.returnValue(Levy(avatar))
 
+    @defer.inlineCallbacks
+    def pollConnect(self, cb, host=None, port=None, cert=None, key=None):
+        ''' 
+        Attempts to connect to a remote portal. If the suceeds and drops, or doesn't suceed, 
+        attempt to reconnect. This method returns a deferred, but *it is never fired.*
+
+        Bah. This is not a good way to manage this
+
+        :param cb: a callback method that is called when the connection succeeds.
+        :type cb: callable
+        '''
+        # if not
+        self.polls.add(cb)
+
+        while cb in self.polls:
+            try:
+                print 'Attempting connection'
+                a = yield self.connect(host=host, port=port, cert=cert, key=key)
+                cb(a)
+                self.polls.remove(cb)
+                defer.returnValue(None)
+            except:
+                print 'Connection failed.'
+                pass
+
+        defer.returnValue(None)
+
+    def cancelPollConnect(self, cb):
+        '''
+        Cancel a retrying connection by removing its callback.
+        '''
+        self.polls.remove(cb)
+
     def close(self):
         '''
-        Close all connections in all realms.
+        Close all connections in all realms. Stop all polling connections.
         '''
+
+        self.polls = set()
+
         out.info("Portal closing all connections")
+
         for k, v in self.realms.iteritems():
             for c in v.connections:
                 c.destroy()
@@ -366,22 +405,6 @@ class RiffleViewable(pb.Viewable):
 # Perspective Broker Monkey Patches
 ############################################################
 
-# class _RiffleBroker(pb.Broker):
-
-#     def connectionLost(self, reason):
-#         '''
-#         This triggers many times, but the reason its here now is to
-#         detect invalid certs. Without the print statement, the client isnt warned. This is a
-#         todo item.
-#         '''
-#         print 'Connection Lost!', reason
-#         return pb.Broker.connectionLost(self, reason)
-
-
-from twisted.protocols.policies import TimeoutMixin
-from twisted.internet.protocol import Protocol
-
-
 class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
 
     def login(self, portal):
@@ -390,7 +413,6 @@ class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
 
     @defer.inlineCallbacks
     def login2(self, portal):
-        # Have to add connection to the portal
         self.portal = portal
 
         # Returns a _RifflePortalWrapper remote reference. Set a timeout
@@ -419,17 +441,6 @@ class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
         avatar = yield root.callRemote('login', referencibleOther)
         other.remote = Levy(avatar)
 
-        # print 'Return Avatar: ' + str(avatar)
-        # print 'Other Remote: ' + str(other)
-        # print 'Not returned avatar: ' + str(a)
-        # print ': ' + str(a.remote)
-        # print 'Returned Mind: ' + str(other)
-
-        # Signal we're done cleaning up
-        # print 'Calling Handshake'
-
-        # other.remote.callRemote('echo', 'boo')
-
         # This is absolutely not needed. The point of this method is to registers
         # the new connections with the portal, but we already have all the pieces.
         # a, b = yield self.portal.login(pdid, avatar)
@@ -437,14 +448,6 @@ class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
         # tttteeeemmmpppppoooorrraaaarrryyy
         realm = self.portal.findRealm(pdid)
         realm.attach(other, avatar)
-        # a, b = self.portal.
-
-        # print 'Realm Object: ' + str(a)
-
-        # Bit hacky, but should be cleaned up in a refactor
-        # a.remote = avatar
-
-        # other.remote = avatar
 
         avatar.callRemote('handshake')
         other.perspective_handshake()
@@ -517,10 +520,9 @@ class _RifflePortalWrapper(pb._PortalWrapper):
     # print 'Remote login!'
     #     return None
 
+
 # Do we need these? Who knows. Keeping them around for know, although
 # these are a full level of abstraction below where we want to be, so be careful using them
-
-
 def disc():
     # print 'CB: Disconnected'
     pass

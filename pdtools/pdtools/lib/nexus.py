@@ -1,5 +1,6 @@
 '''
-Stateful, singleton, command and control center. 
+Stateful, singleton, command and control center. This is the brains of the three 
+paradrop components: tools, router, and server.
 
 Takes over the functionality of the following modules, globals, and all around cruft:
     settings
@@ -23,13 +24,17 @@ Should make this a singleton. And make a print thread for this guy, just for saf
 
 import os
 
-# Havent done the singleton yet. Didn't see a need.
-# ref = None
+from twisted.internet import reactor
+
+from pdtools.lib import output, store, riffle
+
+# Global singleton. Must be assigned when the object is created
+core = None
 
 
-class Nexus(object):
+class NexusBase(object):
 
-    def __init__(self, type, devMode=False):
+    def __init__(self, type, devMode=False, stealStdio=True, printToConsole=True):
         '''
         :param type: one of [router, tool, server]
         :type type: str.
@@ -42,11 +47,19 @@ class Nexus(object):
         self.makePaths()
         self.load()
 
+        # initialize output. If filepath is set, logs to file.
+        # If stealStdio is set intercepts all stderr and stdout and interprets it internally
+        # If printToConsole is set (defaults True) all final output is rendered to stdout
+        output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=True)
+
+        # register onStop for the shutdown call
+        reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
+
     def onStart(self):
         pass
 
     def onStop(self):
-        pass
+        print 'System going down!'
 
     def makePaths(self):
         '''
@@ -59,7 +72,7 @@ class Nexus(object):
 
         # Put tools contents in the home directory
         if self.type is 'tool':
-            self.rootPath = expanduser('~') + '/.paradrop/'
+            self.rootPath = os.path.expanduser('~') + '/.paradrop/'
 
         # Current directory (since we might have more than one server at a time)
         elif self.type is 'server':
@@ -68,7 +81,7 @@ class Nexus(object):
         # We're a router, yay! But are we a router on snappy or local? The snappy
         # path will not resolve on a local machine-- let it fall through, we're set
         elif not self.rootPath:
-            self.rootPath = expanduser('~') + '/.paradrop/local/'
+            self.rootPath = os.path.expanduser('~') + '/.paradrop/local/'
 
         # Set the boring paths
         self.logPath = self.rootPath + 'logs/'
@@ -81,7 +94,10 @@ class Nexus(object):
             if not os.path.exists(x):
                 os.makedirs(x)
 
-    def save():
+    def load(self):
+        pass
+
+    def save(self):
         ''' Ehh. Ideally this should happen constantly and asynchronously. '''
         pass
 

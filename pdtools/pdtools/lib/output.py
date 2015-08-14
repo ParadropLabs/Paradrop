@@ -21,14 +21,11 @@ import os
 import json
 
 from enum import Enum
-
 from twisted.python.logfile import DailyLogFile
 from twisted.python import log
 
 from pdtools.lib import pdutils
 
-# "global" variable all modules should be able to toggle
-verbose = False
 
 # colorama package does colors but doesn't do style, so keeping this for now
 BOLD = '\033[1m'
@@ -409,10 +406,6 @@ class Output():
         pass
 
     def __setattr__(self, name, val):
-        """Allow the program to add new output streams on the fly."""
-        if(verbose):
-            print 'Adding new Output stream %s' % name
-
         def inner(*args, **kwargs):
             result = val(*args, **kwargs)
             self.handlePrint(result)

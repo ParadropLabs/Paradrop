@@ -45,6 +45,17 @@ class ToolsPerspective(riffle.RifflePerspective):
     pass
 
 
+def pollServer(host):
+    '''
+    Poll the server for a connection.
+    '''
+
+    def success(a):
+        print 'Connected to server!'
+
+    riffle.portal.pollConnect(success, host=host)
+
+
 def checkStartRiffle():
     '''
     Temporary function. Do not start serving or connecting over riffle
@@ -56,6 +67,7 @@ def checkStartRiffle():
         return
 
     out.info('Received certs, opening riffle portal')
+
     # Check to make sure we are not already listening
     # as of this writing we are not checking for previously-provisioned state)
 
@@ -64,7 +76,7 @@ def checkStartRiffle():
 
     # Open connection to the server
     from twisted.internet import reactor
-    reactor.callLater(.1, riffle.portal.connect, HOST)
+    reactor.callLater(.1, pollServer, HOST)
 
 
 ###############################################################################
@@ -115,7 +127,7 @@ def api_provision(pdid, publicKey, privateKey):
         raise ValueError("This device is already provisioned as " + store.store.getConfig('pdid'))
 
     # Handshake with the server, ensuring the name is valid
-    client = RpcClient('paradrop.io', 8015, '')
+    # client = RpcClient('paradrop.io', 8015, '')
 
     store.store.saveConfig('pdid', pdid)
     store.store.saveKey(privateKey, 'private')
