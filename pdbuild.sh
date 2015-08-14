@@ -24,8 +24,10 @@ then
     echo -e "  setup\t\t prepares environment for local snappy testing"
     echo -e "  up\t\t starts a local snappy virtual machine, add wifi interface with 'up wifi-BUS-ADDR'"
     echo -e "  down\t\t closes a local snappy virtual machine"
+    echo -e "  reboot\t\t reboots the VM properly"
     echo -e "  connect\t connects to a local snappy virtual machine"
     echo -e "  check\t\t checks the state of the VM and Paradrop instance tools in the VM"
+    echo -e "  logs\t\t print out the logs from in the VM directly to screen (only use to debug issues)"
 
     echo -e "\nDevelopment operations"
     echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"
@@ -261,6 +263,17 @@ down() {
     killvm
 }
 
+reboot() {
+    if [ ! -f pid.txt ]; then
+        echo "No Snappy virtual machine running. Try:"
+        echo -e "$0 up"
+        exit
+    fi
+
+    echo -e "${COLOR} Rebooting the VM" && tput sgr0
+    ssh -p 8022 ubuntu@localhost sudo reboot
+}
+
 connect() {
     if [ ! -f pid.txt ]; then
         echo "No Snappy virtual machine running. Try:"
@@ -290,6 +303,16 @@ check() {
     ssh -p 8022 ubuntu@localhost systemctl status paradrop_pd_${SNAPPY_VERSION}.service
 }
 
+logs() {
+    if [ ! -f pid.txt ]; then
+        echo "No Snappy virtual machine running. Try:"
+        echo -e "$0 up"
+        exit 1
+    fi
+    
+    ssh -p 8022 ubuntu@localhost sudo /apps/paradrop/current/bin/dump_log.py
+}
+
 update-tools() {
     cd pdtools
 
@@ -315,8 +338,10 @@ case "$1" in
     "up") up "$2";;
     "down") down;;
     "connect") connect;;
+    "reboot") reboot;;
     "check") check;;
     "docs") docs;;
+    "logs") logs;;
     "update-tools") update-tools;;
     *) echo "Unknown input $1"
    ;;
