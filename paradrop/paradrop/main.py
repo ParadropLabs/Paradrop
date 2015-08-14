@@ -26,7 +26,7 @@ class Nexus(nexus.NexusBase):
         # register for new server connections
         smokesignal.on('Connected', self.serverConnected)
 
-        # TEMP- check and see if we have keys, if so open a riffle portal
+        # Create riffle realms
         riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
         riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
 
@@ -36,7 +36,7 @@ class Nexus(nexus.NexusBase):
         super(Nexus, self).onStop()
 
     def serverConnected(self):
-        print 'Server Connected!'
+        out.warn('Server Connected!')
 
 
 def main():

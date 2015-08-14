@@ -83,36 +83,6 @@ def checkStartRiffle():
 ###############################################################################
 
 @defer.inlineCallbacks
-def echo(reactor, host):
-
-    avatar = yield riffle.portal.connect(host)
-    result = yield avatar.echo('Hello from a client!')
-    riffle.dumpRealms()
-    defer.returnValue(result)
-
-
-@defer.inlineCallbacks
-def api_echo(message):
-    yield 1
-    defer.returnValue(message)
-
-
-@defer.inlineCallbacks
-def api_log(lines=100):
-    ''' Return the last number lines of the log. '''
-
-    # if settings.LOG_PATH is None:
-    #     raise Exception("Logging to file is not currently enabled.")
-
-    # Fix this
-    path = store.LOG_PATH + 'log'
-    # path = os.path.dirname(os.getcwd()) + '/' + settings.LOG_NAME
-    contents = yield utils.getProcessOutput('/usr/bin/tail', args=[path, '-n ' + str(lines), ])
-
-    defer.returnValue(contents)
-
-
-@defer.inlineCallbacks
 def api_provision(pdid, key, cert):
     '''
     Provision this router with an id and a set of keys. 
