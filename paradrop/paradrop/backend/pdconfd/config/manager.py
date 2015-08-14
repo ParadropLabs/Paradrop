@@ -7,7 +7,7 @@ import threading
 from pdtools.lib.output import out
 from paradrop.lib import settings
 from paradrop.lib.utils import pdosq
-from paradrop.lib.utils.uci import CONFIG_DIR, UCIConfig
+from paradrop.lib.utils.uci import UCIConfig, getSystemConfigDir
 
 # Import all of the modules defining section types, so that all subclasses of
 # ConfigObject are known.
@@ -42,7 +42,7 @@ def findConfigFiles(search=None):
     return the files in that directory.
     """
     if search is None:
-        search = CONFIG_DIR
+        search = getSystemConfigDir()
 
     files = list()
     if os.path.isfile(search):

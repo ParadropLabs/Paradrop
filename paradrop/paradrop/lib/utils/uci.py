@@ -9,11 +9,14 @@ from paradrop.lib import settings
 from paradrop.lib.utils import pdos, pdosq
 from pdtools.lib.output import out
 
-CONFIG_DIR = settings.UCI_CONFIG_DIR
-if "SNAP_APP_DATA_PATH" in os.environ:
-    # If running under Snappy, prepend the Snap data path so that our config
-    # files end up in a writable location.
-    CONFIG_DIR = os.environ['SNAP_APP_DATA_PATH'] + CONFIG_DIR
+
+def getSystemConfigDir():
+    base = settings.UCI_CONFIG_DIR
+    if "SNAP_APP_DATA_PATH" in os.environ:
+        base = os.path.join(os.environ['SNAP_APP_DATA_PATH'], "config")
+    pdosq.makedirs(base)
+    return base
+
 
 def getSystemPath(filename):
     """
@@ -24,9 +27,10 @@ def getSystemPath(filename):
     
     Typical filenames: network, wireless, qos, firewall, dhcp, etc.
     """
-    pdosq.makedirs(CONFIG_DIR)
-    return CONFIG_DIR + "/" + filename
+    base = getSystemConfigDir()
+    return os.path.join(base, filename)
  
+
 def stringify(a):
     b = {}
     #print("%s\n" % a)
