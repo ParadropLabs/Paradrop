@@ -32,7 +32,7 @@ class Nexus(nexus.NexusBase):
         riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
 
         if not self.provisioned():
-            output.out.warn('Router has no keys or identity. Waiting to connecto to server.')
+            output.out.warn('Router has no keys or identity. Waiting to connect to to server.')
         else:
             reactor.callLater(.1, self.connect)
 
@@ -50,6 +50,7 @@ class Nexus(nexus.NexusBase):
     def connect(self):
         ''' Continuously tries to connect to server '''
         print 'Trying to connect to server...'
+
         try:
             yield riffle.portal.connect()
         except:

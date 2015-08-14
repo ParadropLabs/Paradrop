@@ -103,12 +103,15 @@ def api_provision(pdid, key, cert):
     riffle.portal.certCa = cert
 
     # If we are being provisioned for the first time, start riffle services
-    checkStartRiffle()
+    yield checkStartRiffle()
 
-    yield 1
-    defer.returnValue(None)
+    #TEMP
+    # logs = yield out.getLogsSince(0)
+
+    # defer.returnValue(logs)
 
     # Return success to the user
+    defer.returnValue('Done!')
 
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.

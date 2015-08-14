@@ -93,7 +93,7 @@ class NexusBase(object):
         '''
 
         # Lets start out being a router
-        self.rootPath = os.getenv("SNAP_APP_USER_DATA_PATH", None)
+        self.rootPath = os.getenv("SNAP_APP_USER_DATA_PATH", None) + '/'
 
         # Put tools contents in the home directory
         if self.type is 'tool':
