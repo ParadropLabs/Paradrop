@@ -341,42 +341,28 @@ class ExceptionOutput(BaseOutput):
 
 class Output():
 
-    """
-        Class that allows stdout/stderr trickery.
-        By default the paradrop object will contain an @out variable
-        (defined below) and it will contain 2 members of "err" and "fatal".
+    '''
+    Class that allows stdout/stderr trickery.
+    By default the paradrop object will contain an @out variable
+    (defined below) and it will contain 2 members of "err" and "fatal".
 
-        Each attribute of this class should be a function which points
-        to a class that inherits IOutput(). We call these functions
-        "output streams".
+    Each attribute of this class should be a function which points
+    to a class that inherits IOutput(). We call these functions
+    "output streams".
 
-        The way this Output class is setup is that you pass it a series
-        of kwargs like (stuff=OutputClass()). Then at any point in your
-        program you can call "paradrop.out.stuff('This is a string\n')".
+    The way this Output class is setup is that you pass it a series
+    of kwargs like (stuff=OutputClass()). Then at any point in your
+    program you can call "paradrop.out.stuff('This is a string\n')".
 
-        This way we can easily support different levels of verbosity without
-        the need to use some kind of bitmask or anything else.
-        Literally you can define any kind of output call you want (paradrop.out.foobar())
-        but if the parent script doesn't define the kwarg for foobar then the function
-        call just gets thrown away.
+    This way we can easily support different levels of verbosity without
+    the need to use some kind of bitmask or anything else. On-the-fly output
+    creation is no longer supported due to the metadata and special processing 
+    added. It is still possible, but not implemented. 
 
-        This is done by the __getattr__ function below, basically in __init__ we set
-        any attributes you pass as args, and anything else not defined gets sent to __getattr__
-        so that it doesn't error out.
-
-        Currently these are the choices for Output classes:
-            - StdoutOutput() : output sent to sys.stdout
-            - StderrOutput() : output sent to sys.stderr
-            - FileOutput()   : output sent to filename provided
-
-        --v2 Changes--
-        v1 implementation relied on seperate Writers for each output stream, which
-        helped with threading issues. Outputs were open and closed for each write, which is
-        wildly expensive (300ms on local bench!)
-
-        In v2, all contents are logged to file. Writing occurs on a dedicated thread that holds its files
-        open. All print functions are routed through a format transformer and then the printer.
-    """
+    This is done by the __getattr__ function below, basically in __init__ we set
+    any attributes you pass as args, and anything else not defined gets sent to __getattr__
+    so that it doesn't error out.
+    '''
 
     def __init__(self, **kwargs):
         """Setup the initial set of output stream functions."""
@@ -610,14 +596,13 @@ out = Output(
     testing=BaseOutput(LOG_TYPES[Level.VERBOSE]),
     verbose=BaseOutput(LOG_TYPES[Level.VERBOSE]),
     info=BaseOutput(LOG_TYPES[Level.INFO]),
-    usage=BaseOutput(LOG_TYPES[Level.INFO]),
+    usage=BaseOutput(LOG_TYPES[Level.USAGE]),
     perf=BaseOutput(LOG_TYPES[Level.PERF]),
     warn=BaseOutput(LOG_TYPES[Level.WARN]),
     err=BaseOutput(LOG_TYPES[Level.ERR]),
     exception=ExceptionOutput(LOG_TYPES[Level.ERR]),
     security=BaseOutput(LOG_TYPES[Level.SECURITY]),
     fatal=BaseOutput(LOG_TYPES[Level.FATAL]),
-    usage=BaseOutput(LOG_TYPES[Level.USAGE]),
     twisted=TwistedOutput(LOG_TYPES[Level.INFO]),
     twistedErr=TwistedException(LOG_TYPES[Level.ERR])
 )

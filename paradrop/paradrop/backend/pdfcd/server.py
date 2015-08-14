@@ -283,7 +283,6 @@ def setup(args=None):
         initializeSystem()
 
     # Setup the port we listen on
-    out.info('Establishing API server, port: %d' % (thePort))
     reactor.listenTCP(thePort, site)
 
     # Never return from here

@@ -27,7 +27,6 @@ from twisted.protocols.policies import TimeoutMixin
 from twisted.internet.protocol import Protocol
 
 from zope.interface import implements
-from pubsub import pub
 
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *

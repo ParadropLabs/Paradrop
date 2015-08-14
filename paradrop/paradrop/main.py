@@ -17,17 +17,18 @@ class Nexus(nexus.NexusBase):
 
     def __init__(self):
         ''' Sets up the local paths, loads old config and parses incoming config '''
-        super(Nexus, self).__init__('router', devMode=False)
 
-##########################################################################
-# Support Functions
-##########################################################################
+        # Want to change logging? See optional args on the base class and pass them here
+        super(Nexus, self).__init__('router', stealStdio=True)
+
+    def onStart(self):
+        super(Nexus, self).onStart()
+
+    def onStop(self):
+        super(Nexus, self).onStop()
 
 
-def setupArgParse():
-    """
-    Sets up arguments if backend is called directly for testing.
-    """
+def main():
     p = argparse.ArgumentParser(description='Paradrop API server running on client')
     p.add_argument('-s', '--settings', help='Overwrite settings, format is "KEY:VALUE"',
                    action='append', type=str, default=[])
@@ -38,16 +39,6 @@ def setupArgParse():
     p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
     p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
 
-    return p
-
-
-##########################################################################
-# Main Function
-##########################################################################
-
-def main():
-    # Setup args if called directly (testing)
-    p = setupArgParse()
     args = p.parse_args()
 
     # Check for settings to overwrite (MOVE TO NEXUS)

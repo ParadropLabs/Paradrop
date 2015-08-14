@@ -26,8 +26,7 @@ import os
 
 from twisted.internet import reactor
 
-from pdtools.lib import store, riffle
-from pdtools.lib.output import out
+from pdtools.lib import store, riffle, output
 
 # Global singleton. Must be assigned when the object is created
 core = None
@@ -54,17 +53,19 @@ class NexusBase(object):
         # initialize output. If filepath is set, logs to file.
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
         # If printToConsole is set (defaults True) all final output is rendered to stdout
-        output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=True)
+        output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=printToConsole)
 
         # register onStop for the shutdown call
         reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
         reactor.callLater(0, self.onStart)
 
     def onStart(self):
-        out.usage('%s coming up')
+        output.out.usage('%s coming up' % self.type)
 
     def onStop(self):
-        out.usage('%s coming up')
+        output.out.usage('%s going down' % self.type)
+
+        output.out.endLogging()
 
     def makePaths(self):
         '''
