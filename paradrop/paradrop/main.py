@@ -41,20 +41,6 @@ def setupArgParse():
     return p
 
 
-def onShutdown():
-    ''' Get notified of system shutdown from Twisted '''
-
-    # Clears the print buffer, closes the logfile
-    output.out.endLogging()
-
-    # Have the portal close all existing connections (gracefully, if possible)
-    riffle.portal.close()
-
-    # TODO: inform the server
-
-    # TODO: inform pdconfd
-
-
 ##########################################################################
 # Main Function
 ##########################################################################

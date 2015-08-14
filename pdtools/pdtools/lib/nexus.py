@@ -26,7 +26,8 @@ import os
 
 from twisted.internet import reactor
 
-from pdtools.lib import output, store, riffle
+from pdtools.lib import store, riffle
+from pdtools.lib.output import out
 
 # Global singleton. Must be assigned when the object is created
 core = None
@@ -36,6 +37,9 @@ class NexusBase(object):
 
     def __init__(self, type, devMode=False, stealStdio=True, printToConsole=True):
         '''
+        The one big thing this function leaves out is reactor.start(). Call this externally 
+        *after* initializing a nexus object. 
+
         :param type: one of [router, tool, server]
         :type type: str.
         :param devMode: uses dev mode if set. Could mean anything, but at the very least it
@@ -54,12 +58,13 @@ class NexusBase(object):
 
         # register onStop for the shutdown call
         reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
+        reactor.callLater(0, self.onStart)
 
     def onStart(self):
-        pass
+        out.usage('%s coming up')
 
     def onStop(self):
-        print 'System going down!'
+        out.usage('%s coming up')
 
     def makePaths(self):
         '''

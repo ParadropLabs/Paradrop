@@ -31,7 +31,7 @@ from pdtools.lib import pdutils
 BOLD = '\033[1m'
 LOG_NAME = 'log'
 
-Level = Enum('Level', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL')
+Level = Enum('Level', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL, USAGE')
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
@@ -43,6 +43,7 @@ LOG_TYPES = {
     Level.ERR: {'name': Level.ERR.value, 'glyph': '!!', 'color': colorama.Fore.RED},
     Level.SECURITY: {'name': Level.SECURITY.value, 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
     Level.FATAL: {'name': Level.FATAL.value, 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+    Level.USAGE: {'name': Level.USAGE.value, 'glyph': '++', 'color': colorama.Fore.CYAN},
 }
 
 ###############################################################################
@@ -516,7 +517,6 @@ class Output():
 
         level = Level(message['type'])
         outputObject = self.outputMappings[level.name.lower()]
-        # outputObject = self.outputMappings[message['type']._name_.lower()]
         return outputObject.formatOutput(message)
 
     def addSubscriber(self, target):
@@ -617,6 +617,7 @@ out = Output(
     exception=ExceptionOutput(LOG_TYPES[Level.ERR]),
     security=BaseOutput(LOG_TYPES[Level.SECURITY]),
     fatal=BaseOutput(LOG_TYPES[Level.FATAL]),
+    usage=BaseOutput(LOG_TYPES[Level.USAGE]),
     twisted=TwistedOutput(LOG_TYPES[Level.INFO]),
     twistedErr=TwistedException(LOG_TYPES[Level.ERR])
 )
