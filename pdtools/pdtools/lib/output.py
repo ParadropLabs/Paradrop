@@ -163,7 +163,7 @@ class OutputRedirect(object):
 
         ret = {'message': str(contents.strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
                'package': package, 'module': module, 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+               'owner': 'UNSET', 'line': line}
 
         self.callback(ret)
 
@@ -216,7 +216,7 @@ class BaseOutput(object):
 
         ret = {'message': str(args), 'type': self.type['name'], 'extra': extra,
                'package': package, 'module': module, 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+               'owner': 'UNSET', 'line': line}
 
         return ret
 
@@ -271,7 +271,7 @@ class TwistedOutput(BaseOutput):
 
         ret = {'message': message, 'type': self.type['name'], 'extra': {},
                'package': 'twisted', 'module': 'internal', 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': '??', 'pdid': 'pd.damouse.example'}
+               'owner': 'UNSET', 'line': '??'}
 
         return ret
 
@@ -303,7 +303,7 @@ class TwistedException(BaseOutput):
 
         ret = {'message': str(args['failure'].getTraceback().strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
                'package': package, 'module': module, 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+               'owner': 'UNSET', 'line': line}
 
         return ret
 
@@ -334,7 +334,7 @@ class ExceptionOutput(BaseOutput):
 
         ret = {'message': message, 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
                'package': package, 'module': module, 'timestamp': time.time(),
-               'owner': 'UNSET', 'line': line, 'pdid': 'pd.damouse.example'}
+               'owner': 'UNSET', 'line': line}
 
         return ret
 

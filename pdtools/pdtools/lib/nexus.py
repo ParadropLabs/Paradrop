@@ -93,7 +93,7 @@ class NexusBase(object):
         '''
 
         # Lets start out being a router
-        self.rootPath = os.getenv("SNAP_APP_USER_DATA_PATH", None) + '/'
+        self.rootPath = os.getenv("SNAP_APP_USER_DATA_PATH", None)
 
         # Put tools contents in the home directory
         if self.type is 'tool':
@@ -109,10 +109,10 @@ class NexusBase(object):
             self.rootPath = os.path.expanduser('~') + '/.paradrop/local/'
 
         # Set the boring paths
-        self.logPath = self.rootPath + 'logs/'
-        self.keyPath = self.rootPath + 'keys/'
-        self.miscPath = self.rootPath + 'misc/'
-        self.configPath = self.rootPath + 'config'  # This is the only 'path' that is really a file
+        self.logPath = self.rootPath + '/logs/'
+        self.keyPath = self.rootPath + '/keys/'
+        self.miscPath = self.rootPath + '/misc/'
+        self.configPath = self.rootPath + '/config'  # This is the only 'path' that is really a file
 
         # create the paths
         for x in [self.rootPath, self.logPath, self.keyPath, self.miscPath]:
