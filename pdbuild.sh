@@ -280,14 +280,13 @@ check() {
     fi
     
     PID=`cat pid.txt`
-    if [[ `ps -a | grep -E "^${PID}.*" | wc -l` -ne 1 ]]; then
+    if [[ `ps -a | grep -E "^ *${PID}.*" | wc -l` -ne 1 ]]; then
         echo -e "Virtual machine is: DOWN\t\tPID: ${PID}"
         exit 1
     else
         echo "Virtual machine is: UP"
     fi
     
-    ssh -p 8022 ubuntu@localhost systemctl status paradrop_pdconfd_${SNAPPY_VERSION}.service
     ssh -p 8022 ubuntu@localhost systemctl status paradrop_pd_${SNAPPY_VERSION}.service
 }
 

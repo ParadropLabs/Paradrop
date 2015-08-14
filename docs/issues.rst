@@ -30,6 +30,24 @@ This is a known issue for the Paradrop team, if you get this please email us at 
     failed with exit status 1: Job for paradrop_pdconfd_0.1.0.service failed.
     See "systemctl status paradrop_pdconfd_0.1.0.service" and "journalctl -xe" for details.
 
+Issue 3: ``pdbuild.sh up`` fails
+"""""""""""""""""""""""""""""""""""
+
+This is very common and will happen if you delete your VM and setup a fresh one, the solution is simple
+and is stated in the error message::
+
+    Failed to setup keys: failed to setup keys: issues while running ssh command:
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+    Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+    It is also possible that a host key has just been changed.
+    The fingerprint for the ECDSA key sent by the remote host is
+    e6:ec:b1:93:7d:91:84:50:19:36:14:8e:ce:ef:6a:0b.
+    Please contact your system administrator.
+
+
 
 Issues using paradrop command (pdtools)
 ------------------------------------------
