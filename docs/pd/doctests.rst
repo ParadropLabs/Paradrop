@@ -18,7 +18,7 @@ For example, the directive ``.. automodule:: paradrop.backend`` will build all t
 
 All docstring documentation is rebuilt on every commit (unless there's a bug in the code.) Sphinx does not, however, know about structural changes in code! To alert sphinx of these changes, use the ``autodoc`` feature::
 
-    sphinx-apidoc -f -o docs/api src/paradrop/
+    sphinx-apidoc -f -o docs/api paradrop/paradrop/
 
 This scans packages in the ``src/paradrop`` directory and creates .rst files in ``docs/api``. The root file ``index.rst`` links to ``modules.rst``, connecting the newly generated api code with the main documentation.
 

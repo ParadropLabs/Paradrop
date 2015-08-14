@@ -1,6 +1,13 @@
 paradrop.backend.pdconfd package
 ================================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    paradrop.backend.pdconfd.config
+
 Submodules
 ----------
 
@@ -8,14 +15,6 @@ paradrop.backend.pdconfd.client module
 --------------------------------------
 
 .. automodule:: paradrop.backend.pdconfd.client
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-paradrop.backend.pdconfd.config module
---------------------------------------
-
-.. automodule:: paradrop.backend.pdconfd.config
     :members:
     :undoc-members:
     :show-inheritance:

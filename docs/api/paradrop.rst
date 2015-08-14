@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
 
     paradrop.backend
-    paradrop.dock
     paradrop.lib
 
 Submodules

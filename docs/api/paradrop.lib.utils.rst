@@ -36,6 +36,14 @@ paradrop.lib.utils.pdosq module
     :undoc-members:
     :show-inheritance:
 
+paradrop.lib.utils.restart module
+---------------------------------
+
+.. automodule:: paradrop.lib.utils.restart
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 paradrop.lib.utils.storage module
 ---------------------------------
 
