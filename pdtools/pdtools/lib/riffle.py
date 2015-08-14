@@ -33,7 +33,7 @@ from pdtools.lib.exceptions import *
 
 
 DEFAULT_PORT = 8016
-TIMEOUT = 2  # seconds to try for a connection
+TIMEOUT = 5  # seconds to try for a connection
 
 ############################################################
 # Portal and Utility methods

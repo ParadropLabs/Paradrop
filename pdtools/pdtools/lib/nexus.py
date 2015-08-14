@@ -41,18 +41,21 @@ core = None
 
 class NexusBase(object):
 
-    def __init__(self, nexType, devMode=False, stealStdio=True, printToConsole=True):
+    def __init__(self, nexType, mode='development', stealStdio=True, printToConsole=True):
         '''
         The one big thing this function leaves out is reactor.start(). Call this externally 
         *after* initializing a nexus object. 
 
         :param type: one of [router, tool, server]
         :type type: str.
-        :param devMode: uses dev mode if set. Could mean anything, but at the very least it
-            changes the ports and hostname
+        :param mode: one of [production, development, test, local]. Changes host and ports.
+            See section "network resolution" below 
         '''
 
-        self.type, self.devMode = nexType, devMode
+        self.type, self.mode = nexType, mode
+
+        if mode not in 'production development test local'.split():
+            raise KeyError("Mode " + self.mode + " not valid")
 
         # initialize the paths and load existing settings
         self.makePaths()
@@ -195,18 +198,34 @@ class NexusBase(object):
 
     def serverHost(self):
         ''' Different in production vs dev, etc. Returns hostname '''
+        if self.mode == 'local':
+            return 'localhost'
+
         return 'paradrop.io'
 
     def rifflePort(self):
-        return 8016
+        return _incrementingPort(8016)
 
     def insecureRifflePort(self):
         ''' This isnt a thing yet. But it will be. '''
-        return 8017
+        return _incrementingPort(8017)
 
     def webPort(self):
-        ''' If serving on something other than 80 '''
-        return 14321
+        return _incrementingPort(14321)
+
+    def _incrementingPort(base, mode):
+        ''' Returns the given port plus some multiple of 10000 based on the passed mode '''
+
+        if self.mode == 'production' or self.mode == 'local':
+            return base
+
+        if self.mode == 'development':
+            return base + 10000
+
+        if self.mode == 'test':
+            return base + 10000 * 2
+
+        return base
 
     #########################################################
     # Path Resolution
