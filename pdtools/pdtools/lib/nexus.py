@@ -69,6 +69,8 @@ class NexusBase(object):
         # Asssign global riffle keys
         riffle.portal.keyPrivate = self.getKey('pub')
         riffle.portal.certCa = self.getKey('ca')
+        riffle.portal.host = self.serverHost()
+        riffle.portal.port = self.rifflePort()
 
         # register onStop for the shutdown call
         reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
@@ -153,7 +155,7 @@ class NexusBase(object):
         return self.config[k]
 
     def provisioned(self):
-        return True if self.baseConfig['pdid'] else False
+        return self.config['pdid'] is not None
 
     #########################################################
     # Keys
@@ -204,28 +206,14 @@ class NexusBase(object):
         return 'paradrop.io'
 
     def rifflePort(self):
-        return _incrementingPort(8016)
+        return _incrementingPort(8016, self.mode)
 
     def insecureRifflePort(self):
         ''' This isnt a thing yet. But it will be. '''
-        return _incrementingPort(8017)
+        return _incrementingPort(8017, self.mode)
 
     def webPort(self):
-        return _incrementingPort(14321)
-
-    def _incrementingPort(base, mode):
-        ''' Returns the given port plus some multiple of 10000 based on the passed mode '''
-
-        if self.mode == 'production' or self.mode == 'local':
-            return base
-
-        if self.mode == 'development':
-            return base + 10000
-
-        if self.mode == 'test':
-            return base + 10000 * 2
-
-        return base
+        return _incrementingPort(14321, self.mode)
 
     #########################################################
     # Path Resolution
@@ -245,10 +233,25 @@ class NexusBase(object):
 # Utils
 #########################################################
 
+def _incrementingPort(base, mode):
+    ''' Returns the given port plus some multiple of 10000 based on the passed mode '''
+
+    if mode == 'production' or mode == 'local':
+        return base
+
+    if mode == 'development':
+        return base + 10000
+
+    if mode == 'test':
+        return base + 10000 * 2
+
+    return base
+
+
 def createDefaultInfo(path):
     default = {
         'version': 1,
-        'pdid': "",
+        'pdid': None,
         'chutes': [],
         'routers': [],
         'instances': []

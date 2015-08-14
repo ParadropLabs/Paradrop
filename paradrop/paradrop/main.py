@@ -33,7 +33,11 @@ class Nexus(nexus.NexusBase):
 
         # We want to initiate a connection immediately, but
         # reactor.callLater(.1, riffle.portal.connect, HOST)
-        reactor.callLater(.1, self.connect)
+
+        if not self.provisioned():
+            output.out.warn('Router has no keys or identity. Waiting to connecto to server.')
+        else:
+            reactor.callLater(.1, self.connect)
 
     def onStop(self):
         super(Nexus, self).onStop()
@@ -52,7 +56,7 @@ class Nexus(nexus.NexusBase):
         try:
             yield riffle.portal.connect()
         except:
-            reactor.callLater(.1, self.connect)
+            reactor.callLater(3, self.connect)
             defer.returnValue(True)
 
 
@@ -67,7 +71,7 @@ def main():
     p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
     p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
     p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test, local]',
-                   action='store', type=str, default='development')
+                   action='store', type=str, default='production')
 
     # Temporary until the mode=local is hooked up
     p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
