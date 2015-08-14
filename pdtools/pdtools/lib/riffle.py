@@ -78,9 +78,12 @@ class Portal(twistedPortal.Portal):
         SSL4ServerEndpoint(reactor, port, myCertificate.options(ca)).listen(RiffleServerFactory(self))
 
     @defer.inlineCallbacks
-    def connect(self, host=None, port=None, cert=None, key=None):
+    def connect(self, retry=False, host=None, port=None, cert=None, key=None):
         '''
-        Connect to another portal.
+        Connect to another portal somewhere.
+
+        :param retry: continuously attempt to connect on drops or rejections
+        :type retry: bool.
         '''
 
         host = host if host else self.host
@@ -94,7 +97,11 @@ class Portal(twistedPortal.Portal):
         factory = RiffleClientFactory()
         SSL4ClientEndpoint(reactor, host, port, ctx,).connect(factory)
 
-        avatar = yield factory.login(self)
+        try:
+            avatar = yield factory.login(self)
+        except:
+            print 'Caught the failed connection.'
+            defer.returnValue(False)
 
         defer.returnValue(Levy(avatar))
 
