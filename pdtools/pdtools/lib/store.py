@@ -66,6 +66,8 @@ class Storage(object):
 
         # TODO: load keys
 
+        print 'Using path: ' + STORE_PATH
+
     def close(self):
         ''' Close and write out. This is automatic if autoSave is on'''
         pass

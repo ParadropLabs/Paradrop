@@ -6,26 +6,30 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
+import smokesignal
 from twisted.internet import reactor
 
 from pdtools.lib import output, store, riffle, nexus
-
 from paradrop.lib import settings
 
 
 class Nexus(nexus.NexusBase):
 
     def __init__(self):
-        ''' Sets up the local paths, loads old config and parses incoming config '''
-
-        # Want to change logging? See optional args on the base class and pass them here
+        # Want to change logging functionality? See optional args on the base class and pass them here
         super(Nexus, self).__init__('router', stealStdio=True)
 
     def onStart(self):
         super(Nexus, self).onStart()
 
+        # register for new server connections
+        smokesignal.on('Connected', self.serverConnected)
+
     def onStop(self):
         super(Nexus, self).onStop()
+
+    def serverConnected(self):
+        print 'Server Connected!'
 
 
 def main():

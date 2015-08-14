@@ -76,7 +76,7 @@ def checkStartRiffle():
 
     # Open connection to the server
     from twisted.internet import reactor
-    reactor.callLater(.1, pollServer, HOST)
+    reactor.callLater(.1, riffle.portal.connect, HOST)
 
 
 ###############################################################################

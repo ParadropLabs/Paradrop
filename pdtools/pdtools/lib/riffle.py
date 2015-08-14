@@ -22,14 +22,15 @@ from twisted.spread import pb
 from twisted.cred import portal as twistedPortal
 from twisted.internet.endpoints import SSL4ClientEndpoint
 from twisted.internet.ssl import PrivateCertificate, Certificate, optionsForClientTLS
-
 from twisted.protocols.policies import TimeoutMixin
 from twisted.internet.protocol import Protocol
-
 from zope.interface import implements
+
+import smokesignal
 
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
+
 
 DEFAULT_PORT = 8016
 TIMEOUT = 2  # seconds to try for a connection
@@ -126,9 +127,9 @@ class Portal(twistedPortal.Portal):
                 a = yield self.connect(host=host, port=port, cert=cert, key=key)
                 cb(a)
                 self.polls.remove(cb)
-                defer.returnValue(None)
+                defer.returnValue(True)
             except:
-                print 'Connection failed.'
+                print 'Connection failed. NOTE: displayed incorrectly on occasion'
                 pass
 
         defer.returnValue(None)
@@ -243,12 +244,11 @@ class Realm:
     '''
     Wraps a type of avatar and all connections for that avatar type.
 
-    Broadcasts connection changes using pubsub. To be notfied of new connections:
-        pubsub.pub.subscribe(con, '[avatarName]Connected')
-        pubsub.pub.unsubscribe(dis, '[avatarName]Disconnected')
+    Broadcasts connection changes using smokesignal. To be notfied of new connections:
+        smokesignal.on('[avatarName]Connected', methodYouWantToCall)
 
-    where 'dis' and 'con' are method references. Both take keyword arguments 'type'
-    and 'realm'.
+    The method will be called with the passed connection.
+
     '''
     implements(twistedPortal.IRealm)
 
@@ -263,20 +263,12 @@ class Realm:
         any needed initialization (which should be a deferred)
         '''
         avatar = self.avatar(avatarID, self)
-
-        # print 'Attaching %s to %s' % (mind, avatar)
         avatar.attached(mind)
-
-        # print avatar.remote
-
         self.connections.add(avatar)
+
         out.info('Connected: ' + avatar.name)
-        pub.sendMessage('%sConnected' % self.avatar.__name__, avatar=avatar, realm=self)
+        smokesignal.emit('Connected')
 
-        # yield mind.callRemote('echo', '')
-
-        # deferred since initialization may require database operations
-        # yield avatar.initialize()
         yield 1
 
         # move detached from the avatar to here?
@@ -302,7 +294,8 @@ class Realm:
 
     def connectionClosed(self, avatar):
         out.info('Disconnected: ' + str(avatar.name))
-        pub.sendMessage('%sDisconnected' % self.avatar.__name__, avatar=avatar, realm=self)
+        smokesignal.emit('Connected')
+        # pub.sendMessage('%sDisconnected' % self.avatar.__name__, avatar=avatar, realm=self)
         self.connections.remove(avatar)
 
 

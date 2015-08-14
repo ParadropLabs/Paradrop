@@ -374,6 +374,10 @@ class Output():
         self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES[Level.VERBOSE])
         self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES[Level.VERBOSE])
 
+        # by default, dont steal output and print to console
+        self.stealStdio(False)
+        self.logToConsole(True)
+
         # Setattr wraps the output objects in a
         # decorator that allows this class to intercept their output, This dict holds the
         # original objects.

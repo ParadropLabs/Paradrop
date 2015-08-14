@@ -20,6 +20,11 @@ tools may need to store information about routers, routers will store
 chutes, and the server will rely heavily on riffle callbacks.
 
 Should make this a singleton. And make a print thread for this guy, just for safety.
+
+The base class does not implement any riffle integration other than 
+setting up the keys and default connection information. You should register for 
+connection callbacks using smokesignals (see paradrop/main.py). DO NOT
+store connections yourself-- riffle already does that and you'll screw up the portal!
 '''
 
 import os
@@ -34,7 +39,7 @@ core = None
 
 class NexusBase(object):
 
-    def __init__(self, type, devMode=False, stealStdio=True, printToConsole=True):
+    def __init__(self, nexType, devMode=False, stealStdio=True, printToConsole=True):
         '''
         The one big thing this function leaves out is reactor.start(). Call this externally 
         *after* initializing a nexus object. 
@@ -44,7 +49,8 @@ class NexusBase(object):
         :param devMode: uses dev mode if set. Could mean anything, but at the very least it
             changes the ports and hostname
         '''
-        self.type, self.devMode = type, devMode
+
+        self.type, self.devMode = nexType, devMode
 
         # initialize the paths
         self.makePaths()
@@ -53,7 +59,7 @@ class NexusBase(object):
         # initialize output. If filepath is set, logs to file.
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
         # If printToConsole is set (defaults True) all final output is rendered to stdout
-        output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=printToConsole)
+        output.out.startLogging(filePath=self.logPath, stealStdio=True, printToConsole=printToConsole)
 
         # register onStop for the shutdown call
         reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
@@ -69,8 +75,7 @@ class NexusBase(object):
 
     def makePaths(self):
         '''
-        Are we on a VM? On snappy? Bare metal? The server? 
-        So many paths, so few answers!
+        Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
         '''
 
         # Lets start out being a router
@@ -94,6 +99,8 @@ class NexusBase(object):
         self.keyPath = self.rootPath + 'keys/'
         self.miscPath = self.rootPath + 'misc/'
         self.configPath = self.rootPath + 'config'  # This is the only 'path' that is really a file
+
+        output.out.err('Using root path: ' + str(self.rootPath))
 
         # create the paths
         for x in [self.rootPath, self.logPath, self.keyPath, self.miscPath]:
