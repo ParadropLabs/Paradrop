@@ -1,6 +1,6 @@
 # Paradrop
 
-[![Documentation Status](https://readthedocs.org/projects/paradrop/badge/?version=latest)](http://paradrop.readthedocs.org/en/latest/)
+[![Documentation Status](https://readthedocs.org/projects/paradrop/badge/?version=latest)](https://readthedocs.org/projects/paradrop/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/ParadropLabs/Paradrop/badge.svg?branch=master)](https://coveralls.io/r/ParadropLabs/Paradrop?branch=master)
 [![Build Status](https://travis-ci.org/ParadropLabs/Paradrop.svg?branch=dev)](https://travis-ci.org/ParadropLabs/Paradrop)
 

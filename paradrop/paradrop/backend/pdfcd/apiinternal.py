@@ -5,6 +5,8 @@ from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names
 
+from pdtools.lib import nexus
+
 HOST = 'localhost'
 # HOST = 'paradrop.io'
 
@@ -45,6 +47,17 @@ class ToolsPerspective(riffle.RifflePerspective):
     pass
 
 
+def pollServer(host):
+    '''
+    Poll the server for a connection.
+    '''
+
+    def success(a):
+        print 'Connected to server!'
+
+    riffle.portal.pollConnect(success, host=host)
+
+
 def checkStartRiffle():
     '''
     Temporary function. Do not start serving or connecting over riffle
@@ -56,11 +69,9 @@ def checkStartRiffle():
         return
 
     out.info('Received certs, opening riffle portal')
+
     # Check to make sure we are not already listening
     # as of this writing we are not checking for previously-provisioned state)
-
-    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(ServerPerspective))
-    riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(ToolsPerspective))
 
     # Open connection to the server
     from twisted.internet import reactor
@@ -72,37 +83,7 @@ def checkStartRiffle():
 ###############################################################################
 
 @defer.inlineCallbacks
-def echo(reactor, host):
-
-    avatar = yield riffle.portal.connect(host)
-    result = yield avatar.echo('Hello from a client!')
-    riffle.dumpRealms()
-    defer.returnValue(result)
-
-
-@defer.inlineCallbacks
-def api_echo(message):
-    yield 1
-    defer.returnValue(message)
-
-
-@defer.inlineCallbacks
-def api_log(lines=100):
-    ''' Return the last number lines of the log. '''
-
-    # if settings.LOG_PATH is None:
-    #     raise Exception("Logging to file is not currently enabled.")
-
-    # Fix this
-    path = store.LOG_PATH + 'log'
-    # path = os.path.dirname(os.getcwd()) + '/' + settings.LOG_NAME
-    contents = yield utils.getProcessOutput('/usr/bin/tail', args=[path, '-n ' + str(lines), ])
-
-    defer.returnValue(contents)
-
-
-@defer.inlineCallbacks
-def api_provision(pdid, publicKey, privateKey):
+def api_provision(pdid, key, cert):
     '''
     Provision this router with an id and a set of keys. 
 
@@ -112,18 +93,14 @@ def api_provision(pdid, publicKey, privateKey):
     # temp: check to make sure we're not already provisioned. Do not allow for
     # multiple provisioning. This is a little hacky-- better to move this into store
     if riffle.portal.certCa:
-        raise ValueError("This device is already provisioned as " + store.store.getConfig('pdid'))
+        raise ValueError("This device is already provisioned as " + nexus.core.get('pdid'))
 
-    # Handshake with the server, ensuring the name is valid
-    client = RpcClient('paradrop.io', 8015, '')
+    nexus.core.set('pdid', pdid)
+    nexus.core.saveKey(key, 'pub')
+    nexus.core.saveKey(cert, 'ca')
 
-    store.store.saveConfig('pdid', pdid)
-    store.store.saveKey(privateKey, 'private')
-    store.store.saveKey(publicKey, 'public')
-
-    # init keys
-    riffle.portal.keyPrivate = store.store.getKey('public')
-    riffle.portal.certCa = store.store.getKey('private')
+    riffle.portal.keyPrivate = key
+    riffle.portal.certCa = cert
 
     # If we are being provisioned for the first time, start riffle services
     checkStartRiffle()

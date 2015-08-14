@@ -83,6 +83,7 @@ def logs(r, pdid):
 
     # Let the validation occur serverside (or skip it for now)
     pdid = store.getConfig('pdid') + '.' + pdid
+    print 'Asking for logs for ' + pdid
 
     avatar = yield riffle.portal.connect()
     ret = yield avatar.logs(pdid)

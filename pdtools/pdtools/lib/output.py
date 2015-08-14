@@ -21,31 +21,29 @@ import os
 import json
 
 from enum import Enum
-
 from twisted.python.logfile import DailyLogFile
 from twisted.python import log
 
 from pdtools.lib import pdutils
 
-# "global" variable all modules should be able to toggle
-verbose = False
 
 # colorama package does colors but doesn't do style, so keeping this for now
 BOLD = '\033[1m'
 LOG_NAME = 'log'
 
-Level = Enum('NameTypes', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL')
+Level = Enum('Level', 'HEADER, VERBOSE, INFO, PERF, WARN, ERR, SECURITY, FATAL, USAGE')
 
 # Represents formatting information for the specified log type
 LOG_TYPES = {
-    Level.HEADER.name: {'name': Level.HEADER.value, 'glyph': '==', 'color': colorama.Fore.BLUE},
-    Level.VERBOSE.name: {'name': Level.VERBOSE.value, 'glyph': '>>', 'color': colorama.Fore.BLACK},
-    Level.INFO.name: {'name': Level.INFO.value, 'glyph': '--', 'color': colorama.Fore.GREEN},
-    Level.PERF.name: {'name': Level.PERF.value, 'glyph': '--', 'color': colorama.Fore.WHITE},
-    Level.WARN.name: {'name': Level.WARN.value, 'glyph': '**', 'color': colorama.Fore.YELLOW},
-    Level.ERR.name: {'name': Level.ERR.value, 'glyph': '!!', 'color': colorama.Fore.RED},
-    Level.SECURITY.name: {'name': Level.SECURITY.value, 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
-    Level.FATAL.name: {'name': Level.FATAL.value, 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+    Level.HEADER: {'name': Level.HEADER.value, 'glyph': '==', 'color': colorama.Fore.BLUE},
+    Level.VERBOSE: {'name': Level.VERBOSE.value, 'glyph': '>>', 'color': colorama.Fore.BLACK},
+    Level.INFO: {'name': Level.INFO.value, 'glyph': '--', 'color': colorama.Fore.GREEN},
+    Level.PERF: {'name': Level.PERF.value, 'glyph': '--', 'color': colorama.Fore.WHITE},
+    Level.WARN: {'name': Level.WARN.value, 'glyph': '**', 'color': colorama.Fore.YELLOW},
+    Level.ERR: {'name': Level.ERR.value, 'glyph': '!!', 'color': colorama.Fore.RED},
+    Level.SECURITY: {'name': Level.SECURITY.value, 'glyph': '!!', 'color': BOLD + colorama.Fore.RED},
+    Level.FATAL: {'name': Level.FATAL.value, 'glyph': '!!', 'color': colorama.Back.WHITE + colorama.Fore.RED},
+    Level.USAGE: {'name': Level.USAGE.value, 'glyph': '++', 'color': colorama.Fore.CYAN},
 }
 
 ###############################################################################
@@ -123,8 +121,6 @@ class PrintLogThread(threading.Thread):
                 pass
 
             self.queue.task_done()
-
-        print 'Print thread going down NOW'
 
 
 class OutputRedirect(object):
@@ -229,8 +225,7 @@ class BaseOutput(object):
         Convert a logdict into a custom formatted, human readable version suitable for
         printing to console.
         '''
-        #TODO: optionally show the long form timestring
-        trace = '[%s.%s#%s @ %s]  ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.stimestr(logDict['timestamp']))
+        trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.stimestr(logDict['timestamp']))
         return self.type['color'] + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
 
     def __repr__(self):
@@ -346,42 +341,28 @@ class ExceptionOutput(BaseOutput):
 
 class Output():
 
-    """
-        Class that allows stdout/stderr trickery.
-        By default the paradrop object will contain an @out variable
-        (defined below) and it will contain 2 members of "err" and "fatal".
+    '''
+    Class that allows stdout/stderr trickery.
+    By default the paradrop object will contain an @out variable
+    (defined below) and it will contain 2 members of "err" and "fatal".
 
-        Each attribute of this class should be a function which points
-        to a class that inherits IOutput(). We call these functions
-        "output streams".
+    Each attribute of this class should be a function which points
+    to a class that inherits IOutput(). We call these functions
+    "output streams".
 
-        The way this Output class is setup is that you pass it a series
-        of kwargs like (stuff=OutputClass()). Then at any point in your
-        program you can call "paradrop.out.stuff('This is a string\n')".
+    The way this Output class is setup is that you pass it a series
+    of kwargs like (stuff=OutputClass()). Then at any point in your
+    program you can call "paradrop.out.stuff('This is a string\n')".
 
-        This way we can easily support different levels of verbosity without
-        the need to use some kind of bitmask or anything else.
-        Literally you can define any kind of output call you want (paradrop.out.foobar())
-        but if the parent script doesn't define the kwarg for foobar then the function
-        call just gets thrown away.
+    This way we can easily support different levels of verbosity without
+    the need to use some kind of bitmask or anything else. On-the-fly output
+    creation is no longer supported due to the metadata and special processing 
+    added. It is still possible, but not implemented. 
 
-        This is done by the __getattr__ function below, basically in __init__ we set
-        any attributes you pass as args, and anything else not defined gets sent to __getattr__
-        so that it doesn't error out.
-
-        Currently these are the choices for Output classes:
-            - StdoutOutput() : output sent to sys.stdout
-            - StderrOutput() : output sent to sys.stderr
-            - FileOutput()   : output sent to filename provided
-
-        --v2 Changes--
-        v1 implementation relied on seperate Writers for each output stream, which
-        helped with threading issues. Outputs were open and closed for each write, which is
-        wildly expensive (300ms on local bench!)
-
-        In v2, all contents are logged to file. Writing occurs on a dedicated thread that holds its files
-        open. All print functions are routed through a format transformer and then the printer.
-    """
+    This is done by the __getattr__ function below, basically in __init__ we set
+    any attributes you pass as args, and anything else not defined gets sent to __getattr__
+    so that it doesn't error out.
+    '''
 
     def __init__(self, **kwargs):
         """Setup the initial set of output stream functions."""
@@ -390,8 +371,12 @@ class Output():
         colorama.init()
 
         # Refactor this as an Output class
-        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES['VERBOSE'])
-        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES['VERBOSE'])
+        self.__dict__['redirectErr'] = OutputRedirect(sys.stderr, self.handlePrint, LOG_TYPES[Level.VERBOSE])
+        self.__dict__['redirectOut'] = OutputRedirect(sys.stdout, self.handlePrint, LOG_TYPES[Level.VERBOSE])
+
+        # by default, dont steal output and print to console
+        self.stealStdio(False)
+        self.logToConsole(True)
 
         # Setattr wraps the output objects in a
         # decorator that allows this class to intercept their output, This dict holds the
@@ -412,10 +397,6 @@ class Output():
         pass
 
     def __setattr__(self, name, val):
-        """Allow the program to add new output streams on the fly."""
-        if(verbose):
-            print 'Adding new Output stream %s' % name
-
         def inner(*args, **kwargs):
             result = val(*args, **kwargs)
             self.handlePrint(result)
@@ -522,6 +503,8 @@ class Output():
         :returns: str 
         '''
 
+        # print 'Attempting to print: ' + str(message)
+
         level = Level(message['type'])
         outputObject = self.outputMappings[level.name.lower()]
         return outputObject.formatOutput(message)
@@ -613,17 +596,17 @@ class Output():
 
 
 out = Output(
-    header=BaseOutput(LOG_TYPES['HEADER']),
-    testing=BaseOutput(LOG_TYPES['VERBOSE']),
-    verbose=BaseOutput(LOG_TYPES['VERBOSE']),
-    info=BaseOutput(LOG_TYPES['INFO']),
-    usage=BaseOutput(LOG_TYPES['INFO']),
-    perf=BaseOutput(LOG_TYPES['PERF']),
-    warn=BaseOutput(LOG_TYPES['WARN']),
-    err=BaseOutput(LOG_TYPES['ERR']),
-    exception=ExceptionOutput(LOG_TYPES['ERR']),
-    security=BaseOutput(LOG_TYPES['SECURITY']),
-    fatal=BaseOutput(LOG_TYPES['FATAL']),
-    twisted=TwistedOutput(LOG_TYPES['INFO']),
-    twistedErr=TwistedException(LOG_TYPES['ERR'])
+    header=BaseOutput(LOG_TYPES[Level.HEADER]),
+    testing=BaseOutput(LOG_TYPES[Level.VERBOSE]),
+    verbose=BaseOutput(LOG_TYPES[Level.VERBOSE]),
+    info=BaseOutput(LOG_TYPES[Level.INFO]),
+    usage=BaseOutput(LOG_TYPES[Level.USAGE]),
+    perf=BaseOutput(LOG_TYPES[Level.PERF]),
+    warn=BaseOutput(LOG_TYPES[Level.WARN]),
+    err=BaseOutput(LOG_TYPES[Level.ERR]),
+    exception=ExceptionOutput(LOG_TYPES[Level.ERR]),
+    security=BaseOutput(LOG_TYPES[Level.SECURITY]),
+    fatal=BaseOutput(LOG_TYPES[Level.FATAL]),
+    twisted=TwistedOutput(LOG_TYPES[Level.INFO]),
+    twistedErr=TwistedException(LOG_TYPES[Level.ERR])
 )

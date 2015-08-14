@@ -64,8 +64,6 @@ class Storage(object):
             createDefaultInfo(INFO_PATH)
             self.baseConfig = loadYaml(INFO_PATH)
 
-        # TODO: load keys
-
     def close(self):
         ''' Close and write out. This is automatic if autoSave is on'''
         pass

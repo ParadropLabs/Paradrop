@@ -1,5 +1,6 @@
 '''
-Stateful, singleton, command and control center. 
+Stateful, singleton, command and control center. This is the brains of the three 
+paradrop components: tools, router, and server.
 
 Takes over the functionality of the following modules, globals, and all around cruft:
     settings
@@ -19,39 +20,74 @@ tools may need to store information about routers, routers will store
 chutes, and the server will rely heavily on riffle callbacks.
 
 Should make this a singleton. And make a print thread for this guy, just for safety.
+
+The base class does not implement any riffle integration other than 
+setting up the keys and default connection information. You should register for 
+connection callbacks using smokesignals (see paradrop/main.py). DO NOT
+store connections yourself-- riffle already does that and you'll screw up the portal!
 '''
 
 import os
+import yaml
 
-# Havent done the singleton yet. Didn't see a need.
-# ref = None
+from twisted.internet import reactor
+
+from pdtools.lib import store, riffle, output
+
+# Global access. Assign this wherever you instantiate the Nexus object:
+#       nexus.core = MyNexusSubclass()
+core = None
 
 
-class Nexus(object):
+class NexusBase(object):
 
-    def __init__(self, type, devMode=False):
+    def __init__(self, nexType, mode='development', stealStdio=True, printToConsole=True):
         '''
+        The one big thing this function leaves out is reactor.start(). Call this externally 
+        *after* initializing a nexus object. 
+
         :param type: one of [router, tool, server]
         :type type: str.
-        :param devMode: uses dev mode if set. Could mean anything, but at the very least it
-            changes the ports and hostname
+        :param mode: one of [production, development, test, local]. Changes host and ports.
+            See section "network resolution" below 
         '''
-        self.type, self.devMode = type, devMode
 
-        # initialize the paths
+        self.type, self.mode = nexType, mode
+
+        if mode not in 'production development test local'.split():
+            raise KeyError("Mode " + self.mode + " not valid")
+
+        # initialize the paths and load existing settings
         self.makePaths()
         self.load()
 
+        # initialize output. If filepath is set, logs to file.
+        # If stealStdio is set intercepts all stderr and stdout and interprets it internally
+        # If printToConsole is set (defaults True) all final output is rendered to stdout
+        output.out.startLogging(filePath=self.logPath, stealStdio=True, printToConsole=printToConsole)
+
+        # Asssign global riffle keys
+        riffle.portal.keyPrivate = self.getKey('pub')
+        riffle.portal.certCa = self.getKey('ca')
+
+        # register onStop for the shutdown call
+        reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
+        reactor.callLater(0, self.onStart)
+
     def onStart(self):
-        pass
+        output.out.usage('%s coming up' % self.type)
 
     def onStop(self):
-        pass
+        self.save()
+
+        riffle.portal.close()
+
+        output.out.usage('%s going down' % self.type)
+        output.out.endLogging()
 
     def makePaths(self):
         '''
-        Are we on a VM? On snappy? Bare metal? The server? 
-        So many paths, so few answers!
+        Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
         '''
 
         # Lets start out being a router
@@ -59,7 +95,7 @@ class Nexus(object):
 
         # Put tools contents in the home directory
         if self.type is 'tool':
-            self.rootPath = expanduser('~') + '/.paradrop/'
+            self.rootPath = os.path.expanduser('~') + '/.paradrop/'
 
         # Current directory (since we might have more than one server at a time)
         elif self.type is 'server':
@@ -68,7 +104,7 @@ class Nexus(object):
         # We're a router, yay! But are we a router on snappy or local? The snappy
         # path will not resolve on a local machine-- let it fall through, we're set
         elif not self.rootPath:
-            self.rootPath = expanduser('~') + '/.paradrop/local/'
+            self.rootPath = os.path.expanduser('~') + '/.paradrop/local/'
 
         # Set the boring paths
         self.logPath = self.rootPath + 'logs/'
@@ -81,19 +117,64 @@ class Nexus(object):
             if not os.path.exists(x):
                 os.makedirs(x)
 
-    def save():
+    def load(self):
+        '''
+        Load our settings/configuration data from the path ivars. Does not check if the paths are None.
+
+        This is a combo of functionality from store and settings. The method of loading is configurable. 
+        Right now its YAML.
+        '''
+
+        # Check to make sure we have a default settings file
+        if not os.path.isfile(self.configPath):
+            createDefaultInfo(self.configPath)
+
+        self.config = loadYaml(self.configPath)
+
+        # Sanity check contents of info and throw it out if bad
+        if not validateInfo(self.config):
+            out.err('Saved configuration data invalid, destroying it.')
+            os.remove(self.configPath)
+            createDefaultInfo(self.configPath)
+            self.config = loadYaml(self.configPath)
+
+    def save(self):
         ''' Ehh. Ideally this should happen constantly and asynchronously. '''
-        pass
+        writeYaml(self.config, self.configPath)
 
     #########################################################
     # Settings
     #########################################################
 
-    def setSetting(self, k, v):
-        pass
+    def set(self, k, v):
+        self.config[k] = v
 
-    def getSetting(self, k):
-        pass
+    def get(self, k):
+        return self.config[k]
+
+    def provisioned(self):
+        return True if self.baseConfig['pdid'] else False
+
+    #########################################################
+    # Keys
+    #########################################################
+
+    def saveKey(self, key, name):
+        ''' Save the key with the given name. Overwrites by default '''
+        path = self.keyPath + name
+
+        with open(path, 'wb') as f:
+            f.write(key)
+
+    def getKey(self, name):
+        ''' Returns the given key or None '''
+        path = self.keyPath + name
+
+        if os.path.isfile(path):
+            with open(path, 'rb') as f:
+                return f.read()
+
+        return None
 
     #########################################################
     # Chutes
@@ -116,33 +197,92 @@ class Nexus(object):
     #########################################################
 
     def serverHost(self):
-        ''' Different in production vs dev, etc. Returns a host, port tuple '''
-        pass
+        ''' Different in production vs dev, etc. Returns hostname '''
+        if self.mode == 'local':
+            return 'localhost'
+
+        return 'paradrop.io'
 
     def rifflePort(self):
-        pass
+        return _incrementingPort(8016)
 
     def insecureRifflePort(self):
         ''' This isnt a thing yet. But it will be. '''
-        pass
+        return _incrementingPort(8017)
 
     def webPort(self):
-        ''' If serving on something other than 80 '''
-        pass
+        return _incrementingPort(14321)
+
+    def _incrementingPort(base, mode):
+        ''' Returns the given port plus some multiple of 10000 based on the passed mode '''
+
+        if self.mode == 'production' or self.mode == 'local':
+            return base
+
+        if self.mode == 'development':
+            return base + 10000
+
+        if self.mode == 'test':
+            return base + 10000 * 2
+
+        return base
 
     #########################################################
     # Path Resolution
     #########################################################
 
-    def logPath():
-        pass
+    def logPath(self):
+        return self.logPath
 
-    def keyPath():
-        pass
+    def keyPath(self):
+        return self.keyPath
 
-    def chutePath():
-        pass
+    def chutePath(self):
+        return self.chutePath
 
-    #########################################################
-    # Utils
-    #########################################################
+
+#########################################################
+# Utils
+#########################################################
+
+def createDefaultInfo(path):
+    default = {
+        'version': 1,
+        'pdid': "",
+        'chutes': [],
+        'routers': [],
+        'instances': []
+    }
+
+    writeYaml(default, path)
+
+
+def validateInfo(contents):
+    '''
+    Error checking on the read YAML file. This is a temporary method.
+
+    :param contents: the read-in yaml to check
+    :type contents: dict.
+    :returns: True if valid, else false
+    '''
+    INFO_REQUIRES = ['version', 'pdid', 'chutes', 'routers', 'instances']
+
+    for k in INFO_REQUIRES:
+        if k not in contents:
+            return False
+
+    # Check the validity of the contents
+
+    return True
+
+
+def writeYaml(contents, path):
+    ''' Overwrites content with YAML representation at given path '''
+    with open(path, 'w') as f:
+        f.write(yaml.dump(contents, default_flow_style=False))
+
+
+def loadYaml(path):
+    ''' Return dict from YAML found at path '''
+    with open(path, 'r') as f:
+        return yaml.load(f.read())

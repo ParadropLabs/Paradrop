@@ -6,97 +6,93 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-from pdtools.lib import output, store, riffle
+import smokesignal
+from twisted.internet import reactor, defer
+
+from pdtools.lib import output, store, riffle, nexus, names
 from paradrop.lib import settings
+from paradrop.backend.pdfcd import apiinternal
 
-from twisted.internet import reactor
+
+class Nexus(nexus.NexusBase):
+
+    def __init__(self, mode):
+        # Want to change logging functionality? See optional args on the base class and pass them here
+        super(Nexus, self).__init__('router', stealStdio=True, mode=mode)
+
+    def onStart(self):
+        super(Nexus, self).onStart()
+
+        # register for new server connections
+        smokesignal.on('ServerPerspectiveConnected', self.serverConnected)
+        smokesignal.on('ServerPerspectiveDisconnected', self.serverConnected)
+
+        # Create riffle realms
+        riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
+        riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
+
+        # We want to initiate a connection immediately, but
+        # reactor.callLater(.1, riffle.portal.connect, HOST)
+        reactor.callLater(.1, self.connect)
+
+    def onStop(self):
+        super(Nexus, self).onStop()
+
+    def serverConnected(self, avatar, realm):
+        output.out.info('Server Connected!')
+
+    def serverDisconnected(self, avatar, realm):
+        output.out.warn('Server Disconnected!')
+        reactor.callLater(.1, self.connect)
+
+    @defer.inlineCallbacks
+    def connect(self):
+        ''' Continuously tries to connect to server '''
+        print 'Trying to connect to server...'
+        try:
+            yield riffle.portal.connect()
+        except:
+            reactor.callLater(.1, self.connect)
+            defer.returnValue(True)
 
 
-##########################################################################
-# Support Functions
-##########################################################################
-def setupArgParse():
-    """
-    Sets up arguments if backend is called directly for testing.
-    """
-    p = argparse.ArgumentParser(
-        description='Paradrop API server running on client')
+def main():
+    p = argparse.ArgumentParser(description='Paradrop API server running on client')
     p.add_argument('-s', '--settings', help='Overwrite settings, format is "KEY:VALUE"',
                    action='append', type=str, default=[])
     p.add_argument('--development', help='Enable the development environment variables',
                    action='store_true')
     p.add_argument('--config', help='Run as the configuration daemon',
                    action='store_true')
-    p.add_argument(
-        '--unittest', help="Run the server in unittest mode", action='store_true')
-    p.add_argument('--verbose', '-v', help='Enable verbose',
-                   action='store_true')
-    return p
+    p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
+    p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
+    p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test, local]',
+                   action='store', type=str, default='development')
 
+    # Temporary until the mode=local is hooked up
+    p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
 
-def caughtSIGUSR1(signum, frame):
-    """
-    Catches SIGUSR1 calls and toggles verbose output
-    """
-    if(isinstance(output.out.verbose, output.FakeOutput)):
-        output.out.header("Activating verbose mode\n")
-        output.out.verbose = output.Stdout(output.Colors.VERBOSE)
-        output.verbose = True
-    else:
-        output.out.header("Deactivating verbose mode\n")
-        output.verbose = False
-        output.out.verbose = output.FakeOutput()
-
-
-def onShutdown():
-    ''' Get notified of system shutdown from Twisted '''
-
-    # Clears the print buffer, closes the logfile
-    output.out.endLogging()
-
-    # Have the portal close all existing connections (gracefully, if possible)
-    riffle.portal.close()
-
-    # TODO: inform the server
-
-    # TODO: inform pdconfd
-
-
-##########################################################################
-# Main Function
-##########################################################################
-
-def main():
-    # Setup the signal handler for verbose
-    signal.signal(signal.SIGUSR1, caughtSIGUSR1)
-
-    # Setup args if called directly (testing)
-    p = setupArgParse()
     args = p.parse_args()
 
-    # Check for settings to overwrite
+    # Temp- this should go to nexus (the settings portion of it, at least)
+    # Change the confd directories so we can run locally
+    if args.local:
+        settings.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
+        settings.UCI_CONFIG_DIR = "/tmp/config"
+
+    # Check for settings to overwrite (MOVE TO NEXUS)
     settings.updateSettings(args.settings)
 
-    if(args.verbose or settings.VERBOSE):
-        caughtSIGUSR1(signal.SIGUSR1, None)
-
-    # Ask the shared store to setup (paths can be set up there)
-    store.configureLocalPaths()
-    store.store = store.Storage()
-
-    # initialize output. If filepath is set, logs to file.
-    # If stealStdio is set intercepts all stderr and stdout and interprets it internally
-    # If printToConsole is set (defaults True) all final output is rendered to stdout
-    output.out.startLogging(filePath=store.LOG_PATH, stealStdio=False, printToConsole=True)
-
-    # Register for the shutdown callback so we can gracefully close logging
-    reactor.addSystemEventTrigger('before', 'shutdown', onShutdown)
+    # Globally assign the nexus object so anyone else can access it.
+    # Sorry, programming gods. If it makes you feel better this class
+    # replaces about half a dozen singletons
+    nexus.core = Nexus(mode=args.mode)
 
     if args.config:
         from paradrop.backend import pdconfd
 
         # Start the configuration daemon
-        # pdconfd.main.run_pdconfd()
+        pdconfd.main.run_pdconfd()
 
     else:
         from paradrop.backend import pdconfd
@@ -110,5 +106,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()

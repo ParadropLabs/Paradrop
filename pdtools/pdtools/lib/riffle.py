@@ -22,12 +22,15 @@ from twisted.spread import pb
 from twisted.cred import portal as twistedPortal
 from twisted.internet.endpoints import SSL4ClientEndpoint
 from twisted.internet.ssl import PrivateCertificate, Certificate, optionsForClientTLS
-
+from twisted.protocols.policies import TimeoutMixin
+from twisted.internet.protocol import Protocol
 from zope.interface import implements
-from pubsub import pub
+
+import smokesignal
 
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
+
 
 DEFAULT_PORT = 8016
 TIMEOUT = 5  # seconds to try for a connection
@@ -80,7 +83,12 @@ class Portal(twistedPortal.Portal):
     @defer.inlineCallbacks
     def connect(self, host=None, port=None, cert=None, key=None):
         '''
-        Connect to another portal.
+        Connect to another portal somewhere. If retry is set, will attempt to reconnect
+        with the target continuously. As of the time of this writing, you cannot stop a 
+        polling connection without taking down the portal.
+
+        :param retry: continuously attempt to connect on drops or rejections
+        :type retry: bool.
         '''
 
         host = host if host else self.host
@@ -100,9 +108,11 @@ class Portal(twistedPortal.Portal):
 
     def close(self):
         '''
-        Close all connections in all realms.
+        Close all connections in all realms. Stop all polling connections.
         '''
+
         out.info("Portal closing all connections")
+
         for k, v in self.realms.iteritems():
             for c in v.connections:
                 c.destroy()
@@ -160,15 +170,9 @@ class Portal(twistedPortal.Portal):
         :return: the connection avatar or None
         '''
 
-        # print 'Looking for connection with name:', credentials
-
         r = self.findRealm(credentials)
-        # print r
-        # print 'Connections:', len(r.connections)
 
         for c in r.connections:
-            # print c
-
             if c.name == credentials:
                 return c
 
@@ -198,13 +202,29 @@ class Realm:
     '''
     Wraps a type of avatar and all connections for that avatar type.
 
-    Broadcasts connection changes using pubsub. To be notfied of new connections:
-        pubsub.pub.subscribe(con, '[avatarName]Connected')
-        pubsub.pub.unsubscribe(dis, '[avatarName]Disconnected')
+    Broadcasts chanes in connection using smokesignals: a publish/subscribe 
+    library. Each realm broadcasts using its assigned avatar class (the class
+    that new connections are assigend as perspectives.)
 
-    where 'dis' and 'con' are method references. Both take keyword arguments 'type'
-    and 'realm'.
+    For example, consider a user connecting to a server. The server declares a subclass
+    of RifflePerspective called 'UserPerspective.' Another module wants to be alerted of 
+    new user connections and disconnections.
+
+    In external module:
+        def newUser(avatar, realm):
+            print 'A new user connected!
+
+        def userLost(avatar, realm):
+            print 'User went away :('
+
+        smokesignal.on('UserPerspectiveConnected', newUser)
+        smokesignal.on('UserPerspectiveDisconnected', userLost)
+
+    The method will be called with the connection in question and this realm.
+
+    Note: the connection will already be down when the second call comes in. 
     '''
+
     implements(twistedPortal.IRealm)
 
     def __init__(self, avatar):
@@ -217,47 +237,36 @@ class Realm:
         Returns an instance of the appropriate avatar. Asks the avatar to perform 
         any needed initialization (which should be a deferred)
         '''
-        avatar = self.avatar(avatarID, self)
 
-        # print 'Attaching %s to %s' % (mind, avatar)
-        avatar.attached(mind)
+        avatar = yield self.avatar(avatarID, self)
+        self.attach(avatar, mind)
 
-        # print avatar.remote
+        # Testing different methods of disconnecting the avatars
+        def d(a=avatar):
+            # print 'Detaching from mind'
+            a.detached(mind)
 
-        self.connections.add(avatar)
-        out.info('Connected: ' + avatar.name)
-        pub.sendMessage('%sConnected' % self.avatar.__name__, avatar=avatar, realm=self)
-
-        # yield mind.callRemote('echo', '')
-
-        # deferred since initialization may require database operations
-        # yield avatar.initialize()
-        yield 1
-
-        # move detached from the avatar to here?
-        defer.returnValue((avatar, lambda a=avatar: a.detached(mind)))
+        defer.returnValue((avatar, d))
 
     def attach(self, avatar, mind):
         '''
-        Temp method. Performs the other half of the partial avatar method.
+        Completes the riffle association by attaching the avatar to its remote, adding
+        it to the pool of connection stored here, and broadcasting the new connection.
 
-        Leaving the requestAvatar method is most likely a bad, bad idea.
-        The more riffle diverges from PB the greater chance for bugs across the board.
+        To listen for this 
         '''
-        avatar.attached(mind)
 
+        avatar.attached(mind)
         self.connections.add(avatar)
         out.info('Connected: ' + avatar.name)
-
-    def requestPartialAvatar(self, avatarID):
-        return self.avatar(avatarID, self)
+        smokesignal.emit('%sConnected' % self.avatar.__name__, avatar, self)
 
     def requestPartialAvatar(self, avatarID):
         return self.avatar(avatarID, self)
 
     def connectionClosed(self, avatar):
         out.info('Disconnected: ' + str(avatar.name))
-        pub.sendMessage('%sDisconnected' % self.avatar.__name__, avatar=avatar, realm=self)
+        smokesignal.emit('%sDisconnected' % self.avatar.__name__, avatar, self)
         self.connections.remove(avatar)
 
 
@@ -322,7 +331,6 @@ class RifflePerspective(pb.Avatar):
         Note: malicious endpoints can easily call this repeatedly. Add a check 
         to ensure init is only called once. 
         '''
-        # return self.initialize()
         yield self.initialize()
 
     def attached(self, mind):
@@ -359,22 +367,6 @@ class RiffleViewable(pb.Viewable):
 # Perspective Broker Monkey Patches
 ############################################################
 
-# class _RiffleBroker(pb.Broker):
-
-#     def connectionLost(self, reason):
-#         '''
-#         This triggers many times, but the reason its here now is to
-#         detect invalid certs. Without the print statement, the client isnt warned. This is a
-#         todo item.
-#         '''
-#         print 'Connection Lost!', reason
-#         return pb.Broker.connectionLost(self, reason)
-
-
-from twisted.protocols.policies import TimeoutMixin
-from twisted.internet.protocol import Protocol
-
-
 class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
 
     def login(self, portal):
@@ -383,7 +375,6 @@ class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
 
     @defer.inlineCallbacks
     def login2(self, portal):
-        # Have to add connection to the portal
         self.portal = portal
 
         # Returns a _RifflePortalWrapper remote reference. Set a timeout
@@ -412,17 +403,6 @@ class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
         avatar = yield root.callRemote('login', referencibleOther)
         other.remote = Levy(avatar)
 
-        # print 'Return Avatar: ' + str(avatar)
-        # print 'Other Remote: ' + str(other)
-        # print 'Not returned avatar: ' + str(a)
-        # print ': ' + str(a.remote)
-        # print 'Returned Mind: ' + str(other)
-
-        # Signal we're done cleaning up
-        # print 'Calling Handshake'
-
-        # other.remote.callRemote('echo', 'boo')
-
         # This is absolutely not needed. The point of this method is to registers
         # the new connections with the portal, but we already have all the pieces.
         # a, b = yield self.portal.login(pdid, avatar)
@@ -430,14 +410,6 @@ class RiffleClientFactory(pb.PBClientFactory, TimeoutMixin):
         # tttteeeemmmpppppoooorrraaaarrryyy
         realm = self.portal.findRealm(pdid)
         realm.attach(other, avatar)
-        # a, b = self.portal.
-
-        # print 'Realm Object: ' + str(a)
-
-        # Bit hacky, but should be cleaned up in a refactor
-        # a.remote = avatar
-
-        # other.remote = avatar
 
         avatar.callRemote('handshake')
         other.perspective_handshake()
@@ -510,10 +482,9 @@ class _RifflePortalWrapper(pb._PortalWrapper):
     # print 'Remote login!'
     #     return None
 
+
 # Do we need these? Who knows. Keeping them around for know, although
 # these are a full level of abstraction below where we want to be, so be careful using them
-
-
 def disc():
     # print 'CB: Disconnected'
     pass
