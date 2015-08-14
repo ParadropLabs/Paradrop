@@ -25,6 +25,7 @@ then
     echo -e "  up\t\t starts a local snappy virtual machine, add wifi interface with 'up wifi-BUS-ADDR'"
     echo -e "  down\t\t closes a local snappy virtual machine"
     echo -e "  connect\t connects to a local snappy virtual machine"
+    echo -e "  check\t\t checks the state of the VM and Paradrop instance tools in the VM"
 
     echo -e "\nDevelopment operations"
     echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"

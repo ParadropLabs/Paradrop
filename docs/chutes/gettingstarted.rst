@@ -23,7 +23,7 @@ Environment setup
 4. Boot local testing VM ``pdbuild.sh up``
 5. Install instance dependencies ``pdbuild.sh install_deps``
 6. Build the tools to go into testing VM ``pdbuild.sh build``
-7. Push tools into VM ``pdbuild.sh install`` (NOTE: sometimes this fails, please check :doc:`faq`)
+7. Push tools into VM ``pdbuild.sh install`` (NOTE: sometimes this fails, please check :doc:`/issues`)
 8. Check the installation ``pdbuild.sh check``
 
 
