@@ -59,25 +59,46 @@ def reloadChutes():
         confdInfo = str2json(confdInfo)
         print confdInfo
 
-    #Remove any chutes from the restart queue if confd failed to bring up the proper interfaces
-    failedChutes = []
+    #Remove any chutes from the restart queue if confd failed to bring up the
+    #proper interfaces
+    #
+    # At this point, we only care about the chute names, not the full objects.
+    # We are using sets of chute names for their O(1) membership test and
+    # element uniqueness.
+    okChutes = set([ch.name for ch in chutes])
+    failedChutes = set()
     for iface in confdInfo:
-        if iface.get('success') == False:
-            if iface.get('comment') == settings.RESERVED_CHUTE:
+        if iface.get('success') is False:
+            failedChuteName = iface.get('comment')
+            if failedChuteName == settings.RESERVED_CHUTE:
                 out.warn('Failed to load a system config section')
-                continue
-            for ch in chutes:
-                if ch.name == iface.get('comment'): chutes.remove(ch)
-            if iface.get('comment') not in failedChutes: failedChutes.append(iface.get('comment'))
+            elif failedChuteName in okChutes:
+                # This was a chute that we are supposed to restart, but one of
+                # its config sections failed to load.
+                okChutes.remove(failedChuteName)
+                failedChutes.add(failedChuteName)
+            elif failedChuteName not in failedChutes:
+                # In this case, the name in the comment was not something that
+                # we recognize from the chute storage.  Maybe the chute storage
+                # file was deleted but not the config files, or someone
+                # manually modified the config files.  Anyway, we cannot
+                # attempt to stop this chute because the object does not exist,
+                # but we can give a warning message.
+                out.warn('Failed to load config section for '
+                         'unrecognized chute: {}'.format(failedChuteName))
 
-    #First stop all chutes that failed to bring up interfaces according to pdconfd then start successful ones
-    #We do this because pdfcd needs to handle cleaning up uci files and then tell pdconfd 
+    #First stop all chutes that failed to bring up interfaces according to
+    #pdconfd then start successful ones #We do this because pdfcd needs to
+    #handle cleaning up uci files and then tell pdconfd
     updates = []
     for ch in failedChutes:
-        updates.append(dict(updateClass='CHUTE', updateType='stop', name=ch, tok=timeint(), func=updateStatus, warning=FAILURE_WARNING))
+        updates.append(dict(updateClass='CHUTE', updateType='stop', name=ch,
+                       tok=timeint(), func=updateStatus,
+                       warning=FAILURE_WARNING))
 
-    for ch in chutes:
-        updates.append(dict(updateClass='CHUTE', updateType='restart', name=ch.name, tok=timeint(), func=updateStatus))
+    for ch in okChutes:
+        updates.append(dict(updateClass='CHUTE', updateType='restart', name=ch,
+                       tok=timeint(), func=updateStatus))
 
     return updates
 
