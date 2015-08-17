@@ -16,11 +16,17 @@ class Command(object):
 
         priority: integer value, should be one of the PRIO_* constants
         command: array of strings specifying command and arguments
+                 Passing a single string is also supported if there are
+                 no spaces within arguments (only between them).
         parent: parent object (should be ConfigObject subclass)
         """
         self.priority = priority
-        self.command = command
         self.parent = parent
+
+        if type(command) == list:
+            self.command = command
+        elif isinstance(command, basestring):
+            self.command = command.split()
 
         # These are set after execute completes.
         self.pid = None

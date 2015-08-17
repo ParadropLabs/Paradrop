@@ -74,13 +74,13 @@ class ConfigWifiIface(ConfigObject):
         # Look up the interface section.
         interface = self.lookup(allConfigs, "interface", self.network)
 
-        if interface.ifname == wifiDevice.name:
+        if interface.config_ifname == wifiDevice.name:
             # This interface is using the physical device directly (eg. wlan0).
             self.vifName = None
             ifname = wifiDevice.name
         else:
             # This interface is a virtual one (eg. foo.wlan0 using wlan0).
-            self.vifName = interface.ifname
+            self.vifName = interface.config_ifname
             ifname = self.vifName
 
             # Command to create the virtual interface.

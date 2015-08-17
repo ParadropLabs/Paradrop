@@ -52,7 +52,7 @@ def findConfigFiles(search=None):
             path = "{}/{}".format(search, fn)
             files.append(path)
     else:
-        path = "{}/{}".format(CONFIG_DIR, search)
+        path = "{}/{}".format(getSystemConfigDir(), search)
         if os.path.isfile(path):
             files.append(path)
 

@@ -46,6 +46,78 @@ def interfaceDefsEqual(iface1, iface2):
     return True
 
 
+def getNetworkConfigWifi(update, cfg, iface):
+    # Claim a subnet for this interface from the pool.
+    subnet = networkPool.next()
+    hosts = subnet.hosts()
+
+    # Generate internal (in the chute) and external (in the host)
+    # addresses.
+    #
+    # Example:
+    # subnet: 192.168.30.0/24
+    # netmask: 255.255.255.0
+    # external: 192.168.30.1
+    # internal: 192.168.30.2
+    iface['subnet'] = subnet
+    iface['netmask'] = str(subnet.netmask)
+    iface['externalIpaddr'] = str(hosts.next())
+    iface['internalIpaddr'] = str(hosts.next())
+
+    # Generate the internal IP address with prefix length (x.x.x.x/y) for
+    # convenience of other code that expect that format (e.g. pipework).
+    iface['ipaddrWithPrefix'] = "{}/{}".format(
+            iface['internalIpaddr'], subnet.prefixlen)
+
+    # Generate initial portion (prefix) of interface name.
+    #
+    # NOTE: We add a "v" in front of the interface name to avoid triggering
+    # the udev persistent net naming rules, which are hard-coded to certain
+    # typical strings such as "eth*" and "wlan*" but not "veth*" or
+    # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
+    iface['extIntfPrefix'] = "v" + iface['device'] + "."
+    iface['extIntfNumber'] = interfaceNumberPool.next()
+
+    # Generate a name for the new interface in the host.
+    iface['externalIntf'] = "{}{:04x}".format(
+        iface['extIntfPrefix'], iface['extIntfNumber'])
+    if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
+        out.warn("Interface name ({}) is too long\n".
+                 format(iface['externalIntf']))
+        raise Exception("Interface name is too long")
+
+    # Add extra fields for WiFi devices.
+    if cfg['type'] == "wifi":
+        # Check for required fields.
+        res = pdutils.check(cfg, dict, ['ssid'])
+        if res:
+            out.warn('WiFi network interface definition {}\n'.format(res))
+            raise Exception("Interface definition missing field(s)")
+
+        iface['ssid'] = cfg['ssid']
+
+        # Optional encryption settings
+        #
+        # If 'key' is present, but 'encryption' is not, then default to
+        # psk2.  If 'key' is not present, and 'encryption' is not none,
+        # then we have an error.
+        if 'key' in cfg:
+            iface['key'] = cfg['key']
+            iface['encryption'] = 'psk2'  # default to psk2
+        if 'encryption' in cfg:
+            iface['encryption'] = cfg['encryption']
+            if cfg['encryption'] != "none" and 'key' not in cfg:
+                out.warn("Key field must be defined "
+                         "when encryption is enabled.")
+                raise Exception("No key field defined for WiFi encryption")
+
+        # Give a warning if the dhcp block is missing, since it is likely
+        # that developers will want a DHCP server to go with their AP.
+        if 'dhcp' not in cfg:
+            out.warn("No dhcp block found for interface {}; "
+                     "will not run a DHCP server".format(name))
+
+
 def getNetworkConfig(update):
     """
     For the Chute provided, return the dict object of a 100% filled out
@@ -125,75 +197,8 @@ def getNetworkConfig(update):
                      format(cfg['type']))
             raise Exception("Missing device(s) requested by chute")
 
-        # Claim a subnet for this interface from the pool.
-        subnet = networkPool.next()
-        hosts = subnet.hosts()
-
-        # Generate internal (in the chute) and external (in the host)
-        # addresses.
-        #
-        # Example:
-        # subnet: 192.168.30.0/24
-        # netmask: 255.255.255.0
-        # external: 192.168.30.1
-        # internal: 192.168.30.2
-        iface['subnet'] = subnet
-        iface['netmask'] = str(subnet.netmask)
-        iface['externalIpaddr'] = str(hosts.next())
-        iface['internalIpaddr'] = str(hosts.next())
-
-        # Generate the internal IP address with prefix length (x.x.x.x/y) for
-        # convenience of other code that expect that format (e.g. pipework).
-        iface['ipaddrWithPrefix'] = "{}/{}".format(
-                iface['internalIpaddr'], subnet.prefixlen)
-
-        # Generate initial portion (prefix) of interface name.
-        #
-        # NOTE: We add a "v" in front of the interface name to avoid triggering
-        # the udev persistent net naming rules, which are hard-coded to certain
-        # typical strings such as "eth*" and "wlan*" but not "veth*" or
-        # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
-        iface['extIntfPrefix'] = "v" + iface['device'] + "."
-        iface['extIntfNumber'] = interfaceNumberPool.next()
-
-        # Generate a name for the new interface in the host.
-        iface['externalIntf'] = "{}{:04x}".format(
-            iface['extIntfPrefix'], iface['extIntfNumber'])
-        if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
-            out.warn("Interface name ({}) is too long\n".
-                     format(iface['externalIntf']))
-            raise Exception("Interface name is too long")
-
-        # Add extra fields for WiFi devices.
         if cfg['type'] == "wifi":
-            # Check for required fields.
-            res = pdutils.check(cfg, dict, ['ssid'])
-            if res:
-                out.warn('WiFi network interface definition {}\n'.format(res))
-                raise Exception("Interface definition missing field(s)")
-
-            iface['ssid'] = cfg['ssid']
-
-            # Optional encryption settings
-            #
-            # If 'key' is present, but 'encryption' is not, then default to
-            # psk2.  If 'key' is not present, and 'encryption' is not none,
-            # then we have an error.
-            if 'key' in cfg:
-                iface['key'] = cfg['key']
-                iface['encryption'] = 'psk2'  # default to psk2
-            if 'encryption' in cfg:
-                iface['encryption'] = cfg['encryption']
-                if cfg['encryption'] != "none" and 'key' not in cfg:
-                    out.warn("Key field must be defined "
-                             "when encryption is enabled.")
-                    raise Exception("No key field defined for WiFi encryption")
-
-            # Give a warning if the dhcp block is missing, since it is likely
-            # that developers will want a DHCP server to go with their AP.
-            if 'dhcp' not in cfg:
-                out.warn("No dhcp block found for interface {}; "
-                         "will not run a DHCP server".format(name))
+            getNetworkConfigWifi(update, cfg, iface)
 
         # Pass on DHCP configuration if it exists.
         if 'dhcp' in cfg:
@@ -247,9 +252,7 @@ def getOSNetworkConfig(update):
         # A basic set of things must exist for all interfaces
         config = {'type': 'interface', 'name': iface['externalIntf']}
 
-        # LXC network interfaces are always bridges
         options = {
-            'type': "bridge",
             'proto': 'static',
             'ipaddr': iface['externalIpaddr'],
             'netmask': iface['netmask'],

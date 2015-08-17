@@ -80,7 +80,8 @@ class ConfigDnsmasq(ConfigObject):
                 outputFile.write("\n")
                 outputFile.write("# Options for section interface {}\n".
                                  format(interface.name))
-                outputFile.write("interface={}\n".format(interface.ifname))
+                outputFile.write("interface={}\n".format(
+                                 interface.config_ifname))
 
                 network = ipaddress.IPv4Network(u"{}/{}".format(
                     interface.ipaddr, interface.netmask), strict=False)

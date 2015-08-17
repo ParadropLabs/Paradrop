@@ -40,7 +40,8 @@ class ConfigRedirect(ConfigObject):
             for proto in protocols:
                 cmd = ["iptables", "--table", "nat",
                        action, "PREROUTING",
-                       "--in-interface", interface.ifname]
+                       "--in-interface",
+                       interface.config_ifname]
 
                 if self.src_ip is not None:
                     cmd.extend(["--source", self.src_ip])
@@ -142,7 +143,7 @@ class ConfigZone(ConfigObject):
             for interface in self.interfaces(allConfigs):
                 cmd = ["iptables", "--table", "nat",
                        action, "POSTROUTING",
-                       "--out-interface", interface.ifname,
+                       "--out-interface", interface.config_ifname,
                        "--jump", "MASQUERADE",
                        "--match", "comment", "--comment",
                        "pdconfd {} {}".format(self.typename, self.name)]

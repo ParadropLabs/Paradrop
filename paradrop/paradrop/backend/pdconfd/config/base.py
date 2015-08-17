@@ -29,6 +29,16 @@ class ConfigObject(object):
     def __str__(self):
         return "{}:{}".format(self.typename, self.name)
 
+    def setup(self):
+        """
+        Finish object initialization.
+
+        This is called after the config object is initialized will all of its
+        options values filled in.  Override to do some preparation work before
+        we start generating commands.
+        """
+        pass
+
     def addDependent(self, dep):
         self.dependents.add(dep)
 
@@ -67,6 +77,22 @@ class ConfigObject(object):
         Each one is a Command object.
         """
         return []
+
+    def update(self, new, allConfigs):
+        """
+        Return a list of commands to update to new configuration.
+
+        This is called when a new configuration is loaded with the same name
+        but different options.  The default behavior is to revert the old
+        configuration (by calling undoCommands) and apply the new configuration
+        (by calling commands).  However, in certain cases that could be
+        disruptive, so we can do incremental updates by overriding this
+        function.
+
+        Return None to go with default behavior (described above) or return
+        a list of commands to perform the update.
+        """
+        return None
 
     def optionsMatch(self, other):
         """
@@ -135,5 +161,7 @@ class ConfigObject(object):
                     value = opdef['default']
 
             setattr(obj, opdef['name'], value)
+
+        obj.setup()
 
         return obj
