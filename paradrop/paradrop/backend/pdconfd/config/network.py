@@ -10,8 +10,11 @@ class ConfigInterface(ConfigObject):
         {"name": "ifname", "type": list, "required": True, "default": None},
         {"name": "type", "type": str, "required": False, "default": None},
         {"name": "enabled", "type": bool, "required": False, "default": True},
+
+        # Options for "static" protocol:
         {"name": "ipaddr", "type": str, "required": False, "default": None},
-        {"name": "netmask", "type": str, "required": False, "default": None}
+        {"name": "netmask", "type": str, "required": False, "default": None},
+        {"name": "gateway", "type": str, "required": False, "default": None}
     ]
 
     def setup(self):
@@ -78,12 +81,22 @@ class ConfigInterface(ConfigObject):
             cmd = ["ip", "link", "set", "dev", self.config_ifname, updown]
             commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
 
+            if self.gateway is not None:
+                cmd = ["ip", "route", "add", "default", "via", self.gateway,
+                       "dev", self.config_ifname]
+                commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
+
         return commands
 
     def undoCommands(self, allConfigs):
         commands = list()
 
         if self.proto == "static":
+            if self.gateway is not None:
+                cmd = ["ip", "route", "del", "default", "via", self.gateway,
+                       "dev", self.config_ifname]
+                commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
+
             # Remove the IP address that we added.
             cmd = ["ip", "addr", "del",
                    "{}/{}".format(self.ipaddr, self.netmask),
