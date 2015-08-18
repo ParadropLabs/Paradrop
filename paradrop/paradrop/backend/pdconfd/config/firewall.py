@@ -18,6 +18,10 @@ class ConfigRedirect(ConfigObject):
         {"name": "target", "type": str, "required": False, "default": "DNAT"}
     ]
 
+    # Any of these values will be interpreted to mean that --proto and ports
+    # should not be specified in the iptables rule.
+    ANY_PROTO = set([None, "any", "none"])
+
     def __commands_dnat(self, allConfigs, action):
         """
         Generate DNAT iptables rules.
@@ -29,7 +33,7 @@ class ConfigRedirect(ConfigObject):
         # Special cases:
         # None->skip protocol and port arguments,
         # tcpudp->[tcp, udp]
-        if self.proto is None:
+        if self.proto in self.ANY_PROTO:
             protocols = [None]
         elif self.proto == "tcpudp":
             protocols = ["tcp", "udp"]
@@ -87,7 +91,8 @@ class ConfigRedirect(ConfigObject):
         elif self.target == "SNAT":
             commands = self.__commands_snat(allConfigs, "--insert")
         else:
-            commands = list()
+            raise Exception("Unsupported target ({}) in config {} {}".format(
+                self.target, self.typename, self.name))
 
         self.manager.forwardingCount += 1
         if self.manager.forwardingCount == 1:

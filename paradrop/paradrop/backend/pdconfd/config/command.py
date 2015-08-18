@@ -24,13 +24,22 @@ class Command(object):
         self.parent = parent
 
         if type(command) == list:
-            self.command = command
+            self.command = [str(v) for v in command]
         elif isinstance(command, basestring):
             self.command = command.split()
 
         # These are set after execute completes.
         self.pid = None
         self.result = None
+
+    def __contains__(self, s):
+        """
+        Test if command contains given string.
+
+        Example:
+        If the cmd.command = ['kill', '1'], then ("kill" in cmd) will return True.
+        """
+        return (s in str(self))
 
     def __str__(self):
         return " ".join(self.command)
@@ -42,7 +51,7 @@ class Command(object):
             self.result = proc.wait()
             out.info('Command "{}" returned {}\n'.format(
                      " ".join(self.command), self.result))
-        except OSError as e:
+        except Exception as e:
             out.info('Command "{}" raised exception {}\n'.format(
                      " ".join(self.command), e))
             self.result = e
