@@ -46,7 +46,7 @@ def interfaceDefsEqual(iface1, iface2):
     return True
 
 
-def getNetworkConfigWifi(update, cfg, iface):
+def getNetworkConfigWifi(update, name, cfg, iface):
     # Claim a subnet for this interface from the pool.
     subnet = networkPool.next()
     hosts = subnet.hosts()
@@ -198,7 +198,7 @@ def getNetworkConfig(update):
             raise Exception("Missing device(s) requested by chute")
 
         if cfg['type'] == "wifi":
-            getNetworkConfigWifi(update, cfg, iface)
+            getNetworkConfigWifi(update, name, cfg, iface)
 
         # Pass on DHCP configuration if it exists.
         if 'dhcp' in cfg:
