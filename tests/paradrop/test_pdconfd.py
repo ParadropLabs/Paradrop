@@ -4,6 +4,7 @@ from nose.tools import raises
 
 from paradrop.backend.pdconfd.config.command import Command
 from paradrop.backend.pdconfd.config.manager import ConfigManager
+from paradrop.backend.pdconfd.config.network import ConfigInterface
 from paradrop.backend.pdconfd.config.wireless import ConfigWifiDevice, ConfigWifiIface
 
 CONFIG_FILE = "/tmp/test-config"
@@ -426,3 +427,62 @@ def test_config_wireless_sta():
     commands = manager.previousCommands
     for cmd in commands:
         print(cmd)
+
+
+@raises(Exception)
+def test_config_missing_option():
+    """
+    Test loading a config with missing required field
+    """
+    manager = ConfigManager(WRITE_DIR)
+
+    # This will raise an exception because we are not providing the "ifname"
+    # option.
+    ConfigInterface.build(manager, None, "wan", {}, None)
+
+
+def test_interface_update():
+    """
+    Test update method on ConfigInterface
+    """
+    bridge1 = ConfigInterface()
+    bridge1.name = "lan"
+    bridge1.proto = "static"
+    bridge1.ifname = ["eth1", "eth2"]
+    bridge1.type = "bridge"
+    bridge1.ipaddr = "192.168.1.2"
+    bridge1.netmask = "255.255.255.0"
+    bridge1.gateway = "192.168.1.1"
+    bridge1.setup()
+
+    # Test removing one interface and adding another.
+    bridge2 = bridge1.copy()
+    bridge2.ifname = ["eth2", "eth3"]
+
+    commands = bridge1.update(bridge2, {})
+    for cmd in commands:
+        print(cmd)
+    assert len(commands) == 6
+
+    # Should be removing eth1, adding eth3, and doing nothing to eth2.
+    assert in_commands("ip link set dev eth1 nomaster", commands)
+    assert in_commands("ip link set dev eth3 master br-lan", commands)
+    assert not in_commands("eth2", commands)
+
+    # Test changing the IP address and gateway.
+    bridge3 = bridge2.copy()
+    bridge3.ipaddr = "192.168.2.2"
+    bridge3.gateway = "192.168.2.1"
+
+    commands = bridge2.update(bridge3, {})
+    for cmd in commands:
+        print(cmd)
+    assert len(commands) == 3
+
+    # Test making a change that requires doing a complete reload of the config
+    # section.
+    bridge4 = bridge3.copy()
+    bridge4.proto = "dhcp"
+
+    commands = bridge4.update(bridge3, {})
+    assert commands is None

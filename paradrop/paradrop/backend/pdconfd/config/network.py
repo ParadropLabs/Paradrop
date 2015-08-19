@@ -123,10 +123,23 @@ class ConfigInterface(ConfigObject):
 
         # May have changed the IP address.
         if self.proto == "static":
-            cmd = ["ip", "addr", "change",
-                   "{}/{}".format(self.ipaddr, self.netmask),
-                   "dev", self.config_ifname]
-            commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
+            if new.ipaddr != self.ipaddr or new.netmask != self.netmask:
+                cmd = ["ip", "addr", "change",
+                       "{}/{}".format(self.ipaddr, self.netmask),
+                       "dev", self.config_ifname]
+                commands.append(Command(Command.PRIO_CONFIG_IFACE, cmd, self))
+
+            if new.gateway != self.gateway:
+                if self.gateway is not None:
+                    cmd = ["ip", "route", "del", "default", "via", self.gateway,
+                           "dev", self.config_ifname]
+                    commands.append(
+                            Command(Command.PRIO_CONFIG_IFACE, cmd, self))
+                if new.gateway is not None:
+                    cmd = ["ip", "route", "add", "default", "via", new.gateway,
+                            "dev", new.config_ifname]
+                    commands.append(
+                            Command(Command.PRIO_CONFIG_IFACE, cmd, new))
 
         if self.type == "bridge":
             old_ifnames = set(self.ifname)
@@ -139,3 +152,5 @@ class ConfigInterface(ConfigObject):
             # Add interfaces that were not in the old bridge.
             for ifname in (new_ifnames - old_ifnames):
                 commands.extend(self.addToBridge(ifname, self.config_ifname))
+
+        return commands
