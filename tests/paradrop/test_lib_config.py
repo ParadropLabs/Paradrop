@@ -1,16 +1,4 @@
-class MockChute(object):
-    def __init__(self):
-        self.cache = dict()
-
-    def getCache(self, key):
-        return self.cache[key]
-
-    def setCache(self, key, value):
-        self.cache[key] = value
-
-
-class MockUpdate(object):
-    pass
+from .mock import MockChute, MockUpdate
 
 
 def test_get_network_config_wifi():
