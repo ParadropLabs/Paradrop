@@ -128,7 +128,9 @@ def removeChute(update):
         c.remove_container(container=name, force=True)
         c.remove_image(image=repo)
     except Exception as e:
-        update.complete(success=False, message= e.explanation)
+        #TODO: Might want to notify ourselves we could have removed container but failed to remove image for a number of reasons
+        update.complete(success=False, message=e.message)
+        raise e
 
 def stopChute(update):
     """
@@ -140,11 +142,7 @@ def stopChute(update):
     """
     out.info('Attempting to stop chute %s\n' % (update.name))
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
-    try:
-        c.stop(container=update.name)
-    except Exception as e:
-        update.complete(success=False, message= e.explanation)
-        raise e
+    c.stop(container=update.name)
 
 def restartChute(update):
     """
@@ -156,11 +154,7 @@ def restartChute(update):
     """
     out.info('Attempting to restart chute %s\n' % (update.name))
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
-    try:
-        c.start(container=update.name)
-    except Exception as e:
-        update.complete(success=False, message= e.explanation)
-        raise e
+    c.start(container=update.name)
 
     setup_net_interfaces(update)
 
@@ -190,7 +184,7 @@ def failAndCleanUpDocker(validImages, validContainers):
         if not img in validImages:
             out.info('Removing Invalid image with id: %s' % str(img))
             c.remove_image(image=img)
-    #Throw exception so abort plan is called and user is notifie
+    #Throw exception so abort plan is called and user is notified
     raise Exception('Building or starting of docker image failed check your Dockerfile for errors.')
 
 def build_host_config(update):
@@ -210,12 +204,12 @@ def build_host_config(update):
     host_conf = docker.utils.create_host_config(
         #TO support
         port_bindings=config.get('port_bindings'),
-        binds=config.get('binds'),
-        links=config.get('links'),
         dns=config.get('dns'),
         #not supported/managed by us
         #network_mode=update.host_config.get('network_mode'),
         #extra_hosts=update.host_config.get('extra_hosts'),
+        #binds=config.get('binds'),
+        #links=config.get('links'),
         restart_policy={'MaximumRetryCount': 5, 'Name': 'on-failure'},
         devices=[],
         lxc_conf={},
