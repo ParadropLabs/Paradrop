@@ -1,3 +1,5 @@
+import copy
+
 class ConfigObject(object):
     nextId = 0
     typename = None
@@ -22,13 +24,6 @@ class ConfigObject(object):
     def __hash__(self):
         return hash(self.getTypeAndName())
 
-    def __repr__(self):
-        return "{}({}:{}:{})".format(self.__class__.__name__,
-                                     self.source, self.typename, self.name)
-
-    def __str__(self):
-        return "{}:{}".format(self.typename, self.name)
-
     def setup(self):
         """
         Finish object initialization.
@@ -49,6 +44,32 @@ class ConfigObject(object):
         Each one is a Command object.
         """
         return []
+
+    def copy(self):
+        """
+        Make a copy of the config object.
+
+        The copy will receive the same name and option values.
+        """
+        other = self.__class__()
+
+        other.source = self.source
+        other.name = self.name
+        other.comment = self.comment
+        other.dependents = self.dependents.copy()
+
+        for option in self.options:
+            # We use copy here because it works with both the str- and
+            # list-typed values.  Any lists are lists of strings, so
+            # shallow-copy here is fine.
+            copied = copy.copy(getattr(self, option['name']))
+            setattr(other, option['name'], copied)
+
+        # We should call setup on a new config object after all of the option
+        # values are filled in.
+        other.setup()
+
+        return other
 
     def getTypeAndName(self):
         """

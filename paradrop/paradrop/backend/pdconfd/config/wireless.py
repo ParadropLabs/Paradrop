@@ -55,18 +55,21 @@ class ConfigWifiIface(ConfigObject):
     def commands(self, allConfigs):
         commands = list()
 
-        if self.mode == "sta":
+        if self.mode == "ap":
+            pass
+        elif self.mode == "sta":
             # TODO: Implement "sta" mode.
 
             # We only need to set the channel in "sta" mode.  In "ap" mode,
             # hostapd will take care of it.
-            cmd = ["iw", "dev", wifiDevice.name, "set", "channel",
-                   str(wifiDevice.channel)]
-            commands.append(Command(Command.PRIO_CREATE_IFACE, cmd, self))
+            #cmd = ["iw", "dev", wifiDevice.name, "set", "channel",
+            #       str(wifiDevice.channel)]
 
-        if self.mode != "ap":
-            out.warn("Mode {} not supported\n".format(self.mode))
-            raise Exception("WiFi interface mode not supported")
+            #commands.append(Command(Command.PRIO_CREATE_IFACE, cmd, self))
+            raise Exception("WiFi sta mode not implemented")
+        else:
+            raise Exception("Unsupported mode ({}) in config {} {}".format(
+                self.mode, self.typename, self.name))
 
         # Look up the wifi-device section.
         wifiDevice = self.lookup(allConfigs, "wifi-device", self.device)
