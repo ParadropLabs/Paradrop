@@ -45,26 +45,6 @@ def stringify(a):
             b[k] = str(v)
     return b
 
-def configsMatch(a, b):
-    """Takes 2 config objects, returns True if they match, False otherwise."""
-    for e1 in a:
-        c1, o1 = e1
-        c1 = stringify(c1)
-        o1 = stringify(o1)
-        for e2 in b:
-            c2, o2 = e2
-            c2 = stringify(c2)
-            o2 = stringify(o2)
-            if(c1 == c2 and o1 == o2):
-                # Found a match, move to next @a
-                break
-        else:
-            # Didn't find a match so return false
-            out.err('Not a match in configsMatch\n')
-            #out.warn('C1: %r\tO1: %r\n' % (c1, o1))
-            #out.warn('C2: %r\tO2: %r\n' % (c2, o2))
-            return False
-    return True
 
 def chuteConfigsMatch(chutePre, chutePost):
     """ Takes two lists of objects, and returns whether or not they are identical."""
@@ -90,14 +70,14 @@ def chuteConfigsMatch(chutePre, chutePost):
 
     return True    
 
+
 def isMatch(a, b):
-    #print("a: %s\nb: %s" % (a, b))
     a = stringify(a)
     b = stringify(b)
     return (a == b)
 
+
 def isMatchIgnoreComments(a, b):
-    #print("a: %s\nb: %s" % (a, b))
     import copy
     a1 = copy.deepcopy(a) 
     b1 = copy.deepcopy(b)
@@ -107,6 +87,7 @@ def isMatchIgnoreComments(a, b):
     a1 = stringify(a1)
     b1 = stringify(b1)
     return (a1 == b1)
+
 
 def singleConfigMatches(a, b):
     (c1, o1) = a
@@ -327,32 +308,9 @@ class UCIConfig:
         chuteConfigs = []
         for e in self.config:
             c, o = e
-            if ('comment' in c):
-                print c
             if (c.get('comment', '') == internalid):
                 chuteConfigs.append((c,o))
         return chuteConfigs
-
-    def checkWanConfig(self, internalid):
-        configDef =  {'type': 'interface', 'name': 'wan', 'comment': internalid}
-        optionsDef = {'ifname': 'eth0', 'proto': 'dhcp'}
-       
-        otherIfaceWanPresent = False
-        eth0Present = False
-        for c, o in self.config:
-            if (isMatchIgnoreComments(c, configDef)):
-                if (isMatch(o, optionsDef)):
-                    eth0Present = True
-                else:
-                    otherIfaceWanPresent = True
-
-        # If an sta chute has defined the wan, get rid of the default
-        if (otherIfaceWanPresent and eth0Present):
-            self.delConfig(configDef, optionsDef)
-        
-        # If no wan defined, we need to add a default eth0 one
-        if (not otherIfaceWanPresent and not eth0Present):
-            self.addConfig(configDef, optionsDef)
 
     def save(self, backupToken=None, internalid=None):
         """
@@ -541,27 +499,3 @@ class UCIConfig:
             if(None not in (cfg, opt)):
                 data.append((cfg, opt))
         return data
-
-import argparse
-def setupArgParse():
-    p = argparse.ArgumentParser(description='UCI Configuration Manager')
-    p.add_argument('-f', '--file', help='Config file', type=str, default=None)
-    return p
-
-
-if(__name__ == '__main__'):
-    import pprint
-
-    pp = pprint.PrettyPrinter(indent=4)
-    # Get stuff out of the arguments
-    p = setupArgParse()
-    args = p.parse_args()
-       
-    fileLoc = args.file
- 
-    uci = UCIConfig(fileLoc)
-
-    config = uci.readConfig()
-    pp.pprint(config)
-
-

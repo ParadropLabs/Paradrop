@@ -1,3 +1,7 @@
+import os
+import tempfile
+
+
 class MockChute(object):
     def __init__(self, name="mock"):
         self.name = name
@@ -34,3 +38,13 @@ class MockChuteStorage(object):
 
 class MockUpdate(object):
     pass
+
+
+def writeTempFile(data):
+    """
+    Write data to a temporary file and return path to that file.
+    """
+    fd, path = tempfile.mkstemp()
+    os.write(fd, data)
+    os.close(fd)
+    return path
