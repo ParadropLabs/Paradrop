@@ -142,7 +142,7 @@ def register(reactor, host, port):
         raise InvalidCredentials('Your passwords do not match.')
 
     client = RpcClient(host, port, '')
-    ret = yield client.register(name, email, password)
+    ret = yield client.register(name, email, pw)
     print('By using this software you agree to our Privacy Policy as well as our Terms and Conditions.')
     print('  Privacy Policy:        https://paradrop.io/privacy-policy')
     print('  Terms and Conditions:  https://paradrop.io/terms-and-conditions')
