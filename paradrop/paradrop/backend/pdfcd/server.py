@@ -7,7 +7,6 @@
 pdfcd.server.
 Contains the classes required to establish a RESTful API server using Twisted.
 '''
-
 from twisted.web.server import Site
 from twisted.internet import reactor
 
@@ -32,6 +31,19 @@ from paradrop.backend.pdfcd.apiinternal import Base
 from paradrop.backend.pdfcd import apiinternal
 
 
+class AccessInfo(object):
+    """
+    Track accesses to PDAPI server.
+
+    TODO: Implement this class if needed.
+    """
+    def __init__(self, ip, headers, time):
+        self.attempts = 1
+
+    def update(self, ip, headers, time):
+        self.attempts += 1
+
+
 class ParadropAPIServer(pdrest.APIResource):
 
     """
@@ -39,6 +51,10 @@ class ParadropAPIServer(pdrest.APIResource):
 
     This sets up all of the submodules which should contain different types of RESTful API calls.
     """
+
+    # Whitelist of addresses
+    # NOTE This functionality does not seem to be fully implemented.
+    WHITELIST_IP = list()
 
     def __init__(self, lclreactor):
         pdrest.APIResource.__init__(self)
@@ -49,6 +65,9 @@ class ParadropAPIServer(pdrest.APIResource):
 
         # Allow each module to register their API calls
         apichute.ChuteAPI(self)
+
+        # Store failure information for default method.
+        self.defaultFailures = dict()
 
     def _complete(self, update):
         """
@@ -103,7 +122,8 @@ class ParadropAPIServer(pdrest.APIResource):
             # Check if IP is in whitelist
             ipaddr = apiutils.unpackIPAddr(ip)
             for ipnet in self.WHITELIST_IP:
-                if(apiutils.addressInNetwork(ipaddr, ipnet)):
+                net = apiutils.unpackIPAddrWithSlash(ipnet)
+                if(apiutils.addressInNetwork(ipaddr, net)):
                     out.verbose('Request from white list: %s\n' % (ip))
                     return None
 
@@ -114,7 +134,7 @@ class ParadropAPIServer(pdrest.APIResource):
                         usage = None
                     else:
                         usage = (tictoc, None)
-                    self.failprocess(ip, request, (ip, self.clientFailures), None, usage, pdapi.getResponse(pdapi.ERR_THRESHOLD))
+                    self.failprocess(ip, request, (ip, failureDict), None, usage, pdapi.getResponse(pdapi.ERR_THRESHOLD))
                     duration = 0  # self.perf.toc(tictoc)
                     # Log the info of this call
                     # TODO self.usageTracker.addTrackInfo(ip, 'Null', request.path, self.usageTracker.FAIL_THRESH, duration, request.content.getvalue())
@@ -221,6 +241,9 @@ class ParadropAPIServer(pdrest.APIResource):
         # Get data about who done it
         out.err("Default caught API call (%s => %s:%s)\n" % (ip, method, uri))
 
+        # TODO: What is this?
+        tictoc = None
+
         # Someone might be trying something bad, track their IP
         res = self.preprocess(request, (ip, None, ip, self.defaultFailures), tictoc)
         if(res):
@@ -264,7 +287,7 @@ def setup(args=None):
         # Disable sending the error traceback to the client
         site.displayTracebacks = True
     elif(args and args.unittest):
-        thePort = settings.DBAPI_PORT + 20000
+        thePort = settings.PDFCD_PORT + 20000
         out.info('Running under unittest mode')
         site.displayTracebacks = True
     else:

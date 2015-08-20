@@ -7,6 +7,8 @@
 backend.pdfcd.apiutils.
 Contains helper functions specific to the backend API code.
 '''
+import socket
+import struct
 
 
 def getIP(req):

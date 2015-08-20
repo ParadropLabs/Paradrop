@@ -38,6 +38,7 @@ VERBOSE = False
 #
 PDFCD_PORT = 14321
 PDFCD_HEADER_VALUE = "*"
+DBAPI_FAILURE_THRESH = float("inf")
 
 #
 # fc
