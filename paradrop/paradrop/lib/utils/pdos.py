@@ -28,38 +28,16 @@ def isMount(mnt):
     return os.path.ismount(mnt)
 
 
-def doMount(part, mnt):
-    """This function mounts @part to @mnt."""
-    # Since we are already in a deferred chain, use subprocess to block and make the call to mount right HERE AND NOW
-    proc = subprocess.Popen("%s %s %s" % (getMountCmd(), part, mnt), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output, errors = proc.communicate()
-
-    if(proc.returncode):
-        out.err("Unable to mount (%d) %s\n" % (proc.returncode, errors))
-        raise Exception('UnableToMount', 'Mount error for %s' % mnt)
-
-
-def doUnmount(mnt):
-    """This function unmounts @mnt."""
-    # Since we are already in a deferred chain, use subprocess to block and make the call to mount right HERE AND NOW
-    proc = subprocess.Popen("umount %s" % (mnt), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output, errors = proc.communicate()
-
-    if(proc.returncode):
-        out.err("Unable to mount (%d) %s\n" % (proc.returncode, errors))
-        raise Exception('UnableToUnmount', 'Mount error for %s' % mnt)
-
-
 def oscall(cmd, get=False):
     """
-        This function performs a OS subprocess call.
-        All output is thrown away unless an error has occured or if @get is True
-        Arguments:
-            @cmd: the string command to run
-            [get] : True means return (stdout, stderr)
-        Returns:
-            None if not @get and no error
-            (stdout, retcode, stderr) if @get or yes error
+    This function performs a OS subprocess call.
+    All output is thrown away unless an error has occured or if @get is True
+    Arguments:
+        @cmd: the string command to run
+        [get] : True means return (stdout, stderr)
+    Returns:
+        None if not @get and no error
+        (stdout, retcode, stderr) if @get or yes error
     """
     # Since we are already in a deferred chain, use subprocess to block and make the call to mount right HERE AND NOW
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -79,6 +57,8 @@ def syncFS():
 
 
 def getFileType(f):
+    if not exists(f):
+        return None
     r = oscall('file "%s"' % f, True)
     if(r is not None and isinstance(r, tuple)):
         return r[0]
@@ -142,21 +122,6 @@ def copytree(a, b):
 
 def open(p, mode):
     return __open(p, mode)
-
-
-def makeExecutable(*args):
-    """The function that takes the list of files provided and sets the X bit on them."""
-    # Force args to be a tuple
-    if(not (isinstance(args, list) or isinstance(args, tuple))):
-        args = list(args)
-
-    for a in args:
-        out.verbose('Making %s executable\n' % (os.path.basename(a)))
-
-        if(os.path.exists(a)):
-            os.chmod(a, 0744)
-        else:
-            out.warn('File missing "%s"\n' % (a))
 
 
 def writeFile(filename, line, mode="a"):

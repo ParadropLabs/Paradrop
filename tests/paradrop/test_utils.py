@@ -1,6 +1,8 @@
 import copy
 import os
 
+from nose.tools import assert_raises
+
 from .mock import MockChute, MockChuteStorage, writeTempFile
 
 
@@ -72,6 +74,91 @@ def test_addresses():
     assert addresses.getInternalIntfList(chute) == ["eth0"]
     assert addresses.getGatewayIntf(chute) == ("192.168.1.1", "eth0")
     assert addresses.getWANIntf(chute) == ifaces[0]
+
+def test_pdos():
+    """
+    Test pdos utility module
+    """
+    from paradrop.lib.utils import pdos
+
+    assert pdos.getMountCmd() == "mount"
+    assert pdos.isMount("/")
+    assert pdos.ismount("/")
+
+    assert pdos.oscall("true") is None
+    assert pdos.oscall("false") is not None
+
+    assert pdos.syncFS() is None
+
+    # Make a file, check that our functions respond correctly to it
+    path = writeTempFile("hello")
+    assert pdos.fixpath(path) == path
+    assert "text" in pdos.getFileType(path)
+    assert pdos.exists(path)
+    assert not pdos.isdir(path)
+    assert pdos.isfile(path)
+
+    # Remove the file, check that our functions detect that
+    pdos.unlink(path)
+    assert pdos.fixpath(path) == path
+    assert pdos.getFileType(path) is None
+    assert not pdos.exists(path)
+    assert not pdos.isdir(path)
+    assert not pdos.isfile(path)
+
+    # Make a directory there instead
+    pdos.mkdir(path)
+    assert pdos.fixpath(path) == path
+    assert "directory" in pdos.getFileType(path)
+    assert pdos.exists(path)
+    assert pdos.isdir(path)
+    assert not pdos.isfile(path)
+
+    # Now we will do some manipulations on files under that directory
+    a = os.path.join(path, "a")
+    b = os.path.join(path, "b")
+    c = os.path.join(path, "c")
+    d = os.path.join(path, "d")
+
+    pdos.write(a, "hello")
+    assert pdos.isfile(a)
+    pdos.copy(a, b)
+    assert pdos.isfile(b)
+    pdos.symlink(a, c)
+    assert pdos.isfile(c)
+    pdos.move(a, b)
+    assert not pdos.isfile(a)
+    pdos.remove(b)
+    assert not pdos.isfile(b)
+    pdos.mkdir(a)
+    pdos.copytree(a, b)
+    assert pdos.isdir(b)
+
+    # Remove a non-empty directory
+    pdos.remove(path)
+    assert not pdos.isdir(path)
+
+    # This file is under a directory that no longer exists, so the write must
+    # fail.
+    #
+    # TODO: These should not fail silently.  They should either return an error
+    # indicator or raise an exception.
+    pdos.writeFile(a, "c")
+    pdos.write(a, "c")
+
+    # Test various ways to call writeFile
+    pdos.writeFile(path, ["a", "b"])
+    pdos.writeFile(path, "c")
+    pdos.writeFile(path, 5)  # This one does nothing.
+
+    # Test the content with readFile
+    data = pdos.readFile(path, array=False, delimiter="")
+    assert data == "abc"
+    data = pdos.readFile(path, array=True)
+    assert data == ["a", "b", "c"]
+    pdos.remove(path)
+    assert pdos.readFile(path) is None
+
 
 def test_uci():
     """
