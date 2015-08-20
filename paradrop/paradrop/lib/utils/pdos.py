@@ -70,6 +70,10 @@ def exists(p):
     return os.path.exists(p)
 
 
+def listdir(p):
+    return os.listdir(p)
+
+
 def unlink(p):
     return os.unlink(p)
 

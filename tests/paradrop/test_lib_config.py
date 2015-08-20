@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 
 from nose.tools import assert_raises
@@ -60,7 +61,7 @@ def mockListDir(path):
     if path == "/sys/class/net":
         return ["lo", "eth0", "eth1", "wlan0", "vethabcdef"]
     else:
-        return []
+        return os.listdir(path)
 
 def mockReadFile(filename):
     """
@@ -125,7 +126,7 @@ def test_configservice():
 
 @patch("paradrop.lib.utils.pdos.readFile", new=mockReadFile)
 @patch("paradrop.lib.utils.pdos.exists", new=mockExists)
-@patch("os.listdir", new=mockListDir)
+@patch("paradrop.lib.utils.pdos.listdir", new=mockListDir)
 def test_config_devices():
     """
     Test paradrop.lib.config.devices
@@ -144,6 +145,8 @@ def test_config_devices():
     update.old = None
     update.new = MockChute()
 
+    settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
+
     # Calling before getSystemDevices should do nothing.
     devices.setSystemDevices(update)
 
@@ -151,6 +154,8 @@ def test_config_devices():
     # various network interfaces.
     devices.getSystemDevices(update)
     devices.setSystemDevices(update)
+
+    pdos.remove(settings.UCI_CONFIG_DIR)
 
     result = update.new.getCache("networkDevices")
     assert len(result) == 3

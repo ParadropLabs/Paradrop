@@ -46,7 +46,6 @@ def isWAN(ifname):
     pattern = re.compile(r"(\w+)\s+(\w+)*")
     routeList = pdos.readFile("/proc/net/route")
     for line in routeList:
-        print(line)
         match = pattern.match(line)
         if match is not None and \
                 match.group(1) == ifname and \
@@ -92,7 +91,7 @@ def getSystemDevices(update):
     devices['wifi'] = list()
     devices['lan'] = list()
 
-    for ifname in os.listdir(SYS_DIR):
+    for ifname in pdos.listdir(SYS_DIR):
         if ifname in EXCLUDE_IFACES:
             continue
 
