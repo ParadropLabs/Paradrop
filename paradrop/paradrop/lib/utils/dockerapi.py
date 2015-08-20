@@ -40,7 +40,7 @@ def writeDockerConfig():
     path = "/var/lib/apps/docker"
     if not os.path.exists(path):
         out.warn('No directory "{}" found'.format(path))
-        return
+        return False
 
     written = False
     for d in os.listdir(path):
@@ -57,6 +57,7 @@ def writeDockerConfig():
 
     if not written:
         out.warn('Could not write docker configuration.')
+    return written
 
 
 def startChute(update):

@@ -35,4 +35,3 @@ def generatePlans(update):
     update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)
 
     return None
-
