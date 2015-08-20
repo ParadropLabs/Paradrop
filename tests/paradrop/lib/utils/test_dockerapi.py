@@ -21,7 +21,6 @@ def fake_update():
 
     update = Object()
     update.new = Object()
-    update.new.host_config = {}
     return update
 
 def test_build_host_config():
@@ -31,13 +30,14 @@ def test_build_host_config():
     #Check that an empty host_config gives us certain default settings
     u = fake_update()
     res = dockerapi.build_host_config(u)
-    print 'Expected: ', HOST_CONFIG1, '\nResult: ', res, '\n'
+    print '\nExpected: ', HOST_CONFIG1, '\nResult: ', res, '\n'
     assert res == HOST_CONFIG1
 
     #Check that passing things through host_config works
+    u = MagicMock()
     u.new.host_config = {'port_bindings': { 80:9000}, 'dns': ['0.0.0.0', '8.8.8.8']}
     res = dockerapi.build_host_config(u)
-    print 'Expected: ', HOST_CONFIG2, '\nResult: ', res, '\n'
+    print '\nExpected: ', HOST_CONFIG2, '\nResult: ', res, '\n'
     assert res == HOST_CONFIG2
 
 #mock the output module but no need to test
@@ -125,7 +125,6 @@ def test_removeChute(mockDocker, mockOutput):
     try:
         dockerapi.removeChute(update)
     except Exception as e:
-        print e.message
         assert e.message == 'Test'
     client.remove_container.assert_called_once_with(container=update.name, force=True)
     assert update.complete.call_count == 1
@@ -221,14 +220,17 @@ def test_writeDockerConfig(mockOutput, mockOS, mock_open):
     assert len(mockOS.method_calls) == 1
 
     #Test that it writes if we find path
-    mockOS.path.exists.return_value = True
-    mockOS.listdir.return_value = ['/root']
+    mockOS.path.exists.side_effect = [True, False, True]
+    mockOS.listdir.return_value = ['/root', '/var']
     dockerapi.writeDockerConfig()
     assert mock_open.call_count == 1
     file_handle = mock_open.return_value.__enter__.return_value
     file_handle.write.assert_called_once_with(DOCKER_CONF)
 
     #Test that we handle an excpetion when opening
+    mockOS.path.exists.side_effect = None
+    mockOS.path.exists.return_value = True
+    mockOS.listdir.return_value = ['/root']
     mock_open.side_effect = Exception('Blammo!')
     dockerapi.writeDockerConfig()
     assert mock_open.call_count == 2
