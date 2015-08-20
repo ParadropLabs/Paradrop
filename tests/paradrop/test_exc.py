@@ -1,6 +1,6 @@
 from nose.tools import assert_raises
 
-from .mock import MockChute, MockUpdate
+from .pdmock import MockChute, MockUpdate
 
 def test_plangraph():
     from paradrop.backend.exc.plangraph import PlanMap

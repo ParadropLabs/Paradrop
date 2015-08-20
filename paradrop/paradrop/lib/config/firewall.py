@@ -80,7 +80,8 @@ def getDeveloperFirewallRules(update):
 
                 # Do not allow rules that do not pertain to the chute.
                 if "@host.lan" in from_parts[0] and "@host.lan" in to_parts[0]:
-                    out.warn("Unable to add firewall rule - dst and src are both outside of chute\n")
+                    raise Exception("Unable to add firewall rule - "
+                                    "dst and src are both outside of chute")
 
                 # From @host.lan means this is a DNAT rule (redirect to the chute).
                 if from_parts[0] == "@host.lan":

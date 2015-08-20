@@ -3,7 +3,7 @@ import os
 
 from nose.tools import assert_raises
 
-from .mock import MockChute, MockChuteStorage, writeTempFile
+from .pdmock import MockChute, MockChuteStorage, writeTempFile
 
 
 NETWORK_WAN_CONFIG = """

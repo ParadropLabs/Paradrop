@@ -11,12 +11,6 @@ from paradrop.lib.utils import uci
 from pdtools.lib.output import out
 
 
-def reloadQos(update):
-    out.warn('TODO implement me\n')
-    # leverage osconfig to poke pdconfd to tell it we have made changes
-    # to the file specified.
-
-
 def reloadAll(update):
     # Note: reloading all config files at once seems safer than individual
     # files because of cross-dependencies.
