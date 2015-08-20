@@ -105,10 +105,10 @@ def startChute(update):
             image=repo, name=name, host_config=host_config
         )
         c.start(container.get('Id'))
+        out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
     except Exception as e:
         failAndCleanUpDocker(validImages, validContainers)
     
-    out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
 
     setup_net_interfaces(update)
 
