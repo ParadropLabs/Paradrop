@@ -46,6 +46,25 @@ def interfaceDefsEqual(iface1, iface2):
     return True
 
 
+def getWifiKeySettings(cfg, iface):
+    """
+    Read encryption settings from cfg and transfer them to iface.
+    """
+    # If 'key' is present, but 'encryption' is not, then default to
+    # psk2.  If 'key' is not present, and 'encryption' is not none,
+    # then we have an error.
+    iface['encryption'] = "none"
+    if 'key' in cfg:
+        iface['key'] = cfg['key']
+        iface['encryption'] = 'psk2'  # default to psk2
+    if 'encryption' in cfg:
+        iface['encryption'] = cfg['encryption']
+        if cfg['encryption'] != "none" and 'key' not in cfg:
+            out.warn("Key field must be defined "
+                     "when encryption is enabled.")
+            raise Exception("No key field defined for WiFi encryption")
+
+
 def getNetworkConfigWifi(update, name, cfg, iface):
     # Claim a subnet for this interface from the pool.
     subnet = networkPool.next()
@@ -97,19 +116,7 @@ def getNetworkConfigWifi(update, name, cfg, iface):
         iface['ssid'] = cfg['ssid']
 
         # Optional encryption settings
-        #
-        # If 'key' is present, but 'encryption' is not, then default to
-        # psk2.  If 'key' is not present, and 'encryption' is not none,
-        # then we have an error.
-        if 'key' in cfg:
-            iface['key'] = cfg['key']
-            iface['encryption'] = 'psk2'  # default to psk2
-        if 'encryption' in cfg:
-            iface['encryption'] = cfg['encryption']
-            if cfg['encryption'] != "none" and 'key' not in cfg:
-                out.warn("Key field must be defined "
-                         "when encryption is enabled.")
-                raise Exception("No key field defined for WiFi encryption")
+        getWifiKeySettings(cfg, iface)
 
         # Give a warning if the dhcp block is missing, since it is likely
         # that developers will want a DHCP server to go with their AP.
@@ -158,14 +165,6 @@ def getNetworkConfig(update):
     devIters = {t: itertools.cycle(devices[t]) for t in devices.keys()}
 
     for name, cfg in update.new.net.iteritems():
-        # First we must check the length of the name string, it cannot be
-        # longer then 16-6 This is because the veth pair name for lxc cannot be
-        # longer then 16, and we prepend "vc####" to that interface name
-        if len(name) > 10:
-            out.warn('The network interface name ({}) cannot be longer than '
-                     '10 characters.\n'.format(name))
-            raise Exception("Interface name too long")
-
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['intfName', 'type'])
         if res:

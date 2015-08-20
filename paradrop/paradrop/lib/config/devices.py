@@ -14,7 +14,7 @@ import itertools
 import os
 import re
 
-from paradrop.lib.utils import uci
+from paradrop.lib.utils import pdos, uci
 from pdtools.lib.output import out
 from paradrop.lib import settings
 
@@ -44,13 +44,13 @@ def isWAN(ifname):
     Test if an interface is a WAN interface.
     """
     pattern = re.compile(r"(\w+)\s+(\w+)*")
-    with open("/proc/net/route", "r") as routeList:
-        for line in routeList:
-            match = pattern.match(line)
-            if match is not None and \
-                    match.group(1) == ifname and \
-                    match.group(2) == "00000000":
-                return True
+    routeList = pdos.readFile("/proc/net/route")
+    for line in routeList:
+        match = pattern.match(line)
+        if match is not None and \
+                match.group(1) == ifname and \
+                match.group(2) == "00000000":
+            return True
     return False
 
 
@@ -59,7 +59,7 @@ def isWireless(ifname):
     Test if an interface is a wireless device.
     """
     check_path = "{}/{}/wireless".format(SYS_DIR, ifname)
-    return os.path.exists(check_path)
+    return pdos.exists(check_path)
 
 
 def setConfig(chuteName, sections, filepath):
@@ -91,7 +91,7 @@ def getSystemDevices(update):
     devices['wifi'] = list()
     devices['lan'] = list()
 
-    for ifname in os.listdir(SYS_DIR):
+    for ifname in pdos.listdir(SYS_DIR):
         if ifname in EXCLUDE_IFACES:
             continue
 
