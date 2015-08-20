@@ -58,4 +58,3 @@ def generatePlans(update):
     update.plans.addPlans(plangraph.STRUCT_SET_OS_WIRELESS, todoPlan, abtPlan)
 
     return None
-

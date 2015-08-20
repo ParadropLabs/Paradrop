@@ -24,5 +24,3 @@ def generatePlans(update):
     # TODO: Create a directory for the chute for us to hold onto things (dockerfile, OS config stuff)
 
     return None
-
-
