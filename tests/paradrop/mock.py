@@ -36,8 +36,19 @@ class MockChuteStorage(object):
         return self.chuteList
 
 
+class MockPlans(object):
+    def __init__(self):
+        self.plans = list()
+
+    def addPlans(self, priority, plans):
+        self.plans.extend(plans)
+
+
 class MockUpdate(object):
-    pass
+    def __init__(self, name="mock"):
+        self.name = name
+        self.plans = MockPlans()
+        self.responses = list()
 
 
 def writeTempFile(data):

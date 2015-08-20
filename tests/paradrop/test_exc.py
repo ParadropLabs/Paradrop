@@ -1,5 +1,7 @@
 from nose.tools import assert_raises
 
+from .mock import MockChute, MockUpdate
+
 def test_plangraph():
     from paradrop.backend.exc.plangraph import PlanMap
 
@@ -145,3 +147,66 @@ def test_plangraph():
     # This should end up doubling the plans in pm.
     pm.addMap(pm)
     assert repr(pm) == "<PlanMap 'test': 20 Plans>"
+
+def test_state():
+    """
+    Test plan generation for state module
+    """
+    from paradrop.backend.exc import state
+    from paradrop.lib import chute, settings
+
+    # Set this to exercise debug mode code
+    settings.DEBUG_MODE = True
+
+    update = MockUpdate()
+
+    # generatePlans returns:
+    # True on failure
+    # None on success
+
+    # Stop with no old chute should fail
+    update.old = None
+    update.new = MockChute()
+    update.updateType = "stop"
+    assert state.generatePlans(update) is True
+
+    # Install with no old chute should succeed
+    update.updateType = "install"
+    update.new.state = chute.STATE_RUNNING
+    assert state.generatePlans(update) is None
+
+    # Entering invalid state should fail
+    update.new.state = chute.STATE_INVALID
+    assert state.generatePlans(update) is True
+
+    # Start with old chute already running should fail
+    update.old = MockChute()
+    update.updateType = "start"
+    update.old.state = chute.STATE_RUNNING
+    assert state.generatePlans(update) is True
+
+    # But if the old chute was stopped, then start should succeed
+    update.old.state = chute.STATE_STOPPED
+    assert state.generatePlans(update) is None
+
+    # Should be fine
+    update.updateType = "restart"
+    assert state.generatePlans(update) is None
+
+    # Create should fail when old chute exists
+    update.updateType = "create"
+    assert state.generatePlans(update) is True
+
+    # Delete and set to stopped is fine
+    update.new.state = chute.STATE_STOPPED
+    update.updateType = "delete"
+    assert state.generatePlans(update) is None
+
+    # Stopping an already stopped chute should fail
+    update.updateType = "stop"
+    update.old.state = chute.STATE_STOPPED
+    assert state.generatePlans(update) is True
+
+    # Stopping a running chute is fine
+    update.old.state = chute.STATE_RUNNING
+    assert state.generatePlans(update) is None
