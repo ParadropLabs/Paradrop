@@ -1,9 +1,14 @@
 import copy
 import os
+import tempfile
 
+from mock import MagicMock, patch
 from nose.tools import assert_raises
 
 from .pdmock import MockChute, MockChuteStorage, writeTempFile
+
+from paradrop.lib.utils import pdos
+from paradrop.lib.utils.storage import PDStorage
 
 
 NETWORK_WAN_CONFIG = """
@@ -11,6 +16,21 @@ config interface wan #__PARADROP__
     option ifname 'eth0'
     option proto 'dhcp'
 """
+
+
+class TestStorage(PDStorage):
+    def __init__(self, filename):
+        super(TestStorage, self).__init__(filename, None, None)
+        self.data = None
+
+    def setAttr(self, data):
+        self.data = data
+
+    def getAttr(self):
+        return self.data
+
+    def attrSaveable(self):
+        return (self.data is not None)
 
 
 def test_addresses():
@@ -79,8 +99,6 @@ def test_pdos():
     """
     Test pdos utility module
     """
-    from paradrop.lib.utils import pdos
-
     assert pdos.getMountCmd() == "mount"
     assert pdos.isMount("/")
     assert pdos.ismount("/")
@@ -158,6 +176,59 @@ def test_pdos():
     assert data == ["a", "b", "c"]
     pdos.remove(path)
     assert pdos.readFile(path) is None
+
+
+def test_storage():
+    """
+    Test PDStorage class
+    """
+    temp = tempfile.mkdtemp()
+    filename = os.path.join(temp, "storage")
+
+    storage = PDStorage(filename, MagicMock(), None)
+
+    # Constructor should have called this start function.
+    assert storage.repeater.start.called
+
+    # PDStorage needs to be subclassed; the base class always returns not
+    # saveable.
+    assert storage.attrSaveable() is False
+    
+    storage = TestStorage(filename)
+    data = {"key": "value"}
+
+    with open(filename, "w") as output:
+        output.write("BAD CONTENTS")
+
+    # The first attempt to read it will fail and try to delete the file.  We
+    # will cause the unlink to fail on the first try and let it succeed on the
+    # second try.
+    with patch("paradrop.lib.utils.pdos.unlink", side_effect=Exception("Boom!")): 
+        storage.loadFromDisk()
+        assert os.path.exists(filename)
+    storage.loadFromDisk()
+    assert not os.path.exists(filename)
+
+    # The first write will fail because we have not provided data yet.
+    storage.saveToDisk()
+    assert not os.path.exists(filename)
+
+    # Now we will save some data and verify that we can reload it.
+    storage.setAttr(data)
+
+    # Cause the save to fail on the first try, then let it succeed.
+    with patch("paradrop.lib.utils.pdos.open", side_effect=Exception("Boom!")):
+        storage.saveToDisk()
+        assert not os.path.exists(filename)
+    storage.saveToDisk()
+    assert os.path.exists(filename)
+
+    storage.setAttr(None)
+    storage.loadFromDisk()
+    assert storage.getAttr() == data
+
+    # Clean up
+    pdos.remove(temp)
 
 
 def test_uci():

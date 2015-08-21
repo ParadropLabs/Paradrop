@@ -12,7 +12,7 @@ from paradrop.lib.utils import pdos
 from twisted.internet.task import LoopingCall
 
 
-class PDStorage:
+class PDStorage(object):
 
     """
         ParaDropStorage class.

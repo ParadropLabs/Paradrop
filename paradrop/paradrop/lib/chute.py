@@ -39,12 +39,6 @@ class Chute(object):
         s = "Chute:%s" % (self.name)
         return s
 
-    def fullDump(self):
-        """Return a dump of EVERYTHING in this chute including all API data and all internal cache data."""
-        d = self.__dict__
-        d['cache'] = d.pop('_cache', dict())
-        return d
-
     def isValid(self):
         """Return True only if the Chute object we have has all the proper things defined to be in a valid state."""
         if(not self.name or len(self.name) == 0):
@@ -84,3 +78,4 @@ class Chute(object):
             return
         r.append(val)
         self.setCache(key, r)
+        return True
