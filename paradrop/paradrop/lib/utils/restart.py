@@ -57,7 +57,6 @@ def reloadChutes():
             continue
         confdup = True
         confdInfo = str2json(confdInfo)
-        print confdInfo
 
     #Remove any chutes from the restart queue if confd failed to bring up the
     #proper interfaces
@@ -113,7 +112,6 @@ def updateStatus(update):
     """
     chuteStore = chutestorage.ChuteStorage()
     if not update.result.get('success'):
-        print 'INSIDE IF STATEMENT UPDATESTATUS'
         update.old.state = 'stopped'
         update.old.warning = FAILURE_WARNING
         chuteStore.saveChute(update.old)
