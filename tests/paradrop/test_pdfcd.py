@@ -1,25 +1,6 @@
 from mock import MagicMock, Mock, patch
 
-
-def make_dummy(retval):
-    """
-    Make a dummy function that always returns the given value.
-    """
-    return lambda *args, **kwargs: retval
-
-
-def do_nothing(*args, **kwargs):
-    """
-    Do nothing with any arguments.
-    """
-    pass
-
-
-def call(func, *args, **kwargs):
-    """
-    Call a function with any arguments.
-    """
-    func(*args, **kwargs)
+from .pdmock import call, do_nothing, make_dummy
 
 
 def test_server_complete():

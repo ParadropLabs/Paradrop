@@ -1,6 +1,59 @@
 from nose.tools import assert_raises
 
-from .pdmock import MockChute, MockUpdate
+from mock import Mock
+
+from .pdmock import MockChute, MockUpdate, do_nothing, make_dummy
+
+
+def test_executionplan():
+    from paradrop.backend.exc import executionplan as excplan
+    from paradrop.backend.exc import struct
+
+    update = Mock()
+
+    # Simulate a module that fails during the generatePlans step.
+    badModule = Mock()
+    badModule.generatePlans = Mock(return_value=True)
+    update.updateModuleList = [badModule]
+    assert excplan.generatePlans(update)
+
+    # This one should succeed.
+    update.updateModuleList = [struct]
+    assert excplan.generatePlans(update) is None
+
+    excplan.aggregatePlans(update)
+
+    # Make a list of dummy functions to run
+    plans = list()
+    plans.append((do_nothing, ("data",)))
+    plans.append((make_dummy(do_nothing), ("data",)))
+    plans.append((do_nothing, ("skipped",)))
+    plans.append(None)  # Popping None will end the loop.
+    plans.reverse()
+    abortPlans = list(plans)
+
+    # Should return False for success
+    update.plans = Mock()
+    update.plans.getNextTodo = plans.pop
+    update.plans.getNextAbort = abortPlans.pop
+    assert excplan.executePlans(update) is False
+    assert excplan.abortPlans(update) is False
+
+    # Make a plan with non-callable ("fail" string) to cause an error
+    plans = list()
+    plans.append(("fail", ("data",)))
+    plans.append(("fail", ("data",))) # Need two failures to break abortPlans
+    plans.append(None)  # Popping None will end the loop.
+    plans.reverse()
+    abortPlans = list(plans)
+
+    # Should return True for failure
+    update.plans = Mock()
+    update.plans.getNextTodo = plans.pop
+    update.plans.getNextAbort = abortPlans.pop
+    assert excplan.executePlans(update)
+    assert excplan.abortPlans(update)
+
 
 def test_plangraph():
     from paradrop.backend.exc.plangraph import PlanMap
