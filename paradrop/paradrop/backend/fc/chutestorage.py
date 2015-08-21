@@ -49,7 +49,7 @@ class ChuteStorage(PDStorage):
         return ChuteStorage.chuteList
 
     def getChuteList(self):
-        """Return a list of the GUIDs of the chutes we know of."""
+        """Return a list of the names of the chutes we know of."""
         return ChuteStorage.chuteList.values()
 
     def getChute(self, name):
