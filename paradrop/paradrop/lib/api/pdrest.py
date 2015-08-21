@@ -12,6 +12,7 @@ from twisted.web.server import NOT_DONE_YET
 
 from pdtools.lib.output import out
 from pdtools.lib.pdutils import str2json, explode
+from paradrop.lib.api import pdapi
 from paradrop.lib import settings
 
 
