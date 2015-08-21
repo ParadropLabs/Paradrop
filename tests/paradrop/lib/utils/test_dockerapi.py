@@ -40,9 +40,7 @@ def test_build_host_config():
     print '\nExpected: ', HOST_CONFIG2, '\nResult: ', res, '\n'
     assert res == HOST_CONFIG2
 
-#mock the output module but no need to test
 @patch('paradrop.lib.utils.dockerapi.out')
-#Make sure we use mock docker client
 @patch('docker.Client')
 def test_failAndCleanUpDocker(mockDocker, mockOutput):
     """
