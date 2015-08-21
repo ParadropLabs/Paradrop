@@ -483,3 +483,30 @@ def test_config_wifi():
 
     # Clean up our config dir
     pdos.remove(settings.UCI_CONFIG_DIR)
+
+
+def test_pool():
+    """
+    Test resource pool
+    """
+    from paradrop.lib.config.pool import NetworkPool, NumericPool
+
+    pool = NumericPool(digits=1)
+    for i in range(pool.numValues):
+        assert pool.next() == i
+
+    # Pool is exhausted, so should raise an exception.
+    assert_raises(Exception, pool.next)
+
+    # Trigger an error state by tell by telling it there is an item available
+    # that it will never find (because we did not change the list of possible
+    # values).  This should never actually occur; it just exercises our
+    # error-checking.
+    pool.numValues += 1
+    assert_raises(Exception, pool.next)
+
+    # Test an invalid NetworkPool
+    #
+    # 192.168.1.1/32 is a single host address, so it is not possible to
+    # allocate subnets from that.
+    assert_raises(Exception, NetworkPool, "192.168.1.1/32")

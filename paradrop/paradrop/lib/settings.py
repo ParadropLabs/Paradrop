@@ -119,21 +119,6 @@ def parseValue(key):
     return key
 
 
-def addSetting(key, value):
-    """
-    Adds a new setting to this module so other modules can see it.
-
-    :param key: the setting name.
-    :type key: string.
-
-    :param value: the value of the setting.
-    :type value: variable.
-
-    :returns: None
-    """
-    pass
-
-
 def updateSettings(slist=[]):
     """
     Take a list of key:value pairs, and replace any setting defined.
