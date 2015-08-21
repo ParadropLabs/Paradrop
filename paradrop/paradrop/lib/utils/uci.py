@@ -46,6 +46,53 @@ def stringify(a):
     return b
 
 
+def getLineParts(line):
+    """
+    Split the UCI line into its whitespace-separated parts.
+
+    Returns a list of strings, with apostrophes removed.
+    """
+    parts = line.split(" ")
+    # Attempt to remove single quotes from the value if it exists
+    #print("l: %s" % l)
+
+    if len(parts) < 3:
+        return parts
+
+    if parts[1].startswith("'") and parts[1].endswidth("'"):
+        parts[1] = parts[1][1:-1]
+
+    try:
+        if (parts[2].startswith("'") and not parts[2].endswith("'")):
+            # strip off first quotation
+            parts[2] = parts[2][1:]
+            addStr = parts[2]
+
+            i = 3
+
+            # Iterate over the rest of the words until we find a second quotation
+            while True:
+                if (parts[i].endswith("'")):
+                    addStr = "%s %s" % (addStr, parts[i][:-1]) 
+
+                    a = [parts[0], parts[1]]
+                    a.append(addStr)                                                  
+                    if (len(parts) > i+1):
+                        a.extend(parts[i+1:])
+                    break
+                else:
+                    addStr = "%s %s" % (addStr, parts[i]) 
+                i += 1
+
+            parts = a
+        else:
+            parts[2] = parts[2].replace("'", "")
+            parts[2] = parts[2].replace('"', '')
+    except:
+        pass
+
+    return parts
+
 def chuteConfigsMatch(chutePre, chutePost):
     """ Takes two lists of objects, and returns whether or not they are identical."""
     # TODO - currently using a naive implementation by searching over the old configs and the new configs.
@@ -415,42 +462,7 @@ class UCIConfig:
             # FIXME: if there is a space WITHIN quotes this kills it!
             # this could come up as a key in an encryption key
             line = correctStr(line)
-            l = line.split(" ")
-            # Attempt to remove single quotes from the value if it exists
-            #print("l: %s" % l)
-            try:
-                if (l[2].startswith("'") and not l[2].endswith("'")):
-                    i = 2
-                    # strip off first quotation
-                    l[2] = l[2][1:]
-                    addStr = ""
-                    # Iterate over the rest of the words until we find a second quotation
-                    while True:
-                        if (l[i].endswith("'")):
-                            if (i == 2):
-                                addStr = l[i][:-1]
-                            else:
-                                addStr = "%s %s" % (addStr, l[i][:-1]) 
-                            
-                            a = [l[0], l[1]]
-                            a.append(addStr)                                                  
-                            if (len(l) > i+1):
-                                a.extend(l[i+1:])
-                            break
-                        else:
-                            if (i == 2):
-                                addStr = l[i]
-                            else:
-                                addStr = "%s %s" % (addStr, l[i]) 
-                        i += 1
-
-                    l = a
-                else:
-                    l[2] = l[2].replace("'", "")
-                    l[2] = l[2].replace('"', '')
-            except:
-                pass
-            
+            l = getLineParts(line)
 
             #
             # Config

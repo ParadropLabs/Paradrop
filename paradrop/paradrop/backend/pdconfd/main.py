@@ -87,7 +87,6 @@ def run_thread():
 
     This function schedules pdconfd to run as a thread and returns immediately.
     """
-    print settings.PDCONFD_WRITE_DIR
     ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR)
     reactor.callFromThread(listen)
 
@@ -98,7 +97,6 @@ def run_pdconfd():
 
     This enters the pdconfd main loop.
     """
-    print settings.PDCONFD_WRITE_DIR
     ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR)
     reactor.callWhenRunning(listen)
     reactor.run()

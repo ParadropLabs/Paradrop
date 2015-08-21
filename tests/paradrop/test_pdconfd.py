@@ -1,11 +1,14 @@
 import os
+import tempfile
 
+from mock import Mock, patch
 from nose.tools import raises
 
 from paradrop.backend.pdconfd.config.command import Command
 from paradrop.backend.pdconfd.config.manager import ConfigManager
 from paradrop.backend.pdconfd.config.network import ConfigInterface
 from paradrop.backend.pdconfd.config.wireless import ConfigWifiDevice, ConfigWifiIface
+from paradrop.lib.utils import pdos
 
 CONFIG_FILE = "/tmp/test-config"
 WRITE_DIR = "/tmp"
@@ -319,6 +322,65 @@ def test_config_firewall_redirect():
     manager.unload(execute=False)
     commands = manager.previousCommands
     assert len(commands) == 5
+
+
+def test_config_manager():
+    """
+    Test the pdconf configuration manager
+    """
+    from paradrop.backend.pdconfd.config.base import ConfigObject
+    from paradrop.backend.pdconfd.config.manager import findConfigFiles
+
+    files = findConfigFiles()
+    assert isinstance(files, list)
+
+    files = findConfigFiles(search="this_should_not_exist")
+    assert isinstance(files, list)
+
+    temp = tempfile.mkdtemp()
+    manager = ConfigManager(writeDir=temp)
+
+    # Test previousCommands function
+    manager.previousCommands = [Mock(priority=5), Mock(priority=10)]
+    result = manager.getPreviousCommands()
+    assert list(result) == manager.previousCommands
+
+    obj = ConfigObject()
+
+    manager.currentConfig = {
+        ("interface", "wan"): obj
+    }
+
+    # Make a config that matches in name and content.
+    config = Mock()
+    config.getTypeAndName = Mock(return_value=("interface", "wan"))
+    config.optionsMatch = Mock(return_value=True)
+    
+    assert manager.findMatchingConfig(config, byName=False) is not None
+    assert manager.findMatchingConfig(config, byName=True) is not None
+
+    # Make a config that matches by name but not content.
+    config = Mock()
+    config.getTypeAndName = Mock(return_value=("interface", "wan"))
+    config.optionsMatch = Mock(return_value=False)
+
+    assert manager.findMatchingConfig(config, byName=False) is None
+    assert manager.findMatchingConfig(config, byName=True) is not None
+
+    # Now make one that differs in name but matches in content.
+    config = Mock()
+    config.getTypeAndName = Mock(return_value=("interface", "wan2"))
+    config.optionsMatch = Mock(return_value=True)
+    
+    assert manager.findMatchingConfig(config, byName=False) is not None
+    assert manager.findMatchingConfig(config, byName=True) is not None
+
+    # Test waitSystemUp method
+    manager.systemUp.set()
+    result = manager.waitSystemUp()
+    assert isinstance(result, basestring)
+
+    pdos.remove(temp)
 
 
 def test_config_network_wan():

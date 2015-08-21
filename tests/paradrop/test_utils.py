@@ -239,3 +239,42 @@ def test_uci():
             config2.getChuteConfigs("none"))
     assert uci.chuteConfigsMatch(config.getChuteConfigs("__PARADROP__"),
             config2.getChuteConfigs("__PARADROP__"))
+
+    # Further test the equality operators
+    config2.filepath = "NOMATCH"
+    assert not (config == config2)
+    assert config != config2
+
+    config2.filepath = config.filepath
+    config2.myname = "NOMATCH"
+    assert not (config == config2)
+    assert config != config2
+
+    config2.myname = config.myname
+    config2.config = []
+    assert not (config == config2)
+    assert config != config2
+
+
+def test_uci_getLineParts():
+    """
+    Test the UCI getLineParts utility function
+    """
+    from paradrop.lib.utils import uci
+
+    line = "config interface wan"
+    result = uci.getLineParts(line)
+    assert result == line.split()
+
+    # It should eat the apostrophes and give same result.
+    line2 = "config 'interface' 'wan'"
+    result2 = uci.getLineParts(line)
+    assert result2 == result
+
+    line = "option key 'my password has spaces'"
+    result = uci.getLineParts(line)
+    assert result == ["option", "key", "my password has spaces"]
+
+    line = "config interface 'oops"
+    result = uci.getLineParts(line)
+    assert result == ["config", "interface", "oops"]
