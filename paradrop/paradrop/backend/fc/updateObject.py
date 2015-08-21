@@ -145,6 +145,16 @@ class UpdateObject(object):
             self.name, self.updateType))
 
 
+# This gives the new chute state if an update of a given type succeeds.
+NEW_CHUTE_STATE = {
+    'create': chute.STATE_RUNNING,
+    'start': chute.STATE_RUNNING,
+    'restart': chute.STATE_RUNNING,
+    'delete': chute.STATE_STOPPED,
+    'stop': chute.STATE_STOPPED
+}
+
+
 class UpdateChute(UpdateObject):
 
     """
@@ -161,24 +171,18 @@ class UpdateChute(UpdateObject):
     ]
 
     def __init__(self, obj):
-        # TODO : do this better
-        if(obj.get('updateType', None) == "create"):
-            obj['state'] = chute.STATE_RUNNING
-        elif(obj.get('updateType', None) == "start"):
-            obj['state'] = chute.STATE_RUNNING
-        elif(obj.get('updateType', None) == "restart"):
-            obj['state'] = chute.STATE_RUNNING
-        elif(obj.get('updateType', None) == "delete"):
-            obj['state'] = chute.STATE_STOPPED
-        elif(obj.get('updateType', None) == "stop"):
-            obj['state'] = chute.STATE_STOPPED
+        updateType = obj.get('updateType', None)
+        obj['state'] = NEW_CHUTE_STATE.get(updateType, chute.STATE_INVALID)
 
         super(UpdateChute, self).__init__(obj)
 
-        #for start and restart updates we need to get the config info from the old config without overwriting new update info
+        # for start and restart updates we need to get the config info from the
+        # old config without overwriting new update info
         if self.updateType == "start" or self.updateType == "restart":
-            for k in set(self.old.__dict__.keys()).difference(set(self.new.__dict__.keys())):
-                self.new.__dict__.update({k: self.old.__dict__.get(k)})
+            missingKeys = set(self.old.__dict__.keys()) - \
+                          set(self.new.__dict__.keys())
+            for k in missingKeys:
+                setattr(self.new, k, getattr(self.old, k))
 
     def saveState(self):
         """
