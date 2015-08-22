@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-from mock import Mock, patch
+from mock import MagicMock, Mock, patch
 from nose.tools import raises
 
 from paradrop.backend.pdconfd.config.command import Command
@@ -406,6 +406,21 @@ def test_config_network_wan():
     for cmd in commands:
         print(cmd)
     assert len(commands) == 2
+
+
+def test_config_network_execute():
+    """
+    Test loading a network configuration with mock execution
+    """
+    write_file(CONFIG_FILE, NETWORK_WAN_CONFIG)
+    manager = ConfigManager(WRITE_DIR)
+    manager.execute = MagicMock()
+    manager.loadConfig(search=CONFIG_FILE, execute=True)
+    assert manager.execute.called
+
+    manager.execute.reset_mock()
+    manager.unload(execute=True)
+    assert manager.execute.called
 
 
 def test_config_network_bridge():
