@@ -3,7 +3,7 @@ import os
 import tempfile
 
 from nose.tools import assert_raises
-from mock import patch
+from mock import MagicMock, Mock, patch
 
 from .pdmock import MockChute, MockUpdate
 
@@ -155,10 +155,18 @@ def test_config_devices():
     devices.getSystemDevices(update)
     devices.setSystemDevices(update)
 
-    pdos.remove(settings.UCI_CONFIG_DIR)
+    cachedDevices = update.new.getCache("networkDevices")
+    assert len(cachedDevices) == 3
 
-    result = update.new.getCache("networkDevices")
-    assert len(result) == 3
+    # Make sure it continues to work with missing devices.
+    cachedDevices['lan'] = []
+    devices.setSystemDevices(update)
+    cachedDevices['wifi'] = []
+    devices.setSystemDevices(update)
+    cachedDevices['wan'] = []
+    devices.setSystemDevices(update)
+
+    pdos.remove(settings.UCI_CONFIG_DIR)
 
 
 def test_config_dhcp():
@@ -200,6 +208,30 @@ def test_config_dhcp():
         }
     })
     assert_raises(Exception, dhcp.getVirtDHCPSettings, update)
+
+
+def test_config_dockerconfig():
+    """
+    Test the dockerconfig module.
+    """
+    from paradrop.lib.config import dockerconfig
+
+    update = Mock(updateType="create")
+
+    # Test with missing attribute 'dockerfile'.
+    del update.dockerfile
+    dockerconfig.getVirtPreamble(update)
+    assert not hasattr(update, "dockerfile")
+
+    # Test with 'dockerfile' set to None.
+    update.dockerfile = None
+    dockerconfig.getVirtPreamble(update)
+    assert update.dockerfile is None
+
+    # Test with 'dockerfile' having contents.
+    update.dockerfile = "docker"
+    dockerconfig.getVirtPreamble(update)
+    assert update.dockerfile.read() == "docker"
 
 
 def test_config_firewall():
@@ -339,6 +371,9 @@ def test_get_network_config():
     update.old = None
     update.new = MockChute()
 
+    # Should do nothing on a chute with no "networkInterfaces" cache key.
+    network.reclaimNetworkResources(update.new)
+
     # Chute has no net information, we should pass silently.
     assert network.getNetworkConfig(update) is None
 
@@ -350,10 +385,6 @@ def test_get_network_config():
             'key': 'password'
         }
     }
-
-    # Should do nothing on a chute with no "networkInterfaces" cache key.
-    network.reclaimNetworkResources(update.new)
-    update.new.setCache("networkInterfaces", [])
 
     devices = {
         'wifi': [{'name': 'wlan0'}]
@@ -494,6 +525,18 @@ def test_pool():
     pool = NumericPool(digits=1)
     for i in range(pool.numValues):
         assert pool.next() == i
+
+    # Try releasing and re-acquiring an item.
+    pool.release(0)
+
+    # Double release should raise an exception.
+    assert_raises(Exception, pool.release, 0)
+
+    # Now try re-acquiring the released item.
+    assert pool.next() == 0
+
+    # Double reserve should raise an exception.
+    assert_raises(Exception, pool.reserve, 0, strict=True)
 
     # Pool is exhausted, so should raise an exception.
     assert_raises(Exception, pool.next)

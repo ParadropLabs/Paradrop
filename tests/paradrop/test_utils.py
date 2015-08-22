@@ -1,13 +1,15 @@
 import copy
+import errno
 import os
 import tempfile
 
-from mock import MagicMock, patch
+from mock import MagicMock, Mock, patch
 from nose.tools import assert_raises
 
 from .pdmock import MockChute, MockChuteStorage, writeTempFile
 
 from paradrop.lib.utils import pdos
+from paradrop.lib.utils import pdosq
 from paradrop.lib.utils.storage import PDStorage
 
 
@@ -105,6 +107,8 @@ def test_pdos():
 
     assert pdos.oscall("true") is None
     assert pdos.oscall("false") is not None
+    assert pdos.oscall("echo hello") is None
+    assert pdos.oscall("echo hello 1>&2") is None
 
     assert pdos.syncFS() is None
 
@@ -176,6 +180,19 @@ def test_pdos():
     assert data == ["a", "b", "c"]
     pdos.remove(path)
     assert pdos.readFile(path) is None
+
+
+def test_pdosq():
+    """
+    Test pdosq utility functions
+    """
+    # Test makedirs with an already-exists error, returns False.
+    with patch('os.makedirs', side_effect=OSError(errno.EEXIST, "error")):
+        assert pdosq.makedirs("/") is False
+
+    # Test makedirs with a permission error, passes on the Exception.
+    with patch('os.makedirs', side_effect=OSError(errno.EPERM, "error")):
+        assert_raises(OSError, pdosq.makedirs, "/")
 
 
 def test_storage():

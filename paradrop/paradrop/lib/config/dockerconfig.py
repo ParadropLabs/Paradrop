@@ -16,7 +16,7 @@ def getVirtPreamble(update):
     if update.updateType == 'create':
         if not hasattr(update, 'dockerfile'):
             return
-        if update.dockerfile == None:
+        if update.dockerfile is None:
             return
         else:
             out.info('Using prexisting dockerfile.\n')
