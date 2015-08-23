@@ -62,7 +62,7 @@ def getFileType(f):
     r = oscall('file "%s"' % f, True)
     if(r is not None and isinstance(r, tuple)):
         return r[0]
-    else:
+    else: # pragma: no cover
         return None
 
 

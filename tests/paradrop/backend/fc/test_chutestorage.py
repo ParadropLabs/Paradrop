@@ -30,6 +30,7 @@ def test_chutestorage(mSave, mPdos):
 
     #Test deleteChute
     ch = Chute({})
+    assert not ch.isValid()
     mSave.reset_mock()
     ch.name = 'test'
     s.saveChute(ch)

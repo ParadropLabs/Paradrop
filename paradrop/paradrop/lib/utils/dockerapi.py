@@ -238,7 +238,7 @@ def setup_net_interfaces(update):
             IP = iface.get('ipaddrWithPrefix')
             internalIntf = iface.get('internalIntf')
             externalIntf = iface.get('externalIntf')
-        else:
+        else: # pragma: no cover
             continue
 
         # Construct environment for pipework call.  It only seems to require
