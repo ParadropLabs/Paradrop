@@ -108,7 +108,7 @@ class PDConfigurer:
                 out.info('Performing update %s\n' % (update))
 
                 # TESTING start
-                if(settings.FC_BOUNCE_UPDATE):
+                if(settings.FC_BOUNCE_UPDATE): # pragma: no cover
                     out.testing('Bouncing update %s, result: %s\n' % (
                         update, settings.FC_BOUNCE_UPDATE))
                     update.complete(success=True, message=settings.FC_BOUNCE_UPDATE)

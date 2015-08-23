@@ -93,7 +93,7 @@ class ChuteStorage(PDStorage):
         return (type(ChuteStorage.chuteList) == dict)
 
 
-if(__name__ == '__main__'):
+if(__name__ == '__main__'): # pragma: no cover
     def usage():
         print('Usage: $0 -ls : print chute storage details')
         exit(0)
