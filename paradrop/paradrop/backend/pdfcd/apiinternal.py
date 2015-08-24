@@ -27,7 +27,7 @@ class CrossApi(cxbr.BaseSession):
         out.info("Crossbar session attached")
 
         # TEMP: ping the server, let it know we just came up
-        self.call('pd._connected', self.pdid)
+        self.call('pd._connected', self.pdid, self._session_id)
 
         name = self.pdid + '.ping'
         print 'Registering under ' + name
