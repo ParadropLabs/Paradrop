@@ -30,8 +30,8 @@ from pdtools.lib import output, riffle, names
 from pdtools.coms import routers, general, server
 from pdtools.lib.store import store
 
-SERVER_HOST = 'paradrop.io'
-# SERVER_HOST = 'localhost'
+# SERVER_HOST = 'paradrop.io'
+SERVER_HOST = 'localhost'
 SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
 
 
@@ -149,7 +149,12 @@ def listMenu():
     checkLoggedIn()
 
     # currently only one thing to do, but this will get more hefty
-    task.react(server.list)
+    # task.react(server.list)
+    # server.list()
+
+    reactor.callLater(.1, server.list, None)
+    reactor.run()
+    exit(0)
 
 
 def logsMenu():
@@ -182,13 +187,13 @@ def setup(displayToConsole=False, logLevel=0):
 
     # Initialize riffle with default values (can be overridden later)
     # NOTE: riffle serves on its own default port. This is a different port from the const above
-    riffle.portal.certCa = store.getKey('ca.pem')
-    riffle.portal.keyPrivate = store.getKey('client.pem')
-    riffle.portal.host = SERVER_HOST
+    # riffle.portal.certCa = store.getKey('ca.pem')
+    # riffle.portal.keyPrivate = store.getKey('client.pem')
+    # riffle.portal.host = SERVER_HOST
 
     # Register realms. See riffle documentation for Realm in pdtools.lib.riffle
-    riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(server.ServerPerspective))
-    riffle.portal.addRealm(names.matchers[names.NameTypes.router], riffle.Realm(riffle.RifflePerspective))
+    # riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(server.ServerPerspective))
+    # riffle.portal.addRealm(names.matchers[names.NameTypes.router], riffle.Realm(riffle.RifflePerspective))
 
 
 def main():

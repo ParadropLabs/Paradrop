@@ -4,7 +4,9 @@ Communication with the server
 
 import getpass
 
-from twisted.internet import defer
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet import reactor
 
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
@@ -15,8 +17,73 @@ from pdtools.lib.exceptions import *
 
 
 ###############################################################################
+# Crossbar
+###############################################################################
+
+class BaseSession(ApplicationSession):
+
+    """ Temporary base class for crossbar implementation """
+
+    def __init__(self, config=None):
+        ApplicationSession.__init__(self)
+        self.config = config
+
+    def onDisconnect(self):
+        # print "disconnected"
+        reactor.stop()
+
+
+class ListSession(BaseSession):
+
+    @inlineCallbacks
+    def onJoin(self, details):
+        ret = yield self.call(u'pd._list', *self.config.extra)
+
+        store.saveConfig('chutes', ret['chutes'])
+        store.saveConfig('routers', ret['routers'])
+        store.saveConfig('instances', ret['instances'])
+
+        printOwned()
+
+        self.leave()
+
+
+# @general.failureCallbacks
+@inlineCallbacks
+def list(r):
+    ''' Return the resources this user owns. '''
+
+    args = ['pd.damouse']
+
+    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=args)
+    d = yield runner.run(ListSession, start_reactor=False)
+
+    returnValue(d)
+    # d.fund
+
+    # reactor.run()
+
+    # yield
+
+    # avatar = yield riffle.portal.connect()
+    # ret = yield avatar.list()
+
+    # I don't think this is necesary anymore, but keeping it here for now
+    # Have to hit the server every call anyway, so whats the point of saving these
+    # simple lists? User will not be able to do anything offline anyway.
+    # store.saveConfig('chutes', ret['chutes'])
+    # store.saveConfig('routers', ret['routers'])
+    # store.saveConfig('instances', ret['instances'])
+
+    # printOwned()
+
+    # returnValue(ret)
+
+###############################################################################
 # Riffle Implementation
 ###############################################################################
+
+
 class ServerPerspective(riffle.RifflePerspective):
 
     def perspective_logs(self, logs):
@@ -26,8 +93,8 @@ class ServerPerspective(riffle.RifflePerspective):
 
 
 @general.failureCallbacks
-@defer.inlineCallbacks
-def list(r):
+@inlineCallbacks
+def list2(r):
     ''' Return the resources this us4er owns. '''
 
     avatar = yield riffle.portal.connect()
@@ -42,12 +109,12 @@ def list(r):
 
     printOwned()
 
-    defer.returnValue(ret)
+    returnValue(ret)
 
 
 # Merge this with provision!
 @general.failureCallbacks
-@defer.inlineCallbacks
+@inlineCallbacks
 def createRouter(r, name):
     '''
     Create a new router on the server-- do not provision it yet. 
@@ -70,10 +137,10 @@ def createRouter(r, name):
     print 'New router successfully created'
     printOwned()
 
-    defer.returnValue("Done")
+    returnValue("Done")
 
 
-@defer.inlineCallbacks
+@inlineCallbacks
 def logs(r, pdid):
     '''
     Query the server for all logs that the given pdid has access to. Must be a fully qualified name.
@@ -90,7 +157,7 @@ def logs(r, pdid):
 
 
 @general.defaultCallbacks
-@defer.inlineCallbacks
+@inlineCallbacks
 def test(r):
     ''' Should be able to receive a model when prompted '''
     avatar = yield riffle.portal.connect(host='localhost')
@@ -121,7 +188,7 @@ def authSuccess(r):
 
 
 @authCallbacks
-@defer.inlineCallbacks
+@inlineCallbacks
 def login(reactor, host, port):
     name, password = None, None
 
@@ -130,11 +197,11 @@ def login(reactor, host, port):
 
     client = RpcClient(host, port, '')
     ret = yield client.login(name, password)
-    defer.returnValue(ret)
+    returnValue(ret)
 
 
 @authCallbacks
-@defer.inlineCallbacks
+@inlineCallbacks
 def register(reactor, host, port):
     name, email, pw, pw2 = raw_input("Username: "), raw_input("Email: "), getpass.getpass(), getpass.getpass(prompt='Reenter Password:')
 
@@ -146,7 +213,7 @@ def register(reactor, host, port):
     print('By using this software you agree to our Privacy Policy as well as our Terms and Conditions.')
     print('  Privacy Policy:        https://paradrop.io/privacy-policy')
     print('  Terms and Conditions:  https://paradrop.io/terms-and-conditions')
-    defer.returnValue(ret)
+    returnValue(ret)
 
 
 ###############################################################################
