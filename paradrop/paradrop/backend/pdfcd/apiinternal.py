@@ -6,8 +6,8 @@ from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names, nexus, cxbr
 
-# HOST = 'localhost'
-HOST = 'paradrop.io'
+HOST = 'localhost'
+# HOST = 'paradrop.io'
 
 ###############################################################################
 # Crossbar Additions
@@ -22,7 +22,12 @@ class CrossApi(cxbr.BaseSession):
 
     @inlineCallbacks
     def onJoin(self, details):
+        cxbr.BaseSession.onJoin(self, details)
+
         out.info("Crossbar session attached")
+
+        # TEMP: ping the server, let it know we just came up
+        self.call('pd._connected', self.pdid)
 
         name = self.pdid + '.ping'
         print 'Registering under ' + name
@@ -30,8 +35,10 @@ class CrossApi(cxbr.BaseSession):
 
         # Note: although all logs can simply be published as generated, I'm
         # sticking to the old model of subscribing to the logs seperately
-        # from their crossbar publish. There are a suite of situations where
-        # we may not want to push all the logs to the router constantly
+        # from their crossbar publish. There are a host of situations where
+        # we may not want to push all the logs to the router constantly--
+        # direct crossbar publishing of logs can therefor only work if the
+        # local router is smart enough not to push when no remote subscriptions are active
 
         smokesignal.on('logs', self.logs)
 
@@ -39,9 +46,16 @@ class CrossApi(cxbr.BaseSession):
         logId = u'' + self.pdid + '.logs'
         self.publish(logId, logs)
 
+    # Does not allow the shutdown call to go out before the system goes down
+    # @inlineCallbacks
+    # def onClose(self, a):
+    #     print 'Asked to close!'
+    #     yield self.call('pd._disconnected', self.pdid)
+
     def onDisconnect(self):
         out.info("Crossbar session detaching")
 
+        # self.call('pd._disconnected', self.pdid)
         smokesignal.disconnect(self.logs)
 
     def ping(self):

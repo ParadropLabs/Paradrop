@@ -33,7 +33,7 @@ class BaseSession(ApplicationSession):
         Incomplete. 
         '''
 
-        if self.pdid is None: 
+        if self.pdid is None:
             raise Exception("No PDID set! Cannot register!")
 
         ApplicationSession.register()
@@ -44,9 +44,10 @@ class BaseSession(ApplicationSession):
 
 
 @inlineCallbacks
-def cxCall(session, address, realm):
+def cxCall(session, address, realm, extra=None):
     '''
-    One shot crossbar utility method. 
+    One shot crossbar utility method. Creates a session object and starts it,
+    returns a deferred that contains the object. 
 
     Take a session and returns once the session has connected. 
     '''
@@ -59,7 +60,7 @@ def cxCall(session, address, realm):
         sess.dee = dee
         return sess
 
-    runner = ApplicationRunner(address, realm)
+    runner = ApplicationRunner(address, realm, extra=extra)
     yield runner.run(maker, start_reactor=False)
 
     session = yield dee

@@ -272,7 +272,7 @@ class TwistedOutput(BaseOutput):
                 return None
 
         ret = {'message': message, 'type': self.type['name'], 'extra': {},
-               'package': 'tx', 'module': 'internal', 'timestamp': time.time(),
+               'package': 'twisted', 'module': 'internal', 'timestamp': time.time(),
                'owner': 'UNSET', 'line': '??'}
 
         return ret

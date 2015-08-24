@@ -10,7 +10,7 @@ import smokesignal
 from twisted.internet import reactor, defer
 from autobahn.twisted.wamp import ApplicationRunner
 
-from pdtools.lib import output, store, riffle, nexus, names
+from pdtools.lib import output, store, riffle, nexus, names, cxbr
 from paradrop.lib import settings
 from paradrop.backend.pdfcd import apiinternal
 
@@ -20,6 +20,9 @@ class Nexus(nexus.NexusBase):
     def __init__(self, mode):
         # Want to change logging functionality? See optional args on the base class and pass them here
         super(Nexus, self).__init__('router', stealStdio=False, mode=mode, printToConsole=True)
+
+        # WAMP session to the crossbar router
+        self.session = None
 
     def onStart(self):
         super(Nexus, self).onStart()
@@ -38,9 +41,12 @@ class Nexus(nexus.NexusBase):
             reactor.callLater(.1, self.connect)
 
     def onStop(self):
-        super(Nexus, self).onStop()
+        # if self.session is not None:
+        #     self.session.leave()
+        # else:
+        #     print 'No session found!'
 
-        # Add custom shutdown code here
+        super(Nexus, self).onStop()
 
     # def serverConnected(self, avatar, realm):
     #     output.out.info('Server Connected!')
@@ -59,14 +65,11 @@ class Nexus(nexus.NexusBase):
 
         pdid = self.get('pdid')
 
-        runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=pdid)
-        d = yield runner.run(apiinternal.CrossApi, start_reactor=False)
+        self.session = yield cxbr.cxCall(apiinternal.CrossApi, "ws://127.0.0.1:8080/ws", u"crossbardemo", extra=pdid)
+        print 'Session set: ' + str(self.session)
 
-        # try:
-        #     yield riffle.portal.connect()
-        # except:
-        #     reactor.callLater(3, self.connect)
-        #     defer.returnValue(True)
+        # runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=pdid)
+        # d = yield runner.run(apiinternal.CrossApi, start_reactor=False)
 
 
 def main():
