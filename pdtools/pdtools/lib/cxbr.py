@@ -60,7 +60,7 @@ def cxCall(session, address, realm, extra=None):
         sess.dee = dee
         return sess
 
-    runner = ApplicationRunner(address, realm, extra=extra)
+    runner = ApplicationRunner(address, realm, extra=extra, debug_wamp=False, debug=False,)
     yield runner.run(maker, start_reactor=False)
 
     session = yield dee

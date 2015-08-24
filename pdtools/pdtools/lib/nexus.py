@@ -65,7 +65,7 @@ class NexusBase(object):
         # initialize output. If filepath is set, logs to file.
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
         # If printToConsole is set (defaults True) all final output is rendered to stdout
-        output.out.startLogging(filePath=self.logPath, stealStdio=True, printToConsole=printToConsole)
+        output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=printToConsole)
 
         # Asssign global riffle keys
         # riffle.portal.keyPrivate = self.getKey('pub')
