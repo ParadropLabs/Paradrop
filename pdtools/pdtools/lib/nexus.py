@@ -85,6 +85,8 @@ class NexusBase(object):
 
         # riffle.portal.close()
 
+        # remove any and all pubsub registrations. If not done, this can cause
+        # issues with subs that have to do with network connections
         smokesignal.clear_all()
 
         output.out.usage('%s going down' % self.type)
