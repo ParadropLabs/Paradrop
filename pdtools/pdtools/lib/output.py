@@ -486,6 +486,7 @@ class Output():
         if self.printLogs or logDict['type'] == 'ERR':
             self.redirectOut.trueWrite(res)
 
+        # Broadcast the log to interested parties
         smokesignal.emit('logs', logDict)
 
     def messageToString(self, message):
@@ -497,8 +498,6 @@ class Output():
         :type message: dict.
         :returns: str 
         '''
-
-        # print 'Attempting to print: ' + str(message)
 
         level = Level(message['type'])
         outputObject = self.outputMappings[level.name.lower()]

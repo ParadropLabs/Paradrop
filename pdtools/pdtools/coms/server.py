@@ -26,7 +26,6 @@ from pdtools.lib.exceptions import *
 # Crossbar
 ###############################################################################
 
-
 @general.failureCallbacks
 @inlineCallbacks
 def list(r):
@@ -73,7 +72,7 @@ def logs(r, pdid):
     '''
     Query the server for all logs that the given pdid has access to. Must be a fully qualified name.
 
-    NOTE: this method is in progress. For now, just pass the name of one of your routers.
+    NOTE: in progress. For now, just pass the name of one of your routers.
     '''
 
     # Let the validation occur serverside (or skip it for now)
@@ -87,9 +86,6 @@ def logs(r, pdid):
         print out.messageToString(l)
 
     sub = yield sess.subscribe(printem, pdid)
-
-    # avatar = yield riffle.portal.connect()
-    # ret = yield avatar.logs(pdid)
 
 
 ###############################################################################
