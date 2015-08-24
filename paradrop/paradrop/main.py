@@ -19,7 +19,7 @@ class Nexus(nexus.NexusBase):
 
     def __init__(self, mode):
         # Want to change logging functionality? See optional args on the base class and pass them here
-        super(Nexus, self).__init__('router', stealStdio=False, mode=mode, printToConsole=True)
+        super(Nexus, self).__init__('router', stealStdio=True, mode=mode, printToConsole=True)
 
         # WAMP session to the crossbar router
         self.session = None

@@ -52,6 +52,10 @@ class CrossApi(cxbr.BaseSession):
     #     print 'Asked to close!'
     #     yield self.call('pd._disconnected', self.pdid)
 
+    def onLeave(self, details):
+        print 'On Leave'
+        cxbr.BaseSession.onLeave(self, details)
+
     def onDisconnect(self):
         out.info("Crossbar session detaching")
 
