@@ -67,10 +67,10 @@ class NexusBase(object):
         output.out.startLogging(filePath=self.logPath, stealStdio=True, printToConsole=printToConsole)
 
         # Asssign global riffle keys
-        riffle.portal.keyPrivate = self.getKey('pub')
-        riffle.portal.certCa = self.getKey('ca')
-        riffle.portal.host = self.serverHost()
-        riffle.portal.port = self.rifflePort()
+        # riffle.portal.keyPrivate = self.getKey('pub')
+        # riffle.portal.certCa = self.getKey('ca')
+        # riffle.portal.host = self.serverHost()
+        # riffle.portal.port = self.rifflePort()
 
         # register onStop for the shutdown call
         reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
@@ -82,7 +82,7 @@ class NexusBase(object):
     def onStop(self):
         self.save()
 
-        riffle.portal.close()
+        # riffle.portal.close()
 
         output.out.usage('%s going down' % self.type)
         output.out.endLogging()
@@ -215,7 +215,6 @@ class NexusBase(object):
 
     def webPort(self):
         return _incrementingPort(14321, self.mode)
-
 
     #########################################################
     # Path Resolution

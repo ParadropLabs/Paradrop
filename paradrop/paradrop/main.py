@@ -8,6 +8,7 @@ import signal
 
 import smokesignal
 from twisted.internet import reactor, defer
+from autobahn.twisted.wamp import ApplicationRunner
 
 from pdtools.lib import output, store, riffle, nexus, names
 from paradrop.lib import settings
@@ -18,18 +19,18 @@ class Nexus(nexus.NexusBase):
 
     def __init__(self, mode):
         # Want to change logging functionality? See optional args on the base class and pass them here
-        super(Nexus, self).__init__('router', stealStdio=True, mode=mode)
+        super(Nexus, self).__init__('router', stealStdio=False, mode=mode, printToConsole=True)
 
     def onStart(self):
         super(Nexus, self).onStart()
 
         # register for new server connections
-        smokesignal.on('ServerPerspectiveConnected', self.serverConnected)
-        smokesignal.on('ServerPerspectiveDisconnected', self.serverConnected)
+        # smokesignal.on('ServerPerspectiveConnected', self.serverConnected)
+        # smokesignal.on('ServerPerspectiveDisconnected', self.serverConnected)
 
         # Create riffle realms
-        riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
-        riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
+        # riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
+        # riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
 
         if not self.provisioned():
             output.out.warn('Router has no keys or identity. Waiting to connect to to server.')
@@ -39,23 +40,31 @@ class Nexus(nexus.NexusBase):
     def onStop(self):
         super(Nexus, self).onStop()
 
-    def serverConnected(self, avatar, realm):
-        output.out.info('Server Connected!')
+        # Add custom shutdown code here
 
-    def serverDisconnected(self, avatar, realm):
-        output.out.warn('Server Disconnected!')
-        reactor.callLater(.1, self.connect)
+    # def serverConnected(self, avatar, realm):
+    #     output.out.info('Server Connected!')
+
+    # def serverDisconnected(self, avatar, realm):
+    #     output.out.warn('Server Disconnected!')
+    #     reactor.callLater(.1, self.connect)
 
     @defer.inlineCallbacks
     def connect(self):
-        ''' Continuously tries to connect to server '''
+        '''
+        Continuously tries to connect to server. This needs to be replaced with 
+        crossbar logic.
+        '''
         print 'Trying to connect to server...'
 
-        try:
-            yield riffle.portal.connect()
-        except:
-            reactor.callLater(3, self.connect)
-            defer.returnValue(True)
+        runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", debug_wamp=False, debug=False,)
+        d = yield runner.run(apiinternal.CrossApi, start_reactor=False)
+
+        # try:
+        #     yield riffle.portal.connect()
+        # except:
+        #     reactor.callLater(3, self.connect)
+        #     defer.returnValue(True)
 
 
 def main():

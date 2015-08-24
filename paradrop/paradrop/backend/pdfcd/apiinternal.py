@@ -1,19 +1,46 @@
 from twisted.web import xmlrpc
-from twisted.internet import defer, utils
-from pdtools.coms.client import RpcClient
+from twisted.internet import utils
+from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 
 from pdtools.lib.output import out
-from pdtools.lib import store, riffle, names
-
-from pdtools.lib import nexus
+from pdtools.lib import store, riffle, names, nexus, cxbr
 
 # HOST = 'localhost'
 HOST = 'paradrop.io'
 
 ###############################################################################
-# New Riffle Additions
+# Crossbar Additions
 ###############################################################################
 
+
+class CrossApi(cxbr.BaseSession):
+
+    # def __init__(self, pdid, config=None):
+    #     ApplicationSession.__init__(self)
+    #     self.config = config
+    #     self.pdid = pdid
+
+    @inlineCallbacks
+    def onJoin(self, details):
+        out.info("Crossbar session attached")
+
+        self.pdid = nexus.core.get('pdid')
+
+        name = self.pdid + '.ping'
+        print 'Registering under ' + name
+
+        yield self.register(self.ping, u'' + self.pdid + '.ping')
+
+        print "Procedures registered."
+
+    def ping(self):
+        print 'Router ping'
+        return
+
+
+###############################################################################
+# New Riffle Additions
+###############################################################################
 
 class ServerPerspective(riffle.RifflePerspective):
 
@@ -26,7 +53,7 @@ class ServerPerspective(riffle.RifflePerspective):
         if self.subscribed is not None:
             out.removeSubscriber(self.subscribed)
 
-    @defer.inlineCallbacks
+    @inlineCallbacks
     def perspective_subscribeLogs(self, target):
         '''
         Fetch all logs since the target time. Stream all new logs
@@ -40,7 +67,7 @@ class ServerPerspective(riffle.RifflePerspective):
 
         logs = yield out.getLogsSince(target)
 
-        defer.returnValue(logs)
+        returnValue(logs)
 
 
 class ToolsPerspective(riffle.RifflePerspective):
@@ -82,7 +109,7 @@ def checkStartRiffle():
 # Old
 ###############################################################################
 
-@defer.inlineCallbacks
+@inlineCallbacks
 def api_provision(pdid, key, cert):
     '''
     Provision this router with an id and a set of keys. 
@@ -93,7 +120,7 @@ def api_provision(pdid, key, cert):
     # SO TEMP IT HURTS:
     # yield
     # ret = {'root': nexus.core.rootPath, 'logs': nexus.core.logPath}
-    # defer.returnValue(ret)
+    # returnValue(ret)
 
     # temp: check to make sure we're not already provisioned. Do not allow for
     # multiple provisioning. This is a little hacky-- better to move this into store
@@ -112,13 +139,8 @@ def api_provision(pdid, key, cert):
 
     nexus.core.connect()
 
-    # TEMP
-    # logs = yield out.getLogsSince(0)
-
-    # defer.returnValue(logs)
-
     # Return success to the user
-    defer.returnValue('Done!')
+    returnValue('Done!')
 
 ###############################################################################
 # Temporary-- this needs a home, haven't decided where yet.
