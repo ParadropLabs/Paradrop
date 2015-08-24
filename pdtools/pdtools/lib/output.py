@@ -20,6 +20,8 @@ import traceback
 import os
 import json
 
+import smokesignal
+
 from enum import Enum
 from twisted.python.logfile import DailyLogFile
 from twisted.python import log
@@ -383,9 +385,6 @@ class Output():
         # original objects.
         self.__dict__['outputMappings'] = {}
 
-        # listeners that will receive raw logs as they come in
-        self.__dict__['subscribers'] = set()
-
         for name, func in kwargs.iteritems():
             setattr(self, name, func)
 
@@ -453,9 +452,6 @@ class Output():
         Ask the printing thread to flush and end, then return.
         '''
 
-        out.info('Removing subscribers')
-        self.__dict__['subscribers'] = set()
-
         out.info('Asking file logger to close')
         self.queue.join()
 
@@ -490,8 +486,7 @@ class Output():
         if self.printLogs or logDict['type'] == 'ERR':
             self.redirectOut.trueWrite(res)
 
-        for s in self.subscribers:
-            s(logDict)
+        smokesignal.emit('logs', logDict)
 
     def messageToString(self, message):
         '''
@@ -508,21 +503,6 @@ class Output():
         level = Level(message['type'])
         outputObject = self.outputMappings[level.name.lower()]
         return outputObject.formatOutput(message)
-
-    def addSubscriber(self, target):
-        '''
-        Accepts the given function as a subscriber. The function will be called with new logs
-        messages as they come in. 
-
-        TODO:
-            Add priority level filtering on subscription
-        '''
-        self.subscribers.add(target)
-
-    def removeSubscriber(self, target):
-        ''' Removes the given subscriber '''
-        if target in self.subscribers:
-            self.subscribers.remove(target)
 
     def getLogsSince(self, target, purge=False):
         '''

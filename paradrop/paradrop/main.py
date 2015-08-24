@@ -57,7 +57,9 @@ class Nexus(nexus.NexusBase):
         '''
         print 'Trying to connect to server...'
 
-        runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", debug_wamp=False, debug=False,)
+        pdid = self.get('pdid')
+
+        runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=pdid)
         d = yield runner.run(apiinternal.CrossApi, start_reactor=False)
 
         # try:

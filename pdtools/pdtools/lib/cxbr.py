@@ -25,6 +25,19 @@ class BaseSession(ApplicationSession):
         if self.dee is not None:
             yield self.dee.callback(self)
 
+    def pdRegister(self, name, *args, **kwargs):
+        '''
+        Very quick and dirty RPC registration that prepends the currently set PDID
+        to the given method name.
+
+        Incomplete. 
+        '''
+
+        if self.pdid is None: 
+            raise Exception("No PDID set! Cannot register!")
+
+        ApplicationSession.register()
+
     # def onDisconnect(self):
     # print "disconnected"
     #     reactor.stop()

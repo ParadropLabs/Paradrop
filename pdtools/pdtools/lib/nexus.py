@@ -31,6 +31,7 @@ import os
 import yaml
 
 from twisted.internet import reactor
+import smokesignal
 
 from pdtools.lib import store, riffle, output
 
@@ -83,6 +84,8 @@ class NexusBase(object):
         self.save()
 
         # riffle.portal.close()
+
+        smokesignal.clear_all()
 
         output.out.usage('%s going down' % self.type)
         output.out.endLogging()

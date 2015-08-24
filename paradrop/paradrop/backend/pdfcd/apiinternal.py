@@ -1,3 +1,4 @@
+import smokesignal
 from twisted.web import xmlrpc
 from twisted.internet import utils
 from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
@@ -17,21 +18,31 @@ class CrossApi(cxbr.BaseSession):
 
     def __init__(self, config=None):
         cxbr.BaseSession.__init__(self, config=config)
-        self.config = config
-        self.pdid = pdid
+        self.pdid = config.extra
 
     @inlineCallbacks
     def onJoin(self, details):
         out.info("Crossbar session attached")
 
-        self.pdid = nexus.core.get('pdid')
-
         name = self.pdid + '.ping'
         print 'Registering under ' + name
-
         yield self.register(self.ping, u'' + self.pdid + '.ping')
 
-        print "Procedures registered."
+        # Note: although all logs can simply be published as generated, I'm
+        # sticking to the old model of subscribing to the logs seperately
+        # from their crossbar publish. There are a suite of situations where
+        # we may not want to push all the logs to the router constantly
+
+        smokesignal.on('logs', self.logs)
+
+    def logs(self, logs):
+        logId = u'' + self.pdid + '.logs'
+        self.publish(logId, logs)
+
+    def onDisconnect(self):
+        out.info("Crossbar session detaching")
+
+        smokesignal.disconnect(self.logs)
 
     def ping(self):
         print 'Router ping'
