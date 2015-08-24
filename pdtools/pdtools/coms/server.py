@@ -17,8 +17,7 @@ from twisted.internet import reactor
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
-from pdtools.lib import riffle, names
-from pdtools.lib.cxbr import cxCall
+from pdtools.lib import riffle, names, cxbr
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
 
@@ -28,34 +27,12 @@ from pdtools.lib.exceptions import *
 ###############################################################################
 
 
-class BaseSession(ApplicationSession):
-
-    """ Temporary base class for crossbar implementation """
-
-    def __init__(self, config=None):
-        ApplicationSession.__init__(self)
-        self.config = config
-
-    @inlineCallbacks
-    def onJoin(self, details):
-        # print 'Session Joined'
-        yield
-
-        # Inform whoever created us that the session has finished connecting
-        if self.dee is not None:
-            yield self.dee.callback(self)
-
-    # def onDisconnect(self):
-    # print "disconnected"
-    #     reactor.stop()
-
-
 @general.failureCallbacks
 @inlineCallbacks
 def list(r):
     ''' Return the resources this user owns. '''
 
-    sess = yield cxCall(BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
+    sess = yield cxbr.cxCall(cxbr.BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
     pdid = store.getConfig('pdid')
 
     ret = yield sess.call(u'pd._list', pdid)
@@ -68,6 +45,7 @@ def list(r):
     returnValue(None)
 
 
+@general.failureCallbacks
 @inlineCallbacks
 def createRouter(r, name):
     ''' Create a new router. '''
@@ -75,7 +53,7 @@ def createRouter(r, name):
     pdid = store.getConfig('pdid')
     name = store.getConfig('pdid') + '.' + name
 
-    sess = yield cxCall(BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
+    sess = yield cxbr.cxCall(cxbr.BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
 
     ret = yield sess.call(u'pd._provisionRouter', name)
     store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
@@ -88,67 +66,6 @@ def createRouter(r, name):
 
     print 'New router successfully created'
     printOwned()
-
-
-###############################################################################
-# Riffle Implementation
-###############################################################################
-
-
-class ServerPerspective(riffle.RifflePerspective):
-
-    def perspective_logs(self, logs):
-        ''' New logs coming in from the server '''
-        for x in logs:
-            print out.messageToString(x)
-
-
-@general.failureCallbacks
-@inlineCallbacks
-def list2(r):
-    ''' Return the resources this us4er owns. '''
-
-    avatar = yield riffle.portal.connect()
-    ret = yield avatar.list()
-
-    # I don't think this is necesary anymore, but keeping it here for now
-    # Have to hit the server every call anyway, so whats the point of saving these
-    # simple lists? User will not be able to do anything offline anyway.
-    store.saveConfig('chutes', ret['chutes'])
-    store.saveConfig('routers', ret['routers'])
-    store.saveConfig('instances', ret['instances'])
-
-    printOwned()
-
-    returnValue(ret)
-
-
-# Merge this with provision!
-@general.failureCallbacks
-@inlineCallbacks
-def createRouter2(r, name):
-    '''
-    Create a new router on the server-- do not provision it yet. 
-
-    Like so many other things, this is a temporary method.
-    '''
-
-    avatar = yield riffle.portal.connect()
-    ret = yield avatar.provisionRouter(name)
-
-    # Save that router's keys
-    store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
-
-    ret = yield avatar.list()
-
-    store.saveConfig('chutes', ret['chutes'])
-    store.saveConfig('routers', ret['routers'])
-    store.saveConfig('instances', ret['instances'])
-
-    print 'New router successfully created'
-    printOwned()
-
-    returnValue("Done")
 
 
 @inlineCallbacks
@@ -167,21 +84,9 @@ def logs(r, pdid):
     ret = yield avatar.logs(pdid)
 
 
-@general.defaultCallbacks
-@inlineCallbacks
-def test(r):
-    ''' Should be able to receive a model when prompted '''
-    avatar = yield riffle.portal.connect(host='localhost')
-    ret = yield avatar.test()
-
-    # print ret.__dict__
-    name = yield ret.callRemote('data')
-    print 'Result from call: ' + name
-
 ###############################################################################
 # Authentication
 ###############################################################################
-
 
 def authCallbacks(f):
     def w(*args, **kwargs):
@@ -221,9 +126,11 @@ def register(reactor, host, port):
 
     client = RpcClient(host, port, '')
     ret = yield client.register(name, email, pw)
+
     print('By using this software you agree to our Privacy Policy as well as our Terms and Conditions.')
     print('  Privacy Policy:        https://paradrop.io/privacy-policy')
     print('  Terms and Conditions:  https://paradrop.io/terms-and-conditions')
+
     returnValue(ret)
 
 

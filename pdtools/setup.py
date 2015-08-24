@@ -19,7 +19,8 @@ setup(
         'service-identity>=14.0.0',
         'twisted>=14.2',
         'enum34',
-        'smokesignal>=0.7.0'
+        'smokesignal>=0.7.0',
+        'autobahn==0.10.5.post2'
     ],
 
     packages=find_packages(),
