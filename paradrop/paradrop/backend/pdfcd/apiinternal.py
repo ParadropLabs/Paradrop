@@ -15,10 +15,10 @@ HOST = 'paradrop.io'
 
 class CrossApi(cxbr.BaseSession):
 
-    # def __init__(self, pdid, config=None):
-    #     ApplicationSession.__init__(self)
-    #     self.config = config
-    #     self.pdid = pdid
+    def __init__(self, config=None):
+        cxbr.BaseSession.__init__(self, config=config)
+        self.config = config
+        self.pdid = pdid
 
     @inlineCallbacks
     def onJoin(self, details):
