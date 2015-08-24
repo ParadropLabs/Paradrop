@@ -117,10 +117,7 @@ def routerMenu():
         task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
 
     elif args['create']:
-        # task.react(server.createRouter, (args['<name>'],))
-        reactor.callLater(.1, server.createRouter, args['<name>'])
-        reactor.run()
-        exit(0)
+        task.react(server.createRouter, (args['<name>'],))
 
     else:
         print routerDoc
@@ -151,9 +148,6 @@ def listMenu():
     checkLoggedIn()
 
     task.react(server.list)
-    # reactor.callLater(.1, server.list)
-    # reactor.run()
-    # exit(0)
 
 
 def logsMenu():

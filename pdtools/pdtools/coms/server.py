@@ -40,30 +40,14 @@ class BaseSession(ApplicationSession):
     def onJoin(self, details):
         # print 'Session Joined'
         yield
-        self.dee.callback(self)
+
+        # Inform whoever created us that the session has finished connecting
+        if self.dee is not None:
+            yield self.dee.callback(self)
 
     # def onDisconnect(self):
     # print "disconnected"
     #     reactor.stop()
-
-
-class CreateSession(BaseSession):
-
-    @inlineCallbacks
-    def onJoin(self, details):
-        ret = yield self.call(u'pd._provisionRouter', self.config.extra['name'])
-        store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
-
-        ret = yield self.call(u'pd._list', self.config.extra['pdid'])
-
-        store.saveConfig('chutes', ret['chutes'])
-        store.saveConfig('routers', ret['routers'])
-        store.saveConfig('instances', ret['instances'])
-
-        print 'New router successfully created'
-        printOwned()
-
-        self.leave()
 
 
 @general.failureCallbacks
@@ -85,17 +69,25 @@ def list(r):
 
 
 @inlineCallbacks
-def createRouter(name):
+def createRouter(r, name):
     ''' Create a new router. '''
 
     pdid = store.getConfig('pdid')
     name = store.getConfig('pdid') + '.' + name
 
-    args = dict(name=name, pdid=pdid)
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=args)
-    d = yield runner.run(CreateSession, start_reactor=False)
+    sess = yield cxCall(BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
 
-    returnValue(d)
+    ret = yield sess.call(u'pd._provisionRouter', name)
+    store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
+
+    ret = yield sess.call(u'pd._list', pdid)
+
+    store.saveConfig('chutes', ret['chutes'])
+    store.saveConfig('routers', ret['routers'])
+    store.saveConfig('instances', ret['instances'])
+
+    print 'New router successfully created'
+    printOwned()
 
 
 ###############################################################################
