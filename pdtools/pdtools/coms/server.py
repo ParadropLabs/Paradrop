@@ -1,17 +1,24 @@
 '''
-Communication with the server
+Communication with the server.
+
+Top 10:
+    House's Head/ Wilsons Heart
+    Three Stories
+    All In 
+    Both sides now
 '''
 
 import getpass
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 from twisted.internet import reactor
 
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
 from pdtools.lib import riffle, names
+from pdtools.lib.cxbr import cxCall
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
 
@@ -19,6 +26,7 @@ from pdtools.lib.exceptions import *
 ###############################################################################
 # Crossbar
 ###############################################################################
+
 
 class BaseSession(ApplicationSession):
 
@@ -37,7 +45,23 @@ class ListSession(BaseSession):
 
     @inlineCallbacks
     def onJoin(self, details):
-        ret = yield self.call(u'pd._list', *self.config.extra)
+        print 'Session Joined'
+        self.dee.callback(self)
+        # print self.dee
+
+        # ret = yield self.call(u'pd._list', *self.config.extra)
+
+        # store.saveConfig('chutes', ret['chutes'])
+        # store.saveConfig('routers', ret['routers'])
+        # store.saveConfig('instances', ret['instances'])
+
+        # printOwned()
+
+        # self.leave()
+
+    @inlineCallbacks
+    def list(self, pdid):
+        ret = yield self.call(u'pd._list', pdid)
 
         store.saveConfig('chutes', ret['chutes'])
         store.saveConfig('routers', ret['routers'])
@@ -45,7 +69,7 @@ class ListSession(BaseSession):
 
         printOwned()
 
-        self.leave()
+        # self.leave()
 
 
 class CreateSession(BaseSession):
@@ -72,12 +96,9 @@ class CreateSession(BaseSession):
 def list(r):
     ''' Return the resources this user owns. '''
 
+    sess = yield cxCall(ListSession)
     pdid = store.getConfig('pdid')
-    args = [pdid]
-
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=args)
-    d = yield runner.run(ListSession, start_reactor=False)
-    returnValue(d)
+    sess.list(pdid)
 
 
 @inlineCallbacks

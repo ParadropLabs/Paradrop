@@ -148,12 +148,7 @@ def chuteMenu():
 
 def listMenu():
     args = docopt(listDoc)
-
     checkLoggedIn()
-
-    # currently only one thing to do, but this will get more hefty
-    # task.react(server.list)
-    # server.list()
 
     reactor.callLater(.1, server.list, None)
     reactor.run()
