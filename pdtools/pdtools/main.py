@@ -117,7 +117,10 @@ def routerMenu():
         task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
 
     elif args['create']:
-        task.react(server.createRouter, (args['<name>'],))
+        # task.react(server.createRouter, (args['<name>'],))
+        reactor.callLater(.1, server.createRouter, args['<name>'])
+        reactor.run()
+        exit(0)
 
     else:
         print routerDoc
@@ -183,7 +186,7 @@ def setup(displayToConsole=False, logLevel=0):
     initialize riffle's portal by creating name to realm assignments
     '''
     # For now, don't grab STDIO and don't write random log noise to conosle
-    output.out.startLogging(stealStdio=False, printToConsole=False)
+    output.out.startLogging(stealStdio=False, printToConsole=True)
 
     # Initialize riffle with default values (can be overridden later)
     # NOTE: riffle serves on its own default port. This is a different port from the const above

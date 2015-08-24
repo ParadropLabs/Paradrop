@@ -48,36 +48,51 @@ class ListSession(BaseSession):
         self.leave()
 
 
+class CreateSession(BaseSession):
+
+    @inlineCallbacks
+    def onJoin(self, details):
+        ret = yield self.call(u'pd._provisionRouter', self.config.extra['name'])
+        store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
+
+        ret = yield self.call(u'pd._list', self.config.extra['pdid'])
+
+        store.saveConfig('chutes', ret['chutes'])
+        store.saveConfig('routers', ret['routers'])
+        store.saveConfig('instances', ret['instances'])
+
+        print 'New router successfully created'
+        printOwned()
+
+        self.leave()
+
+
 # @general.failureCallbacks
 @inlineCallbacks
 def list(r):
     ''' Return the resources this user owns. '''
 
-    args = ['pd.damouse']
+    pdid = store.getConfig('pdid')
+    args = [pdid]
 
     runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=args)
     d = yield runner.run(ListSession, start_reactor=False)
+    returnValue(d)
+
+
+@inlineCallbacks
+def createRouter(name):
+    ''' Create a new router. '''
+
+    pdid = store.getConfig('pdid')
+    name = store.getConfig('pdid') + '.' + name
+
+    args = dict(name=name, pdid=pdid)
+    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=args)
+    d = yield runner.run(CreateSession, start_reactor=False)
 
     returnValue(d)
-    # d.fund
 
-    # reactor.run()
-
-    # yield
-
-    # avatar = yield riffle.portal.connect()
-    # ret = yield avatar.list()
-
-    # I don't think this is necesary anymore, but keeping it here for now
-    # Have to hit the server every call anyway, so whats the point of saving these
-    # simple lists? User will not be able to do anything offline anyway.
-    # store.saveConfig('chutes', ret['chutes'])
-    # store.saveConfig('routers', ret['routers'])
-    # store.saveConfig('instances', ret['instances'])
-
-    # printOwned()
-
-    # returnValue(ret)
 
 ###############################################################################
 # Riffle Implementation
@@ -115,7 +130,7 @@ def list2(r):
 # Merge this with provision!
 @general.failureCallbacks
 @inlineCallbacks
-def createRouter(r, name):
+def createRouter2(r, name):
     '''
     Create a new router on the server-- do not provision it yet. 
 
