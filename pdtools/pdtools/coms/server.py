@@ -36,40 +36,15 @@ class BaseSession(ApplicationSession):
         ApplicationSession.__init__(self)
         self.config = config
 
-    def onDisconnect(self):
-        # print "disconnected"
-        reactor.stop()
-
-
-class ListSession(BaseSession):
-
     @inlineCallbacks
     def onJoin(self, details):
-        print 'Session Joined'
+        # print 'Session Joined'
+        yield
         self.dee.callback(self)
-        # print self.dee
 
-        # ret = yield self.call(u'pd._list', *self.config.extra)
-
-        # store.saveConfig('chutes', ret['chutes'])
-        # store.saveConfig('routers', ret['routers'])
-        # store.saveConfig('instances', ret['instances'])
-
-        # printOwned()
-
-        # self.leave()
-
-    @inlineCallbacks
-    def list(self, pdid):
-        ret = yield self.call(u'pd._list', pdid)
-
-        store.saveConfig('chutes', ret['chutes'])
-        store.saveConfig('routers', ret['routers'])
-        store.saveConfig('instances', ret['instances'])
-
-        printOwned()
-
-        # self.leave()
+    # def onDisconnect(self):
+    # print "disconnected"
+    #     reactor.stop()
 
 
 class CreateSession(BaseSession):
@@ -91,14 +66,22 @@ class CreateSession(BaseSession):
         self.leave()
 
 
-# @general.failureCallbacks
+@general.failureCallbacks
 @inlineCallbacks
 def list(r):
     ''' Return the resources this user owns. '''
 
-    sess = yield cxCall(ListSession)
+    sess = yield cxCall(BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
     pdid = store.getConfig('pdid')
-    sess.list(pdid)
+
+    ret = yield sess.call(u'pd._list', pdid)
+
+    store.saveConfig('chutes', ret['chutes'])
+    store.saveConfig('routers', ret['routers'])
+    store.saveConfig('instances', ret['instances'])
+
+    printOwned()
+    returnValue(None)
 
 
 @inlineCallbacks

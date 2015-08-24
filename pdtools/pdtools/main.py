@@ -150,9 +150,10 @@ def listMenu():
     args = docopt(listDoc)
     checkLoggedIn()
 
-    reactor.callLater(.1, server.list, None)
-    reactor.run()
-    exit(0)
+    task.react(server.list)
+    # reactor.callLater(.1, server.list)
+    # reactor.run()
+    # exit(0)
 
 
 def logsMenu():

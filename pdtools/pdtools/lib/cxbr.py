@@ -7,10 +7,14 @@ from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 
 
 @inlineCallbacks
-def cxCall(session):
+def cxCall(session, address, realm):
     '''
     One shot crossbar utility method. 
+
+    Take a session and returns once the session has connected. 
     '''
+
+    # WAMP ApplicationSession is already using 'd,' so went with something a little more creative
     dee = Deferred()
 
     def maker(cfg):
@@ -18,7 +22,7 @@ def cxCall(session):
         sess.dee = dee
         return sess
 
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo")
+    runner = ApplicationRunner(address, realm)
     yield runner.run(maker, start_reactor=False)
 
     session = yield dee
