@@ -6,17 +6,9 @@ type: framework
 frameworks: 
     - docker
 
-# binaries:
-#  - name: bin/echo
-#    caps: []
-#  - name: bin/pd
-#    security-policy:
-#       apparmor: meta/pd.apparmor
-#       seccomp: meta/pd.seccomp
-
 services:
  - name: pd
-   start: bin/pd
+   start: bin/runpd
    description: Paradrop main daemon
    bus-name: com.paradrop.config
    security-policy:

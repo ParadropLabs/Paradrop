@@ -7,6 +7,7 @@ COLOR='\033[01;33m'
 DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
 HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
 SNAPPY_VERSION="0.1.0"
+PEX_CACHE="/var/lib/apps/paradrop/$SNAPPY_VERSION/pex/install"
 
 #Show help if no args passed
 if [ $# -lt 1 ]
@@ -178,6 +179,9 @@ install() {
         echo "$0 setup"
         exit
     fi
+
+    echo -e "${COLOR}Purging pex cache on target" && tput sgr0
+    ssh -p 8022 ubuntu@localhost sudo rm -rf "$PEX_CACHE"
 
     echo -e "${COLOR}Building snap" && tput sgr0
     
