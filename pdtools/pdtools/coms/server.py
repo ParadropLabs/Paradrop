@@ -77,11 +77,19 @@ def logs(r, pdid):
     '''
 
     # Let the validation occur serverside (or skip it for now)
-    pdid = store.getConfig('pdid') + '.' + pdid
+    pdid = u'' + store.getConfig('pdid') + '.' + pdid + '.logs'
     print 'Asking for logs for ' + pdid
 
-    avatar = yield riffle.portal.connect()
-    ret = yield avatar.logs(pdid)
+    sess = yield cxbr.cxCall(cxbr.BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
+
+    # TODO: load in existing logs based on the passed query times
+    def printem(l):
+        print out.messageToString(l)
+
+    sub = yield sess.subscribe(printem, pdid)
+
+    # avatar = yield riffle.portal.connect()
+    # ret = yield avatar.logs(pdid)
 
 
 ###############################################################################
