@@ -52,8 +52,10 @@ class CrossApi(cxbr.BaseSession):
     #     print 'Asked to close!'
     #     yield self.call('pd._disconnected', self.pdid)
 
+    @inlineCallbacks
     def onLeave(self, details):
         print 'On Leave'
+        yield self.call('pd._disconnected', self.pdid)
         cxbr.BaseSession.onLeave(self, details)
 
     def onDisconnect(self):
