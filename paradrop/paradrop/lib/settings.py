@@ -45,7 +45,7 @@ DBAPI_FAILURE_THRESH = float("inf")
 #
 FC_BOUNCE_UPDATE = None
 
-FC_CHUTESTORAGE_SAVE_PATH = "./tmp"
+FC_CHUTESTORAGE_SAVE_PATH = "chutes"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
 RESERVED_CHUTE = "__PARADROP__"
 
@@ -134,6 +134,12 @@ def updateSettings(slist=[]):
     from types import ModuleType
     # Get a handle to our settings defined above
     mod = sys.modules[__name__]
+
+    # Adjust default paths if we are running under Snappy
+    dataPath = os.environ.get("SNAP_APP_DATA_PATH", None)
+    if dataPath is not None:
+        mod.FC_CHUTESTORAGE_SAVE_PATH = os.path.join(dataPath, "chutes")
+        mod.UCI_CONFIG_DIR = os.path.join(dataPath, "config")
 
     # First overwrite settings they may have provided with the arg list
     for kv in slist:

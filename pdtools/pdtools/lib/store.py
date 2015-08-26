@@ -17,7 +17,7 @@ from pdtools.lib.output import out
 # Check and see if we're on snappy or not. If not, then stick the logs in the local
 # directory. We will be provisioned as a developer instance anyway, so the info doesn't matter yet,
 # Also doesn't really matter for the buildtools, although it is a bit of a vulnurability
-snappyPath = os.getenv("SNAP_APP_USER_DATA_PATH", None)
+snappyPath = os.getenv("SNAP_APP_DATA_PATH", None)
 
 STORE_PATH = snappyPath + '/' if snappyPath is not None else expanduser('~') + '/.paradrop/'
 
