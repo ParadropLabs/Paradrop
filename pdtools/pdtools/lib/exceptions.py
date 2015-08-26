@@ -29,5 +29,9 @@ class PdidExclusionError(PdServerException):
     pass
 
 
+class ModelNotFound(PdServerException):
+    pass
+
+
 class RiffleError(PdServerException):
     pass
