@@ -76,7 +76,7 @@ def logs(r, pdid):
     '''
 
     # Let the validation occur serverside (or skip it for now)
-    pdid = u'' + store.getConfig('pdid') + '.' + pdid + '.logs'
+    pdid = u'' + store.getConfig('pdid') + '.' + pdid
     print 'Asking for logs for ' + pdid
 
     sess = yield cxbr.cxCall(cxbr.BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
@@ -85,7 +85,7 @@ def logs(r, pdid):
     def printem(l):
         print out.messageToString(l)
 
-    oldLogs = yield sess.call('pd._getLogs', 0)
+    oldLogs = yield sess.call('pd._getLogs', pdid, 0)
     for x in oldLogs:
         printem(x)
 
