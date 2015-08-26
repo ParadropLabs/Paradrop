@@ -81,9 +81,13 @@ def logs(r, pdid):
 
     sess = yield cxbr.cxCall(cxbr.BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
 
-    # TODO: load in existing logs based on the passed query times
+    # Rending method
     def printem(l):
         print out.messageToString(l)
+
+    oldLogs = yield sess.call('pd._getLogs', 0)
+    for x in oldLogs:
+        printem(x)
 
     sub = yield sess.subscribe(printem, pdid)
 

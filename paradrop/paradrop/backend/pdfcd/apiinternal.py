@@ -29,9 +29,9 @@ class CrossApi(cxbr.BaseSession):
         # TEMP: ping the server, let it know we just came up
         self.call('pd._connected', self.pdid, self._session_id)
 
-        name = self.pdid + '.ping'
-        print 'Registering under ' + name
+        print 'Registering under ' + self.pdid
         yield self.register(self.ping, u'' + self.pdid + '.ping')
+        yield self.register(self.logsFromTime, u'' + self.pdid + '.logsFromTime')
 
         # Note: although all logs can simply be published as generated, I'm
         # sticking to the old model of subscribing to the logs seperately
@@ -40,11 +40,24 @@ class CrossApi(cxbr.BaseSession):
         # direct crossbar publishing of logs can therefor only work if the
         # local router is smart enough not to push when no remote subscriptions are active
 
+        # route output to the logs call
         smokesignal.on('logs', self.logs)
 
     def logs(self, logs):
+        ''' Called by the paradrop system when new logs come in '''
         logId = u'' + self.pdid + '.logs'
-        self.publish(logId, logs)
+        self.publish(logId, self.pdid, logs)
+
+    def logsFromTime(self, start):
+        '''
+        Loads logs that have timestamps after the given time. 
+
+        :param start: seconds since epoch from which to start returning logs
+        :type start: int.
+        :returns: list of logs
+        '''
+
+        return out.getLogsSince(start, purge=False)
 
     # Does not allow the shutdown call to go out before the system goes down
     # @inlineCallbacks
