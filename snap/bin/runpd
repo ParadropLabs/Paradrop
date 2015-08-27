@@ -1,11 +1,14 @@
 #!/bin/bash
 
 # PEX_ROOT is the directory where pex will at runtime unpack paradrop and its
-# dependencies for execution.  The default is ~/.pex, which is kind of weird
-# for a system package.  It is better to tie it to our package version, so that
-# we clear out the old code when performing upgrades.
-export PEX_ROOT="$SNAP_APP_DATA_PATH/pex"
+# dependencies for execution.  The default is ~/.pex, which persists and
+# accumulates during package upgrades.
+export PEX_ROOT="/tmp/pex"
 
-# Hop into Paradrop.  With exec, it inherits the pid, permissions, etc.  that
-# this calling script received.
-exec "$SNAP_APP_PATH/bin/pd"
+# Setup a cleanup function to remove our pex files when the script exits.
+function cleanup {
+    rm -rf $PEX_ROOT
+}
+trap cleanup EXIT
+
+$SNAP_APP_PATH/bin/pd

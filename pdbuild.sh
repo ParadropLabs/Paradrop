@@ -107,6 +107,7 @@ build() {
     fi
 
     pex --disable-cache paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
+    pex --disable-cache pdinstall -o snap/bin/pdinstall -m pdinstall.main:main -f buildenv/
     rm -rf *.egg-info
 }
 
