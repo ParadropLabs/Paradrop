@@ -252,10 +252,10 @@ class ParadropAPIServer(pdrest.APIResource):
         self.failprocess(ip, request, (ip, self.defaultFailures), None, (tictoc, None), pdapi.ERR_BADMETHOD)
         return ""
 
+
 ###############################################################################
 # Initialization
 ###############################################################################
-
 
 def initializeSystem():
     """
@@ -267,7 +267,6 @@ def initializeSystem():
 ###############################################################################
 # Main function
 ###############################################################################
-
 
 def setup(args=None):
     """

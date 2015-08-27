@@ -27,7 +27,9 @@ class CrossApi(cxbr.BaseSession):
         out.info("Crossbar session attached")
 
         # TEMP: ping the server, let it know we just came up
-        self.call('pd._connected', self.pdid, self._session_id)
+        yield self.call('pd._connected', self.pdid, self._session_id)
+
+        # yield self.call(u'pd.damouse.aardvark.ping')
 
         print 'Registering under ' + self.pdid
         yield self.register(self.ping, u'' + self.pdid + '.ping')
