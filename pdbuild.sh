@@ -55,7 +55,7 @@ killvm() {
 # Operations
 ###
 
-#  ommented lines are from the older virtualenv way of packaging the app. This seems cleaner
+#  commented lines are from the older virtualenv way of packaging the app. This seems cleaner
 build() {
     echo "Cleaning build directories"
 
