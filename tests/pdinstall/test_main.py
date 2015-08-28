@@ -9,9 +9,9 @@ def test_getArgs():
     """
     from pdinstall.main import getArgs
 
-    argv = ["paradrop_0.1.0_all.snap"]
+    argv = ["install", "--source", "paradrop_0.1.0_all.snap"]
     args = getArgs(argv)
-    assert args.source == argv[0]
+    assert args.sources == [argv[2]]
 
 
 @patch("os.remove")
@@ -36,18 +36,15 @@ def test_getSnaps(getFile):
     """
     from pdinstall.main import getSnaps
 
-    args = Mock()
-    args.source = "paradrop_0.2.0_all.snap"
-    args.fallback = ["paradrop_0.1.0_all.snap"]
-
+    sources = ["paradrop_0.2.0_all.snap", "paradrop_0.1.0_all.snap"]
     getFile.return_value = True
 
-    snaps = getSnaps(args)
+    snaps = getSnaps(sources)
     assert len(snaps) == 2
 
     getFile.return_value = False
 
-    snaps = getSnaps(args)
+    snaps = getSnaps(sources)
     assert snaps == []
 
 
@@ -90,6 +87,11 @@ def test_main(getArgs, getSnaps, installFromList):
     from pdinstall.main import main
 
     installFromList.return_value = True
+
+    args = Mock()
+    args.command = "install"
+    args.sources = ["fake.snap"]
+    getArgs.return_value = args
 
     assert main() == 0
     assert getArgs.called

@@ -1,17 +1,9 @@
 name: paradrop
 version: 0.1.0
 vendor: Paradrop Labs <snappy-devel@lists.ubuntu.com>
-icon: meta/hello.png
 type: framework
 frameworks: 
     - docker
-
-binaries:
- - name: bin/pdinstall
-   description: Paradrop installation utility
-   security-policy:
-      apparmor: meta/pdinstall.apparmor
-      seccomp: meta/pdinstall.seccomp
 
 services:
  - name: pd
