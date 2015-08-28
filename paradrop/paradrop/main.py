@@ -27,14 +27,6 @@ class Nexus(nexus.NexusBase):
     def onStart(self):
         super(Nexus, self).onStart()
 
-        # register for new server connections
-        # smokesignal.on('ServerPerspectiveConnected', self.serverConnected)
-        # smokesignal.on('ServerPerspectiveDisconnected', self.serverConnected)
-
-        # Create riffle realms
-        # riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(apiinternal.ServerPerspective))
-        # riffle.portal.addRealm(names.matchers[names.NameTypes.user], riffle.Realm(apiinternal.ToolsPerspective))
-
         if not self.provisioned():
             output.out.warn('Router has no keys or identity. Waiting to connect to to server.')
         else:
@@ -64,12 +56,7 @@ class Nexus(nexus.NexusBase):
         print 'Trying to connect to server...'
 
         pdid = self.get('pdid')
-
-        self.session = yield cxbr.cxCall(apiinternal.CrossApi, "ws://127.0.0.1:8080/ws", u"crossbardemo", extra=pdid)
-        print 'Session set: ' + str(self.session)
-
-        # runner = ApplicationRunner("ws://127.0.0.1:8080/ws", u"crossbardemo", extra=pdid)
-        # d = yield runner.run(apiinternal.CrossApi, start_reactor=False)
+        self.session = yield apiinternal.RouterSession.start("ws://127.0.0.1:8080/ws", pdid)
 
 
 def main():

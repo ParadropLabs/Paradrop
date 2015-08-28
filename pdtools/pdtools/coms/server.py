@@ -68,28 +68,30 @@ def createRouter(r, name):
 
 
 @inlineCallbacks
-def logs(r, pdid):
+def logs(r, target):
     '''
     Query the server for all logs that the given pdid has access to. Must be a fully qualified name.
 
     NOTE: in progress. For now, just pass the name of one of your routers.
     '''
 
-    # Let the validation occur serverside (or skip it for now)
-    pdid = u'' + store.getConfig('pdid') + '.' + pdid
-    print 'Asking for logs for ' + pdid
+    pdid = store.getConfig('pdid')
+    sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
 
-    sess = yield cxbr.cxCall(cxbr.BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
+    # Note the lack of validation
+    target = pdid + '.' + target
+    print 'Asking for logs for ' + target
 
     # Rending method
-    def printem(l):
-        print out.messageToString(l)
+    def printem(pdid, l):
+        for x in l:
+            print out.messageToString(x)
 
-    oldLogs = yield sess.call('pd._getLogs', pdid, 0)
-    for x in oldLogs:
-        printem(x)
+    oldLogs = yield sess.call('pd', 'getLogs', target, 0)
 
-    sub = yield sess.subscribe(printem, pdid)
+    printem(None, oldLogs)
+
+    sub = yield sess.subscribe(printem, target, 'logs')
 
 
 ###############################################################################

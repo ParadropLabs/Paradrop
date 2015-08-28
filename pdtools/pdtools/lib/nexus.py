@@ -78,7 +78,9 @@ class NexusBase(object):
         reactor.callLater(0, self.onStart)
 
     def onStart(self):
-        output.out.usage('%s coming up' % self.type)
+        pdid = self.get('pdid') if self.provisioned() else 'unprovisioned router'
+
+        output.out.usage('%s (%s) coming up' % (pdid, self.type))
 
     def onStop(self):
         self.save()
@@ -87,9 +89,9 @@ class NexusBase(object):
 
         # remove any and all pubsub registrations. If not done, this can cause
         # issues with subs that have to do with network connections
-        smokesignal.clear_all()
 
         output.out.usage('%s going down' % self.type)
+        smokesignal.clear_all()
         output.out.endLogging()
 
     def makePaths(self):

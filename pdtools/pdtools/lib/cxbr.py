@@ -108,44 +108,44 @@ class BaseSession(ApplicationSession):
         # kwargs['options'] = PublishOptions(disclose_me=True)
         args = (self.pdid,) + args
         topic = _prepend(pdid, topic)
-        print 'cxbr: (%s) publish (%s)' % (self.pdid, topic,)
+        # out.info('cxbr: (%s) publish (%s)' % (self.pdid, topic,))
         return ApplicationSession.publish(self, topic, *args, **kwargs)
 
     def subscribe(self, handler, pdid, topic=None, options=None):
         topic = _prepend(pdid, topic)
-        print 'cxbr: (%s) subscribe (%s)' % (self.pdid, topic,)
+        out.info('cxbr: (%s) subscribe (%s)' % (self.pdid, topic,))
         return ApplicationSession.subscribe(self, handler, topic=topic, options=options)
 
     def call(self, pdid, procedure, *args, **kwargs):
         # kwargs['options'] = CallOptions(disclose_me=True)
         args = (self.pdid,) + args
         procedure = _prepend(pdid, procedure)
-        print 'cxbr: (%s) calling (%s)' % (self.pdid, procedure,)
+        # out.info('cxbr: (%s) calling (%s)' % (self.pdid, procedure,))
         return ApplicationSession.call(self, procedure, *args, **kwargs)
 
     def register(self, endpoint, procedure=None, options=None):
         # options = RegisterOptions(details_arg='session')
         procedure = _prepend(self.pdid, procedure)
-        print 'cxbr: (%s) register (%s)' % (self.pdid, procedure,)
+        out.info('cxbr: (%s) register (%s)' % (self.pdid, procedure,))
         return ApplicationSession.register(self, endpoint, procedure=procedure, options=options)
 
     ###################################################
     # Access to the original methods, without convenience modifiers
     ###################################################
     def stockPublish(self, pdid, topic, *args, **kwargs):
-        print 'cxbr: (%s) publish (%s)' % (self.pdid, topic,)
+        out.info('cxbr: (%s) publish (%s)' % (self.pdid, topic,))
         return ApplicationSession.publish(self, topic, *args, **kwargs)
 
     def stockSubscribe(self, handler, topic=None, options=None):
-        print 'cxbr: (%s) subscribe (%s)' % (self.pdid, topic,)
+        out.info('cxbr: (%s) subscribe (%s)' % (self.pdid, topic,))
         return ApplicationSession.subscribe(self, handler, topic=topic, options=options)
 
     def stockCall(self, pdid, procedure, *args, **kwargs):
-        print 'cxbr: (%s) calling (%s)' % (self.pdid, procedure,)
+        out.info('cxbr: (%s) calling (%s)' % (self.pdid, procedure,))
         return ApplicationSession.call(self, procedure, *args, **kwargs)
 
     def stockRegister(self, endpoint, procedure=None, options=None):
-        print 'cxbr: (%s) registering (%s)' % (self.pdid, procedure,)
+        out.info('cxbr: (%s) registering (%s)' % (self.pdid, procedure,))
         return ApplicationSession.register(self, endpoint, procedure=procedure, options=options)
 
 

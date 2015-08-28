@@ -14,41 +14,33 @@ HOST = 'localhost'
 ###############################################################################
 
 
-class CrossApi(cxbr.BaseSession):
-
-    def __init__(self, config=None):
-        cxbr.BaseSession.__init__(self, config=config)
-        self.pdid = config.extra
+class RouterSession(cxbr.BaseSession):
 
     @inlineCallbacks
     def onJoin(self, details):
-        cxbr.BaseSession.onJoin(self, details)
-
-        out.info("Crossbar session attached")
-
         # TEMP: ping the server, let it know we just came up
-        yield self.call('pd._connected', self.pdid, self._session_id)
+        # yield self.call('pd', 'routerConnected', self._session_id)
 
-        # yield self.call(u'pd.damouse.aardvark.ping')
-
-        print 'Registering under ' + self.pdid
-        yield self.register(self.ping, u'' + self.pdid + '.ping')
-        yield self.register(self.logsFromTime, u'' + self.pdid + '.logsFromTime')
-
-        # Note: although all logs can simply be published as generated, I'm
-        # sticking to the old model of subscribing to the logs seperately
-        # from their crossbar publish. There are a host of situations where
-        # we may not want to push all the logs to the router constantly--
-        # direct crossbar publishing of logs can therefor only work if the
-        # local router is smart enough not to push when no remote subscriptions are active
+        yield self.register(self.ping, 'ping')
+        # yield self.register(self.logsFromTime, 'logsFromTime')
 
         # route output to the logs call
         smokesignal.on('logs', self.logs)
 
+        yield cxbr.BaseSession.onJoin(self, details)
+
+    @inlineCallbacks
     def logs(self, logs):
         ''' Called by the paradrop system when new logs come in '''
-        logId = u'' + self.pdid + '.logs'
-        self.publish(logId, self.pdid, logs)
+
+        # Temp fix- these will eventually be batched as a list, but not yet
+        logs = [logs]
+
+        # Naive implementation: step 1- send logs to server
+        yield self.call('pd', 'saveLogs', logs)
+
+        # Step 2- broadcast our logs under our pdid
+        yield self.publish(self.pdid, 'logs', logs)
 
     def logsFromTime(self, start):
         '''
@@ -79,9 +71,9 @@ class CrossApi(cxbr.BaseSession):
         # self.call('pd._disconnected', self.pdid)
         smokesignal.disconnect(self.logs)
 
-    def ping(self):
+    def ping(self, pdid):
         print 'Router ping'
-        return
+        return 'Router ping receipt'
 
 
 ###############################################################################
