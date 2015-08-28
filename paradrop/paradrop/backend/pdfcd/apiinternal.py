@@ -33,14 +33,20 @@ class RouterSession(cxbr.BaseSession):
     def logs(self, logs):
         ''' Called by the paradrop system when new logs come in '''
 
-        # Temp fix- these will eventually be batched as a list, but not yet
-        logs = [logs]
+        # If ANYTHING throws an exception here you enter recursive hell,
+        # since printing an exception will flood this method. No way out,
+        # have to throw the logs away
+        try:
+            # Temp fix- these will eventually be batched as a list, but not yet
+            logs = [logs]
 
-        # Naive implementation: step 1- send logs to server
-        yield self.call('pd', 'saveLogs', logs)
+            # Naive implementation: step 1- send logs to server
+            yield self.call('pd', 'saveLogs', logs)
 
-        # Step 2- broadcast our logs under our pdid
-        yield self.publish(self.pdid, 'logs', logs)
+            # Step 2- broadcast our logs under our pdid
+            yield self.publish(self.pdid, 'logs', logs)
+        except:
+            yield
 
     def logsFromTime(self, start):
         '''
@@ -59,57 +65,21 @@ class RouterSession(cxbr.BaseSession):
     #     print 'Asked to close!'
     #     yield self.call('pd._disconnected', self.pdid)
 
-    @inlineCallbacks
-    def onLeave(self, details):
-        print 'On Leave'
-        yield self.call('pd._disconnected', self.pdid)
-        cxbr.BaseSession.onLeave(self, details)
+    # @inlineCallbacks
+    # def onLeave(self, details):
+    #     print 'On Leave'
+    # yield self.call('pd._disconnected', self.pdid)
+    #     cxbr.BaseSession.onLeave(self, details)
 
-    def onDisconnect(self):
-        out.info("Crossbar session detaching")
+    # def onDisconnect(self):
+    #     out.info("Crossbar session detaching")
 
-        # self.call('pd._disconnected', self.pdid)
-        smokesignal.disconnect(self.logs)
+    # self.call('pd._disconnected', self.pdid)
+    #     smokesignal.disconnect(self.logs)
 
     def ping(self, pdid):
         print 'Router ping'
         return 'Router ping receipt'
-
-
-###############################################################################
-# New Riffle Additions
-###############################################################################
-
-class ServerPerspective(riffle.RifflePerspective):
-
-    def initialize(self):
-        # The function target that subscribes to output events
-        self.subscribed = None
-
-    def destroy(self):
-        # Remove the log subscriber when the connection goes down.
-        if self.subscribed is not None:
-            out.removeSubscriber(self.subscribed)
-
-    @inlineCallbacks
-    def perspective_subscribeLogs(self, target):
-        '''
-        Fetch all logs since the target time. Stream all new logs
-        to the server as they come in. 
-        '''
-
-        # Adds the target function (newLogs) to out's streaming subscription set
-        # Do not do this without the user's consent
-        out.addSubscriber(self.remote.newLogs)
-        self.subscribed = self.remote.newLogs
-
-        logs = yield out.getLogsSince(target)
-
-        returnValue(logs)
-
-
-class ToolsPerspective(riffle.RifflePerspective):
-    pass
 
 
 def pollServer(host):
@@ -173,9 +143,10 @@ def api_provision(pdid, key, cert):
     riffle.portal.certCa = cert
 
     # If we are being provisioned for the first time, start riffle services
-    yield checkStartRiffle()
+    # yield checkStartRiffle()
 
-    nexus.core.connect()
+    # Attempt to connect. WARNING- what happens if we're already connected?
+    yield nexus.core.connect()
 
     # Return success to the user
     returnValue('Done!')
