@@ -12,8 +12,6 @@ from pdtools.lib.output import out
 
 def getSystemConfigDir():
     base = settings.UCI_CONFIG_DIR
-    if "SNAP_APP_DATA_PATH" in os.environ:
-        base = os.path.join(os.environ['SNAP_APP_DATA_PATH'], "config")
     pdosq.makedirs(base)
     return base
 

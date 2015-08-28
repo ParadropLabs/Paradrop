@@ -7,6 +7,7 @@ COLOR='\033[01;33m'
 DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
 HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
 SNAPPY_VERSION="0.1.0"
+PEX_CACHE="/var/lib/apps/paradrop/$SNAPPY_VERSION/pex/install"
 
 #Show help if no args passed
 if [ $# -lt 1 ]
@@ -54,7 +55,7 @@ killvm() {
 # Operations
 ###
 
-#  ommented lines are from the older virtualenv way of packaging the app. This seems cleaner
+#  commented lines are from the older virtualenv way of packaging the app. This seems cleaner
 build() {
     echo "Cleaning build directories"
 
@@ -106,6 +107,7 @@ build() {
     fi
 
     pex --disable-cache paradrop -o snap/bin/pd -m paradrop:main -f buildenv/
+    pex --disable-cache pdinstall -o snap/bin/pdinstall -m pdinstall.main:main -f buildenv/
     rm -rf *.egg-info
 }
 
@@ -178,6 +180,9 @@ install() {
         echo "$0 setup"
         exit
     fi
+
+    echo -e "${COLOR}Purging pex cache on target" && tput sgr0
+    ssh -p 8022 ubuntu@localhost sudo rm -rf "$PEX_CACHE"
 
     echo -e "${COLOR}Building snap" && tput sgr0
     
