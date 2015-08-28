@@ -2,7 +2,10 @@
 import os
 import shutil
 
+from nose.tools import assert_raises
+
 from pdtools.lib import nexus
+
 
 root = os.getcwd() + '/TESTS/'
 
@@ -55,6 +58,77 @@ def testNetworkResolution():
     assert nex.net.webPort == nexus.NexusBase.PORT_HTTP_PRODUCTION
 
 
-def testAccessVariables():
-    ''' Variable access should be handled through the internal "interceptor" methods '''
-    pass
+def testConfigLoadingEmpty():
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
+    assert nex.info.pdid == None
+
+
+def testConfigLoadingExisting():
+    contents = dict(pdid='pd.damouse.aardvark', version=1)
+    nexus.writeYaml(contents, root + nexus.NexusBase.PATH_CONFIG)
+
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
+    assert nex.info.pdid == 'pd.damouse.aardvark'
+
+
+###############################################################################
+# AttrWrapper
+###############################################################################
+
+def testWrapperDoesntAllowChanges():
+    wrapper = nexus.AttrWrapper()
+
+    wrapper.a = 1
+    assert wrapper.a == 1
+
+    def s():
+        wrapper._lock()
+        wrapper.a = 2
+
+    assert_raises(AttributeError, s)
+
+###############################################################################
+# Setings Changes
+###############################################################################
+
+
+def testSaveCallbackTriggered():
+    class Receiver:
+
+        def __init__(self):
+            self.received = False
+
+        def onChange(self, k, v):
+            self.received = True
+
+    rec = Receiver()
+
+    wrapper = nexus.AttrWrapper()
+    wrapper.a = 1
+
+    wrapper.setOnChange(rec.onChange)
+
+    wrapper.a = 2
+
+    assert wrapper.a == 2
+    assert rec.received == True
+
+
+def testSaveUpdatesYaml():
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
+    nex.info.a = 1
+
+    dic = nexus.loadYaml(root + nexus.NexusBase.PATH_CONFIG)
+    print dic
+    assert dic['a'] == 1
+
+
+def testWrappersLocked():
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
+
+    def s(wrapper):
+        wrapper.a = 2
+
+    assert_raises(AttributeError, s, nex.paths)
+    assert_raises(AttributeError, s, nex.net)
+    assert_raises(AttributeError, s, nex.meta)

@@ -129,7 +129,6 @@ class NexusBase(object):
 
     # One of the enum values above this class
     PDID = None                                         # nexus.core.info.pdid
-    OWNER = None                                        # nexus.core.info.owner
 
     def __init__(self, nexusType, mode=Mode.development, stealStdio=True, printToConsole=True):
         '''
@@ -143,10 +142,10 @@ class NexusBase(object):
         '''
 
         # Create the attr redirectors. These allow for nexus.net.stuff
-        self.paths = AttrRedirect()
-        self.net = AttrRedirect()
-        self.meta = AttrRedirect()
-        self.info = AttrRedirect()
+        self.paths = AttrWrapper()
+        self.net = AttrWrapper()
+        self.meta = AttrWrapper()
+        self.info = AttrWrapper()
 
         # Set meta
         self.meta.type = nexusType
@@ -160,7 +159,11 @@ class NexusBase(object):
         resolveNetwork(self, self.meta.mode)
 
         # Set info by loading from paths
-        # self.load()
+        loadConfig(self, self.paths.config)
+
+        # Lock all the wrapper objects except info. That one we register to the save function
+        [x._lock() for x in [self.paths, self.net, self.meta]]
+        self.info.setOnChange(self.onInfoChange)
 
         # initialize output. If filepath is set, logs to file.
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
@@ -194,79 +197,15 @@ class NexusBase(object):
         smokesignal.clear_all()
         output.out.endLogging()
 
-<< << << < Updated upstream
-    def makePaths(self):
+    def onInfoChange(self, key, value):
         '''
-        Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
+        Called when an internal setting is changed. Trigger a save automatically.
         '''
-
-        # Lets start out being a router
-        self.rootPath = os.getenv("SNAP_APP_USER_DATA_PATH", None)
-
-        # Put tools contents in the home directory
-        if self.type is 'tool':
-            self.rootPath = os.path.expanduser('~') + '/.paradrop/'
-
-        # Current directory (since we might have more than one server at a time)
-        elif self.type is 'server':
-            self.rootPath = os.getcwd() + '/.paradrop/'
-
-        # We're a router, yay! But are we a router on snappy or local? The snappy
-        # path will not resolve on a local machine-- let it fall through, we're set
-        elif not self.rootPath:
-            self.rootPath = os.path.expanduser('~') + '/.paradrop/local/'
-
-        # Set the boring paths
-        self.logPath = self.rootPath + '/logs/'
-        self.keyPath = self.rootPath + '/keys/'
-        self.miscPath = self.rootPath + '/misc/'
-        self.configPath = self.rootPath + '/config'  # this is a path, not a file
-
-        # create the paths
-        for x in [self.rootPath, self.logPath, self.keyPath, self.miscPath]:
-            if not os.path.exists(x):
-                os.makedirs(x)
-
-== == == =
->>>>>> > Stashed changes
-    def load(self):
-        '''
-        Load our settings/configuration data from the path ivars. Does not check if the paths are None.
-
-        This is a combo of functionality from store and settings. The method of loading is configurable. 
-        Right now its YAML.
-        '''
-
-        # Check to make sure we have a default settings file
-        if not os.path.isfile(self.configPath):
-            createDefaultInfo(self.configPath)
-
-        self.config = loadYaml(self.configPath)
-
-        # Sanity check contents of info and throw it out if bad
-        if not validateInfo(self.config):
-            out.err('Saved configuration data invalid, destroying it.')
-            os.remove(self.configPath)
-            createDefaultInfo(self.configPath)
-            self.config = loadYaml(self.configPath)
-
-    def save(self):
-        ''' Ehh. Ideally this should happen constantly and asynchronously. '''
-        writeYaml(self.config, self.configPath)
-
-    #########################################################
-    # Settings
-    #########################################################
-
-    def set(self, k, v):
-        self.config[k] = v
         self.save()
 
-    def get(self, k):
-        return self.config[k]
-
-    def provisioned(self):
-        return self.config['pdid'] is not None
+    def save(self):
+        ''' Ehh. Ideally this should happen asynchronously. '''
+        writeYaml(self.info.__dict__['contents'], self.paths.config)
 
     #########################################################
     # Keys
@@ -289,73 +228,40 @@ class NexusBase(object):
 
         return None
 
-    #########################################################
-    # Chutes
-    #########################################################
-
-    def chute(self, name):
-        return None
-
-    def chutes(self):
-        return []
-
-    def removeChute(self, name):
-        pass
-
-    def addChute(self, name):
-        pass
-
-    #########################################################
-    # Network Resolution
-    #########################################################
-
-    def serverHost(self):
-        ''' Different in production vs dev, etc. Returns hostname '''
-        if self.mode == 'local':
-            return 'localhost'
-
-        return 'paradrop.io'
-
-    def rifflePort(self):
-        return _incrementingPort(8016, self.mode)
-
-    def insecureRifflePort(self):
-        ''' This isnt a thing yet. But it will be. '''
-        return _incrementingPort(8017, self.mode)
-
-    def webPort(self):
-        return _incrementingPort(14321, self.mode)
-
-    #########################################################
-    # Path Resolution
-    #########################################################
-
-    def logPath(self):
-        return self.logPath
-
-    def keyPath(self):
-        return self.keyPath
-
-    def chutePath(self):
-        return self.chutePath
-
-    def uciPath(self):
-        pass
-
-
 #########################################################
 # Utils
 #########################################################
 
-class AttrRedirect(object):
+
+class AttrWrapper(object):
 
     '''
     Simple attr interceptor to make accessing settings simple and magical. 
     Because we all could use a little magic in our day. 
+
+    Stores values in an internal dict called contents. 
+
+    Does not allow modification once _lock() is called. Respect it.
+
+    Once you've filled it up with the appropriate initial values, set
+    onChange to assign 
     '''
 
     def __init__(self):
         self.__dict__['contents'] = {}
+
+        # Called when a value changes unless None
+        self.__dict__['onChange'] = None
+
+        # Lock the contents of this wrapper. Can read valued, cant write them
+        self.__dict__['locked'] = False
+
+    def _lock(self):
+        self.__dict__['locked'] = True
+
+    def setOnChange(self, func):
+        assert(callable(func))
+        self.__dict__['onChange'] = func
 
     def __repr__(self):
         return str(self.contents)
@@ -364,22 +270,13 @@ class AttrRedirect(object):
         return self.__dict__['contents'][name]
 
     def __setattr__(self, k, v):
+        if self.__dict__['locked']:
+            raise AttributeError('This attribute wrapper is locked. You cannot change its values.')
+
         self.contents[k] = v
 
-
-def _incrementingPort(base, mode):
-    ''' Returns the given port plus some multiple of 10000 based on the passed mode '''
-
-    if mode == 'production' or mode == 'local':
-        return base
-
-    if mode == 'development':
-        return base + 10000
-
-    if mode == 'test':
-        return base + 10000 * 2
-
-    return base
+        if self.__dict__['onChange'] is not None:
+            self.__dict__['onChange'](k, v)
 
 
 def resolveNetwork(nexus, mode):
@@ -387,7 +284,7 @@ def resolveNetwork(nexus, mode):
     nexus.net.webHost = eval('NexusBase.HOST_HTTP_%s' % mode.name.upper())
     nexus.net.webPort = eval('NexusBase.PORT_HTTP_%s' % mode.name.upper())
     nexus.net.host = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
-    nexus.net.port = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
+    nexus.net.port = eval('NexusBase.PORT_WS_%s' % mode.name.upper())
 
 
 def makePaths(nexus):
@@ -423,13 +320,33 @@ def makePaths(nexus):
             os.makedirs(x)
 
 
+def loadConfig(nexus, path):
+    '''
+    Given a path to the config file, load its contents and assign it to the 
+    config file as appropriate. 
+    '''
+
+    # Check to make sure we have a default settings file
+    if not os.path.isfile(path):
+        createDefaultInfo(path)
+
+    contents = loadYaml(path)
+
+    # Sanity check contents of info and throw it out if bad
+    if not validateInfo(contents):
+        output.out.err('Saved configuration data invalid, destroying it.')
+        os.remove(path)
+        createDefaultInfo(path)
+        contents = loadYaml(path)
+
+    nexus.info.pdid = contents['pdid']
+    # nexus.info.owner = contents['version']
+
+
 def createDefaultInfo(path):
     default = {
         'version': 1,
-        'pdid': None,
-        'chutes': [],
-        'routers': [],
-        'instances': []
+        'pdid': None
     }
 
     writeYaml(default, path)
@@ -443,13 +360,11 @@ def validateInfo(contents):
     :type contents: dict.
     :returns: True if valid, else false
     '''
-    INFO_REQUIRES = ['version', 'pdid', 'chutes', 'routers', 'instances']
+    INFO_REQUIRES = ['version', 'pdid']
 
     for k in INFO_REQUIRES:
         if k not in contents:
             return False
-
-    # Check the validity of the contents
 
     return True
 
