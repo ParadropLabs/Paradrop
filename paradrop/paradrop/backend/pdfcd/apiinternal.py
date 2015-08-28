@@ -3,6 +3,7 @@ from twisted.web import xmlrpc
 from twisted.internet import utils
 from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 
+from paradrop.lib import pdinstall
 from pdtools.lib.output import out
 from pdtools.lib import store, riffle, names, nexus, cxbr
 
@@ -29,10 +30,6 @@ class RouterSession(cxbr.BaseSession):
         smokesignal.on('logs', self.logs)
 
         yield cxbr.BaseSession.onJoin(self, details)
-
-    def update(self, pdid, args):
-        print 'Doing an update!'
-        return 'Done'
 
     @inlineCallbacks
     def logs(self, logs):
@@ -85,6 +82,16 @@ class RouterSession(cxbr.BaseSession):
     def ping(self, pdid):
         print 'Router ping'
         return 'Router ping receipt'
+
+    def update(self, pdid, data):
+        print("Sending command {} to pdinstall".format(data['command']))
+        success = pdinstall.sendCommand(data['command'], data)
+
+        # NOTE: If successful, this process will probably be going down soon.
+        if success:
+            return "Sent command to pdinstall"
+        else:
+            return "Sending command to pdinstall failed"
 
 
 def pollServer(host):

@@ -61,7 +61,7 @@ routerDoc = """
 usage: 
     paradrop [options] router create <name> 
     paradrop [options] router provision <name> <host> <port>
-    paradrop [options] router update <name>
+    paradrop [options] router update <name> <snap> ...
 
 options:
    -v, --verbose    Show verbose internal output       
@@ -113,7 +113,7 @@ def routerMenu():
     args = docopt(routerDoc, options_first=False)
 
     checkLoggedIn()
-
+    
     if args['provision']:
         task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
 
@@ -121,7 +121,7 @@ def routerMenu():
         task.react(server.createRouter, (args['<name>'],))
 
     elif args['update']:
-        task.react(routers.update, (args['<name>'],))
+        task.react(routers.update, (args['<name>'], args['<snap>']))
 
     else:
         print routerDoc

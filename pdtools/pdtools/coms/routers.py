@@ -50,7 +50,7 @@ def provisionRouter(r, name, host, port):
 
 @general.defaultCallbacks
 @defer.inlineCallbacks
-def update(r, name):
+def update(r, name, sources):
     print 'Starting an update command!'
 
     pdid = store.getConfig('pdid')
@@ -58,7 +58,12 @@ def update(r, name):
 
     target = pdid + '.' + name
 
-    result = yield sess.call(target, 'update')
+    data = {
+        'command': 'install',
+        'sources': sources
+    }
+
+    result = yield sess.call(target, 'update', data)
     print 'Conpleted with result: ' + result
 
 ###############################################################################
