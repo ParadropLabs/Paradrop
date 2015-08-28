@@ -119,7 +119,8 @@ def testSaveUpdatesYaml():
     nex.info.a = 1
 
     dic = nexus.loadYaml(root + nexus.NexusBase.PATH_CONFIG)
-    assert dic['a'] == 1
+    print nex
+    assert dic['a'] == 2
 
 
 def testWrappersLocked():

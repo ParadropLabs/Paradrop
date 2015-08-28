@@ -289,10 +289,12 @@ class AttrWrapper(object):
 
 def resolveNetwork(nexus, mode):
     ''' Given a nexus object and its mode, set its network values '''
-    nexus.net.webHost = eval('NexusBase.HOST_HTTP_%s' % mode.name.upper())
     nexus.net.webPort = eval('NexusBase.PORT_HTTP_%s' % mode.name.upper())
-    nexus.net.host = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
     nexus.net.port = eval('NexusBase.PORT_WS_%s' % mode.name.upper())
+
+    nexus.net.webHost = eval('NexusBase.HOST_HTTP_%s' % mode.name.upper())
+    nexus.net.host = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
+    
 
 
 def makePaths(nexus):
