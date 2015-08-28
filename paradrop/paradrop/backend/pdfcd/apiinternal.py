@@ -22,12 +22,17 @@ class RouterSession(cxbr.BaseSession):
         # yield self.call('pd', 'routerConnected', self._session_id)
 
         yield self.register(self.ping, 'ping')
+        yield self.register(self.update, 'update')
         # yield self.register(self.logsFromTime, 'logsFromTime')
 
         # route output to the logs call
         smokesignal.on('logs', self.logs)
 
         yield cxbr.BaseSession.onJoin(self, details)
+
+    def update(self, pdid, args):
+        print 'Doing an update!'
+        return 'Done'
 
     @inlineCallbacks
     def logs(self, logs):

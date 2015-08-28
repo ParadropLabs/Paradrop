@@ -61,6 +61,7 @@ routerDoc = """
 usage: 
     paradrop [options] router create <name> 
     paradrop [options] router provision <name> <host> <port>
+    paradrop [options] router update <name>
 
 options:
    -v, --verbose    Show verbose internal output       
@@ -118,6 +119,9 @@ def routerMenu():
 
     elif args['create']:
         task.react(server.createRouter, (args['<name>'],))
+
+    elif args['update']:
+        task.react(routers.update, (args['<name>'],))
 
     else:
         print routerDoc

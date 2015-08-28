@@ -14,8 +14,11 @@ from twisted.internet import defer
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
-from pdtools.lib import pdutils, riffle
+from pdtools.lib import pdutils, riffle, cxbr
 from pdtools.lib.output import out
+
+# HOST = "ws://127.0.0.s1:9080/ws"
+HOST = "ws://paradrop.io:9080/ws"
 
 
 ###############################################################################
@@ -45,9 +48,23 @@ def provisionRouter(r, name, host, port):
     print 'Provisioning successful'
 
 
+@general.defaultCallbacks
+@defer.inlineCallbacks
+def update(r, name):
+    print 'Starting an update command!'
+
+    pdid = store.getConfig('pdid')
+    sess = yield cxbr.BaseSession.start(HOST, pdid)
+
+    target = pdid + '.' + name
+
+    result = yield sess.call(target, 'update')
+    print 'Conpleted with result: ' + result
+
 ###############################################################################
 # Chute Operations
 ###############################################################################
+
 
 def installChute(host, port, config):
     '''
