@@ -131,7 +131,7 @@ class NexusBase(object):
     # One of the enum values above this class
     PDID = None                                         # nexus.core.info.pdid
 
-    def __init__(self, nexusType, mode=Mode.development, stealStdio=True, printToConsole=True):
+    def __init__(self, nexusType, mode=Mode.development, settings={}, stealStdio=True, printToConsole=True):
         '''
         The one big thing this function leaves out is reactor.start(). Call this externally 
         *after* initializing a nexus object. 
@@ -148,7 +148,9 @@ class NexusBase(object):
         self.meta = AttrWrapper()
         self.info = AttrWrapper()
 
-        # Replace settings values with environment variables
+        # Replace values with settings or environ vars
+        overrideSettingsDict(NexusBase, settings)
+        overrideSettingsEnv(NexusBase)
 
         # Set meta
         self.meta.type = nexusType
@@ -296,6 +298,7 @@ def resolveNetwork(nexus, mode):
     nexus.net.host = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
 
     # Interpolating the websockets port into the url
+    #TODO: take a look at this again
     nexus.net.host = nexus.net.host.replace('PORT', nexus.net.port)
     
 
@@ -355,7 +358,26 @@ def loadConfig(nexus, path):
     nexus.info.pdid = contents['pdid']
     # nexus.info.owner = contents['version']
 
+def overrideSettingsDict(nexusClass, settings):
+    '''
+    Replaces constants settings values with new ones based on the passed list
+    and THEN the environment variables as passed in 
+    '''
 
+    # replace settings from dict first
+    for k, v in settings.iteritems():
+        if getattr(nexusClass, k, None) is not None:
+            setattr(nexusClass, k, v)
+            print 'Replacing %s with value %s' % (k, v)
+
+            # print nexusClass.PORT_WS
+        else:
+            raise KeyError('You have set a setting that does not exist! %s not found!' % k)
+        
+
+def overrideSettingsEnv(nexusClass):
+    pass
+    
 def createDefaultInfo(path):
     default = {
         'version': 1,

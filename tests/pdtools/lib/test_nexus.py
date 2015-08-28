@@ -52,7 +52,8 @@ def testPathCreation():
 def testNetworkResolution():
     nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
 
-    assert nex.net.host == nexus.NexusBase.HOST_WS_PRODUCTION
+    repl = nexus.NexusBase.HOST_WS_PRODUCTION.replace('PORT', nex.net.port)
+    assert nex.net.host == repl
     assert nex.net.port == nexus.NexusBase.PORT_WS_PRODUCTION
     assert nex.net.webHost == nexus.NexusBase.HOST_HTTP_PRODUCTION
     assert nex.net.webPort == nexus.NexusBase.PORT_HTTP_PRODUCTION
@@ -119,8 +120,7 @@ def testSaveUpdatesYaml():
     nex.info.a = 1
 
     dic = nexus.loadYaml(root + nexus.NexusBase.PATH_CONFIG)
-    print nex
-    assert dic['a'] == 2
+    assert dic['a'] == 1
 
 
 def testWrappersLocked():
@@ -132,3 +132,23 @@ def testWrappersLocked():
     assert_raises(AttributeError, s, nex.paths)
     assert_raises(AttributeError, s, nex.net)
     assert_raises(AttributeError, s, nex.meta)
+
+###############################################################################
+# Setings Overrides
+###############################################################################
+
+
+def testOverrideWithList():
+    replace = dict(PORT_WS_PRODUCTION='5555')
+
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.production, settings=replace)
+    print nex
+    assert nex.net.port == '5555'
+
+
+def testOverrideWithEnv():
+    os.environ["PORT_WS_PRODUCTION"] = "5555"
+
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.production, settings=replace)
+    print nex
+    assert nex.net.port == '5555'
