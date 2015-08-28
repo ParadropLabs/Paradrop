@@ -42,6 +42,13 @@ core = None
 
 class NexusBase(object):
 
+    # PATH_ROOT = os.getenv("SNAP_APP_DATA_PATH", None)
+    # PATH_
+    # PATH_LOG = self.rootPath + '/logs/'
+    # PATH_KEY = self.rootPath + '/keys/'
+    # PATH_misc = self.rootPath + '/misc/'
+    # PATH_config = self.rootPath + '/config'
+
     def __init__(self, nexType, mode='development', stealStdio=True, printToConsole=True):
         '''
         The one big thing this function leaves out is reactor.start(). Call this externally 

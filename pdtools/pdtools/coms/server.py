@@ -35,6 +35,7 @@ def list(r):
     ''' Return the resources this user owns. '''
 
     pdid = store.getConfig('pdid')
+
     sess = yield cxbr.BaseSession.start(HOST, pdid)
 
     ret = yield sess.call('pd', 'list')
