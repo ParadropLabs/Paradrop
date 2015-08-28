@@ -32,6 +32,7 @@ Version 2 changes:
 
 import os
 import yaml
+import json
 
 from enum import Enum
 import smokesignal
@@ -147,6 +148,8 @@ class NexusBase(object):
         self.meta = AttrWrapper()
         self.info = AttrWrapper()
 
+        # Replace settings values with environment variables
+
         # Set meta
         self.meta.type = nexusType
         self.meta.mode = mode
@@ -223,6 +226,15 @@ class NexusBase(object):
                 return f.read()
 
         return None
+
+    #########################################################
+    # Misc
+    #########################################################
+
+    def __repr__(self):
+        ''' Dump everything '''
+        dic = dict(paths=self.paths.contents,net=self.net.contents, info=self.info.contents, meta=str(self.meta))
+        return json.dumps(dic, sort_keys=True, indent=4)
 
 #########################################################
 # Utils

@@ -119,7 +119,6 @@ def testSaveUpdatesYaml():
     nex.info.a = 1
 
     dic = nexus.loadYaml(root + nexus.NexusBase.PATH_CONFIG)
-    print dic
     assert dic['a'] == 1
 
 
