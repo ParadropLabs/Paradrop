@@ -31,10 +31,10 @@ from pdtools.lib.exceptions import *
 def list(r):
     ''' Return the resources this user owns. '''
 
-    sess = yield cxbr.cxCall(cxbr.BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
     pdid = store.getConfig('pdid')
+    sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
 
-    ret = yield sess.call(u'pd._list', pdid)
+    ret = yield sess.call('pd', 'list')
 
     store.saveConfig('chutes', ret['chutes'])
     store.saveConfig('routers', ret['routers'])
@@ -50,14 +50,14 @@ def createRouter(r, name):
     ''' Create a new router. '''
 
     pdid = store.getConfig('pdid')
-    name = store.getConfig('pdid') + '.' + name
+    sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
 
-    sess = yield cxbr.cxCall(cxbr.BaseSession, "ws://127.0.0.1:8080/ws", u"crossbardemo")
+    name = pdid + '.' + name
 
-    ret = yield sess.call(u'pd._provisionRouter', name)
+    ret = yield sess.call('pd', 'provisionRouter', name)
     store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
 
-    ret = yield sess.call(u'pd._list', pdid)
+    ret = yield sess.call('pd', 'list')
 
     store.saveConfig('chutes', ret['chutes'])
     store.saveConfig('routers', ret['routers'])

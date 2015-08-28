@@ -26,7 +26,7 @@ from docopt import docopt
 from twisted.internet import task
 from twisted.internet import reactor
 
-from pdtools.lib import output, riffle, names
+from pdtools.lib import output, riffle, names, cxbr
 from pdtools.coms import routers, general, server
 from pdtools.lib.store import store
 
@@ -199,18 +199,16 @@ def main():
     # TODO: set lower level log filters based on the number of '-v's passed in
     setup(displayToConsole=args['--verbose'])
 
-    # Unpublished functions-- these here for testing purposes
-    if command == 'echo':
-        task.react(general.echo, (args['<args>'][0], int(args['<args>'][1]),))
-
-    if command == 'test':
-        task.react(server.test)
-
     if command == 'login':
         task.react(server.login, (SERVER_HOST, SERVER_PORT,))
 
     if command == 'register':
         task.react(server.register, (SERVER_HOST, SERVER_PORT,))
+
+    # It doesn't matter what the call is. If we got to this point then we have to instantiate a
+    # crossbar session
+    # pdid = store.getConfig('pdid')
+    # sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
 
     # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
     if command in 'router chute list logs'.split():

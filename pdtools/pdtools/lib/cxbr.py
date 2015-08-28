@@ -7,6 +7,9 @@ from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 from autobahn.wamp.types import RegisterOptions, SubscribeOptions, CallOptions, PublishOptions
 
 
+from pdtools.lib.output import out
+
+
 class BaseSession(ApplicationSession):
 
     """ Temporary base class for crossbar implementation """
@@ -16,32 +19,43 @@ class BaseSession(ApplicationSession):
         self.pdid = config.extra
 
     @classmethod
-    def start(klass, address, realm, pdid, start_reactor=False, debug=False):
+    def start(klass, address, pdid, realm='crossbardemo', start_reactor=False, debug=False):
         '''
         Creates a new instance of this session and attaches it to the router
         at the given address and realm. The pdid is set manually now since we trust
         clients. Excessively.
+
+        For now the realm is automatically set as a demo realm since we are not 
+        using multiple realms.
         '''
         dee = Deferred()
 
         def maker(cfg):
             sess = klass(cfg)
             sess.dee = dee
+
+            # print 'Assigning deferred to ' + sess
             return sess
 
         runner = ApplicationRunner(address, u'' + realm, extra=pdid, debug_wamp=debug, debug=debug,)
-        runner.run(klass, start_reactor=start_reactor)
+        runner.run(maker, start_reactor=start_reactor)
+
+        return dee
 
     @inlineCallbacks
     def onJoin(self, details):
-        print 'Session Joined'
+        print str(self.__class__.__name__) + ' crossbar session connected'
         yield
 
         # Inform whoever created us that the session has finished connecting.
         # Useful in situations where you need to fire off a single call and not a
         # full wamplet
-        if self.dee is not None:
-            yield self.dee.callback(self)
+        try:
+            if self.dee is not None:
+                yield self.dee.callback(self)
+        except:
+            # print 'No onJoin deferred callback set.'
+            pass
 
     def pdRegister(self, name, *args, **kwargs):
         '''
@@ -90,23 +104,60 @@ class BaseSession(ApplicationSession):
     #     options = RegisterOptions(details_arg='details')
     #     return ApplicationSession.register(self, endpoint, procedure=procedure, options=options)
 
-    def publish(self, topic, *args, **kwargs):
+    def publish(self, pdid, topic, *args, **kwargs):
         # kwargs['options'] = PublishOptions(disclose_me=True)
         args = (self.pdid,) + args
+        topic = _prepend(pdid, topic)
+        print 'cxbr: (%s) publish (%s)' % (self.pdid, topic,)
         return ApplicationSession.publish(self, topic, *args, **kwargs)
 
-    def subscribe(self, handler, topic=None, options=None):
-        # options = SubscribeOptions(details_arg='details')
+    def subscribe(self, handler, pdid, topic=None, options=None):
+        topic = _prepend(pdid, topic)
+        print 'cxbr: (%s) subscribe (%s)' % (self.pdid, topic,)
         return ApplicationSession.subscribe(self, handler, topic=topic, options=options)
 
-    def call(self, procedure, *args, **kwargs):
+    def call(self, pdid, procedure, *args, **kwargs):
         # kwargs['options'] = CallOptions(disclose_me=True)
         args = (self.pdid,) + args
+        procedure = _prepend(pdid, procedure)
+        print 'cxbr: (%s) calling (%s)' % (self.pdid, procedure,)
         return ApplicationSession.call(self, procedure, *args, **kwargs)
 
     def register(self, endpoint, procedure=None, options=None):
         # options = RegisterOptions(details_arg='session')
+        procedure = _prepend(self.pdid, procedure)
+        print 'cxbr: (%s) register (%s)' % (self.pdid, procedure,)
         return ApplicationSession.register(self, endpoint, procedure=procedure, options=options)
+
+    ###################################################
+    # Access to the original methods, without convenience modifiers
+    ###################################################
+    def stockPublish(self, pdid, topic, *args, **kwargs):
+        print 'cxbr: (%s) publish (%s)' % (self.pdid, topic,)
+        return ApplicationSession.publish(self, topic, *args, **kwargs)
+
+    def stockSubscribe(self, handler, topic=None, options=None):
+        print 'cxbr: (%s) subscribe (%s)' % (self.pdid, topic,)
+        return ApplicationSession.subscribe(self, handler, topic=topic, options=options)
+
+    def stockCall(self, pdid, procedure, *args, **kwargs):
+        print 'cxbr: (%s) calling (%s)' % (self.pdid, procedure,)
+        return ApplicationSession.call(self, procedure, *args, **kwargs)
+
+    def stockRegister(self, endpoint, procedure=None, options=None):
+        print 'cxbr: (%s) registering (%s)' % (self.pdid, procedure,)
+        return ApplicationSession.register(self, endpoint, procedure=procedure, options=options)
+
+
+def _prepend(pdid, topic):
+    '''
+    In order to make subscription and execution code cleaner, this method automatically
+    injects this classes pdid to the start of any publish or register call. 
+
+    The topic is also converted to a unicode string. An underscore is inserted to the 
+    start of every topic. No consideration is given to 'valid' topics-- thats on you.
+    '''
+    return u'' + pdid + '._' + topic
 
 
 @inlineCallbacks
