@@ -44,7 +44,7 @@ class BaseSession(ApplicationSession):
 
     @inlineCallbacks
     def onJoin(self, details):
-        print str(self.__class__.__name__) + ' crossbar session connected'
+        out.info(str(self.__class__.__name__) + ' crossbar session connected')
         yield
 
         # Inform whoever created us that the session has finished connecting.

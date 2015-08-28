@@ -21,10 +21,13 @@ from pdtools.lib import riffle, names, cxbr
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
 
+# HOST = "ws://127.0.0.s1:9080/ws"
+HOST = "ws://paradrop.io:9080/ws"
 
 ###############################################################################
 # Crossbar
 ###############################################################################
+
 
 @general.failureCallbacks
 @inlineCallbacks
@@ -32,7 +35,7 @@ def list(r):
     ''' Return the resources this user owns. '''
 
     pdid = store.getConfig('pdid')
-    sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
+    sess = yield cxbr.BaseSession.start(HOST, pdid)
 
     ret = yield sess.call('pd', 'list')
 
@@ -50,7 +53,7 @@ def createRouter(r, name):
     ''' Create a new router. '''
 
     pdid = store.getConfig('pdid')
-    sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
+    sess = yield cxbr.BaseSession.start(HOST, pdid)
 
     name = pdid + '.' + name
 
@@ -67,6 +70,7 @@ def createRouter(r, name):
     printOwned()
 
 
+@general.failureCallbacks
 @inlineCallbacks
 def logs(r, target):
     '''
@@ -76,7 +80,7 @@ def logs(r, target):
     '''
 
     pdid = store.getConfig('pdid')
-    sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
+    sess = yield cxbr.BaseSession.start(HOST, pdid)
 
     # Note the lack of validation
     target = pdid + '.' + target

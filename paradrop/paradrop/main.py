@@ -55,8 +55,10 @@ class Nexus(nexus.NexusBase):
         '''
         print 'Trying to connect to server...'
 
+        HOST = "ws://paradrop.io:9080/ws"
+
         pdid = self.get('pdid')
-        self.session = yield apiinternal.RouterSession.start("ws://127.0.0.1:8080/ws", pdid)
+        self.session = yield apiinternal.RouterSession.start(HOST, pdid)
 
 
 def main():
