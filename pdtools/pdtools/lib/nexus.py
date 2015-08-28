@@ -25,13 +25,17 @@ The base class does not implement any riffle integration other than
 setting up the keys and default connection information. You should register for 
 connection callbacks using smokesignals (see paradrop/main.py). DO NOT
 store connections yourself-- riffle already does that and you'll screw up the portal!
+
+Version 2 changes: 
+    Should be able to call nexus.core.paths.logPath
 '''
 
 import os
 import yaml
 
-from twisted.internet import reactor
+from enum import Enum
 import smokesignal
+from twisted.internet import reactor
 
 from pdtools.lib import store, riffle, output
 
@@ -39,10 +43,95 @@ from pdtools.lib import store, riffle, output
 #       nexus.core = MyNexusSubclass()
 core = None
 
+# The type and mode of this nexus instance
+Type = Enum('Type', 'router, tools, server')
+Mode = Enum('Mode', 'production, development, test, local')
+
 
 class NexusBase(object):
 
-    def __init__(self, nexType, mode='development', stealStdio=True, printToConsole=True):
+    '''
+    These are the boilerplate, initial settings values. 
+
+    DO NOT MODIFY THESE AT RUNTIME. Instead, query the nexus object for 
+    the appropriate attribute. These are here for two purposes: declare
+    which settings will be present in the nexus object, and show you their names.
+
+    There are three steps that take place in resolving these valus to their 
+    final forms:
+        1- this module is imported, initial values assigned (as written below)
+        2- this class is instatiated, reading in environment variables and replacing 
+            any those it finds
+        3- runtime level modification of settings as appropriate
+
+    Note the last step. Some variables simply cannot be changed. 
+
+    Not implemented: settings, chutes
+    '''
+
+    ###############################################################################
+    # Paths. Dump: 'print nexus.core.paths'
+    ###############################################################################
+
+    # The three options for root file directory. Eventually end up in nexus.core.paths.root
+    PATH_ROOT = None                                    # nexus.core.paths.root
+    PATH_SNAPPY = os.getenv("SNAP_APP_DATA_PATH", None)
+    PATH_LOCAL = os.path.expanduser('~') + '/.paradrop/local/'
+    PATH_HOME = os.path.expanduser('~') + '/.paradrop/'
+    PATH_CURRENT = os.getcwd() + '/.paradrop/'
+
+    PATH_LOG = '/logs/'                                 # nexus.core.paths.log
+    PATH_KEY = '/keys/'                                 # nexus.core.paths.key
+    PATH_MISC = '/misc/'                                # nexus.core.paths.misc
+    PATH_CONFIG = '/config'                             # nexus.core.paths.config
+
+    ###############################################################################
+    # Net. Dump: 'print nexus.core.net'
+    ###############################################################################
+
+    # Note: one of the options are picked  based on the mode
+    HOST_HTTP_PRODUCTION = 'https://paradrop.io'        # nexus.core.net.webHost
+    HOST_HTTP_DEVELOPMENT = 'https://paradrop.io'
+    HOST_HTTP_TEST = 'localhost'
+    HOST_HTTP_LOCAL = 'localhost'
+
+    PORT_HTTP_PRODUCTION = '14321'                      # nexus.core.net.webPort
+    PORT_HTTP_DEVELOPMENT = '14321'
+    PORT_HTTP_TEST = '14321'
+    PORT_HTTP_LOCAL = '14321'
+
+    # Web Sockets host and port
+    HOST_WS_PRODUCTION = 'ws://paradrop.io:PORT/ws'     # nexus.core.net.host
+    HOST_WS_DEVELOPMENT = "ws://paradrop.io:PORT/ws"
+    HOST_WS_TEST = "ws://127.0.0.1:PORT/ws"
+    HOST_WS_LOCAL = "ws://127.0.0.1:PORT/ws"
+
+    PORT_WS_PRODUCTION = '9080'                         # nexus.core.net.port
+    PORT_WS_DEVELOPMENT = '9080'
+    PORT_WS_TEST = '9080'
+    PORT_WS_DEVELOPMENT = '9080'
+
+    ###############################################################################
+    # Meta. Dump: 'print nexus.core.meta'
+    ###############################################################################
+
+    # One of the enum values above this class. Note: the value here is *not*
+    # applied to the nexus object (except for version) since they are received
+    # as direct parameters to the initialization method. You can still set
+    # environment variables that match these names, they will overwrite the final values
+    TYPE = None                                         # nexus.core.meta.type
+    MODE = None                                         # nexus.core.meta.mode
+    VERSION = 1                                         # nexus.core.meta.version
+
+    ###############################################################################
+    # Info. Dump: 'print nexus.core.info'
+    ###############################################################################
+
+    # One of the enum values above this class
+    PDID = None                                         # nexus.core.info.pdid
+    OWNER = None                                        # nexus.core.info.owner
+
+    def __init__(self, nexusType, mode=Mode.development, stealStdio=True, printToConsole=True):
         '''
         The one big thing this function leaves out is reactor.start(). Call this externally 
         *after* initializing a nexus object. 
@@ -53,19 +142,30 @@ class NexusBase(object):
             See section "network resolution" below 
         '''
 
-        self.type, self.mode = nexType, mode
+        # Create the attr redirectors. These allow for nexus.net.stuff
+        self.paths = AttrRedirect()
+        self.net = AttrRedirect()
+        self.meta = AttrRedirect()
+        self.info = AttrRedirect()
 
-        if mode not in 'production development test local'.split():
-            raise KeyError("Mode " + self.mode + " not valid")
+        # Set meta
+        self.meta.type = nexusType
+        self.meta.mode = mode
+        self.meta.version = NexusBase.VERSION
 
-        # initialize the paths and load existing settings
-        self.makePaths()
-        self.load()
+        # Set paths
+        makePaths(self)
+
+        # Set network
+        resolveNetwork(self, self.meta.mode)
+
+        # Set info by loading from paths
+        # self.load()
 
         # initialize output. If filepath is set, logs to file.
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
         # If printToConsole is set (defaults True) all final output is rendered to stdout
-        output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=printToConsole)
+        # output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=printToConsole)
 
         # Asssign global riffle keys
         # riffle.portal.keyPrivate = self.getKey('pub')
@@ -74,8 +174,8 @@ class NexusBase(object):
         # riffle.portal.port = self.rifflePort()
 
         # register onStop for the shutdown call
-        reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
-        reactor.callLater(0, self.onStart)
+        # reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
+        # reactor.callLater(0, self.onStart)
 
     def onStart(self):
         pdid = self.get('pdid') if self.provisioned() else 'unprovisioned router'
@@ -94,6 +194,7 @@ class NexusBase(object):
         smokesignal.clear_all()
         output.out.endLogging()
 
+<< << << < Updated upstream
     def makePaths(self):
         '''
         Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
@@ -126,6 +227,8 @@ class NexusBase(object):
             if not os.path.exists(x):
                 os.makedirs(x)
 
+== == == =
+>>>>>> > Stashed changes
     def load(self):
         '''
         Load our settings/configuration data from the path ivars. Does not check if the paths are None.
@@ -244,6 +347,26 @@ class NexusBase(object):
 # Utils
 #########################################################
 
+class AttrRedirect(object):
+
+    '''
+    Simple attr interceptor to make accessing settings simple and magical. 
+    Because we all could use a little magic in our day. 
+    '''
+
+    def __init__(self):
+        self.__dict__['contents'] = {}
+
+    def __repr__(self):
+        return str(self.contents)
+
+    def __getattr__(self, name):
+        return self.__dict__['contents'][name]
+
+    def __setattr__(self, k, v):
+        self.contents[k] = v
+
+
 def _incrementingPort(base, mode):
     ''' Returns the given port plus some multiple of 10000 based on the passed mode '''
 
@@ -257,6 +380,47 @@ def _incrementingPort(base, mode):
         return base + 10000 * 2
 
     return base
+
+
+def resolveNetwork(nexus, mode):
+    ''' Given a nexus object and its mode, set its network values '''
+    nexus.net.webHost = eval('NexusBase.HOST_HTTP_%s' % mode.name.upper())
+    nexus.net.webPort = eval('NexusBase.PORT_HTTP_%s' % mode.name.upper())
+    nexus.net.host = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
+    nexus.net.port = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
+
+
+def makePaths(nexus):
+    '''
+    Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
+    '''
+
+    # Default use the Home path (covers tools)
+    nexus.paths.root = NexusBase.PATH_HOME
+
+    # Always use current directory when server (since there could be more than one of them )
+    if nexus.meta.type == Type.server:
+        nexus.paths.root = NexusBase.PATH_CURRENT
+
+    # we can either resolve the root path based on the mode (which
+    # is prefereable) or continue to just use the snappy check to set it
+    # In other words, path_snappy if in snappy, else path_vm
+    if nexus.meta.type == Type.router:
+        if nexus.PATH_SNAPPY is None:
+            nexus.paths.root = NexusBase.PATH_LOCAL
+        else:
+            nexus.paths.root = NexusBase.PATH_SNAPPY
+
+    # Set boring paths
+    nexus.paths.log = nexus.paths.root + NexusBase.PATH_LOG
+    nexus.paths.key = nexus.paths.root + NexusBase.PATH_KEY
+    nexus.paths.misc = nexus.paths.root + NexusBase.PATH_MISC
+    nexus.paths.config = nexus.paths.root + NexusBase.PATH_CONFIG
+
+    # create the paths
+    for x in [nexus.paths.root, nexus.paths.log, nexus.paths.key, nexus.paths.misc]:
+        if not os.path.exists(x):
+            os.makedirs(x)
 
 
 def createDefaultInfo(path):
