@@ -33,4 +33,4 @@ def test_CommandServer(socket, remove):
     assert sock.bind.called
     assert sock.listen.called
     assert handler.called
-    remove.assert_called_once_with("/fake/path")
+    remove.assert_called_with("/fake/path")
