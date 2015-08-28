@@ -31,6 +31,9 @@
   # BELOW: rules specific to pdinstall
   #
 
+  /bin/bash rix,
+  /bin/rm rix,
+
   /usr/bin/env rix,
   /usr/bin/python2.7 rux,
 }

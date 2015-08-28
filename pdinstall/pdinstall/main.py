@@ -4,18 +4,19 @@ import re
 import subprocess
 
 from . import snappy
+from .server import CommandServer
 
 
+SOCKET_ADDRESS = '/var/run/pdinstall.sock'
 SERVICE_FILES_DIR = '/etc/systemd/system/'
 
 
 def getArgs(argv=None):
     parser = argparse.ArgumentParser(description='Paradrop installer')
-    parser.add_argument('source', type=str,
-                        help='Source (file path or URL)')
-    parser.add_argument('-f', '--fallback', type=str, action='append', 
-                        default=[],
-                        help='Fallback snap (file path or URL)')
+    parser.add_argument('command', choices=['install', 'server'])
+    parser.add_argument('-s', '--source', type=str, action='append', 
+                        default=[], dest='sources',
+                        help='Snap source (file path or URL)')
     parser.add_argument('-i', '--ignore-version', action="store_true",
                         help='Ignore version check')
     args = parser.parse_args(argv)
@@ -34,16 +35,15 @@ def cleanupServiceFiles(name):
             os.remove(path)
 
 
-def getSnaps(args):
+def getSnaps(sources):
     """
     Get an ordered list of snaps to try installing.
 
     Returns an empty list if any of the requested snaps cannot be found.
     """
     snapList = list()
-    snapList.append(snappy.Snap(args.source))
-    for fallback in args.fallback:
-        snapList.append(snappy.Snap(fallback))
+    for source in sources:
+        snapList.append(snappy.Snap(source))
 
     # First make sure we can find all of the snap files.  We do not want to
     # start installing unless we are sure the fallback snaps are available.
@@ -61,7 +61,7 @@ def getSnaps(args):
     return snapList
 
 
-def installFromList(snaps, args):
+def installFromList(snaps, ignoreVersion=False):
     """
     Install one of the snaps from a list.
 
@@ -82,7 +82,7 @@ def installFromList(snaps, args):
     for snap in snaps:
         # If the --ignore-version argument was passed, we don't need to check
         # for currently installed version.
-        if not args.ignore_version:
+        if not ignoreVersion:
             if snap.isInstalled():
                 print('The snap ({}) is already installed.'.format(str(snap)))
                 return True
@@ -98,11 +98,20 @@ def installFromList(snaps, args):
     return False
 
 
+def installHandler(data):
+    snaps = getSnaps(data['sources'])
+    success = installFromList(snaps, data.get("ignore-version", False))
+    return success
+
+
 def main():
     args = getArgs()
 
-    snaps = getSnaps(args)
-    if installFromList(snaps, args):
-        return 0
-    else:
-        return 1
+    if args.command == 'install':
+        success = installHandler(vars(args))
+        return 0 if success else 1
+
+    elif args.command == 'server':
+        server = CommandServer(SOCKET_ADDRESS)
+        server.addHandler("install", installHandler)
+        server.run()
