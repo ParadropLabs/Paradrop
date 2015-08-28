@@ -45,31 +45,6 @@ def teardown():
     shutil.rmtree(PATH)
 
 
-def test_subscriptionWorks():
-    class Sub(object):
-
-        def __init__(self):
-            self.last = None
-
-        def subscriber(self, a):
-            self.last = a
-
-    s = Sub()
-
-    # Can subscribe
-    output.out.addSubscriber(s.subscriber)
-    output.out.info('Something')
-
-    assert s.last is not None
-
-    # Can unsubscribe
-    s.last = None
-    output.out.removeSubscriber(s.subscriber)
-    output.out.info('Something')
-
-    assert s.last is None
-
-
 def test_logsOrdered():
     logs = output.out.getLogsSince(0)
 
