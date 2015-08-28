@@ -294,6 +294,9 @@ def resolveNetwork(nexus, mode):
 
     nexus.net.webHost = eval('NexusBase.HOST_HTTP_%s' % mode.name.upper())
     nexus.net.host = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
+
+    # Interpolating the websockets port into the url
+    nexus.net.host = nexus.net.host.replace('PORT', nexus.net.port)
     
 
 
