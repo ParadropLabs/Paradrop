@@ -18,6 +18,7 @@ from paradrop.backend.pdfcd import apiinternal
 class Nexus(nexus.NexusBase):
 
     def __init__(self, mode, settings=[]):
+        # get a Mode.production, Mode.test, etc from the passed string
         mode = eval('nexus.Mode.%s' % mode)
 
         # Want to change logging functionality? See optional args on the base class and pass them here
@@ -62,9 +63,6 @@ def main():
                    action='append', type=str, default=[])
     p.add_argument('--config', help='Run as the configuration daemon',
                    action='store_true')
-    p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
-    p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
-
     p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test, local]',
                    action='store', type=str, default='production')
 
@@ -72,6 +70,10 @@ def main():
     p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
     p.add_argument('--development', help='Enable the development environment variables',
                    action='store_true')
+
+    # No longer used
+    p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
+    p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
 
     args = p.parse_args()
     # print args
