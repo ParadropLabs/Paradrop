@@ -17,7 +17,7 @@ from paradrop.backend.pdfcd import apiinternal
 
 class Nexus(nexus.NexusBase):
 
-    def __init__(self, mode, settings={}):
+    def __init__(self, mode, settings=[]):
         mode = eval('nexus.Mode.%s' % mode)
 
         # Want to change logging functionality? See optional args on the base class and pass them here
@@ -60,8 +60,6 @@ def main():
     p = argparse.ArgumentParser(description='Paradrop API server running on client')
     p.add_argument('-s', '--settings', help='Overwrite settings, format is "KEY:VALUE"',
                    action='append', type=str, default=[])
-    p.add_argument('--development', help='Enable the development environment variables',
-                   action='store_true')
     p.add_argument('--config', help='Run as the configuration daemon',
                    action='store_true')
     p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
@@ -70,11 +68,13 @@ def main():
     p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test, local]',
                    action='store', type=str, default='production')
 
-    # Temporary until the mode=local is hooked up
+    # Things to replace
     p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
+    p.add_argument('--development', help='Enable the development environment variables',
+                   action='store_true')
 
     args = p.parse_args()
-    print args
+    # print args
 
     # Temp- this should go to nexus (the settings portion of it, at least)
     # Change the confd directories so we can run locally
@@ -88,7 +88,7 @@ def main():
     # Globally assign the nexus object so anyone else can access it.
     # Sorry, programming gods. If it makes you feel better this class
     # replaces about half a dozen singletons
-    nexus.core = Nexus(mode=args.mode)
+    nexus.core = Nexus(args.mode, settings=args.settings)
 
     if args.config:
         from paradrop.backend import pdconfd

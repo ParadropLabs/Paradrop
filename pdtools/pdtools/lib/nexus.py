@@ -2,32 +2,28 @@
 Stateful, singleton, command and control center. This is the brains of the three 
 paradrop components: tools, router, and server.
 
-Takes over the functionality of the following modules, globals, and all around cruft:
-    settings
-    storage (keys, settings, names, permissions)
-    chuteStore
-    port/host consts
-    portal and server administration
+See docstring for NexusBase class for information on settings.
 
-Additionally:
-    Persists data to disk synchronously (for now, unless it gets hairy.)
-    Manages init and deinit
-    Document versioning, migrations, and validations through barit.
+SETTINGS QUICK REFERENCE:
+    # assuming the following import
+    from pdtools.lib.nexus import core
 
-This object is meant to be subclassed by each of the three PD components. 
-They should build upon the methods below as it suits their needs-- for example, 
-tools may need to store information about routers, routers will store 
-chutes, and the server will rely heavily on riffle callbacks.
+    core.path.root
+    core.path.log
+    core.path.key
+    core.path.misc
+    core.path.config
 
-Should make this a singleton. And make a print thread for this guy, just for safety.
+    core.net.webHost
+    core.net.webPort
+    core.net.host
+    core.net.port
 
-The base class does not implement any riffle integration other than 
-setting up the keys and default connection information. You should register for 
-connection callbacks using smokesignals (see paradrop/main.py). DO NOT
-store connections yourself-- riffle already does that and you'll screw up the portal!
+    core.meta.type
+    core.meta.mode
+    core.meta.version
 
-Version 2 changes: 
-    Should be able to call nexus.core.path.logPath
+    core.info.pdid
 '''
 
 import os
@@ -52,34 +48,69 @@ Mode = Enum('Mode', 'production, development, test, local')
 class NexusBase(object):
 
     '''
-    These are the boilerplate, initial settings values. 
+    Initial settings values.
 
-    DO NOT MODIFY THESE AT RUNTIME. Instead, query the nexus object for 
-    the appropriate attribute. These are here for two purposes: declare
-    which settings will be present in the nexus object, and show you their names.
+    Resolving these values to their final forms:
+        1- module imported, initial values assigned (as written below)
+        2- class is instatiated, passed settings or environ replace values
+        3- instance chooses appropriate values based on current state (production, router, etc)
+            Each category has its own method for initialization here 
+            (see: resolveNetwork, resolvePaths)
 
-    There are three steps that take place in resolving these valus to their 
-    final forms:
-        1- this module is imported, initial values assigned (as written below)
-        2- this class is instatiated, reading in environment variables and replacing 
-            any those it finds
-        3- runtime level modification of settings as appropriate
+    DO NOT MODIFY CONSTS AT RUNTIME. Add new settings, pass in settings changes, 
+    or set environment variables. 
 
-    Note the last step. Some variables simply cannot be changed. 
+    DO NOT ACCESS CONSTS AT RUNTIME. These are the initial states. They are 
+    evaluated and mapped to readable names. Their resulting attribute names are 
+    shown as a comment to the right of each declaration.
 
-    Not implemented: settings, chutes
+    To dump all values:
+        from pdtools.lib import nexus
+        print nexus.core
+
+    To dump a subset of values: 
+        from pdtools.lib import nexus
+        print nexus.core.net
+        print nexus.core.path
+
+    Not yet implemented: settings, chutes
+
+    EXAMPLE:
+        We want to resolve port dynamically based on type and mode. First, 
+        we enumerate the possibilities as consts:
+            PORT_PRODUCTION = 1234                          # nexus.core.net.port
+            PORT_DEVELOPMENT = 2345
+
+        (The right-justified comment indicates where the final value resides)
+
+        To change the const at runtime, instantiate the object with settings override:
+            NexusBase(Type.router, Mode.production, settings=['PORT_PRODUCTION:3456'])
+
+        Or set an environment variable before running:
+            export PORT_PRODUCTION=3456
+
+        When instantiating, class checks for mode in "resolveNetwork"
+            if nex.meta.type == Type.Production:
+                nex.net.port = PORT_PRODUCTION
+
+            (magic omitted)
+
+        Finally access the resulting values:
+            from pdtools.lib import nexus
+            print nexus.core.net.port
+            => '3456'
+
     '''
 
     ###############################################################################
     # Paths. Dump: 'print nexus.core.path'
     ###############################################################################
 
-    # The three options for root file directory. Eventually end up in nexus.core.path.root
-    PATH_ROOT = None                                    # nexus.core.path.root
     PATH_SNAPPY = os.getenv("SNAP_APP_DATA_PATH", None)
     PATH_LOCAL = os.path.expanduser('~') + '/.paradrop/local/'
     PATH_HOME = os.path.expanduser('~') + '/.paradrop/'
     PATH_CURRENT = os.getcwd() + '/.paradrop/'
+    PATH_ROOT = None                                   # nexus.core.path.root
 
     PATH_LOG = 'logs/'                                 # nexus.core.path.log
     PATH_KEY = 'keys/'                                 # nexus.core.path.key
@@ -87,10 +118,10 @@ class NexusBase(object):
     PATH_CONFIG = 'config'                             # nexus.core.path.config
 
     ###############################################################################
-    # Net. Dump: 'print nexus.core.net'
+    # Network.
+    # Dump: 'print nexus.core.net'
     ###############################################################################
 
-    # Note: one of the options are picked  based on the mode
     HOST_HTTP_PRODUCTION = 'https://paradrop.io'        # nexus.core.net.webHost
     HOST_HTTP_DEVELOPMENT = 'https://paradrop.io'
     HOST_HTTP_TEST = 'localhost'
@@ -110,22 +141,25 @@ class NexusBase(object):
     PORT_WS_PRODUCTION = '9080'                         # nexus.core.net.port
     PORT_WS_DEVELOPMENT = '9080'
     PORT_WS_TEST = '9080'
-    PORT_WS_DEVELOPMENT = '9080'
+    PORT_WS_LOCAL = '9080'
 
     ###############################################################################
-    # Meta. Dump: 'print nexus.core.meta'
+    # Meta. Values that tell you something about the values in here
+    # Dump: 'print nexus.core.meta'
     ###############################################################################
 
-    # One of the enum values above this class. Note: the value here is *not*
-    # applied to the nexus object (except for version) since they are received
-    # as direct parameters to the initialization method. You can still set
-    # environment variables that match these names, they will overwrite the final values
     TYPE = None                                         # nexus.core.meta.type
     MODE = None                                         # nexus.core.meta.mode
     VERSION = 1                                         # nexus.core.meta.version
 
     ###############################################################################
-    # Info. Dump: 'print nexus.core.info'
+    # Configuration. Affect the whole system, generally static
+    # Dump: 'print nexus.core.conf'
+    ###############################################################################
+
+    ###############################################################################
+    # Info. Values that are likely to change with individual users.
+    # Dump: 'print nexus.core.info'
     ###############################################################################
 
     # One of the enum values above this class
@@ -153,7 +187,7 @@ class NexusBase(object):
         self.meta.version = self.__class__.VERSION
 
         # Set paths
-        makePaths(self)
+        resolvePaths(self)
 
         # Set network
         resolveNetwork(self, self.meta.mode)
@@ -305,7 +339,7 @@ def resolveNetwork(nex, mode):
     nex.net.host = nex.net.host.replace('PORT', nex.net.port)
 
 
-def makePaths(nex):
+def resolvePaths(nex):
     '''
     Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
     '''
