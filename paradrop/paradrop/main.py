@@ -17,9 +17,11 @@ from paradrop.backend.pdfcd import apiinternal
 
 class Nexus(nexus.NexusBase):
 
-    def __init__(self, mode):
+    def __init__(self, mode, settings={}):
+        mode = eval('nexus.Mode.%s' % mode)
+        
         # Want to change logging functionality? See optional args on the base class and pass them here
-        super(Nexus, self).__init__('router', stealStdio=True, mode=mode, printToConsole=True)
+        super(Nexus, self).__init__(nexus.Type.router, mode, settings=settings, stealStdio=True, printToConsole=True)
 
         # WAMP session to the crossbar router
         self.session = None
@@ -39,13 +41,6 @@ class Nexus(nexus.NexusBase):
         #     print 'No session found!'
 
         super(Nexus, self).onStop()
-
-    # def serverConnected(self, avatar, realm):
-    #     output.out.info('Server Connected!')
-
-    # def serverDisconnected(self, avatar, realm):
-    #     output.out.warn('Server Disconnected!')
-    #     reactor.callLater(.1, self.connect)
 
     @defer.inlineCallbacks
     def connect(self):

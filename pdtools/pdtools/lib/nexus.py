@@ -27,7 +27,7 @@ connection callbacks using smokesignals (see paradrop/main.py). DO NOT
 store connections yourself-- riffle already does that and you'll screw up the portal!
 
 Version 2 changes: 
-    Should be able to call nexus.core.paths.logPath
+    Should be able to call nexus.core.path.logPath
 '''
 
 import os
@@ -71,20 +71,20 @@ class NexusBase(object):
     '''
 
     ###############################################################################
-    # Paths. Dump: 'print nexus.core.paths'
+    # Paths. Dump: 'print nexus.core.path'
     ###############################################################################
 
-    # The three options for root file directory. Eventually end up in nexus.core.paths.root
-    PATH_ROOT = None                                    # nexus.core.paths.root
+    # The three options for root file directory. Eventually end up in nexus.core.path.root
+    PATH_ROOT = None                                    # nexus.core.path.root
     PATH_SNAPPY = os.getenv("SNAP_APP_DATA_PATH", None)
     PATH_LOCAL = os.path.expanduser('~') + '/.paradrop/local/'
     PATH_HOME = os.path.expanduser('~') + '/.paradrop/'
     PATH_CURRENT = os.getcwd() + '/.paradrop/'
 
-    PATH_LOG = '/logs/'                                 # nexus.core.paths.log
-    PATH_KEY = '/keys/'                                 # nexus.core.paths.key
-    PATH_MISC = '/misc/'                                # nexus.core.paths.misc
-    PATH_CONFIG = '/config'                             # nexus.core.paths.config
+    PATH_LOG = 'logs/'                                 # nexus.core.path.log
+    PATH_KEY = 'keys/'                                 # nexus.core.path.key
+    PATH_MISC = 'misc/'                                # nexus.core.path.misc
+    PATH_CONFIG = 'config'                             # nexus.core.path.config
 
     ###############################################################################
     # Net. Dump: 'print nexus.core.net'
@@ -138,7 +138,7 @@ class NexusBase(object):
         '''
 
         # Create the attr redirectors. These allow for nexus.net.stuff
-        self.paths = AttrWrapper()
+        self.path = AttrWrapper()
         self.net = AttrWrapper()
         self.meta = AttrWrapper()
         self.info = AttrWrapper()
@@ -159,10 +159,10 @@ class NexusBase(object):
         resolveNetwork(self, self.meta.mode)
 
         # Set info by loading from paths
-        loadConfig(self, self.paths.config)
+        loadConfig(self, self.path.config)
 
         # Lock all the wrapper objects except info. That one we register to the save function
-        [x._lock() for x in [self.paths, self.net, self.meta]]
+        [x._lock() for x in [self.path, self.net, self.meta]]
         self.info.setOnChange(self.onInfoChange)
 
         # Done with data initizlization. From here on out its configuration and state
@@ -170,15 +170,14 @@ class NexusBase(object):
         # initialize output. If filepath is set, logs to file.
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
         # If printToConsole is set (defaults True) all final output is rendered to stdout
-        # output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=printToConsole)
+        output.out.startLogging(filePath=self.path.log, stealStdio=stealStdio, printToConsole=printToConsole)
 
         # register onStop for the shutdown call
-        # reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
-        # reactor.callLater(0, self.onStart)
+        reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
+        reactor.callLater(0, self.onStart)
 
     def onStart(self):
-        pdid = self.get('pdid') if self.provisioned() else 'unprovisioned router'
-
+        pdid = self.info.pdid if self.provisioned() else 'UNPROVISIONED'
         output.out.usage('%s (%s) coming up' % (self.info.pdid, self.meta.type))
 
     def onStop(self):
@@ -196,7 +195,21 @@ class NexusBase(object):
 
     def save(self):
         ''' Ehh. Ideally this should happen asynchronously. '''
-        writeYaml(self.info.__dict__['contents'], self.paths.config)
+        saveDict = self.info.__dict__['contents']
+        saveDict['version'] = self.meta.version
+
+        writeYaml(saveDict, self.path.config)
+
+    #########################################################
+    # High Level Methods
+    #########################################################
+
+    def provisioned(self):
+        '''
+        Checks if this [whatever] appears to be provisioned or not
+        '''
+
+        return self.info.pdid is not None
 
     #########################################################
     # Keys
@@ -225,12 +238,13 @@ class NexusBase(object):
 
     def __repr__(self):
         ''' Dump everything '''
-        dic = dict(paths=self.paths.contents,net=self.net.contents, info=self.info.contents, meta=str(self.meta))
+        dic = dict(paths=self.path.contents, net=self.net.contents, info=self.info.contents, meta=str(self.meta))
         return json.dumps(dic, sort_keys=True, indent=4)
 
 #########################################################
 # Utils
 #########################################################
+
 
 class AttrWrapper(object):
 
@@ -287,9 +301,9 @@ def resolveNetwork(nex, mode):
     nex.net.host = eval('nex.__class__.HOST_WS_%s' % mode.name.upper())
 
     # Interpolating the websockets port into the url
-    #TODO: take a look at this again
+    # TODO: take a look at this again
     nex.net.host = nex.net.host.replace('PORT', nex.net.port)
-    
+
 
 def makePaths(nex):
     '''
@@ -297,29 +311,29 @@ def makePaths(nex):
     '''
 
     # Default use the Home path (covers tools)
-    nex.paths.root = nex.__class__.PATH_HOME
+    nex.path.root = nex.__class__.PATH_HOME
 
     # Always use current directory when server (since there could be more than one of them )
     if nex.meta.type == Type.server:
-        nex.paths.root = nex.__class__.PATH_CURRENT
+        nex.path.root = nex.__class__.PATH_CURRENT
 
     # we can either resolve the root path based on the mode (which
     # is prefereable) or continue to just use the snappy check to set it
     # In other words, path_snappy if in snappy, else path_vm
     if nex.meta.type == Type.router:
         if nex.PATH_SNAPPY is None:
-            nex.paths.root = nex.__class__.PATH_LOCAL
+            nex.path.root = nex.__class__.PATH_LOCAL
         else:
-            nex.paths.root = nex.__class__.PATH_SNAPPY
+            nex.path.root = nex.__class__.PATH_SNAPPY
 
     # Set boring paths
-    nex.paths.log = nex.paths.root + nex.__class__.PATH_LOG
-    nex.paths.key = nex.paths.root + nex.__class__.PATH_KEY
-    nex.paths.misc = nex.paths.root + nex.__class__.PATH_MISC
-    nex.paths.config = nex.paths.root + nex.__class__.PATH_CONFIG
+    nex.path.log = nex.path.root + nex.__class__.PATH_LOG
+    nex.path.key = nex.path.root + nex.__class__.PATH_KEY
+    nex.path.misc = nex.path.root + nex.__class__.PATH_MISC
+    nex.path.config = nex.path.root + nex.__class__.PATH_CONFIG
 
     # create the paths
-    for x in [nex.paths.root, nex.paths.log, nex.paths.key, nex.paths.misc]:
+    for x in [nex.path.root, nex.path.log, nex.path.key, nex.path.misc]:
         if not os.path.exists(x):
             os.makedirs(x)
 
@@ -342,9 +356,11 @@ def loadConfig(nexus, path):
         os.remove(path)
         createDefaultInfo(path)
         contents = loadYaml(path)
+        writeYaml(contents, path)
 
     nexus.info.pdid = contents['pdid']
     # nexus.info.owner = contents['version']
+
 
 def overrideSettingsDict(nexusClass, settings):
     '''
@@ -359,7 +375,7 @@ def overrideSettingsDict(nexusClass, settings):
             output.out.info('Overriding setting %s with value %s from passed settings' % (k, v))
         else:
             raise KeyError('You have set a setting that does not exist! %s not found!' % k)
-        
+
 
 def overrideSettingsEnv(nexusClass):
     for v in dir(nexusClass):
@@ -367,6 +383,7 @@ def overrideSettingsEnv(nexusClass):
         if replace is not None:
             output.out.info('Overriding setting %s with value %s from envionment variable' % (v, replace))
             setattr(nexusClass, v, replace)
+
 
 def createDefaultInfo(path):
     default = {
@@ -389,6 +406,7 @@ def validateInfo(contents):
 
     for k in INFO_REQUIRES:
         if k not in contents:
+            output.out.err('Contents is missing: ' + str(k))
             return False
 
     return True
@@ -396,6 +414,8 @@ def validateInfo(contents):
 
 def writeYaml(contents, path):
     ''' Overwrites content with YAML representation at given path '''
+    # print 'Writing ' + str(contents) + ' to path ' + str(path)
+
     with open(path, 'w') as f:
         f.write(yaml.dump(contents, default_flow_style=False))
 
@@ -403,4 +423,7 @@ def writeYaml(contents, path):
 def loadYaml(path):
     ''' Return dict from YAML found at path '''
     with open(path, 'r') as f:
-        return yaml.load(f.read())
+        contents = yaml.load(f.read())
+
+    # print 'Loaded ' + str(contents) + ' from path ' + str(path)
+    return contents
