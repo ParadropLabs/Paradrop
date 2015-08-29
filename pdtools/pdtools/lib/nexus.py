@@ -135,11 +135,6 @@ class NexusBase(object):
         '''
         The one big thing this function leaves out is reactor.start(). Call this externally 
         *after* initializing a nexus object. 
-
-        :param type: one of [router, tool, server]
-        :type type: str.
-        :param mode: one of [production, development, test, local]. Changes host and ports.
-            See section "network resolution" below 
         '''
 
         # Create the attr redirectors. These allow for nexus.net.stuff
@@ -149,13 +144,13 @@ class NexusBase(object):
         self.info = AttrWrapper()
 
         # Replace values with settings or environ vars
-        overrideSettingsDict(NexusBase, settings)
-        overrideSettingsEnv(NexusBase)
+        overrideSettingsDict(self.__class__, settings)
+        overrideSettingsEnv(self.__class__)
 
         # Set meta
         self.meta.type = nexusType
         self.meta.mode = mode
-        self.meta.version = NexusBase.VERSION
+        self.meta.version = self.__class__.VERSION
 
         # Set paths
         makePaths(self)
@@ -184,17 +179,12 @@ class NexusBase(object):
     def onStart(self):
         pdid = self.get('pdid') if self.provisioned() else 'unprovisioned router'
 
-        output.out.usage('%s (%s) coming up' % (pdid, self.type))
+        output.out.usage('%s (%s) coming up' % (self.info.pdid, self.meta.type))
 
     def onStop(self):
         self.save()
 
-        # riffle.portal.close()
-
-        # remove any and all pubsub registrations. If not done, this can cause
-        # issues with subs that have to do with network connections
-
-        output.out.usage('%s going down' % self.type)
+        output.out.usage('%s (%s) going down' % (self.info.pdid, self.meta.type))
         smokesignal.clear_all()
         output.out.endLogging()
 
@@ -242,7 +232,6 @@ class NexusBase(object):
 # Utils
 #########################################################
 
-
 class AttrWrapper(object):
 
     '''
@@ -289,49 +278,48 @@ class AttrWrapper(object):
             self.__dict__['onChange'](k, v)
 
 
-def resolveNetwork(nexus, mode):
+def resolveNetwork(nex, mode):
     ''' Given a nexus object and its mode, set its network values '''
-    nexus.net.webPort = eval('NexusBase.PORT_HTTP_%s' % mode.name.upper())
-    nexus.net.port = eval('NexusBase.PORT_WS_%s' % mode.name.upper())
+    nex.net.webPort = eval('nex.__class__.PORT_HTTP_%s' % mode.name.upper())
+    nex.net.port = eval('nex.__class__.PORT_WS_%s' % mode.name.upper())
 
-    nexus.net.webHost = eval('NexusBase.HOST_HTTP_%s' % mode.name.upper())
-    nexus.net.host = eval('NexusBase.HOST_WS_%s' % mode.name.upper())
+    nex.net.webHost = eval('nex.__class__.HOST_HTTP_%s' % mode.name.upper())
+    nex.net.host = eval('nex.__class__.HOST_WS_%s' % mode.name.upper())
 
     # Interpolating the websockets port into the url
     #TODO: take a look at this again
-    nexus.net.host = nexus.net.host.replace('PORT', nexus.net.port)
+    nex.net.host = nex.net.host.replace('PORT', nex.net.port)
     
 
-
-def makePaths(nexus):
+def makePaths(nex):
     '''
     Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
     '''
 
     # Default use the Home path (covers tools)
-    nexus.paths.root = NexusBase.PATH_HOME
+    nex.paths.root = nex.__class__.PATH_HOME
 
     # Always use current directory when server (since there could be more than one of them )
-    if nexus.meta.type == Type.server:
-        nexus.paths.root = NexusBase.PATH_CURRENT
+    if nex.meta.type == Type.server:
+        nex.paths.root = nex.__class__.PATH_CURRENT
 
     # we can either resolve the root path based on the mode (which
     # is prefereable) or continue to just use the snappy check to set it
     # In other words, path_snappy if in snappy, else path_vm
-    if nexus.meta.type == Type.router:
-        if nexus.PATH_SNAPPY is None:
-            nexus.paths.root = NexusBase.PATH_LOCAL
+    if nex.meta.type == Type.router:
+        if nex.PATH_SNAPPY is None:
+            nex.paths.root = nex.__class__.PATH_LOCAL
         else:
-            nexus.paths.root = NexusBase.PATH_SNAPPY
+            nex.paths.root = nex.__class__.PATH_SNAPPY
 
     # Set boring paths
-    nexus.paths.log = nexus.paths.root + NexusBase.PATH_LOG
-    nexus.paths.key = nexus.paths.root + NexusBase.PATH_KEY
-    nexus.paths.misc = nexus.paths.root + NexusBase.PATH_MISC
-    nexus.paths.config = nexus.paths.root + NexusBase.PATH_CONFIG
+    nex.paths.log = nex.paths.root + nex.__class__.PATH_LOG
+    nex.paths.key = nex.paths.root + nex.__class__.PATH_KEY
+    nex.paths.misc = nex.paths.root + nex.__class__.PATH_MISC
+    nex.paths.config = nex.paths.root + nex.__class__.PATH_CONFIG
 
     # create the paths
-    for x in [nexus.paths.root, nexus.paths.log, nexus.paths.key, nexus.paths.misc]:
+    for x in [nex.paths.root, nex.paths.log, nex.paths.key, nex.paths.misc]:
         if not os.path.exists(x):
             os.makedirs(x)
 
@@ -368,16 +356,18 @@ def overrideSettingsDict(nexusClass, settings):
     for k, v in settings.iteritems():
         if getattr(nexusClass, k, None) is not None:
             setattr(nexusClass, k, v)
-            print 'Replacing %s with value %s' % (k, v)
-
-            # print nexusClass.PORT_WS
+            output.out.info('Overriding setting %s with value %s from passed settings' % (k, v))
         else:
             raise KeyError('You have set a setting that does not exist! %s not found!' % k)
         
 
 def overrideSettingsEnv(nexusClass):
-    pass
-    
+    for v in dir(nexusClass):
+        replace = os.environ.get(v, None)
+        if replace is not None:
+            output.out.info('Overriding setting %s with value %s from envionment variable' % (v, replace))
+            setattr(nexusClass, v, replace)
+
 def createDefaultInfo(path):
     default = {
         'version': 1,

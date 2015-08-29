@@ -133,10 +133,10 @@ def testWrappersLocked():
     assert_raises(AttributeError, s, nex.net)
     assert_raises(AttributeError, s, nex.meta)
 
+
 ###############################################################################
 # Setings Overrides
 ###############################################################################
-
 
 def testOverrideWithList():
     replace = dict(PORT_WS_PRODUCTION='5555')
@@ -147,8 +147,16 @@ def testOverrideWithList():
 
 
 def testOverrideWithEnv():
-    os.environ["PORT_WS_PRODUCTION"] = "5555"
+    os.environ["PORT_WS_DEVELOPMENT"] = "5555"
 
-    nex = TestingNexus(nexus.Type.router, nexus.Mode.production, settings=replace)
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.development)
     print nex
     assert nex.net.port == '5555'
+
+def testOverrideWithSubclass():
+    ''' I really dont like this functionality, but meh. '''
+    class Over(nexus.NexusBase):
+        PORT_WS_PRODUCTION = '1111'
+
+    nex = Over(nexus.Type.router, nexus.Mode.production)
+    assert nex.net.port == '1111'
