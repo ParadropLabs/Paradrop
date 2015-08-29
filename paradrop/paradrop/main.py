@@ -19,7 +19,7 @@ class Nexus(nexus.NexusBase):
 
     def __init__(self, mode, settings={}):
         mode = eval('nexus.Mode.%s' % mode)
-        
+
         # Want to change logging functionality? See optional args on the base class and pass them here
         super(Nexus, self).__init__(nexus.Type.router, mode, settings=settings, stealStdio=True, printToConsole=True)
 
@@ -66,6 +66,7 @@ def main():
                    action='store_true')
     p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
     p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
+
     p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test, local]',
                    action='store', type=str, default='production')
 
@@ -73,6 +74,7 @@ def main():
     p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
 
     args = p.parse_args()
+    print args
 
     # Temp- this should go to nexus (the settings portion of it, at least)
     # Change the confd directories so we can run locally

@@ -131,7 +131,7 @@ class NexusBase(object):
     # One of the enum values above this class
     PDID = None                                         # nexus.core.info.pdid
 
-    def __init__(self, nexusType, mode=Mode.development, settings={}, stealStdio=True, printToConsole=True):
+    def __init__(self, nexusType, mode=Mode.development, settings=[], stealStdio=True, printToConsole=True):
         '''
         The one big thing this function leaves out is reactor.start(). Call this externally 
         *after* initializing a nexus object. 
@@ -144,7 +144,7 @@ class NexusBase(object):
         self.info = AttrWrapper()
 
         # Replace values with settings or environ vars
-        overrideSettingsDict(self.__class__, settings)
+        overrideSettingsList(self.__class__, settings)
         overrideSettingsEnv(self.__class__)
 
         # Set meta
@@ -362,14 +362,18 @@ def loadConfig(nexus, path):
     # nexus.info.owner = contents['version']
 
 
-def overrideSettingsDict(nexusClass, settings):
+def overrideSettingsList(nexusClass, settings):
     '''
     Replaces constants settings values with new ones based on the passed list
     and THEN the environment variables as passed in 
     '''
 
+    # settings = {x.split(':')[0]: x.split(':')[1] for x in settings}
+
     # replace settings from dict first
-    for k, v in settings.iteritems():
+    for x in settings:
+        k, v = x.split(':')
+    # for k, v in settings.iteritems():
         if getattr(nexusClass, k, None) is not None:
             setattr(nexusClass, k, v)
             output.out.info('Overriding setting %s with value %s from passed settings' % (k, v))

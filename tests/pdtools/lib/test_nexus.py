@@ -42,11 +42,11 @@ def testMetaAssignment():
 def testPathCreation():
     nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
 
-    assert nex.paths.root == root
-    assert nex.paths.log == root + nexus.NexusBase.PATH_LOG
-    assert nex.paths.key == root + nexus.NexusBase.PATH_KEY
-    assert nex.paths.misc == root + nexus.NexusBase.PATH_MISC
-    assert nex.paths.config == root + nexus.NexusBase.PATH_CONFIG
+    assert nex.path.root == root
+    assert nex.path.log == root + nexus.NexusBase.PATH_LOG
+    assert nex.path.key == root + nexus.NexusBase.PATH_KEY
+    assert nex.path.misc == root + nexus.NexusBase.PATH_MISC
+    assert nex.path.config == root + nexus.NexusBase.PATH_CONFIG
 
 
 def testNetworkResolution():
@@ -129,7 +129,7 @@ def testWrappersLocked():
     def s(wrapper):
         wrapper.a = 2
 
-    assert_raises(AttributeError, s, nex.paths)
+    assert_raises(AttributeError, s, nex.path)
     assert_raises(AttributeError, s, nex.net)
     assert_raises(AttributeError, s, nex.meta)
 
@@ -139,7 +139,7 @@ def testWrappersLocked():
 ###############################################################################
 
 def testOverrideWithList():
-    replace = dict(PORT_WS_PRODUCTION='5555')
+    replace = ['PORT_WS_PRODUCTION:5555']
 
     nex = TestingNexus(nexus.Type.router, nexus.Mode.production, settings=replace)
     print nex
@@ -152,6 +152,7 @@ def testOverrideWithEnv():
     nex = TestingNexus(nexus.Type.router, nexus.Mode.development)
     print nex
     assert nex.net.port == '5555'
+
 
 def testOverrideWithSubclass():
     ''' I really dont like this functionality, but meh. '''
