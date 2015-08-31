@@ -18,7 +18,8 @@ from twisted.internet import defer
 
 from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
-from pdtools.lib import pdutils, store, riffle, names
+from pdtools.lib import pdutils, store, riffle, names, nexus
+# from pdtools.lib.nexus import core
 
 
 ###############################################################################
@@ -63,18 +64,6 @@ def printFailure(r):
 
 @defaultCallbacks
 @defer.inlineCallbacks
-def echo(reactor, host, port):
-    avatar = yield riffle.portal.connect(host=host, port=port)
-    response = yield avatar.echo("Hello!")
-    defer.returnValue(response)
-
-
-@defer.inlineCallbacks
-def test(r):
-    avatar = yield riffle.portal.connect()
-    response = yield avatar.test()
-
-    contents = yield response.callRemote('stuff')
-    print contents
-
-    defer.returnValue(response)
+def ping():
+    ret = yield nexus.core.session.call('pd', 'ping')
+    print 'Ping result: ' + str(ret)

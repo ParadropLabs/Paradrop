@@ -25,8 +25,9 @@ from pkg_resources import get_distribution
 from docopt import docopt
 from twisted.internet import task
 from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
 
-from pdtools.lib import output, riffle, names, cxbr
+from pdtools.lib import output, riffle, names, cxbr, nexus
 from pdtools.coms import routers, general, server
 from pdtools.lib.store import store
 
@@ -111,8 +112,6 @@ must be online.
 def routerMenu():
     args = docopt(routerDoc, options_first=False)
 
-    checkLoggedIn()
-
     if args['provision']:
         task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
 
@@ -125,8 +124,6 @@ def routerMenu():
 
 def chuteMenu():
     args = docopt(chuteDoc, options_first=False)
-
-    checkLoggedIn()
 
     if args['install']:
         return routers.installChute(args['<host>'], args['<port>'], args['<path-to-config>'])
@@ -145,14 +142,12 @@ def chuteMenu():
 
 def listMenu():
     args = docopt(listDoc)
-    checkLoggedIn()
 
-    task.react(server.list)
+    return server.list()
 
 
 def logsMenu():
     args = docopt(logsDoc)
-    checkLoggedIn()
 
     reactor.callLater(.1, server.logs, None, args['<name>'])
     reactor.run()
@@ -163,30 +158,53 @@ def logsMenu():
 # Utility and Initialization
 ###################################################################
 
-def checkLoggedIn():
-    # logged in calls
-    if not store.loggedIn():
-        print 'You must login first.'
-        exit(0)
+class Nexus(nexus.NexusBase):
 
-
-def setup(displayToConsole=False, logLevel=0):
     '''
-    Boilerplate setup. Start the logger, give riffle crypto keys, and 
-    initialize riffle's portal by creating name to realm assignments
+    Core nexus subclass. This handles all the high level operations for 
+    tools, but should be the lightest of the three nexus subclasses by far. 
+
+    The only core piece of functionality here is logins and handling bad connections.
     '''
-    # For now, don't grab STDIO and don't write random log noise to conosle
-    output.out.startLogging(stealStdio=False, printToConsole=False)
 
-    # Initialize riffle with default values (can be overridden later)
-    # NOTE: riffle serves on its own default port. This is a different port from the const above
-    # riffle.portal.certCa = store.getKey('ca.pem')
-    # riffle.portal.keyPrivate = store.getKey('client.pem')
-    # riffle.portal.host = SERVER_HOST
+    def __init__(self, mode, settings=[]):
+        # get a Mode.production, Mode.test, etc from the passed string
+        mode = eval('nexus.Mode.%s' % mode)
 
-    # Register realms. See riffle documentation for Realm in pdtools.lib.riffle
-    # riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(server.ServerPerspective))
-    # riffle.portal.addRealm(names.matchers[names.NameTypes.router], riffle.Realm(riffle.RifflePerspective))
+        # Want to change logging functionality? See optional args on the base class and pass them here
+        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=True)
+
+    def onStart(self):
+        super(Nexus, self).onStart()
+
+    def onStop(self):
+        super(Nexus, self).onStop()
+
+
+@inlineCallbacks
+def connectAndCall(command):
+    '''
+    Convenience method-- wait for nexus to finish connecting and then 
+    make the call. 
+    '''
+
+    print 'Attempting to connect with command' + str(command)
+
+    # Ask the reactor to connect
+    sess = yield nexus.core.connect(cxbr.BaseSession)
+
+    # Unpublished
+    if command == 'ping':
+        yield general.ping()
+
+    # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
+    elif command in 'router chute list logs'.split():
+        yield eval('%sMenu' % command)()
+
+    else:
+        print "%r is not a paradrop command. See 'paradrop -h'." % command
+
+    reactor.stop()
 
 
 def main():
@@ -195,9 +213,10 @@ def main():
     argv = [args['<command>']] + args['<args>']
     command = args['<command>']
 
-    # Check for verbose flag. If set, turn on the serious logging.
-    # TODO: set lower level log filters based on the number of '-v's passed in
-    setup(displayToConsole=args['--verbose'])
+    # Create and assign the root nexus object
+    nexus.core = Nexus('local')
+
+    # TODO: If not provisioned, we have to change our realm into the unprovisioned one
 
     if command == 'login':
         task.react(server.login, (SERVER_HOST, SERVER_PORT,))
@@ -205,16 +224,18 @@ def main():
     if command == 'register':
         task.react(server.register, (SERVER_HOST, SERVER_PORT,))
 
-    # It doesn't matter what the call is. If we got to this point then we have to instantiate a
-    # crossbar session
-    # pdid = store.getConfig('pdid')
-    # sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
+    # if not nexus.core.provisioned():
+    #     print 'You must login first.'
+    #     exit(0)
 
-    # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
-    if command in 'router chute list logs'.split():
-        return eval('%sMenu' % args['<command>'])()
+    if not store.loggedIn():
+        print 'You must login first.'
+        exit(0)
 
-    exit("%r is not a paradrop command. See 'paradrop -h'." % args['<command>'])
+    # Start the reactor, start the nexus connection, and then start the call
+    reactor.callLater(0, connectAndCall, args['<command>'])
+    reactor.run()
+
 
 if __name__ == '__main__':
     main()

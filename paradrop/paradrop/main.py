@@ -24,16 +24,15 @@ class Nexus(nexus.NexusBase):
         # Want to change logging functionality? See optional args on the base class and pass them here
         super(Nexus, self).__init__(nexus.Type.router, mode, settings=settings, stealStdio=True, printToConsole=True)
 
-        # WAMP session to the crossbar router
-        self.session = None
-
     def onStart(self):
         super(Nexus, self).onStart()
 
+        # onStart is called when the reactor starts, not when the connection is made.
+        # Check for provisioning keys and attempt to connect
         if not self.provisioned():
             output.out.warn('Router has no keys or identity. Waiting to connect to to server.')
         else:
-            reactor.callLater(.1, self.connect)
+            return self.connect(apiinternal.RouterSession)
 
     def onStop(self):
         # if self.session is not None:
@@ -42,19 +41,6 @@ class Nexus(nexus.NexusBase):
         #     print 'No session found!'
 
         super(Nexus, self).onStop()
-
-    @defer.inlineCallbacks
-    def connect(self):
-        '''
-        Continuously tries to connect to server. This needs to be replaced with 
-        crossbar logic.
-        '''
-        print 'Trying to connect to server...'
-
-        HOST = "ws://paradrop.io:9080/ws"
-
-        pdid = self.get('pdid')
-        self.session = yield apiinternal.RouterSession.start(HOST, pdid)
 
 
 def main():

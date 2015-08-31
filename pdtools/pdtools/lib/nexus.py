@@ -1,5 +1,5 @@
 '''
-Stateful, singleton, command and control center. This is the brains of the three 
+Stateful, singleton, command and control center. This is the brains of the three
 paradrop components: tools, router, and server.
 
 See docstring for NexusBase class for information on settings.
@@ -33,8 +33,9 @@ import json
 from enum import Enum
 import smokesignal
 from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks, returnValue
 
-from pdtools.lib import store, riffle, output
+from pdtools.lib import store, riffle, output, cxbr
 
 # Global access. Assign this wherever you instantiate the Nexus object:
 #       nexus.core = MyNexusSubclass()
@@ -54,21 +55,21 @@ class NexusBase(object):
         1- module imported, initial values assigned (as written below)
         2- class is instatiated, passed settings or environ replace values
         3- instance chooses appropriate values based on current state (production, router, etc)
-            Each category has its own method for initialization here 
+            Each category has its own method for initialization here
             (see: resolveNetwork, resolvePaths)
 
-    DO NOT MODIFY CONSTS AT RUNTIME. Add new settings, pass in settings changes, 
-    or set environment variables. 
+    DO NOT MODIFY CONSTS AT RUNTIME. Add new settings, pass in settings changes,
+    or set environment variables.
 
-    DO NOT ACCESS CONSTS AT RUNTIME. These are the initial states. They are 
-    evaluated and mapped to readable names. Their resulting attribute names are 
+    DO NOT ACCESS CONSTS AT RUNTIME. These are the initial states. They are
+    evaluated and mapped to readable names. Their resulting attribute names are
     shown as a comment to the right of each declaration.
 
     To dump all values:
         from pdtools.lib import nexus
         print nexus.core
 
-    To dump a subset of values: 
+    To dump a subset of values:
         from pdtools.lib import nexus
         print nexus.core.net
         print nexus.core.path
@@ -76,7 +77,7 @@ class NexusBase(object):
     Not yet implemented: settings, chutes
 
     EXAMPLE:
-        We want to resolve port dynamically based on type and mode. First, 
+        We want to resolve port dynamically based on type and mode. First,
         we enumerate the possibilities as consts:
             PORT_PRODUCTION = 1234                          # nexus.core.net.port
             PORT_DEVELOPMENT = 2345
@@ -167,8 +168,8 @@ class NexusBase(object):
 
     def __init__(self, nexusType, mode=Mode.development, settings=[], stealStdio=True, printToConsole=True):
         '''
-        The one big thing this function leaves out is reactor.start(). Call this externally 
-        *after* initializing a nexus object. 
+        The one big thing this function leaves out is reactor.start(). Call this externally
+        *after* initializing a nexus object.
         '''
 
         # Create the attr redirectors. These allow for nexus.net.stuff
@@ -208,11 +209,16 @@ class NexusBase(object):
 
         # register onStop for the shutdown call
         reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
+
+        # The reactor needs to be runnnig before this call is fired, since we start the session
+        # here. Assuming callLater doesn't fire until thats happened
         reactor.callLater(0, self.onStart)
 
     def onStart(self):
         pdid = self.info.pdid if self.provisioned() else 'UNPROVISIONED'
-        output.out.usage('%s (%s) coming up' % (self.info.pdid, self.meta.type))
+        output.out.usage('%s (%s: %s) coming up' % (self.info.pdid, self.meta.type, self.meta.mode))
+
+        # Start trying to connect to cxbr fabric
 
     def onStop(self):
         self.save()
@@ -220,6 +226,34 @@ class NexusBase(object):
         output.out.usage('%s (%s) going down' % (self.info.pdid, self.meta.type))
         smokesignal.clear_all()
         output.out.endLogging()
+
+    @inlineCallbacks
+    def connect(self, sessionClass):
+        '''
+        Takes the given session class and attempts to connect to the crossbar fabric.
+
+        If an existing session is connected, it is cleanly closed.
+        '''
+        self.session = yield sessionClass.start(self.net.host, self.info.pdid)
+        returnValue(self.session)
+
+    def onConnect(self):
+        '''
+        Called when the session passed into connect suceeds in its connection.
+        That session object is assigned to self.session.
+        '''
+        if not self.provisioned():
+            output.out.warn('Router has no keys or identity. Waiting to connect to to server.')
+        else:
+            reactor.callLater(.1, self.connect)
+
+    def onDisconnect(self):
+        ''' Called when the crossbar session disconnects intentionally (cleanly). '''
+        pass
+
+    def onConnectionLost(self):
+        ''' Called when our session is lost by accident. '''
+        pass
 
     def onInfoChange(self, key, value):
         '''
@@ -245,20 +279,25 @@ class NexusBase(object):
 
         return self.info.pdid is not None
 
+    def provision(self, pdid, keys):
+        ''' Temporary method, things dont work like this anymore '''
+
+        self.info.pdid = pdid
+
     #########################################################
     # Keys
     #########################################################
 
     def saveKey(self, key, name):
         ''' Save the key with the given name. Overwrites by default '''
-        path = self.keyPath + name
+        path = self.paths.key + name
 
         with open(path, 'wb') as f:
             f.write(key)
 
     def getKey(self, name):
         ''' Returns the given key or None '''
-        path = self.keyPath + name
+        path = self.paths.key + name
 
         if os.path.isfile(path):
             with open(path, 'rb') as f:

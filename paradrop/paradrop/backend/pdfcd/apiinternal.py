@@ -135,7 +135,8 @@ def api_provision(pdid, key, cert):
     if riffle.portal.certCa:
         raise ValueError("This device is already provisioned as " + nexus.core.get('pdid'))
 
-    nexus.core.set('pdid', pdid)
+    # nexus.core.set('pdid', pdid)
+    nexus.core.provision(pdid, None)
     nexus.core.saveKey(key, 'pub')
     nexus.core.saveKey(cert, 'ca')
 

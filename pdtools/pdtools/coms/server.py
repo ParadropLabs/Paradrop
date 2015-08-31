@@ -17,11 +17,12 @@ from twisted.internet import reactor
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
-from pdtools.lib import riffle, names, cxbr
+# from pdtools.lib.nexus import core
+from pdtools.lib import riffle, names, cxbr, nexus
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
 
-# HOST = "ws://127.0.0.s1:9080/ws"
+# HOST = "ws://127.0.0.1:9080/ws"
 HOST = "ws://paradrop.io:9080/ws"
 
 ###############################################################################
@@ -31,13 +32,10 @@ HOST = "ws://paradrop.io:9080/ws"
 
 @general.failureCallbacks
 @inlineCallbacks
-def list(r):
+def list():
     ''' Return the resources this user owns. '''
 
-    pdid = store.getConfig('pdid')
-    sess = yield cxbr.BaseSession.start(HOST, pdid)
-
-    ret = yield sess.call('pd', 'list')
+    ret = yield nexus.core.session.call('pd', 'list')
 
     store.saveConfig('chutes', ret['chutes'])
     store.saveConfig('routers', ret['routers'])
@@ -98,6 +96,22 @@ def logs(r, target):
     sub = yield sess.subscribe(printem, target, 'logs')
 
 
+@general.failureCallbacks
+@inlineCallbacks
+def ping(r):
+    ''' Return the resources this user owns. '''
+
+    print 'Attempting to ping at ' + str(HOST)
+
+    pdid = store.getConfig('pdid')
+    sess = yield cxbr.BaseSession.start(HOST, pdid)
+
+    ret = yield sess.call('pd', 'ping')
+    print 'Ping completing with result: ' + str(ret)
+
+    returnValue(None)
+
+
 ###############################################################################
 # Authentication
 ###############################################################################
@@ -110,7 +124,8 @@ def authCallbacks(f):
 
 
 def authSuccess(r):
-    store.saveConfig('pdid', r['_id'])
+    nexus.core.provision(r['_id'], None)
+    # store.saveConfig('pdid', r['_id'])
     store.saveKey(r['keys'], 'client.pem')
     store.saveKey(r['ca'], 'ca.pem')
 
