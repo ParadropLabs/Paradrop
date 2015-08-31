@@ -17,7 +17,6 @@ from twisted.internet import reactor
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
-# from pdtools.lib.nexus import core
 from pdtools.lib import riffle, names, cxbr, nexus
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
@@ -25,12 +24,6 @@ from pdtools.lib.exceptions import *
 # HOST = "ws://127.0.0.1:9080/ws"
 HOST = "ws://paradrop.io:9080/ws"
 
-###############################################################################
-# Crossbar
-###############################################################################
-
-
-@general.failureCallbacks
 @inlineCallbacks
 def list():
     ''' Return the resources this user owns. '''
@@ -42,23 +35,18 @@ def list():
     store.saveConfig('instances', ret['instances'])
 
     printOwned()
-    returnValue(None)
 
 
-@general.failureCallbacks
 @inlineCallbacks
-def createRouter(r, name):
+def createRouter(name):
     ''' Create a new router. '''
 
-    pdid = store.getConfig('pdid')
-    sess = yield cxbr.BaseSession.start(HOST, pdid)
+    name = nexus.core.info.pdid + '.' + name
 
-    name = pdid + '.' + name
-
-    ret = yield sess.call('pd', 'provisionRouter', name)
+    ret = yield nexus.core.session.call('pd', 'provisionRouter', name)
     store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
 
-    ret = yield sess.call('pd', 'list')
+    ret = yield nexus.core.session.call('pd', 'list')
 
     store.saveConfig('chutes', ret['chutes'])
     store.saveConfig('routers', ret['routers'])
@@ -68,20 +56,17 @@ def createRouter(r, name):
     printOwned()
 
 
-@general.failureCallbacks
 @inlineCallbacks
-def logs(r, target):
+def logs(target):
     '''
     Query the server for all logs that the given pdid has access to. Must be a fully qualified name.
 
     NOTE: in progress. For now, just pass the name of one of your routers.
+    TODO: check for bad router name. Happen on the server? Are we storing anything locally?
     '''
 
-    pdid = store.getConfig('pdid')
-    sess = yield cxbr.BaseSession.start(HOST, pdid)
-
     # Note the lack of validation
-    target = pdid + '.' + target
+    target = nexus.core.info.pdid + '.' + target
     print 'Asking for logs for ' + target
 
     # Rending method
@@ -89,27 +74,17 @@ def logs(r, target):
         for x in l:
             print out.messageToString(x)
 
-    oldLogs = yield sess.call('pd', 'getLogs', target, 0)
+    oldLogs = yield nexus.core.session.call('pd', 'getLogs', target, 0)
 
     printem(None, oldLogs)
 
-    sub = yield sess.subscribe(printem, target, 'logs')
+    sub = yield nexus.core.session.subscribe(printem, target, 'logs')
 
+    # Never return, let the user stop with a keyboard interrupt
+    # we could return if the router is offline, but user may want to wait 
+    # for it 
+    yield Deferred()
 
-@general.failureCallbacks
-@inlineCallbacks
-def ping(r):
-    ''' Return the resources this user owns. '''
-
-    print 'Attempting to ping at ' + str(HOST)
-
-    pdid = store.getConfig('pdid')
-    sess = yield cxbr.BaseSession.start(HOST, pdid)
-
-    ret = yield sess.call('pd', 'ping')
-    print 'Ping completing with result: ' + str(ret)
-
-    returnValue(None)
 
 
 ###############################################################################
@@ -125,7 +100,7 @@ def authCallbacks(f):
 
 def authSuccess(r):
     nexus.core.provision(r['_id'], None)
-    # store.saveConfig('pdid', r['_id'])
+
     store.saveKey(r['keys'], 'client.pem')
     store.saveKey(r['ca'], 'ca.pem')
 

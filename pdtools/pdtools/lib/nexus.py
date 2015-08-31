@@ -39,7 +39,7 @@ from pdtools.lib import store, riffle, output, cxbr
 
 # Global access. Assign this wherever you instantiate the Nexus object:
 #       nexus.core = MyNexusSubclass()
-core = None
+core = 1
 
 # The type and mode of this nexus instance
 Type = Enum('Type', 'router, tools, server')

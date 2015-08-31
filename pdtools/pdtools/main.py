@@ -21,6 +21,7 @@ To run this code from the command line:
 '''
 
 from pkg_resources import get_distribution
+import sys
 
 from docopt import docopt
 from twisted.internet import task
@@ -42,7 +43,8 @@ usage: paradrop [options] <command> [<args>...]
 options:
    -h, --help
    --version
-   -v, --verbose    Show verbose internal output       
+   -v, --verbose    Show verbose internal output   
+   -m, --mode=MODE  production, development, test, or local [default: production]
    
 commands:
     router     Manage routers
@@ -113,10 +115,10 @@ def routerMenu():
     args = docopt(routerDoc, options_first=False)
 
     if args['provision']:
-        task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
+        return routers.provisionRouter(args['<name>'], args['<host>'], args['<port>'])
 
     elif args['create']:
-        task.react(server.createRouter, (args['<name>'],))
+        return server.createRouter(args['<name>'])
 
     else:
         print routerDoc
@@ -149,10 +151,7 @@ def listMenu():
 def logsMenu():
     args = docopt(logsDoc)
 
-    reactor.callLater(.1, server.logs, None, args['<name>'])
-    reactor.run()
-    exit(0)
-
+    return server.logs(args['<name>'])
 
 ###################################################################
 # Utility and Initialization
@@ -180,38 +179,40 @@ class Nexus(nexus.NexusBase):
     def onStop(self):
         super(Nexus, self).onStop()
 
-
-@inlineCallbacks
 def connectAndCall(command):
     '''
     Convenience method-- wait for nexus to finish connecting and then 
     make the call. 
+
+    The subhandler methods should not call reactor.stop, just return.
     '''
-
-    print 'Attempting to connect with command' + str(command)
-
-    # Ask the reactor to connect
-    sess = yield nexus.core.connect(cxbr.BaseSession)
 
     # Unpublished
     if command == 'ping':
-        yield general.ping()
+        d = general.ping()
 
     # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
     elif command in 'router chute list logs'.split():
-        yield eval('%sMenu' % command)()
+        d = eval('%sMenu' % command)()
 
     else:
         print "%r is not a paradrop command. See 'paradrop -h'." % command
+        return
+
+    # Ask the reactor to connect
+    done = nexus.core.connect(cxbr.BaseSession)
+    done.addCallback(d)
 
     reactor.stop()
-
 
 def main():
     # present documentation, extract arguments
     args = docopt(rootDoc, version=get_distribution('pdtools').version, options_first=True, help=True)
     argv = [args['<command>']] + args['<args>']
     command = args['<command>']
+
+    print args
+    # exit(0)
 
     # Create and assign the root nexus object
     nexus.core = Nexus('local')
@@ -230,7 +231,7 @@ def main():
 
     if not store.loggedIn():
         print 'You must login first.'
-        exit(0)
+        return
 
     # Start the reactor, start the nexus connection, and then start the call
     reactor.callLater(0, connectAndCall, args['<command>'])

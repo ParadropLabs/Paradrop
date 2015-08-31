@@ -14,7 +14,7 @@ from twisted.internet import defer
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
 from pdtools.lib.store import store
-from pdtools.lib import pdutils, riffle
+from pdtools.lib import pdutils, riffle, nexus
 from pdtools.lib.output import out
 
 
@@ -22,13 +22,21 @@ from pdtools.lib.output import out
 # Riffle and Non-riffle implementations
 ###############################################################################
 
-@general.defaultCallbacks
 @defer.inlineCallbacks
-def provisionRouter(r, name, host, port):
+def provisionRouter(name, host, port):
+
+    routers = yield nexus.core.session.call('pd', 'list')
+    routers = routers['routers']
+    pdid = nexus.core.info.pdid + '.' + name
+
+    # print 'Got list: ' + str(routers)
+    for x in routers: 
+        print x['_id']
 
     # Bug: if the user sets the name of the router as their username, this will
     # fail badly
-    target = [x for x in store.getConfig('routers') if name in x['_id']]
+    target = filter(lambda x: x['_id'] == pdid, routers)
+    # target = [x for x in store.getConfig('routers') if name in x['_id']]
 
     if len(target) == 0:
         print 'Router with name ' + name + ' not found.'
