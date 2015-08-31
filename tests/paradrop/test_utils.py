@@ -256,9 +256,9 @@ def test_uci():
     from paradrop.lib import settings
 
     # Test functions for finding path to UCI files
-    settings.UCI_CONFIG_DIR = "/tmp/config"
-    assert uci.getSystemConfigDir() == "/tmp/config"
-    assert uci.getSystemPath("network") == "/tmp/config/network"
+    settings.UCI_CONFIG_DIR = "/tmp/config.d"
+    assert uci.getSystemConfigDir() == "/tmp/config.d"
+    assert uci.getSystemPath("network") == "/tmp/config.d/network"
 
     # Test stringify function
     assert uci.stringify("a") == "a"

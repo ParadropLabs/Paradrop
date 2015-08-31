@@ -139,7 +139,7 @@ def updateSettings(slist=[]):
     dataPath = os.environ.get("SNAP_APP_DATA_PATH", None)
     if dataPath is not None:
         mod.FC_CHUTESTORAGE_SAVE_PATH = os.path.join(dataPath, "chutes")
-        mod.UCI_CONFIG_DIR = os.path.join(dataPath, "config")
+        mod.UCI_CONFIG_DIR = os.path.join(dataPath, "config.d")
 
     # First overwrite settings they may have provided with the arg list
     for kv in slist:

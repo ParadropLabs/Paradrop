@@ -83,7 +83,7 @@ def main():
     # Change the confd directories so we can run locally
     if args.local:
         settings.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
-        settings.UCI_CONFIG_DIR = "/tmp/config"
+        settings.UCI_CONFIG_DIR = "/tmp/config.d"
 
     # Check for settings to overwrite (MOVE TO NEXUS)
     settings.updateSettings(args.settings)

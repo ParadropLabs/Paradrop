@@ -17,7 +17,7 @@ dont worry about failure conditions.) Check documentation for more information.
 
 To run this code from the command line:
     export PDCONFD_WRITE_DIR="/tmp/pdconfd"
-    export UCI_CONFIG_DIR="/tmp/config"
+    export UCI_CONFIG_DIR="/tmp/config.d"
 '''
 
 from pkg_resources import get_distribution
