@@ -3,6 +3,7 @@ import network
 import wifi
 import dhcp
 import firewall
+import hostconfig
 import osconfig
 import dockerconfig
 import configservice

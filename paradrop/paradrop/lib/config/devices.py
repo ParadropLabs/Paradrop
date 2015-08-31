@@ -17,6 +17,7 @@ import re
 from paradrop.lib.utils import pdos, uci
 from pdtools.lib.output import out
 from paradrop.lib import settings
+from paradrop.lib.config import hostconfig, uciutils
 
 SYS_DIR = "/sys/class/net"
 EXCLUDE_IFACES = set(["lo"])
@@ -62,29 +63,17 @@ def isWireless(ifname):
     return pdos.exists(check_path)
 
 
-def setConfig(chuteName, sections, filepath):
-    cfgFile = uci.UCIConfig(filepath)
-
-    # Set the name in the comment field.
-    for config, options in sections:
-        config['comment'] = chuteName
-
-    oldSections = cfgFile.getChuteConfigs(chuteName)
-    if not uci.chuteConfigsMatch(oldSections, sections):
-        cfgFile.delConfigs(oldSections)
-        cfgFile.addConfigs(sections)
-        cfgFile.save(internalid=chuteName)
-
-
-#
-# Chute update functions
-#
-
-def getSystemDevices(update):
+def detectSystemDevices():
     """
     Detect devices on the system.
 
-    Store device information in cache key "networkDevices".
+    The result is three lists stored in a dictionary.  The three lists are
+    indexed by 'wan', 'wifi', and 'lan'.  Other devices may be supported by
+    adding additional lists.
+
+    Within each list, a device is represented by a dictionary.  Currently, only
+    the 'name' field is defined.  Later, we may fill in device information
+    (e.g. what channels a WiFi card supports).
     """
     devices = dict()
     devices['wan'] = list()
@@ -108,6 +97,35 @@ def getSystemDevices(update):
         else:
             devices['lan'].append(dev)
 
+    return devices
+
+
+def setConfig(chuteName, sections, filepath):
+    cfgFile = uci.UCIConfig(filepath)
+
+    # Set the name in the comment field.
+    for config, options in sections:
+        config['comment'] = chuteName
+
+    oldSections = cfgFile.getChuteConfigs(chuteName)
+    if not uci.chuteConfigsMatch(oldSections, sections):
+        cfgFile.delConfigs(oldSections)
+        cfgFile.addConfigs(sections)
+        cfgFile.save(internalid=chuteName)
+
+
+#
+# Chute update functions
+#
+
+
+def getSystemDevices(update):
+    """
+    Detect devices on the system.
+
+    Store device information in cache key "networkDevices".
+    """
+    devices = detectSystemDevices()
     update.new.setCache('networkDevices', devices)
 
 
@@ -117,26 +135,20 @@ def setSystemDevices(update):
 
     Creates basic sections that all chutes require such as the "wan" interface.
     """
-    devices = update.new.getCache('networkDevices')
-    if devices is None:
-        return
+    hostConfig = update.new.getCache('hostConfig')
 
-    if len(devices['wan']) == 0:
-        out.warn("No WAN interface found; "
-                 "chute may not have Internet connectivity.")
-    if len(devices['wifi']) == 0:
-        out.warn("No available wireless interfaces found.")
-
+    dhcpSections = list()
     networkSections = list()
     firewallSections = list()
     wirelessSections = list()
 
-    if len(devices['wan']) >= 1:
-        # Only use one WAN device for now.
-        wanDev = devices['wan'][0]
-
+    if 'wan' in hostConfig:
         config = {"type": "interface", "name": "wan"}
-        options = {"ifname": wanDev['name'], "proto": "dhcp"}
+
+        options = dict()
+        options['ifname'] = hostConfig['wan']['interface']
+        options['proto'] = "dhcp"
+
         networkSections.append((config, options))
 
         config = {"type": "zone"}
@@ -150,15 +162,49 @@ def setSystemDevices(update):
         }
         firewallSections.append((config, options))
 
-    # Cycle through the channel list to assign different channels to
-    # WiFi interfaces.
-    channels = itertools.cycle(CHANNELS)
+    if 'lan' in hostConfig:
+        config = {"type": "interface", "name": "lan"}
 
-    for dev in devices['wifi']:
-        config = {"type": "wifi-device", "name": dev['name']}
-        options = {"type": "auto", "channel": channels.next()}
-        wirelessSections.append((config, options))
+        options = dict()
+        options['type'] = "bridge"
 
+        options['proto'] = 'static'
+        options['ipaddr'] = hostConfig['lan']['ipaddr']
+        options['netmask'] = hostConfig['lan']['netmask']
+        uciutils.setList(options, 'ifname', hostConfig['lan']['interfaces'])
+
+        networkSections.append((config, options))
+
+        if 'dhcp' in hostConfig['lan']:
+            dhcp = hostConfig['lan']['dhcp']
+
+            config = {'type': 'dnsmasq'}
+            options = {'interface': 'lan'}
+
+            dhcpSections.append((config, options))
+
+            config = {'type': 'dhcp', 'name': 'lan'}
+            options = {
+                'interface': 'lan',
+                'start': dhcp['start'],
+                'limit': dhcp['limit'],
+                'leasetime': dhcp['leasetime']
+            }
+
+            dhcpSections.append((config, options))
+
+    if 'wifi' in hostConfig:
+        for dev in hostConfig['wifi']:
+            config = {"type": "wifi-device", "name": dev['interface']}
+            options = {
+                'type': 'auto',
+                'channel': dev['channel']
+            }
+
+            wirelessSections.append((config, options))
+
+    setConfig(settings.RESERVED_CHUTE, dhcpSections,
+              uci.getSystemPath("dhcp"))
     setConfig(settings.RESERVED_CHUTE, networkSections,
               uci.getSystemPath("network"))
     setConfig(settings.RESERVED_CHUTE, firewallSections,

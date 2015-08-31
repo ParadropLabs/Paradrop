@@ -3,7 +3,7 @@
 import json
 import urllib
 
-LOG_FILE = "/root/apps/paradrop/0.1.0/logs/log"
+LOG_FILE = "/var/lib/apps/paradrop/0.1.0/logs/log"
 
 if __name__ == "__main__":
     with open(LOG_FILE, "r") as inputFile:

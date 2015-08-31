@@ -145,6 +145,24 @@ def test_config_devices():
     update.old = None
     update.new = MockChute()
 
+    hostConfig = {
+        'wan': {
+            'interface': 'eth0'
+        },
+        'lan': {
+            'interfaces': ['eth1'],
+            'ipaddr': '192.168.1.1',
+            'netmask': '255.255.255.0',
+            'dhcp': {
+                'start': 100,
+                'limit': 100,
+                'leasetime': '12h'
+            }
+        },
+        'wifi': [{'interface': 'wlan0', 'channel': 1}]
+    }
+    update.new.setCache('hostConfig', hostConfig)
+
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
 
     # Calling before getSystemDevices should do nothing.

@@ -224,7 +224,7 @@ def getOSNetworkConfig(update):
     """
     Takes the network interface obj created by
     NetworkManager.getNetworkConfiguration and returns a properly formatted
-    object to be passed to the OpenWrtConfig class.  The object returned is a
+    object to be passed to the UCIConfig class.  The object returned is a
     list of tuples (config, options).
     """
     # Notes:
