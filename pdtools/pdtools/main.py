@@ -55,7 +55,7 @@ commands:
     
     login      Log into Paradrop account on another computer
     register   Register for a Paradrop account
-    logout     Logout of account on this computer
+    logout     Logout of account on this computer (not implemented)
 
 See 'paradrop <command> -h' for more information on a specific command.    
 """
@@ -75,10 +75,14 @@ commands:
 
 chuteDoc = """
 usage:
-    paradrop chute install <host> <port> <path-to-config>
-    paradrop chute delete <host> <port> <name>
-    paradrop chute start <host> <port> <name>
-    paradrop chute stop <host> <port> <name>
+    paradrop [options] chute install <host> <port> <path-to-config>
+    paradrop [options] chute delete <host> <port> <name>
+    paradrop [options] chute start <host> <port> <name>
+    paradrop [options] chute stop <host> <port> <name>
+
+options:
+   -v, --verbose    Show verbose internal output 
+   -m, --mode=MODE  production, development, test, or local [default: production]
 
 commands: 
     start       Start the installed chute with the given name
@@ -89,10 +93,11 @@ commands:
 
 listDoc = """
 usage: 
-    paradrop list
+    paradrop [options] list
 
 options:
-   -v, --verbose    Show verbose internal output       
+   -v, --verbose    Show verbose internal output 
+   -m, --mode=MODE  production, development, test, or local [default: production]
 
 
 Lists all owned resources.
@@ -100,10 +105,11 @@ Lists all owned resources.
 
 logsDoc = """
 usage: 
-    paradrop logs <name>
+    paradrop [options] logs <name>
 
 options:
-   -v, --verbose    Show verbose internal output       
+   -v, --verbose    Show verbose internal output 
+   -m, --mode=MODE  production, development, test, or local [default: production]      
 
     
 Displays the logs for the provided resource. The resource, commonly a router, 
@@ -181,6 +187,7 @@ class Nexus(nexus.NexusBase):
         super(Nexus, self).onStop()
 
 
+@general.failureCallbacks
 @inlineCallbacks
 def connectAndCall(command):
     '''
@@ -190,22 +197,27 @@ def connectAndCall(command):
     The subhandler methods should not call reactor.stop, just return.
     '''
 
-    try:
-        yield nexus.core.connect(cxbr.BaseSession)
+    # Not he biggest fan of this, but we want to intercept and reformat the
+    # pdserver exceptions
+    # try:
+    yield nexus.core.connect(cxbr.BaseSession)
 
-        # Unpublished
-        if command == 'ping':
-            yield general.ping()
+    # Unpublished
+    if command == 'ping':
+        yield general.ping()
 
-        # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
-        elif command in 'router chute list logs'.split():
-            yield eval('%sMenu' % command)()
+    # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
+    elif command in 'router chute list logs'.split():
+        yield eval('%sMenu' % command)()
 
-        else:
-            print "%r is not a paradrop command. See 'paradrop -h'." % command
-    except:
-        e = sys.exc_info()[0]
-        print e.usage
+    else:
+        print "%r is not a paradrop command. See 'paradrop -h'." % command
+    # except:
+    #     # this only works if the exception is a docopt object. May not work otherwise
+    #     e = sys.exc_info()[0]
+
+    #     print str(e)
+    #     print e.usage
 
     reactor.stop()
 
@@ -216,14 +228,16 @@ def main():
     argv = [args['<command>']] + args['<args>']
     command = args['<command>']
 
-    print args
-    # exit(0)
-
     # Create and assign the root nexus object
-    nexus.core = Nexus('local')
+    mode = args['--mode']
+    if mode not in 'production development test local'.split():
+        print 'You entered an invalid mode. Please enter one of [production, development, test, local]'
+        exit(1)
+
+    nexus.core = Nexus(args['--mode'])
 
     # TODO: If not provisioned, we have to change our realm into the unprovisioned one
-
+    # Make these calls crossbar and move them to an unprovisioned realm
     if command == 'login':
         task.react(server.login, (SERVER_HOST, SERVER_PORT,))
 
