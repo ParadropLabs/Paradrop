@@ -157,6 +157,7 @@ def logsMenu():
 # Utility and Initialization
 ###################################################################
 
+
 class Nexus(nexus.NexusBase):
 
     '''
@@ -179,6 +180,8 @@ class Nexus(nexus.NexusBase):
     def onStop(self):
         super(Nexus, self).onStop()
 
+
+@inlineCallbacks
 def connectAndCall(command):
     '''
     Convenience method-- wait for nexus to finish connecting and then 
@@ -187,23 +190,25 @@ def connectAndCall(command):
     The subhandler methods should not call reactor.stop, just return.
     '''
 
-    # Unpublished
-    if command == 'ping':
-        d = general.ping()
+    try:
+        yield nexus.core.connect(cxbr.BaseSession)
 
-    # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
-    elif command in 'router chute list logs'.split():
-        d = eval('%sMenu' % command)()
+        # Unpublished
+        if command == 'ping':
+            yield general.ping()
 
-    else:
-        print "%r is not a paradrop command. See 'paradrop -h'." % command
-        return
+        # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
+        elif command in 'router chute list logs'.split():
+            yield eval('%sMenu' % command)()
 
-    # Ask the reactor to connect
-    done = nexus.core.connect(cxbr.BaseSession)
-    done.addCallback(d)
+        else:
+            print "%r is not a paradrop command. See 'paradrop -h'." % command
+    except:
+        e = sys.exc_info()[0]
+        print e.usage
 
     reactor.stop()
+
 
 def main():
     # present documentation, extract arguments
