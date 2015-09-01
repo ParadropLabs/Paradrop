@@ -16,8 +16,7 @@ from twisted.internet import reactor
 
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
-from pdtools.lib.store import store
-from pdtools.lib import riffle, names, cxbr, nexus
+from pdtools.lib import nexus
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
 
@@ -27,12 +26,7 @@ def list():
     ''' Return the resources this user owns. '''
 
     ret = yield nexus.core.session.call('pd', 'list')
-
-    store.saveConfig('chutes', ret['chutes'])
-    store.saveConfig('routers', ret['routers'])
-    store.saveConfig('instances', ret['instances'])
-
-    printOwned()
+    printOwned(ret)
 
 
 @inlineCallbacks
@@ -42,16 +36,11 @@ def createRouter(name):
     name = nexus.core.info.pdid + '.' + name
 
     ret = yield nexus.core.session.call('pd', 'provisionRouter', name)
-    store.saveKey(ret['keys'], ret['_id'] + '.client.pem')
+    nexus.core.saveKey(ret['keys'], ret['_id'] + '.client.pem')
 
     ret = yield nexus.core.session.call('pd', 'list')
-
-    store.saveConfig('chutes', ret['chutes'])
-    store.saveConfig('routers', ret['routers'])
-    store.saveConfig('instances', ret['instances'])
-
     print 'New router successfully created'
-    printOwned()
+    printOwned(ret)
 
 
 @inlineCallbacks
@@ -98,8 +87,8 @@ def authCallbacks(f):
 def authSuccess(r):
     nexus.core.provision(r['_id'], None)
 
-    store.saveKey(r['keys'], 'client.pem')
-    store.saveKey(r['ca'], 'ca.pem')
+    nexus.core.saveKey(r['keys'], 'client.pem')
+    nexus.core.saveKey(r['ca'], 'ca.pem')
 
     print 'You have been successfully logged in.'
 
@@ -139,9 +128,9 @@ def register(reactor, host, port):
 # Utils
 ###############################################################################
 
-def printOwned():
-    chutes = store.getConfig('chutes')
-    routers = store.getConfig('routers')
+def printOwned(owned):
+    chutes = owned['chutes']
+    routers = owned['routers']
 
     def pprint(d):
         print '\t' + d['_id']

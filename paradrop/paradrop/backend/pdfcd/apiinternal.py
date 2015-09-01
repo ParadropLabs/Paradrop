@@ -93,41 +93,10 @@ class RouterSession(cxbr.BaseSession):
         else:
             return "Sending command to pdinstall failed"
 
-
-def pollServer(host):
-    '''
-    Poll the server for a connection.
-    '''
-
-    def success(a):
-        print 'Connected to server!'
-
-    riffle.portal.pollConnect(success, host=host)
-
-
-def checkStartRiffle():
-    '''
-    Temporary function. Do not start serving or connecting over riffle
-    until we have our keys (which occurs during currently optional provisioning)
-    '''
-
-    if not riffle.portal.certCa:
-        out.warn("Cannot start riffle server, no CA certificate found")
-        return
-
-    out.info('Received certs, opening riffle portal')
-
-    # Check to make sure we are not already listening
-    # as of this writing we are not checking for previously-provisioned state)
-
-    # Open connection to the server
-    from twisted.internet import reactor
-    reactor.callLater(.1, riffle.portal.connect, HOST)
-
-
 ###############################################################################
 # Old
 ###############################################################################
+
 
 @inlineCallbacks
 def api_provision(pdid, key, cert):
@@ -138,8 +107,8 @@ def api_provision(pdid, key, cert):
     '''
     # temp: check to make sure we're not already provisioned. Do not allow for
     # multiple provisioning. This is a little hacky-- better to move this into store
-    if nexus.core.provisioned():
-        raise ValueError("This device is already provisioned as " + nexus.core.info.pdid)
+    # if nexus.core.provisioned():
+    #     raise ValueError("This device is already provisioned as " + nexus.core.info.pdid)
 
     # nexus.core.set('pdid', pdid)
     nexus.core.provision(pdid, None)
@@ -149,7 +118,7 @@ def api_provision(pdid, key, cert):
 
     # Attempt to connect. WARNING- what happens if we're already connected?
     # Or if we timeout on the connection? The caller will never receive a response
-    yield nexus.core.connect()
+    yield nexus.core.connect(RouterSession)
 
     # Return success to the user
     returnValue('Done!')

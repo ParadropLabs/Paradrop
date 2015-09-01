@@ -9,10 +9,10 @@ Structurally there are three sections. In order:
     - Subcommand handlers
     - Entry point
 
-The main method calls docopt, which parses the first positional command given.
+The main method calls docopt.docopt, which parses the first positional command given.
 If that command matches a sub-command the correct handler is invoked. 
 
-Docopt will not allow execution to continue if the args matcher fails (in other words:
+docopt.docopt will not allow execution to continue if the args matcher fails (in other words:
 dont worry about failure conditions.) Check documentation for more information.
 
 To run this code from the command line:
@@ -23,22 +23,17 @@ To run this code from the command line:
 from pkg_resources import get_distribution
 import sys
 
-from docopt import docopt
+import docopt
 from twisted.internet import task
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from pdtools.lib import output, riffle, names, cxbr, nexus
+from pdtools.lib import cxbr, nexus
 from pdtools.coms import routers, general, server
-from pdtools.lib.store import store
 
 SERVER_HOST = 'paradrop.io'
 # SERVER_HOST = 'localhost'
-<< << << < HEAD
 SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
-== == == =
-SERVER_PORT = 8015
->>>>>> > danger
 
 
 rootDoc = """
@@ -72,6 +67,7 @@ usage:
 
 options:
    -v, --verbose    Show verbose internal output       
+   -m, --mode=MODE  production, development, test, or local [default: production]
 
 commands: 
     create      Create a new router with the given name
@@ -122,8 +118,8 @@ must be online.
 """
 
 
-def routerMenu():
-    args = docopt(routerDoc, options_first=False)
+def routerMenu(s):
+    args = docopt.docopt(routerDoc, options_first=False)
 
     if args['provision']:
         return routers.provisionRouter(args['<name>'], args['<host>'], args['<port>'])
@@ -139,7 +135,7 @@ def routerMenu():
 
 
 def chuteMenu():
-    args = docopt(chuteDoc, options_first=False)
+    args = docopt.docopt(chuteDoc, options_first=False)
 
     host, port = args['<host>'], args['<port>']
 
@@ -158,14 +154,14 @@ def chuteMenu():
     print routerDoc
 
 
-def listMenu():
-    args = docopt(listDoc)
+def listMenu(s):
+    args = docopt.docopt(listDoc)
 
     return server.list()
 
 
-def logsMenu():
-    args = docopt(logsDoc)
+def logsMenu(s):
+    args = docopt.docopt(logsDoc)
 
     return server.logs(args['<name>'])
 
@@ -187,8 +183,10 @@ class Nexus(nexus.NexusBase):
         # get a Mode.production, Mode.test, etc from the passed string
         mode = eval('nexus.Mode.%s' % mode)
 
+        verbose = mode != nexus.Mode.production
+
         # Want to change logging functionality? See optional args on the base class and pass them here
-        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=False)
+        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=verbose)
 
     def onStart(self):
         super(Nexus, self).onStart()
@@ -197,8 +195,42 @@ class Nexus(nexus.NexusBase):
         super(Nexus, self).onStop()
 
 
-@general.failureCallbacks
-@inlineCallbacks
+# @general.failureCallbacks
+# @inlineCallbacks
+# def connectAndCall(command):
+#     '''
+#     Convenience method-- wait for nexus to finish connecting and then
+#     make the call.
+
+#     The subhandler methods should not call reactor.stop, just return.
+#     '''
+
+# Not he biggest fan of this, but we want to intercept and reformat the
+# pdserver exceptions
+# try:
+
+#     yield nexus.core.connect(cxbr.BaseSession)
+
+# Unpublished
+#     if command == 'ping':
+#         yield general.ping()
+
+# Check for a sub-command. If found, pass off execution to the appropriate sub-handler
+#     elif command in 'router chute list logs'.split():
+#         yield eval('%sMenu' % command)()
+
+#     else:
+#         print "%r is not a paradrop command. See 'paradrop -h'." % command
+
+# except:
+# this only works if the exception is a docopt.docopt object. May not work otherwise
+# e = sys.exc_info()[0]
+
+# print str(e)
+# print e.usage
+
+#     reactor.stop()
+
 def connectAndCall(command):
     '''
     Convenience method-- wait for nexus to finish connecting and then 
@@ -211,32 +243,42 @@ def connectAndCall(command):
     # pdserver exceptions
     # try:
 
-    yield nexus.core.connect(cxbr.BaseSession)
+    d = nexus.core.connect(cxbr.BaseSession)
+
+    def e(x):
+        if isinstance(x.value, docopt.DocoptExit):
+            print x.value
+            return None
+        else:
+            return x
 
     # Unpublished
     if command == 'ping':
-        yield general.ping()
+        d.addCallback(general.ping)
 
     # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
     elif command in 'router chute list logs'.split():
-        yield eval('%sMenu' % command)()
+        d.addCallback(eval('%sMenu' % command))
 
     else:
         print "%r is not a paradrop command. See 'paradrop -h'." % command
 
+    d.addErrback(e)
+
     # except:
-    # this only works if the exception is a docopt object. May not work otherwise
+    # this only works if the exception is a docopt.docopt object. May not work otherwise
     #     e = sys.exc_info()[0]
 
     #     print str(e)
     #     print e.usage
 
-    reactor.stop()
+    d.addBoth(lambda x: reactor.stop())
+    # reactor.stop()
 
 
 def main():
     # present documentation, extract arguments
-    args = docopt(rootDoc, version=get_distribution('pdtools').version, options_first=True, help=True)
+    args = docopt.docopt(rootDoc, version=get_distribution('pdtools').version, options_first=True, help=True)
     argv = [args['<command>']] + args['<args>']
     command = args['<command>']
 

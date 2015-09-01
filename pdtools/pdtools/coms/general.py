@@ -15,11 +15,11 @@ suitable for printing.
 import re
 
 from twisted.internet import defer
+from autobahn.wamp import exception
 
 from pdtools.coms.client import RpcClient
 from pdtools.lib.output import out
-from pdtools.lib import pdutils, store, riffle, names, nexus
-# from pdtools.lib.nexus import core
+from pdtools.lib import nexus
 
 
 ###############################################################################
@@ -54,8 +54,15 @@ def printSuccess(r):
 
 
 def printFailure(r):
-    print r
-    return r
+
+    # Autobahn cast exceptions
+    if isinstance(r.value, exception.Error):
+        print r.value.args[0]
+        return None
+
+    else:
+        out.err('Unknown exception: ' + str(r))
+        return r
 
 
 ###############################################################################
@@ -64,6 +71,6 @@ def printFailure(r):
 
 @defaultCallbacks
 @defer.inlineCallbacks
-def ping():
+def ping(sess):
     ret = yield nexus.core.session.call('pd', 'ping')
     print 'Ping result: ' + str(ret)

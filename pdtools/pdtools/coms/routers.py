@@ -13,21 +13,9 @@ from twisted.internet import defer
 
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
-from pdtools.lib.store import store
-<<<<<<< HEAD
-from pdtools.lib import pdutils, riffle, cxbr
-=======
-from pdtools.lib import pdutils, riffle, nexus
->>>>>>> danger
+from pdtools.lib import pdutils, riffle, cxbr, nexus
 from pdtools.lib.output import out
 
-# HOST = "ws://127.0.0.s1:9080/ws"
-HOST = "ws://paradrop.io:9080/ws"
-
-
-###############################################################################
-# Riffle and Non-riffle implementations
-###############################################################################
 
 @defer.inlineCallbacks
 def provisionRouter(name, host, port):
@@ -37,13 +25,12 @@ def provisionRouter(name, host, port):
     pdid = nexus.core.info.pdid + '.' + name
 
     # print 'Got list: ' + str(routers)
-    for x in routers: 
+    for x in routers:
         print x['_id']
 
     # Bug: if the user sets the name of the router as their username, this will
     # fail badly
     target = filter(lambda x: x['_id'] == pdid, routers)
-    # target = [x for x in store.getConfig('routers') if name in x['_id']]
 
     if len(target) == 0:
         print 'Router with name ' + name + ' not found.'
@@ -51,8 +38,8 @@ def provisionRouter(name, host, port):
 
     target = target[0]
 
-    pkey = store.getKey(target['_id'] + '.client.pem')
-    cacert = store.getKey('ca.pem')
+    pkey = nexus.core.getKey(target['_id'] + '.client.pem')
+    cacert = nexus.core.getKey('ca.pem')
 
     client = RpcClient(host, port, 'internal')
     ret = yield client.provision(target['_id'], pkey, cacert)
@@ -65,23 +52,20 @@ def provisionRouter(name, host, port):
 def update(r, name, sources):
     print 'Starting an update command!'
 
-    pdid = store.getConfig('pdid')
-    sess = yield cxbr.BaseSession.start(HOST, pdid)
-
-    target = pdid + '.' + name
+    target = nexus.core.info.pdid + '.' + name
 
     data = {
         'command': 'install',
         'sources': sources
     }
 
-    result = yield sess.call(target, 'update', data)
+    result = yield nexus.core.session.call(target, 'update', data)
     print 'Conpleted with result: ' + result
+
 
 ###############################################################################
 # Chute Operations
 ###############################################################################
-
 
 def installChute(host, port, config):
     '''

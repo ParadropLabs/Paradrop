@@ -291,14 +291,14 @@ class NexusBase(object):
 
     def saveKey(self, key, name):
         ''' Save the key with the given name. Overwrites by default '''
-        path = self.paths.key + name
+        path = self.path.key + name
 
         with open(path, 'wb') as f:
             f.write(key)
 
     def getKey(self, name):
         ''' Returns the given key or None '''
-        path = self.paths.key + name
+        path = self.path.key + name
 
         if os.path.isfile(path):
             with open(path, 'rb') as f:
