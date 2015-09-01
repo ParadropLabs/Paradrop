@@ -36,7 +36,7 @@ DEBUG_MODE = False
 #
 # pdfcd
 #
-PDFCD_PORT = 14321
+# PDFCD_PORT = 14321
 PDFCD_HEADER_VALUE = "*"
 DBAPI_FAILURE_THRESH = float("inf")
 
@@ -52,18 +52,12 @@ RESERVED_CHUTE = "__PARADROP__"
 #
 # Host configuration file
 #
-# HOST_CONFIG_PATH = "/etc/paradrop_host_config"
+HOST_CONFIG_PATH = "/etc/paradrop_host_config"
 
 #
 # UCI configuration files
 #
-# UCI_CONFIG_DIR = "/etc/config"
-
-
-#
-# Output
-#
-LOG_PATH = '/var/run/'  # Not supposed to be for log files but will work for now.
+UCI_CONFIG_DIR = "/etc/config"
 
 #
 # pdconfd
@@ -71,7 +65,7 @@ LOG_PATH = '/var/run/'  # Not supposed to be for log files but will work for now
 # PDCONFD_WRITE_DIR: Directory where automatically generated config files
 # (dnsmasq.conf) will be stored.  It is better to put it in /var/run because
 # /tmp is sandboxed on Snappy.
-# PDCONFD_WRITE_DIR = '/var/run/pdconfd'
+PDCONFD_WRITE_DIR = '/var/run/pdconfd'
 
 PDCONFD_ENABLED = True
 

@@ -119,14 +119,18 @@ class NexusBase(object):
     PATH_MISC = 'misc/'                                # nexus.core.path.misc
     PATH_CONFIG = 'config'                             # nexus.core.path.config
 
+    # This needs work
     PDCONFD_WRITE_DIR = '/var/run/pdconfd'             # nexus.core.path.pdconfdWrite
     PDCONFD_WRITE_DIR_LOCAL = "/tmp/pdconfd"
 
     UCI_CONFIG_DIR = "/etc/config"                     # nexus.core.path.uciConfig
+    UCI_CONFIG_DIR_SNAPPY = "config.d"
     UCI_CONFIG_DIR_LOCAL = "/tmp/config.d"
 
     HOST_CONFIG_PATH = "/etc/paradrop_host_config"     # nexus.core.path.hostConfig
     HOST_CONFIG_PATH_LOCAL = "/tmp/hostconfig.yaml"
+
+    DOCKER_BIN_DIR = "/apps/bin"                       # nexus.core.path.docker
 
     ###############################################################################
     # Network.
@@ -168,6 +172,12 @@ class NexusBase(object):
     # Dump: 'print nexus.core.conf'
     ###############################################################################
 
+    DYNAMIC_NETWORK_POOL = "192.168.128.0/17"           # nexus.core.conf.networkPool
+    PDCONFD_ENABLED = True                              # nexus.core.conf.pdconfdEnabled
+    FC_BOUNCE_UPDATE = None                             # nexus.core.conf.fcBounceUpdate
+    RESERVED_CHUTE = "__PARADROP__"                     # nexus.core.conf.reservedChute
+    FC_CHUTESTORAGE_SAVE_TIMER = 60                     # nexus.core.conf.chuteSaveTimer
+
     ###############################################################################
     # Info. Values that are likely to change with individual users.
     # Dump: 'print nexus.core.info'
@@ -186,6 +196,7 @@ class NexusBase(object):
         self.path = AttrWrapper()
         self.net = AttrWrapper()
         self.meta = AttrWrapper()
+        self.conf = AttrWrapper()
         self.info = AttrWrapper()
 
         # Replace values with settings or environ vars
@@ -202,6 +213,9 @@ class NexusBase(object):
 
         # Set network
         resolveNetwork(self, self.meta.mode)
+
+        # Set config
+        resolveConfig(self, self.meta.mode)
 
         # Set info by loading from paths
         loadConfig(self, self.path.config)
@@ -388,6 +402,14 @@ def resolveNetwork(nex, mode):
     nex.net.host = nex.net.host.replace('PORT', nex.net.port)
 
 
+def resolveConfig(nex, mode):
+    nex.conf.networkPool = nex.__class__.DYNAMIC_NETWORK_POOL
+    nex.conf.pdconfdEnabled = nex.__class__.PDCONFD_ENABLED
+    nex.conf.fcBounceUpdate = nex.__class__.FC_BOUNCE_UPDATE
+    nex.conf.reservedChute = nex.__class__.RESERVED_CHUTE
+    nex.conf.chuteSaveTimer = nex.__class__.FC_CHUTESTORAGE_SAVE_TIMER
+
+
 def resolvePaths(nex):
     '''
     Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
@@ -414,6 +436,7 @@ def resolvePaths(nex):
     nex.path.key = nex.path.root + nex.__class__.PATH_KEY
     nex.path.misc = nex.path.root + nex.__class__.PATH_MISC
     nex.path.config = nex.path.root + nex.__class__.PATH_CONFIG
+    nex.path.docker = nex.__class__.DOCKER_BIN_DIR
 
     # Set old paths
     if nex.meta.mode == Mode.local:

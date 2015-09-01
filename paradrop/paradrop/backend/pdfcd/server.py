@@ -32,11 +32,13 @@ from paradrop.backend.pdfcd import apiinternal
 
 
 class AccessInfo(object):
+
     """
     Track accesses to PDAPI server.
 
     TODO: Implement this class if needed.
     """
+
     def __init__(self, ip, headers, time):
         self.attempts = 1
 

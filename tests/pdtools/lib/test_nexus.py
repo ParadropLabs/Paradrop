@@ -47,6 +47,7 @@ def testPathCreation():
     assert nex.path.key == root + nexus.NexusBase.PATH_KEY
     assert nex.path.misc == root + nexus.NexusBase.PATH_MISC
     assert nex.path.config == root + nexus.NexusBase.PATH_CONFIG
+    assert nex.path.docker == nexus.NexusBase.DOCKER_BIN_DIR
 
 
 def testNetworkResolution():
@@ -63,19 +64,31 @@ def testConfigLoadingEmpty():
     nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
     assert nex.info.pdid == None
 
+
 def testConfdProduction():
     nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
-    
+
     assert nex.path.pdconfdWrite == nexus.NexusBase.PDCONFD_WRITE_DIR
     assert nex.path.uciConfig == nexus.NexusBase.UCI_CONFIG_DIR
     assert nex.path.hostConfig == nexus.NexusBase.HOST_CONFIG_PATH
 
+
 def testConfdProduction():
     nex = TestingNexus(nexus.Type.router, nexus.Mode.local)
-    
+
     assert nex.path.pdconfdWrite == nexus.NexusBase.PDCONFD_WRITE_DIR_LOCAL
     assert nex.path.uciConfig == nexus.NexusBase.UCI_CONFIG_DIR_LOCAL
     assert nex.path.hostConfig == nexus.NexusBase.HOST_CONFIG_PATH_LOCAL
+
+
+def testConfig():
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
+
+    assert nex.conf.networkPool == nexus.NexusBase.DYNAMIC_NETWORK_POOL
+    assert nex.conf.pdconfdEnabled == nexus.NexusBase.PDCONFD_ENABLED
+    assert nex.conf.fcBounceUpdate == nexus.NexusBase.FC_BOUNCE_UPDATE
+    assert nex.conf.reservedChute == nexus.NexusBase.RESERVED_CHUTE
+    assert nex.conf.chuteSaveTimer == nexus.NexusBase.FC_CHUTESTORAGE_SAVE_TIMER
 
 
 def testConfigLoadingExisting():
