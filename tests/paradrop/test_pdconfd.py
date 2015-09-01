@@ -482,12 +482,13 @@ def test_config_wireless_ap():
 
     manager.unload(execute=False)
     commands = manager.previousCommands
+    print("---")
     for cmd in commands:
         print(cmd)
-    assert len(commands) == 5
+    assert len(commands) == 7
 
     # Unload should generate a kill command for the fake pid.
-    assert in_commands("kill 12345", commands)
+    assert in_commands("kill /tmp/hostapd-ap1.pid", commands)
     os.remove(pidFile)
 
 

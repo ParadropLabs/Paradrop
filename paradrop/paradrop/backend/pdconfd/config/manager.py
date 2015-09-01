@@ -187,7 +187,7 @@ class ConfigManager(object):
         # changing.
         # undoConfigs: old sections that need to be undone before proceeding.
         newConfigs = set()
-        affectedConfigs = set()
+        updatedConfigs = set()
         undoConfigs = set()
 
         # Final list of commands to execute.
@@ -217,12 +217,12 @@ class ConfigManager(object):
             # no new work to do for this section.
             if matchByContent is None:
                 if matchByName is not None:
-                    # Old section will need to be undone appropriately.
-                    undoConfigs.add(matchByName)
+                    # Old section will need to be updated appropriately.
+                    updatedConfigs.add(matchByName)
 
                     # Keep track of sections that may be affected by this
                     # one's change.
-                    affectedConfigs.update(matchByName.dependents)
+                    updatedConfigs.update(matchByName.dependents)
 
                 # If it did not exist or is different, add it to our queue
                 # of sections to execute.
@@ -235,14 +235,32 @@ class ConfigManager(object):
             del allConfigs[config.getTypeAndName()]
             undoConfigs.add(config)
 
+        # Remove configs that are in both sets---we should not try to reload
+        # updated configs that are supposed to be removed.
+        updatedConfigs -= undoConfigs
+
         # Generate list of commands to implement configuration.
-        for config in affectedConfigs:
-            commands.extend(config.undoCommands(self.currentConfig))
+        #
+        # First try to apply any updates, since these mess with our undoConfigs
+        # and newConfigs sets.
+        for config in updatedConfigs:
+            new = allConfigs[config.getTypeAndName()]
+
+            updateCommands = config.update(new, allConfigs)
+            if updateCommands is None:
+                # Update function not implemented---need to undo old and
+                # implement new.
+                undoConfigs.add(config)
+            else:
+                # Update function implemented---only need to run the update
+                # commands.
+                commands.extend(updateCommands)
+                if new in newConfigs:
+                    newConfigs.remove(new)
+
         for config in undoConfigs:
             commands.extend(config.undoCommands(self.currentConfig))
         for config in newConfigs:
-            commands.extend(config.commands(allConfigs))
-        for config in affectedConfigs:
             commands.extend(config.commands(allConfigs))
 
         # Finally, execute the commands.

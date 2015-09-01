@@ -1,0 +1,8 @@
+config wifi-device wifi0
+    option type 'auto'
+    option channel '11'
+
+config interface lan
+    option proto 'dhcp'
+    option type 'bridge'
+    list ifname 'eth1'
