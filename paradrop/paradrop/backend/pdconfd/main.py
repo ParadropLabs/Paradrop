@@ -78,7 +78,6 @@ def listen():
         yield conn.requestBusName(service_name)
     except error.DBusException as e:
         print("Failed to export DBus object: {}".format(e))
-#        raise e
 
 
 def run_thread():
@@ -100,6 +99,3 @@ def run_pdconfd():
     ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR)
     reactor.callWhenRunning(listen)
     reactor.run()
-
-if __name__ == "__main__":
-    run_pdconfd()

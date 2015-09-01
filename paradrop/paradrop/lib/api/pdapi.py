@@ -1,5 +1,6 @@
 import random, math
 
+
 class PDAPIError(Exception):
     """
         Exception class related to ParaDrop API calls.
@@ -13,11 +14,12 @@ class PDAPIError(Exception):
 
 
 def isPDError(code):
-    """Checks all Paradrop API error codes, if the HTTP code is in our set it is assumed a PDAPI error."""
-    if(code in RESP_MSG.keys()):
-        return True
-    else:
-        return False
+    """
+    Checks all Paradrop API error codes, if the HTTP code is in our set it is
+    assumed a PDAPI error.
+    """
+    return (code in RESP_MSG)
+
 
 OK = 200
 ERR_BADPARAM = 400
@@ -67,7 +69,7 @@ def getResponse(code, *args):
     else:
         return code, RESP_MSG[code] % (args)
 
+
 def getErrorToken():
     """Generates a random string which is used to match client issues with log output."""
     return '%010d' % int(random.getrandbits(32))
-

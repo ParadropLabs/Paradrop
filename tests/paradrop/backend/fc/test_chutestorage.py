@@ -17,6 +17,7 @@ def test_chutestorage(mSave, mPdos):
     for ch in ['ch1', ch2, 'ch3']:
         assert ch in s.getChuteList()
     assert s.getAttr() == {1: 'ch1', 2: ch2, 3: 'ch3'}
+    assert s.attrSaveable()
 
     #Test saveChute
     ch = MagicMock()

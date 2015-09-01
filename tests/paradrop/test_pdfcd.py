@@ -17,6 +17,16 @@ def test_server_complete():
 
     server.complete(update)
 
+    # Test the private _complete method.
+    update = MagicMock()
+    update.result = {}
+    server._complete(update)
+    assert update.pkg.request.write.called
+    assert update.pkg.request.finish.called
+
+    update.pkg.request.write.side_effect = Exception("Boom!")
+    server._complete(update)
+
 
 def test_server_preprocess():
     """
