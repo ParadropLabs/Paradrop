@@ -93,35 +93,30 @@ def authSuccess(r):
     print 'You have been successfully logged in.'
 
 
-@authCallbacks
 @inlineCallbacks
-def login(reactor, host, port):
+def login(s):
     name, password = None, None
-
     name = raw_input("Username: ")
     password = getpass.getpass()
+    # name, password = 'damouse', '12345678'
 
-    client = RpcClient(host, port, '')
-    ret = yield client.login(name, password)
-    returnValue(ret)
+    ret = yield nexus.core.session.call('pd', 'login', name, password)
+    authSuccess(ret)
 
 
-@authCallbacks
 @inlineCallbacks
-def register(reactor, host, port):
+def register(s):
     name, email, pw, pw2 = raw_input("Username: "), raw_input("Email: "), getpass.getpass(), getpass.getpass(prompt='Reenter Password:')
 
     if pw != pw2:
         raise InvalidCredentials('Your passwords do not match.')
 
-    client = RpcClient(host, port, '')
-    ret = yield client.register(name, email, pw)
+    ret = yield nexus.core.session.call('pd', 'register', name, email, pw)
+    authSuccess(ret)
 
     print('By using this software you agree to our Privacy Policy as well as our Terms and Conditions.')
     print('  Privacy Policy:        https://paradrop.io/privacy-policy')
     print('  Terms and Conditions:  https://paradrop.io/terms-and-conditions')
-
-    returnValue(ret)
 
 
 ###############################################################################

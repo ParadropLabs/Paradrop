@@ -202,6 +202,18 @@ def connectAndCall(command):
 
     d = nexus.core.connect(cxbr.BaseSession)
 
+    # If not provisioned, user is not logged in. User can still login, cant proceed further
+    if command == 'login':
+        d.addCallback(server.login)
+
+    if command == 'register':
+        d.addCallback(server.register)
+
+    if not nexus.core.provisioned():
+        print 'You must login first.'
+        exit(0)
+
+
     # Unpublished
     if command == 'ping':
         d.addCallback(general.ping)
@@ -241,18 +253,6 @@ def main():
 
     # Create the global nexus object and assign it as a global "singleton"
     nexus.core = Nexus(args['--mode'])
-
-    # TODO: If not provisioned, we have to change our realm into the unprovisioned one
-    # Make these calls crossbar and move them to an unprovisioned realm
-    if command == 'login':
-        task.react(server.login, (SERVER_HOST, SERVER_PORT,))
-
-    if command == 'register':
-        task.react(server.register, (SERVER_HOST, SERVER_PORT,))
-
-    if not nexus.core.provisioned():
-        print 'You must login first.'
-        exit(0)
 
     # Start the reactor, start the nexus connection, and then start the call
     reactor.callLater(0, connectAndCall, command)
