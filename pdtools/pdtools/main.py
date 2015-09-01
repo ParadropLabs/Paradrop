@@ -32,9 +32,9 @@ from pdtools.lib import output, riffle, names, cxbr, nexus
 from pdtools.coms import routers, general, server
 from pdtools.lib.store import store
 
-# SERVER_HOST = 'paradrop.io'
-SERVER_HOST = 'localhost'
-SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
+SERVER_HOST = 'paradrop.io'
+# SERVER_HOST = 'localhost'
+SERVER_PORT = 8015
 
 
 rootDoc = """
@@ -133,17 +133,19 @@ def routerMenu():
 def chuteMenu():
     args = docopt(chuteDoc, options_first=False)
 
+    host, port = args['<host>'], args['<port>']
+
     if args['install']:
-        return routers.installChute(args['<host>'], args['<port>'], args['<path-to-config>'])
+        return routers.installChute(host, port, args['<path-to-config>'])
 
     if args['delete']:
-        return routers.deleteChute(args['<host>'], args['<port>'], args['<name>'])
+        return routers.deleteChute(host, port, args['<name>'])
 
     if args['start']:
-        return routers.startChute(args['<host>'], args['<port>'], args['<name>'])
+        return routers.startChute(host, port, args['<name>'])
 
     if args['stop']:
-        return routers.stopChute(args['<host>'], args['<port>'], args['<name>'])
+        return routers.stopChute(host, port, args['<name>'])
 
     print routerDoc
 
@@ -178,7 +180,7 @@ class Nexus(nexus.NexusBase):
         mode = eval('nexus.Mode.%s' % mode)
 
         # Want to change logging functionality? See optional args on the base class and pass them here
-        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=True)
+        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=False)
 
     def onStart(self):
         super(Nexus, self).onStart()
@@ -200,6 +202,7 @@ def connectAndCall(command):
     # Not he biggest fan of this, but we want to intercept and reformat the
     # pdserver exceptions
     # try:
+
     yield nexus.core.connect(cxbr.BaseSession)
 
     # Unpublished
@@ -212,8 +215,9 @@ def connectAndCall(command):
 
     else:
         print "%r is not a paradrop command. See 'paradrop -h'." % command
+
     # except:
-    #     # this only works if the exception is a docopt object. May not work otherwise
+    # this only works if the exception is a docopt object. May not work otherwise
     #     e = sys.exc_info()[0]
 
     #     print str(e)
@@ -234,6 +238,7 @@ def main():
         print 'You entered an invalid mode. Please enter one of [production, development, test, local]'
         exit(1)
 
+    # Create the global nexus object and assign it as a global "singleton"
     nexus.core = Nexus(args['--mode'])
 
     # TODO: If not provisioned, we have to change our realm into the unprovisioned one
@@ -244,13 +249,9 @@ def main():
     if command == 'register':
         task.react(server.register, (SERVER_HOST, SERVER_PORT,))
 
-    # if not nexus.core.provisioned():
-    #     print 'You must login first.'
-    #     exit(0)
-
-    if not store.loggedIn():
+    if not nexus.core.provisioned():
         print 'You must login first.'
-        return
+        exit(0)
 
     # Start the reactor, start the nexus connection, and then start the call
     reactor.callLater(0, connectAndCall, args['<command>'])

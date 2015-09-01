@@ -21,8 +21,6 @@ from pdtools.lib import riffle, names, cxbr, nexus
 from pdtools.lib.output import out
 from pdtools.lib.exceptions import *
 
-# HOST = "ws://127.0.0.1:9080/ws"
-HOST = "ws://paradrop.io:9080/ws"
 
 @inlineCallbacks
 def list():
@@ -81,10 +79,9 @@ def logs(target):
     sub = yield nexus.core.session.subscribe(printem, target, 'logs')
 
     # Never return, let the user stop with a keyboard interrupt
-    # we could return if the router is offline, but user may want to wait 
-    # for it 
+    # we could return if the router is offline, but user may want to wait
+    # for it
     yield Deferred()
-
 
 
 ###############################################################################

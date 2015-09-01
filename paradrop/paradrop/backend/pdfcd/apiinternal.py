@@ -136,6 +136,7 @@ def api_provision(pdid, key, cert):
     nexus.core.saveKey(cert, 'ca')
 
     # Attempt to connect. WARNING- what happens if we're already connected?
+    # Or if we timeout on the connection? The caller will never receive a response
     yield nexus.core.connect()
 
     # Return success to the user
