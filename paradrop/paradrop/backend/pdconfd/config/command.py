@@ -66,3 +66,51 @@ class Command(object):
         Returns True if the command was successfully executed.
         """
         return (self.result == 0)
+
+
+class KillCommand(Command):
+    """
+    Special command object for killing a process
+    """
+    def __init__(self, priority, pid, parent=None): 
+        """
+        Create a kill command
+
+        The pid argument can either be a real pid (e.g. kill 12345) or a path
+        to a file containing the pid.
+
+        If the pid is coming from a file, it will be resolved at the time that
+        execute is called.  Before that time, the command will be stored
+        internally as ["kill", "/path/to/file"].  This is not a real command,
+        but it is meaningful you print the command object.
+        """
+        # This will not be a valid command if pid is a file path.
+        cmd = ["kill", pid]
+
+        super(KillCommand, self).__init__(priority, cmd, parent)
+
+        # Is it a numeric pid or a path to a pid file?
+        try:
+            self.pid = int(pid)
+            self.fromFile = False
+        except ValueError:
+            self.pid = pid
+            self.fromFile = True
+
+    def getPid(self):
+        if self.fromFile:
+            try:
+                with open(self.pid, "r") as inputFile:
+                    return int(inputFile.read().strip())
+            except:
+                # No pid file --- maybe it was not running?
+                out.warn("File not found: {}\n".format(self.pid))
+                return None
+        else:
+            return self.pid
+
+    def execute(self):
+        pid = self.getPid()
+        if pid is not None:
+            self.cmd = ["kill", str(pid)]
+            super(KillCommand, self).execute()

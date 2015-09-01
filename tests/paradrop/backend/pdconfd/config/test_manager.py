@@ -6,6 +6,18 @@ import tempfile
 CONFIG_DIR = "tests/paradrop/backend/pdconfd/config/config.d"
 
 
+def test_bad_config():
+    """
+    Test how pdconf manager handles a bad configuration section
+    """
+    from paradrop.backend.pdconfd.config.manager import ConfigManager
+
+    manager = ConfigManager(writeDir="/tmp")
+
+    source = os.path.join(CONFIG_DIR, "bad_config")
+    manager.loadConfig(search=source, execute=False)
+
+
 def test_change_channel():
     """
     Test how pdconf manager handles changing a WiFi card's channel
@@ -35,9 +47,9 @@ def test_change_channel():
     for cmd in manager.previousCommands:
         print(cmd)
 
-    # TODO: Add this when update works---we should not need to delete and
-    # re-add the virtual wireless interface.
-#    assert all("del" not in cmd for cmd in manager.previousCommands)
+    # Changing the channel should restart hostapd but not delete and recreate
+    # the wireless interface.
+    assert all("del" not in cmd for cmd in manager.previousCommands)
 
     source = os.path.join(CONFIG_DIR, "change_channel_3")
     shutil.copyfile(source, confFile)
@@ -48,4 +60,8 @@ def test_change_channel():
         print(cmd)
 
     # The third config should bring down hostapd, not start it.
-    assert all("hostapd" not in cmd for cmd in manager.previousCommands)
+    assert any("kill" in cmd for cmd in manager.previousCommands)
+    assert all("bin/hostapd" not in cmd for cmd in manager.previousCommands)
+
+    # Cleanup
+    shutil.rmtree(temp)

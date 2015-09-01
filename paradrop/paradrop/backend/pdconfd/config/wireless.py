@@ -9,7 +9,7 @@ from pdtools.lib.output import out
 from paradrop.lib.utils import pdosq
 
 from .base import ConfigObject
-from .command import Command
+from .command import Command, KillCommand
 
 
 # Command priorities, lower numbers executed first.
@@ -35,9 +35,8 @@ class ConfigWifiDevice(ConfigObject):
         {"name": "channel", "type": int, "required": True, "default": 1}
     ]
 
-    def commands(self, allConfigs):
-        commands = list()
-        return commands
+    def update(self, new, allConfigs):
+        return list()
 
 
 class ConfigWifiIface(ConfigObject):
@@ -80,17 +79,26 @@ class ConfigWifiIface(ConfigObject):
         if interface.config_ifname == wifiDevice.name:
             # This interface is using the physical device directly (eg. wlan0).
             self.vifName = None
-            ifname = wifiDevice.name
         else:
             # This interface is a virtual one (eg. foo.wlan0 using wlan0).
             self.vifName = interface.config_ifname
-            ifname = self.vifName
 
             # Command to create the virtual interface.
             cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
                    self.vifName, "type", "__ap"]
             commands.append(Command(Command.PRIO_CREATE_IFACE, cmd, self))
 
+        confFile = self.makeHostapdConf(wifiDevice, interface)
+
+        self.pidFile = "{}/hostapd-{}.pid".format(
+            self.manager.writeDir, self.name)
+
+        cmd = ["/apps/bin/hostapd", "-P", self.pidFile, "-B", confFile]
+        commands.append(Command(Command.PRIO_START_DAEMON, cmd, self))
+
+        return commands
+
+    def makeHostapdConf(self, wifiDevice, interface):
         outputPath = "{}/hostapd-{}.conf".format(
             self.manager.writeDir, self.name)
         with open(outputPath, "w") as outputFile:
@@ -104,7 +112,7 @@ class ConfigWifiIface(ConfigObject):
             outputFile.write("#" * 80 + "\n")
 
             # Write essential options.
-            outputFile.write("interface={}\n".format(ifname))
+            outputFile.write("interface={}\n".format(interface.config_ifname))
             outputFile.write("ssid={}\n".format(self.ssid))
             outputFile.write("channel={}\n".format(wifiDevice.channel))
 
@@ -123,31 +131,51 @@ class ConfigWifiIface(ConfigObject):
                 out.warn("Encryption type {} not supported (supported: "
                          "none|psk2)".format(self.encryption))
                 raise Exception("Encryption type not supported")
-
-        self.pidFile = "{}/hostapd-{}.pid".format(
-            self.manager.writeDir, self.name)
-
-        cmd = ["/apps/bin/hostapd", "-P", self.pidFile, "-B", outputPath]
-        commands.append(Command(Command.PRIO_START_DAEMON, cmd, self))
-
-        return commands
+        return outputPath
 
     def undoCommands(self, allConfigs):
         commands = list()
 
-        try:
-            with open(self.pidFile, "r") as inputFile:
-                pid = inputFile.read().strip()
-            cmd = ["kill", pid]
-            commands.append(Command(Command.PRIO_START_DAEMON, cmd, self))
-        except:
-            # No pid file --- maybe it was not running?
-            out.warn("File not found: {}\n".format(
-                self.pidFile))
+        commands.append(KillCommand(Command.PRIO_START_DAEMON, 
+                self.pidFile, self))
 
         # Delete our virtual interface.
         if self.vifName is not None:
             cmd = ["iw", "dev", self.vifName, "del"]
             commands.append(Command(Command.PRIO_DELETE_IFACE, cmd, self))
+
+        return commands
+
+    def update(self, new, allConfigs):
+        if new.mode != self.mode or \
+                new.device != self.device or \
+                new.network != self.network:
+            # Major change requires unloading the old section and applying the
+            # new.
+            return None
+
+        if new.mode != "ap":
+            # Only implemented updates for AP mode.
+            return None
+
+        commands = list()
+
+        # Bring down hostapd
+        commands.append(KillCommand(Command.PRIO_START_DAEMON, 
+                self.pidFile, self))
+
+        # Look up the wifi-device section.
+        wifiDevice = new.lookup(allConfigs, "wifi-device", new.device)
+
+        # Look up the interface section.
+        interface = new.lookup(allConfigs, "interface", new.network)
+
+        confFile = new.makeHostapdConf(wifiDevice, interface)
+
+        new.pidFile = "{}/hostapd-{}.pid".format(
+            new.manager.writeDir, new.name)
+
+        cmd = ["/apps/bin/hostapd", "-P", new.pidFile, "-B", confFile]
+        commands.append(Command(Command.PRIO_START_DAEMON, cmd, new))
 
         return commands

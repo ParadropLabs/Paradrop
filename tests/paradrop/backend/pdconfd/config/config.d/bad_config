@@ -1,0 +1,2 @@
+config interface bad
+    option dummy "value"
