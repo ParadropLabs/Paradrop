@@ -24,6 +24,9 @@ class ConfigObject(object):
     def __hash__(self):
         return hash(self.getTypeAndName())
 
+    def __str__(self):
+        return "config {} {}".format(self.typename, self.name)
+
     def setup(self):
         """
         Finish object initialization.

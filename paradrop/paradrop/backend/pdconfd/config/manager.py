@@ -235,6 +235,10 @@ class ConfigManager(object):
             del allConfigs[config.getTypeAndName()]
             undoConfigs.add(config)
 
+        # Remove configs that are in both sets---we should not try to reload
+        # affected configs that are supposed to be removed.
+        affectedConfigs -= undoConfigs
+
         # Generate list of commands to implement configuration.
         for config in affectedConfigs:
             commands.extend(config.undoCommands(self.currentConfig))

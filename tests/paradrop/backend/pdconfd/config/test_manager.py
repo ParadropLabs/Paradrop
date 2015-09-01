@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 
 
@@ -11,27 +12,40 @@ def test_change_channel():
     """
     from paradrop.backend.pdconfd.config.manager import ConfigManager
 
+    # We want to use the same path for the config file at every step of the
+    # test case, as this allows the manager to detect when a section is
+    # removed.
+    temp = tempfile.mkdtemp()
+    confFile = os.path.join(temp, "config")
+
     manager = ConfigManager(writeDir="/tmp")
 
-    config1Path = os.path.join(CONFIG_DIR, "change_channel_1")
-    manager.loadConfig(search=config1Path, execute=False)
+    source = os.path.join(CONFIG_DIR, "change_channel_1")
+    shutil.copyfile(source, confFile)
+    manager.loadConfig(search=confFile, execute=False)
     
     for cmd in manager.previousCommands:
-        print(cmd.command)
+        print(cmd)
 
-    config2Path = os.path.join(CONFIG_DIR, "change_channel_2")
-    manager.loadConfig(search=config2Path, execute=False)
-
-    print("---")
-    for cmd in manager.previousCommands:
-        print(cmd.command)
-
-    config3Path = os.path.join(CONFIG_DIR, "change_channel_3")
-    manager.loadConfig(search=config3Path, execute=False)
+    source = os.path.join(CONFIG_DIR, "change_channel_2")
+    shutil.copyfile(source, confFile)
+    manager.loadConfig(search=confFile, execute=False)
 
     print("---")
     for cmd in manager.previousCommands:
-        print(cmd.command)
+        print(cmd)
 
-    # The third config should bring down hostapd.
+    # TODO: Add this when update works---we should not need to delete and
+    # re-add the virtual wireless interface.
+#    assert all("del" not in cmd for cmd in manager.previousCommands)
+
+    source = os.path.join(CONFIG_DIR, "change_channel_3")
+    shutil.copyfile(source, confFile)
+    manager.loadConfig(search=confFile, execute=False)
+
+    print("---")
+    for cmd in manager.previousCommands:
+        print(cmd)
+
+    # The third config should bring down hostapd, not start it.
     assert all("hostapd" not in cmd for cmd in manager.previousCommands)
