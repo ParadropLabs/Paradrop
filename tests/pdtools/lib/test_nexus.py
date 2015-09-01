@@ -27,7 +27,7 @@ def teardown():
     assert not os.path.exists(root)
 
 ###############################################################################
-# Settings Assignment
+# Settings Assignment, Paths
 ###############################################################################
 
 
@@ -62,6 +62,20 @@ def testNetworkResolution():
 def testConfigLoadingEmpty():
     nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
     assert nex.info.pdid == None
+
+def testConfdProduction():
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
+    
+    assert nex.path.pdconfdWrite == nexus.NexusBase.PDCONFD_WRITE_DIR
+    assert nex.path.uciConfig == nexus.NexusBase.UCI_CONFIG_DIR
+    assert nex.path.hostConfig == nexus.NexusBase.HOST_CONFIG_PATH
+
+def testConfdProduction():
+    nex = TestingNexus(nexus.Type.router, nexus.Mode.local)
+    
+    assert nex.path.pdconfdWrite == nexus.NexusBase.PDCONFD_WRITE_DIR_LOCAL
+    assert nex.path.uciConfig == nexus.NexusBase.UCI_CONFIG_DIR_LOCAL
+    assert nex.path.hostConfig == nexus.NexusBase.HOST_CONFIG_PATH_LOCAL
 
 
 def testConfigLoadingExisting():

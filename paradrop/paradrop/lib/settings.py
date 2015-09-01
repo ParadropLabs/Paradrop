@@ -52,12 +52,13 @@ RESERVED_CHUTE = "__PARADROP__"
 #
 # Host configuration file
 #
-HOST_CONFIG_PATH = "/etc/paradrop_host_config"
+# HOST_CONFIG_PATH = "/etc/paradrop_host_config"
 
 #
 # UCI configuration files
 #
-UCI_CONFIG_DIR = "/etc/config"
+# UCI_CONFIG_DIR = "/etc/config"
+
 
 #
 # Output
@@ -70,7 +71,8 @@ LOG_PATH = '/var/run/'  # Not supposed to be for log files but will work for now
 # PDCONFD_WRITE_DIR: Directory where automatically generated config files
 # (dnsmasq.conf) will be stored.  It is better to put it in /var/run because
 # /tmp is sandboxed on Snappy.
-PDCONFD_WRITE_DIR = '/var/run/pdconfd'
+# PDCONFD_WRITE_DIR = '/var/run/pdconfd'
+
 PDCONFD_ENABLED = True
 
 # Pool of address available for chutes that request dynamic addresses.

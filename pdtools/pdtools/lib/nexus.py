@@ -6,24 +6,24 @@ See docstring for NexusBase class for information on settings.
 
 SETTINGS QUICK REFERENCE:
     # assuming the following import
-    from pdtools.lib.nexus import core
+    from pdtools.lib import nexus
 
-    core.path.root
-    core.path.log
-    core.path.key
-    core.path.misc
-    core.path.config
+    nexus.core.path.root
+    nexus.core.path.log
+    nexus.core.path.key
+    nexus.core.path.misc
+    nexus.core.path.config
 
-    core.net.webHost
-    core.net.webPort
-    core.net.host
-    core.net.port
+    nexus.core.net.webHost
+    nexus.core.net.webPort
+    nexus.core.net.host
+    nexus.core.net.port
 
-    core.meta.type
-    core.meta.mode
-    core.meta.version
+    nexus.core.meta.type
+    nexus.core.meta.mode
+    nexus.core.meta.version
 
-    core.info.pdid
+    nexus.core.info.pdid
 '''
 
 import os
@@ -39,7 +39,7 @@ from pdtools.lib import output, cxbr
 
 # Global access. Assign this wherever you instantiate the Nexus object:
 #       nexus.core = MyNexusSubclass()
-core = 1
+core = None
 
 # The type and mode of this nexus instance
 Type = Enum('Type', 'router, tools, server')
@@ -118,6 +118,15 @@ class NexusBase(object):
     PATH_KEY = 'keys/'                                 # nexus.core.path.key
     PATH_MISC = 'misc/'                                # nexus.core.path.misc
     PATH_CONFIG = 'config'                             # nexus.core.path.config
+
+    PDCONFD_WRITE_DIR = '/var/run/pdconfd'             # nexus.core.path.pdconfdWrite
+    PDCONFD_WRITE_DIR_LOCAL = "/tmp/pdconfd"
+
+    UCI_CONFIG_DIR = "/etc/config"                     # nexus.core.path.uciConfig
+    UCI_CONFIG_DIR_LOCAL = "/tmp/config.d"
+
+    HOST_CONFIG_PATH = "/etc/paradrop_host_config"     # nexus.core.path.hostConfig
+    HOST_CONFIG_PATH_LOCAL = "/tmp/hostconfig.yaml"
 
     ###############################################################################
     # Network.
@@ -405,6 +414,16 @@ def resolvePaths(nex):
     nex.path.key = nex.path.root + nex.__class__.PATH_KEY
     nex.path.misc = nex.path.root + nex.__class__.PATH_MISC
     nex.path.config = nex.path.root + nex.__class__.PATH_CONFIG
+
+    # Set old paths
+    if nex.meta.mode == Mode.local:
+        nex.path.pdconfdWrite = nex.__class__.PDCONFD_WRITE_DIR_LOCAL
+        nex.path.uciConfig = nex.__class__.UCI_CONFIG_DIR_LOCAL
+        nex.path.hostConfig = nex.__class__.HOST_CONFIG_PATH_LOCAL
+    else:
+        nex.path.pdconfdWrite = nex.__class__.PDCONFD_WRITE_DIR
+        nex.path.uciConfig = nex.__class__.UCI_CONFIG_DIR
+        nex.path.hostConfig = nex.__class__.HOST_CONFIG_PATH
 
     # create the paths
     for x in [nex.path.root, nex.path.log, nex.path.key, nex.path.misc]:
