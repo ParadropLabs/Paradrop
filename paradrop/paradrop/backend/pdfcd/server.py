@@ -11,7 +11,7 @@ from twisted.web.server import Site
 from twisted.internet import reactor
 
 from pdtools.lib.output import out
-from pdtools.lib import store, riffle, names
+from pdtools.lib import names
 
 from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi

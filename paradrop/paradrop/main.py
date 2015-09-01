@@ -10,7 +10,7 @@ import smokesignal
 from twisted.internet import reactor, defer
 from autobahn.twisted.wamp import ApplicationRunner
 
-from pdtools.lib import output, store, riffle, nexus, names, cxbr
+from pdtools.lib import output, riffle, nexus, names, cxbr
 from paradrop.lib import settings
 from paradrop.backend.pdfcd import apiinternal
 

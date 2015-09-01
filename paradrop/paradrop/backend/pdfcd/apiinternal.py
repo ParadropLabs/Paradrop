@@ -5,14 +5,7 @@ from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 
 from paradrop.lib import pdinstall
 from pdtools.lib.output import out
-from pdtools.lib import store, riffle, names, nexus, cxbr
-
-HOST = 'localhost'
-# HOST = 'paradrop.io'
-
-###############################################################################
-# Crossbar Additions
-###############################################################################
+from pdtools.lib import names, nexus, cxbr
 
 
 class RouterSession(cxbr.BaseSession):

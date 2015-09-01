@@ -35,7 +35,7 @@ import smokesignal
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from pdtools.lib import store, riffle, output, cxbr
+from pdtools.lib import output, cxbr
 
 # Global access. Assign this wherever you instantiate the Nexus object:
 #       nexus.core = MyNexusSubclass()
