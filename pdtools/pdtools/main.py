@@ -195,62 +195,12 @@ class Nexus(nexus.NexusBase):
         super(Nexus, self).onStop()
 
 
-# @general.failureCallbacks
-# @inlineCallbacks
-# def connectAndCall(command):
-#     '''
-#     Convenience method-- wait for nexus to finish connecting and then
-#     make the call.
-
-#     The subhandler methods should not call reactor.stop, just return.
-#     '''
-
-# Not he biggest fan of this, but we want to intercept and reformat the
-# pdserver exceptions
-# try:
-
-#     yield nexus.core.connect(cxbr.BaseSession)
-
-# Unpublished
-#     if command == 'ping':
-#         yield general.ping()
-
-# Check for a sub-command. If found, pass off execution to the appropriate sub-handler
-#     elif command in 'router chute list logs'.split():
-#         yield eval('%sMenu' % command)()
-
-#     else:
-#         print "%r is not a paradrop command. See 'paradrop -h'." % command
-
-# except:
-# this only works if the exception is a docopt.docopt object. May not work otherwise
-# e = sys.exc_info()[0]
-
-# print str(e)
-# print e.usage
-
-#     reactor.stop()
-
 def connectAndCall(command):
     '''
-    Convenience method-- wait for nexus to finish connecting and then 
-    make the call. 
-
-    The subhandler methods should not call reactor.stop, just return.
+    Wait for nexus to connect, make the requested calls. 
     '''
 
-    # Not he biggest fan of this, but we want to intercept and reformat the
-    # pdserver exceptions
-    # try:
-
     d = nexus.core.connect(cxbr.BaseSession)
-
-    def e(x):
-        if isinstance(x.value, docopt.DocoptExit):
-            print x.value
-            return None
-        else:
-            return x
 
     # Unpublished
     if command == 'ping':
@@ -263,17 +213,18 @@ def connectAndCall(command):
     else:
         print "%r is not a paradrop command. See 'paradrop -h'." % command
 
-    d.addErrback(e)
+    # Catch the docopt exceptions and print them. This is usage information.
+    def showDocopt(x):
+        if isinstance(x.value, docopt.DocoptExit):
+            print x.value
+            return None
 
-    # except:
-    # this only works if the exception is a docopt.docopt object. May not work otherwise
-    #     e = sys.exc_info()[0]
+        return x
 
-    #     print str(e)
-    #     print e.usage
+    d.addErrback(showDocopt)
+    d.addErrback(general.printFailure)
 
     d.addBoth(lambda x: reactor.stop())
-    # reactor.stop()
 
 
 def main():
@@ -282,7 +233,7 @@ def main():
     argv = [args['<command>']] + args['<args>']
     command = args['<command>']
 
-    # Create and assign the root nexus object
+    # Create and assign the root nexus object. Shouldnt this be in nexus?
     mode = args['--mode']
     if mode not in 'production development test local'.split():
         print 'You entered an invalid mode. Please enter one of [production, development, test, local]'
@@ -304,7 +255,7 @@ def main():
         exit(0)
 
     # Start the reactor, start the nexus connection, and then start the call
-    reactor.callLater(0, connectAndCall, args['<command>'])
+    reactor.callLater(0, connectAndCall, command)
     reactor.run()
 
 
