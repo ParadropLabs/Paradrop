@@ -136,28 +136,19 @@ def api_provision(pdid, key, cert):
 
     This is a temporary call until the provisioning process is finalized.
     '''
-
-    # SO TEMP IT HURTS:
-    # yield
-    # ret = {'root': nexus.core.rootPath, 'logs': nexus.core.logPath}
-    # returnValue(ret)
-
     # temp: check to make sure we're not already provisioned. Do not allow for
     # multiple provisioning. This is a little hacky-- better to move this into store
-    if riffle.portal.certCa:
-        raise ValueError("This device is already provisioned as " + nexus.core.get('pdid'))
+    if nexus.core.provisioned():
+        raise ValueError("This device is already provisioned as " + nexus.core.info.pdid)
 
-    nexus.core.set('pdid', pdid)
+    # nexus.core.set('pdid', pdid)
+    nexus.core.provision(pdid, None)
+
     nexus.core.saveKey(key, 'pub')
     nexus.core.saveKey(cert, 'ca')
 
-    riffle.portal.keyPrivate = key
-    riffle.portal.certCa = cert
-
-    # If we are being provisioned for the first time, start riffle services
-    # yield checkStartRiffle()
-
     # Attempt to connect. WARNING- what happens if we're already connected?
+    # Or if we timeout on the connection? The caller will never receive a response
     yield nexus.core.connect()
 
     # Return success to the user

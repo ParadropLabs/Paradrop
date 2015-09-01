@@ -17,20 +17,22 @@ from paradrop.backend.pdfcd import apiinternal
 
 class Nexus(nexus.NexusBase):
 
-    def __init__(self, mode):
-        # Want to change logging functionality? See optional args on the base class and pass them here
-        super(Nexus, self).__init__('router', stealStdio=True, mode=mode, printToConsole=True)
+    def __init__(self, mode, settings=[]):
+        # get a Mode.production, Mode.test, etc from the passed string
+        mode = eval('nexus.Mode.%s' % mode)
 
-        # WAMP session to the crossbar router
-        self.session = None
+        # Want to change logging functionality? See optional args on the base class and pass them here
+        super(Nexus, self).__init__(nexus.Type.router, mode, settings=settings, stealStdio=True, printToConsole=True)
 
     def onStart(self):
         super(Nexus, self).onStart()
 
+        # onStart is called when the reactor starts, not when the connection is made.
+        # Check for provisioning keys and attempt to connect
         if not self.provisioned():
             output.out.warn('Router has no keys or identity. Waiting to connect to to server.')
         else:
-            reactor.callLater(.1, self.connect)
+            return self.connect(apiinternal.RouterSession)
 
     def onStop(self):
         # if self.session is not None:
@@ -40,44 +42,27 @@ class Nexus(nexus.NexusBase):
 
         super(Nexus, self).onStop()
 
-    # def serverConnected(self, avatar, realm):
-    #     output.out.info('Server Connected!')
-
-    # def serverDisconnected(self, avatar, realm):
-    #     output.out.warn('Server Disconnected!')
-    #     reactor.callLater(.1, self.connect)
-
-    @defer.inlineCallbacks
-    def connect(self):
-        '''
-        Continuously tries to connect to server. This needs to be replaced with 
-        crossbar logic.
-        '''
-        print 'Trying to connect to server...'
-
-        HOST = "ws://paradrop.io:9080/ws"
-
-        pdid = self.get('pdid')
-        self.session = yield apiinternal.RouterSession.start(HOST, pdid)
-
 
 def main():
     p = argparse.ArgumentParser(description='Paradrop API server running on client')
     p.add_argument('-s', '--settings', help='Overwrite settings, format is "KEY:VALUE"',
                    action='append', type=str, default=[])
-    p.add_argument('--development', help='Enable the development environment variables',
-                   action='store_true')
     p.add_argument('--config', help='Run as the configuration daemon',
                    action='store_true')
-    p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
-    p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
     p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test, local]',
                    action='store', type=str, default='production')
 
-    # Temporary until the mode=local is hooked up
+    # Things to replace
     p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
+    p.add_argument('--development', help='Enable the development environment variables',
+                   action='store_true')
+
+    # No longer used
+    p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
+    p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
 
     args = p.parse_args()
+    # print args
 
     # Temp- this should go to nexus (the settings portion of it, at least)
     # Change the confd directories so we can run locally
@@ -92,7 +77,7 @@ def main():
     # Globally assign the nexus object so anyone else can access it.
     # Sorry, programming gods. If it makes you feel better this class
     # replaces about half a dozen singletons
-    nexus.core = Nexus(mode=args.mode)
+    nexus.core = Nexus(args.mode, settings=args.settings)
 
     if args.config:
         from paradrop.backend import pdconfd

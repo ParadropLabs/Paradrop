@@ -1,176 +1,289 @@
 '''
-Stateful, singleton, command and control center. This is the brains of the three 
+Stateful, singleton, command and control center. This is the brains of the three
 paradrop components: tools, router, and server.
 
-Takes over the functionality of the following modules, globals, and all around cruft:
-    settings
-    storage (keys, settings, names, permissions)
-    chuteStore
-    port/host consts
-    portal and server administration
+See docstring for NexusBase class for information on settings.
 
-Additionally:
-    Persists data to disk synchronously (for now, unless it gets hairy.)
-    Manages init and deinit
-    Document versioning, migrations, and validations through barit.
+SETTINGS QUICK REFERENCE:
+    # assuming the following import
+    from pdtools.lib.nexus import core
 
-This object is meant to be subclassed by each of the three PD components. 
-They should build upon the methods below as it suits their needs-- for example, 
-tools may need to store information about routers, routers will store 
-chutes, and the server will rely heavily on riffle callbacks.
+    core.path.root
+    core.path.log
+    core.path.key
+    core.path.misc
+    core.path.config
 
-Should make this a singleton. And make a print thread for this guy, just for safety.
+    core.net.webHost
+    core.net.webPort
+    core.net.host
+    core.net.port
 
-The base class does not implement any riffle integration other than 
-setting up the keys and default connection information. You should register for 
-connection callbacks using smokesignals (see paradrop/main.py). DO NOT
-store connections yourself-- riffle already does that and you'll screw up the portal!
+    core.meta.type
+    core.meta.mode
+    core.meta.version
+
+    core.info.pdid
 '''
 
 import os
 import yaml
+import json
 
-from twisted.internet import reactor
+from enum import Enum
 import smokesignal
+from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks, returnValue
 
-from pdtools.lib import store, riffle, output
+from pdtools.lib import store, riffle, output, cxbr
 
 # Global access. Assign this wherever you instantiate the Nexus object:
 #       nexus.core = MyNexusSubclass()
-core = None
+core = 1
+
+# The type and mode of this nexus instance
+Type = Enum('Type', 'router, tools, server')
+Mode = Enum('Mode', 'production, development, test, local')
 
 
 class NexusBase(object):
 
-    # PATH_ROOT = os.getenv("SNAP_APP_DATA_PATH", None)
-    # PATH_
-    # PATH_LOG = self.rootPath + '/logs/'
-    # PATH_KEY = self.rootPath + '/keys/'
-    # PATH_misc = self.rootPath + '/misc/'
-    # PATH_config = self.rootPath + '/config'
+    '''
+    Initial settings values.
 
-    def __init__(self, nexType, mode='development', stealStdio=True, printToConsole=True):
+    Resolving these values to their final forms:
+        1 - module imported, initial values assigned(as written below)
+        2 - class is instatiated, passed settings or environ replace values
+        3 - instance chooses appropriate values based on current state(production, router, etc)
+            Each category has its own method for initialization here
+            (see: resolveNetwork, resolvePaths)
+
+    DO NOT MODIFY CONSTS AT RUNTIME. Add new settings, pass in settings changes,
+    or set environment variables.
+
+    DO NOT ACCESS CONSTS AT RUNTIME. These are the initial states. They are
+    evaluated and mapped to readable names. Their resulting attribute names are
+    shown as a comment to the right of each declaration.
+
+    To dump all values:
+        from pdtools.lib import nexus
+        print nexus.core
+
+    To dump a subset of values:
+        from pdtools.lib import nexus
+        print nexus.core.net
+        print nexus.core.path
+
+    Not yet implemented:
+        settings, chutes
+
+    EXAMPLE:
+        We want to resolve port dynamically based on type and mode. First,
+        we enumerate the possibilities as consts:
+            PORT_PRODUCTION = 1234                          # nexus.core.net.port
+            PORT_DEVELOPMENT = 2345
+
+        (The right - justified comment indicates where the final value resides)
+
+        To change the const at runtime, instantiate the object with settings override:
+            NexusBase(Type.router, Mode.production, settings=['PORT_PRODUCTION:3456'])
+
+        Or set an environment variable before running:
+            export PORT_PRODUCTION = 3456
+
+        When instantiating, class checks for mode in "resolveNetwork"
+            if nex.meta.type == Type.Production:
+                nex.net.port = PORT_PRODUCTION
+
+            (magic omitted)
+
+        Finally access the resulting values:
+            from pdtools.lib import nexus
+            print nexus.core.net.port
+            = > '3456'
+
+    '''
+
+    ###############################################################################
+    # Paths. Dump: 'print nexus.core.path'
+    ###############################################################################
+
+    PATH_SNAPPY = os.getenv("SNAP_APP_DATA_PATH", None)
+    PATH_LOCAL = os.path.expanduser('~') + '/.paradrop/local/'
+    PATH_HOME = os.path.expanduser('~') + '/.paradrop/'
+    PATH_CURRENT = os.getcwd() + '/.paradrop/'
+    PATH_ROOT = None                                   # nexus.core.path.root
+
+    PATH_LOG = 'logs/'                                 # nexus.core.path.log
+    PATH_KEY = 'keys/'                                 # nexus.core.path.key
+    PATH_MISC = 'misc/'                                # nexus.core.path.misc
+    PATH_CONFIG = 'config'                             # nexus.core.path.config
+
+    ###############################################################################
+    # Network.
+    # Dump: 'print nexus.core.net'
+    ###############################################################################
+
+    HOST_HTTP_PRODUCTION = 'https://paradrop.io'        # nexus.core.net.webHost
+    HOST_HTTP_DEVELOPMENT = 'https://paradrop.io'
+    HOST_HTTP_TEST = 'localhost'
+    HOST_HTTP_LOCAL = 'localhost'
+
+    PORT_HTTP_PRODUCTION = '14321'                      # nexus.core.net.webPort
+    PORT_HTTP_DEVELOPMENT = '14321'
+    PORT_HTTP_TEST = '14321'
+    PORT_HTTP_LOCAL = '14321'
+
+    # Web Sockets host and port
+    HOST_WS_PRODUCTION = 'ws://paradrop.io:PORT/ws'     # nexus.core.net.host
+    HOST_WS_DEVELOPMENT = "ws://paradrop.io:PORT/ws"
+    HOST_WS_TEST = "ws://127.0.0.1:PORT/ws"
+    HOST_WS_LOCAL = "ws://127.0.0.1:PORT/ws"
+
+    PORT_WS_PRODUCTION = '9080'                         # nexus.core.net.port
+    PORT_WS_DEVELOPMENT = '9080'
+    PORT_WS_TEST = '9080'
+    PORT_WS_LOCAL = '9080'
+
+    ###############################################################################
+    # Meta. Values that tell you something about the values in here
+    # Dump: 'print nexus.core.meta'
+    ###############################################################################
+
+    TYPE = None                                         # nexus.core.meta.type
+    MODE = None                                         # nexus.core.meta.mode
+    VERSION = 1                                         # nexus.core.meta.version
+
+    ###############################################################################
+    # Configuration. Affect the whole system, generally static
+    # Dump: 'print nexus.core.conf'
+    ###############################################################################
+
+    ###############################################################################
+    # Info. Values that are likely to change with individual users.
+    # Dump: 'print nexus.core.info'
+    ###############################################################################
+
+    # One of the enum values above this class
+    PDID = None                                         # nexus.core.info.pdid
+
+    def __init__(self, nexusType, mode=Mode.development, settings=[], stealStdio=True, printToConsole=True):
         '''
-        The one big thing this function leaves out is reactor.start(). Call this externally 
-        *after* initializing a nexus object. 
-
-        :param type: one of [router, tool, server]
-        :type type: str.
-        :param mode: one of [production, development, test, local]. Changes host and ports.
-            See section "network resolution" below 
+        The one big thing this function leaves out is reactor.start(). Call this externally
+        *after * initializing a nexus object.
         '''
 
-        self.type, self.mode = nexType, mode
+        # Create the attr redirectors. These allow for nexus.net.stuff
+        self.path = AttrWrapper()
+        self.net = AttrWrapper()
+        self.meta = AttrWrapper()
+        self.info = AttrWrapper()
 
-        if mode not in 'production development test local'.split():
-            raise KeyError("Mode " + self.mode + " not valid")
+        # Replace values with settings or environ vars
+        overrideSettingsList(self.__class__, settings)
+        overrideSettingsEnv(self.__class__)
 
-        # initialize the paths and load existing settings
-        self.makePaths()
-        self.load()
+        # Set meta
+        self.meta.type = nexusType
+        self.meta.mode = mode
+        self.meta.version = self.__class__.VERSION
+
+        # Set paths
+        resolvePaths(self)
+
+        # Set network
+        resolveNetwork(self, self.meta.mode)
+
+        # Set info by loading from paths
+        loadConfig(self, self.path.config)
+
+        # Lock all the wrapper objects except info. That one we register to the save function
+        [x._lock() for x in [self.path, self.net, self.meta]]
+        self.info.setOnChange(self.onInfoChange)
+
+        # Done with data initizlization. From here on out its configuration and state
 
         # initialize output. If filepath is set, logs to file.
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
         # If printToConsole is set (defaults True) all final output is rendered to stdout
-        output.out.startLogging(filePath=self.logPath, stealStdio=stealStdio, printToConsole=printToConsole)
-
-        # Asssign global riffle keys
-        # riffle.portal.keyPrivate = self.getKey('pub')
-        # riffle.portal.certCa = self.getKey('ca')
-        # riffle.portal.host = self.serverHost()
-        # riffle.portal.port = self.rifflePort()
+        output.out.startLogging(filePath=self.path.log, stealStdio=stealStdio, printToConsole=printToConsole)
 
         # register onStop for the shutdown call
         reactor.addSystemEventTrigger('before', 'shutdown', self.onStop)
+
+        # The reactor needs to be runnnig before this call is fired, since we start the session
+        # here. Assuming callLater doesn't fire until thats happened
         reactor.callLater(0, self.onStart)
 
     def onStart(self):
-        pdid = self.get('pdid') if self.provisioned() else 'unprovisioned router'
+        pdid = self.info.pdid if self.provisioned() else 'UNPROVISIONED'
+        output.out.usage('%s (%s: %s) coming up' % (self.info.pdid, self.meta.type, self.meta.mode))
 
-        output.out.usage('%s (%s) coming up' % (pdid, self.type))
+        # Start trying to connect to cxbr fabric
 
     def onStop(self):
         self.save()
 
-        # riffle.portal.close()
-
-        # remove any and all pubsub registrations. If not done, this can cause
-        # issues with subs that have to do with network connections
-
-        output.out.usage('%s going down' % self.type)
+        output.out.usage('%s (%s) going down' % (self.info.pdid, self.meta.type))
         smokesignal.clear_all()
         output.out.endLogging()
 
-    def makePaths(self):
+    @inlineCallbacks
+    def connect(self, sessionClass):
         '''
-        Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
+        Takes the given session class and attempts to connect to the crossbar fabric.
+
+        If an existing session is connected, it is cleanly closed.
         '''
+        self.session = yield sessionClass.start(self.net.host, self.info.pdid)
+        returnValue(self.session)
 
-        # Lets start out being a router
-        self.rootPath = os.getenv("SNAP_APP_DATA_PATH", None)
-
-        # Put tools contents in the home directory
-        if self.type is 'tool':
-            self.rootPath = os.path.expanduser('~') + '/.paradrop/'
-
-        # Current directory (since we might have more than one server at a time)
-        elif self.type is 'server':
-            self.rootPath = os.getcwd() + '/.paradrop/'
-
-        # We're a router, yay! But are we a router on snappy or local? The snappy
-        # path will not resolve on a local machine-- let it fall through, we're set
-        elif not self.rootPath:
-            self.rootPath = os.path.expanduser('~') + '/.paradrop/local/'
-
-        # Set the boring paths
-        self.logPath = self.rootPath + '/logs/'
-        self.keyPath = self.rootPath + '/keys/'
-        self.miscPath = self.rootPath + '/misc/'
-        self.configPath = self.rootPath + '/config'  # this is a path, not a file
-
-        # create the paths
-        for x in [self.rootPath, self.logPath, self.keyPath, self.miscPath]:
-            if not os.path.exists(x):
-                os.makedirs(x)
-
-    def load(self):
+    def onConnect(self):
         '''
-        Load our settings/configuration data from the path ivars. Does not check if the paths are None.
-
-        This is a combo of functionality from store and settings. The method of loading is configurable. 
-        Right now its YAML.
+        Called when the session passed into connect suceeds in its connection.
+        That session object is assigned to self.session.
         '''
+        if not self.provisioned():
+            output.out.warn('Router has no keys or identity. Waiting to connect to to server.')
+        else:
+            reactor.callLater(.1, self.connect)
 
-        # Check to make sure we have a default settings file
-        if not os.path.isfile(self.configPath):
-            createDefaultInfo(self.configPath)
+    def onDisconnect(self):
+        ''' Called when the crossbar session disconnects intentionally (cleanly). '''
+        pass
 
-        self.config = loadYaml(self.configPath)
+    def onConnectionLost(self):
+        ''' Called when our session is lost by accident. '''
+        pass
 
-        # Sanity check contents of info and throw it out if bad
-        if not validateInfo(self.config):
-            out.err('Saved configuration data invalid, destroying it.')
-            os.remove(self.configPath)
-            createDefaultInfo(self.configPath)
-            self.config = loadYaml(self.configPath)
-
-    def save(self):
-        ''' Ehh. Ideally this should happen constantly and asynchronously. '''
-        writeYaml(self.config, self.configPath)
-
-    #########################################################
-    # Settings
-    #########################################################
-
-    def set(self, k, v):
-        self.config[k] = v
+    def onInfoChange(self, key, value):
+        '''
+        Called when an internal setting is changed. Trigger a save automatically.
+        '''
         self.save()
 
-    def get(self, k):
-        return self.config[k]
+    def save(self):
+        ''' Ehh. Ideally this should happen asynchronously. '''
+        saveDict = self.info.__dict__['contents']
+        saveDict['version'] = self.meta.version
+
+        writeYaml(saveDict, self.path.config)
+
+    #########################################################
+    # High Level Methods
+    #########################################################
 
     def provisioned(self):
-        return self.config['pdid'] is not None
+        '''
+        Checks if this[whatever] appears to be provisioned or not
+        '''
+
+        return self.info.pdid is not None
+
+    def provision(self, pdid, keys):
+        ''' Temporary method, things dont work like this anymore '''
+
+        self.info.pdid = pdid
 
     #########################################################
     # Keys
@@ -178,14 +291,14 @@ class NexusBase(object):
 
     def saveKey(self, key, name):
         ''' Save the key with the given name. Overwrites by default '''
-        path = self.keyPath + name
+        path = self.paths.key + name
 
         with open(path, 'wb') as f:
             f.write(key)
 
     def getKey(self, name):
         ''' Returns the given key or None '''
-        path = self.keyPath + name
+        path = self.paths.key + name
 
         if os.path.isfile(path):
             with open(path, 'rb') as f:
@@ -194,85 +307,166 @@ class NexusBase(object):
         return None
 
     #########################################################
-    # Chutes
+    # Misc
     #########################################################
 
-    def chute(self, name):
-        return None
-
-    def chutes(self):
-        return []
-
-    def removeChute(self, name):
-        pass
-
-    def addChute(self, name):
-        pass
-
-    #########################################################
-    # Network Resolution
-    #########################################################
-
-    def serverHost(self):
-        ''' Different in production vs dev, etc. Returns hostname '''
-        if self.mode == 'local':
-            return 'localhost'
-
-        return 'paradrop.io'
-
-    def rifflePort(self):
-        return _incrementingPort(8016, self.mode)
-
-    def insecureRifflePort(self):
-        ''' This isnt a thing yet. But it will be. '''
-        return _incrementingPort(8017, self.mode)
-
-    def webPort(self):
-        return _incrementingPort(14321, self.mode)
-
-    #########################################################
-    # Path Resolution
-    #########################################################
-
-    def logPath(self):
-        return self.logPath
-
-    def keyPath(self):
-        return self.keyPath
-
-    def chutePath(self):
-        return self.chutePath
-
-    def uciPath(self):
-        pass
-
+    def __repr__(self):
+        ''' Dump everything '''
+        dic = dict(paths=self.path.contents, net=self.net.contents, info=self.info.contents, meta=str(self.meta))
+        return json.dumps(dic, sort_keys=True, indent=4)
 
 #########################################################
 # Utils
 #########################################################
 
-def _incrementingPort(base, mode):
-    ''' Returns the given port plus some multiple of 10000 based on the passed mode '''
 
-    if mode == 'production' or mode == 'local':
-        return base
+class AttrWrapper(object):
 
-    if mode == 'development':
-        return base + 10000
+    '''
+    Simple attr interceptor to make accessing settings simple and magical.
+    Because we all could use a little magic in our day.
 
-    if mode == 'test':
-        return base + 10000 * 2
+    Stores values in an internal dict called contents.
 
-    return base
+    Does not allow modification once _lock() is called. Respect it.
+
+    Once you've filled it up with the appropriate initial values, set
+    onChange to assign
+    '''
+
+    def __init__(self):
+        self.__dict__['contents'] = {}
+
+        # Called when a value changes unless None
+        self.__dict__['onChange'] = None
+
+        # Lock the contents of this wrapper. Can read valued, cant write them
+        self.__dict__['locked'] = False
+
+    def _lock(self):
+        self.__dict__['locked'] = True
+
+    def setOnChange(self, func):
+        assert(callable(func))
+        self.__dict__['onChange'] = func
+
+    def __repr__(self):
+        return str(self.contents)
+
+    def __getattr__(self, name):
+        return self.__dict__['contents'][name]
+
+    def __setattr__(self, k, v):
+        if self.__dict__['locked']:
+            raise AttributeError('This attribute wrapper is locked. You cannot change its values.')
+
+        self.contents[k] = v
+
+        if self.__dict__['onChange'] is not None:
+            self.__dict__['onChange'](k, v)
+
+
+def resolveNetwork(nex, mode):
+    ''' Given a nexus object and its mode, set its network values '''
+    nex.net.webPort = eval('nex.__class__.PORT_HTTP_%s' % mode.name.upper())
+    nex.net.port = eval('nex.__class__.PORT_WS_%s' % mode.name.upper())
+
+    nex.net.webHost = eval('nex.__class__.HOST_HTTP_%s' % mode.name.upper())
+    nex.net.host = eval('nex.__class__.HOST_WS_%s' % mode.name.upper())
+
+    # Interpolating the websockets port into the url
+    # TODO: take a look at this again
+    nex.net.host = nex.net.host.replace('PORT', nex.net.port)
+
+
+def resolvePaths(nex):
+    '''
+    Are we on a VM? On snappy? Bare metal? The server?  So many paths, so few answers!
+    '''
+
+    # Default use the Home path (covers tools)
+    nex.path.root = nex.__class__.PATH_HOME
+
+    # Always use current directory when server (since there could be more than one of them )
+    if nex.meta.type == Type.server:
+        nex.path.root = nex.__class__.PATH_CURRENT
+
+    # we can either resolve the root path based on the mode (which
+    # is prefereable) or continue to just use the snappy check to set it
+    # In other words, path_snappy if in snappy, else path_vm
+    if nex.meta.type == Type.router:
+        if nex.PATH_SNAPPY is None:
+            nex.path.root = nex.__class__.PATH_LOCAL
+        else:
+            nex.path.root = nex.__class__.PATH_SNAPPY
+
+    # Set boring paths
+    nex.path.log = nex.path.root + nex.__class__.PATH_LOG
+    nex.path.key = nex.path.root + nex.__class__.PATH_KEY
+    nex.path.misc = nex.path.root + nex.__class__.PATH_MISC
+    nex.path.config = nex.path.root + nex.__class__.PATH_CONFIG
+
+    # create the paths
+    for x in [nex.path.root, nex.path.log, nex.path.key, nex.path.misc]:
+        if not os.path.exists(x):
+            os.makedirs(x)
+
+
+def loadConfig(nexus, path):
+    '''
+    Given a path to the config file, load its contents and assign it to the
+    config file as appropriate.
+    '''
+
+    # Check to make sure we have a default settings file
+    if not os.path.isfile(path):
+        createDefaultInfo(path)
+
+    contents = loadYaml(path)
+
+    # Sanity check contents of info and throw it out if bad
+    if not validateInfo(contents):
+        output.out.err('Saved configuration data invalid, destroying it.')
+        os.remove(path)
+        createDefaultInfo(path)
+        contents = loadYaml(path)
+        writeYaml(contents, path)
+
+    nexus.info.pdid = contents['pdid']
+    # nexus.info.owner = contents['version']
+
+
+def overrideSettingsList(nexusClass, settings):
+    '''
+    Replaces constants settings values with new ones based on the passed list
+    and THEN the environment variables as passed in
+    '''
+
+    # settings = {x.split(':')[0]: x.split(':')[1] for x in settings}
+
+    # replace settings from dict first
+    for x in settings:
+        k, v = x.split(':')
+    # for k, v in settings.iteritems():
+        if getattr(nexusClass, k, None) is not None:
+            setattr(nexusClass, k, v)
+            output.out.info('Overriding setting %s with value %s from passed settings' % (k, v))
+        else:
+            raise KeyError('You have set a setting that does not exist! %s not found!' % k)
+
+
+def overrideSettingsEnv(nexusClass):
+    for v in dir(nexusClass):
+        replace = os.environ.get(v, None)
+        if replace is not None:
+            output.out.info('Overriding setting %s with value %s from envionment variable' % (v, replace))
+            setattr(nexusClass, v, replace)
 
 
 def createDefaultInfo(path):
     default = {
         'version': 1,
-        'pdid': None,
-        'chutes': [],
-        'routers': [],
-        'instances': []
+        'pdid': None
     }
 
     writeYaml(default, path)
@@ -282,23 +476,30 @@ def validateInfo(contents):
     '''
     Error checking on the read YAML file. This is a temporary method.
 
-    :param contents: the read-in yaml to check
-    :type contents: dict.
-    :returns: True if valid, else false
+    :
+        param contents:
+            the read - in yaml to check
+    :
+        type contents:
+            dict.
+    :
+        returns:
+            True if valid, else false
     '''
-    INFO_REQUIRES = ['version', 'pdid', 'chutes', 'routers', 'instances']
+    INFO_REQUIRES = ['version', 'pdid']
 
     for k in INFO_REQUIRES:
         if k not in contents:
+            output.out.err('Contents is missing: ' + str(k))
             return False
-
-    # Check the validity of the contents
 
     return True
 
 
 def writeYaml(contents, path):
     ''' Overwrites content with YAML representation at given path '''
+    # print 'Writing ' + str(contents) + ' to path ' + str(path)
+
     with open(path, 'w') as f:
         f.write(yaml.dump(contents, default_flow_style=False))
 
@@ -306,4 +507,7 @@ def writeYaml(contents, path):
 def loadYaml(path):
     ''' Return dict from YAML found at path '''
     with open(path, 'r') as f:
-        return yaml.load(f.read())
+        contents = yaml.load(f.read())
+
+    # print 'Loaded ' + str(contents) + ' from path ' + str(path)
+    return contents

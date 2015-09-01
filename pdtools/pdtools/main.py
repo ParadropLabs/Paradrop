@@ -21,18 +21,24 @@ To run this code from the command line:
 '''
 
 from pkg_resources import get_distribution
+import sys
 
 from docopt import docopt
 from twisted.internet import task
 from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
 
-from pdtools.lib import output, riffle, names, cxbr
+from pdtools.lib import output, riffle, names, cxbr, nexus
 from pdtools.coms import routers, general, server
 from pdtools.lib.store import store
 
 SERVER_HOST = 'paradrop.io'
 # SERVER_HOST = 'localhost'
+<< << << < HEAD
 SERVER_PORT = 8015  # this is the vanilla server port, not the riffle one
+== == == =
+SERVER_PORT = 8015
+>>>>>> > danger
 
 
 rootDoc = """
@@ -41,7 +47,8 @@ usage: paradrop [options] <command> [<args>...]
 options:
    -h, --help
    --version
-   -v, --verbose    Show verbose internal output       
+   -v, --verbose    Show verbose internal output   
+   -m, --mode=MODE  production, development, test, or local [default: production]
    
 commands:
     router     Manage routers
@@ -52,7 +59,7 @@ commands:
     
     login      Log into Paradrop account on another computer
     register   Register for a Paradrop account
-    logout     Logout of account on this computer
+    logout     Logout of account on this computer (not implemented)
 
 See 'paradrop <command> -h' for more information on a specific command.    
 """
@@ -73,10 +80,14 @@ commands:
 
 chuteDoc = """
 usage:
-    paradrop chute install <host> <port> <path-to-config>
-    paradrop chute delete <host> <port> <name>
-    paradrop chute start <host> <port> <name>
-    paradrop chute stop <host> <port> <name>
+    paradrop [options] chute install <host> <port> <path-to-config>
+    paradrop [options] chute delete <host> <port> <name>
+    paradrop [options] chute start <host> <port> <name>
+    paradrop [options] chute stop <host> <port> <name>
+
+options:
+   -v, --verbose    Show verbose internal output 
+   -m, --mode=MODE  production, development, test, or local [default: production]
 
 commands: 
     start       Start the installed chute with the given name
@@ -87,10 +98,11 @@ commands:
 
 listDoc = """
 usage: 
-    paradrop list
+    paradrop [options] list
 
 options:
-   -v, --verbose    Show verbose internal output       
+   -v, --verbose    Show verbose internal output 
+   -m, --mode=MODE  production, development, test, or local [default: production]
 
 
 Lists all owned resources.
@@ -98,10 +110,11 @@ Lists all owned resources.
 
 logsDoc = """
 usage: 
-    paradrop logs <name>
+    paradrop [options] logs <name>
 
 options:
-   -v, --verbose    Show verbose internal output       
+   -v, --verbose    Show verbose internal output 
+   -m, --mode=MODE  production, development, test, or local [default: production]      
 
     
 Displays the logs for the provided resource. The resource, commonly a router, 
@@ -112,13 +125,11 @@ must be online.
 def routerMenu():
     args = docopt(routerDoc, options_first=False)
 
-    checkLoggedIn()
-    
     if args['provision']:
-        task.react(routers.provisionRouter, (args['<name>'], args['<host>'], args['<port>']))
+        return routers.provisionRouter(args['<name>'], args['<host>'], args['<port>'])
 
     elif args['create']:
-        task.react(server.createRouter, (args['<name>'],))
+        return server.createRouter(args['<name>'])
 
     elif args['update']:
         task.react(routers.update, (args['<name>'], args['<snap>']))
@@ -130,67 +141,97 @@ def routerMenu():
 def chuteMenu():
     args = docopt(chuteDoc, options_first=False)
 
-    checkLoggedIn()
+    host, port = args['<host>'], args['<port>']
 
     if args['install']:
-        return routers.installChute(args['<host>'], args['<port>'], args['<path-to-config>'])
+        return routers.installChute(host, port, args['<path-to-config>'])
 
     if args['delete']:
-        return routers.deleteChute(args['<host>'], args['<port>'], args['<name>'])
+        return routers.deleteChute(host, port, args['<name>'])
 
     if args['start']:
-        return routers.startChute(args['<host>'], args['<port>'], args['<name>'])
+        return routers.startChute(host, port, args['<name>'])
 
     if args['stop']:
-        return routers.stopChute(args['<host>'], args['<port>'], args['<name>'])
+        return routers.stopChute(host, port, args['<name>'])
 
     print routerDoc
 
 
 def listMenu():
     args = docopt(listDoc)
-    checkLoggedIn()
 
-    task.react(server.list)
+    return server.list()
 
 
 def logsMenu():
     args = docopt(logsDoc)
-    checkLoggedIn()
 
-    reactor.callLater(.1, server.logs, None, args['<name>'])
-    reactor.run()
-    exit(0)
-
+    return server.logs(args['<name>'])
 
 ###################################################################
 # Utility and Initialization
 ###################################################################
 
-def checkLoggedIn():
-    # logged in calls
-    if not store.loggedIn():
-        print 'You must login first.'
-        exit(0)
 
+class Nexus(nexus.NexusBase):
 
-def setup(displayToConsole=False, logLevel=0):
     '''
-    Boilerplate setup. Start the logger, give riffle crypto keys, and 
-    initialize riffle's portal by creating name to realm assignments
+    Core nexus subclass. This handles all the high level operations for 
+    tools, but should be the lightest of the three nexus subclasses by far. 
+
+    The only core piece of functionality here is logins and handling bad connections.
     '''
-    # For now, don't grab STDIO and don't write random log noise to conosle
-    output.out.startLogging(stealStdio=False, printToConsole=False)
 
-    # Initialize riffle with default values (can be overridden later)
-    # NOTE: riffle serves on its own default port. This is a different port from the const above
-    # riffle.portal.certCa = store.getKey('ca.pem')
-    # riffle.portal.keyPrivate = store.getKey('client.pem')
-    # riffle.portal.host = SERVER_HOST
+    def __init__(self, mode, settings=[]):
+        # get a Mode.production, Mode.test, etc from the passed string
+        mode = eval('nexus.Mode.%s' % mode)
 
-    # Register realms. See riffle documentation for Realm in pdtools.lib.riffle
-    # riffle.portal.addRealm(names.matchers[names.NameTypes.server], riffle.Realm(server.ServerPerspective))
-    # riffle.portal.addRealm(names.matchers[names.NameTypes.router], riffle.Realm(riffle.RifflePerspective))
+        # Want to change logging functionality? See optional args on the base class and pass them here
+        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=False)
+
+    def onStart(self):
+        super(Nexus, self).onStart()
+
+    def onStop(self):
+        super(Nexus, self).onStop()
+
+
+@general.failureCallbacks
+@inlineCallbacks
+def connectAndCall(command):
+    '''
+    Convenience method-- wait for nexus to finish connecting and then 
+    make the call. 
+
+    The subhandler methods should not call reactor.stop, just return.
+    '''
+
+    # Not he biggest fan of this, but we want to intercept and reformat the
+    # pdserver exceptions
+    # try:
+
+    yield nexus.core.connect(cxbr.BaseSession)
+
+    # Unpublished
+    if command == 'ping':
+        yield general.ping()
+
+    # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
+    elif command in 'router chute list logs'.split():
+        yield eval('%sMenu' % command)()
+
+    else:
+        print "%r is not a paradrop command. See 'paradrop -h'." % command
+
+    # except:
+    # this only works if the exception is a docopt object. May not work otherwise
+    #     e = sys.exc_info()[0]
+
+    #     print str(e)
+    #     print e.usage
+
+    reactor.stop()
 
 
 def main():
@@ -199,26 +240,31 @@ def main():
     argv = [args['<command>']] + args['<args>']
     command = args['<command>']
 
-    # Check for verbose flag. If set, turn on the serious logging.
-    # TODO: set lower level log filters based on the number of '-v's passed in
-    setup(displayToConsole=args['--verbose'])
+    # Create and assign the root nexus object
+    mode = args['--mode']
+    if mode not in 'production development test local'.split():
+        print 'You entered an invalid mode. Please enter one of [production, development, test, local]'
+        exit(1)
 
+    # Create the global nexus object and assign it as a global "singleton"
+    nexus.core = Nexus(args['--mode'])
+
+    # TODO: If not provisioned, we have to change our realm into the unprovisioned one
+    # Make these calls crossbar and move them to an unprovisioned realm
     if command == 'login':
         task.react(server.login, (SERVER_HOST, SERVER_PORT,))
 
     if command == 'register':
         task.react(server.register, (SERVER_HOST, SERVER_PORT,))
 
-    # It doesn't matter what the call is. If we got to this point then we have to instantiate a
-    # crossbar session
-    # pdid = store.getConfig('pdid')
-    # sess = yield cxbr.BaseSession.start("ws://127.0.0.1:8080/ws", pdid)
+    if not nexus.core.provisioned():
+        print 'You must login first.'
+        exit(0)
 
-    # Check for a sub-command. If found, pass off execution to the appropriate sub-handler
-    if command in 'router chute list logs'.split():
-        return eval('%sMenu' % args['<command>'])()
+    # Start the reactor, start the nexus connection, and then start the call
+    reactor.callLater(0, connectAndCall, args['<command>'])
+    reactor.run()
 
-    exit("%r is not a paradrop command. See 'paradrop -h'." % args['<command>'])
 
 if __name__ == '__main__':
     main()

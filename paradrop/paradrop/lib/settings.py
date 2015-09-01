@@ -31,7 +31,7 @@ import re
 import sys
 
 DEBUG_MODE = False
-VERBOSE = False
+# VERBOSE = False
 
 #
 # pdfcd
