@@ -134,7 +134,7 @@ def routerMenu(s):
         print routerDoc
 
 
-def chuteMenu():
+def chuteMenu(s):
     args = docopt.docopt(chuteDoc, options_first=False)
 
     host, port = args['<host>'], args['<port>']
@@ -179,8 +179,8 @@ class Nexus(nexus.NexusBase):
     The only core piece of functionality here is logins and handling bad connections.
     '''
 
-    def __init__(self, mode, settings=[]):
-        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=False)
+    def __init__(self, mode, verbose, settings=[]):
+        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=verbose)
 
 
 def connectAndCall(command):
@@ -232,7 +232,7 @@ def main():
     command = args['<command>']
 
     # Create the global nexus object and assign it as a global "singleton"
-    nexus.core = Nexus(args['--mode'])
+    nexus.core = Nexus(args['--mode'], args['--verbose'])
 
     # Start the reactor, start the nexus connection, and then start the call
     reactor.callLater(0, connectAndCall, command)
