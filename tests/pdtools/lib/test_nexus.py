@@ -39,6 +39,13 @@ def testMetaAssignment():
     assert nex.meta.version == 1
 
 
+def testModeString():
+    ''' Mode can either be enum or string '''
+    nex = TestingNexus(nexus.Type.router, 'production')
+
+    assert nex.meta.mode == nexus.Mode.production
+
+
 def testPathCreation():
     nex = TestingNexus(nexus.Type.router, nexus.Mode.production)
 

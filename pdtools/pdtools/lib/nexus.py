@@ -203,28 +203,17 @@ class NexusBase(object):
         overrideSettingsList(self.__class__, settings)
         overrideSettingsEnv(self.__class__)
 
-        # Set meta
-        self.meta.type = nexusType
-        self.meta.mode = mode
-        self.meta.version = self.__class__.VERSION
-
-        # Set paths
+        # Resolve all the final attribute values
+        resolveMeta(self, nexusType, mode)
         resolvePaths(self)
-
-        # Set network
         resolveNetwork(self, self.meta.mode)
-
-        # Set config
         resolveConfig(self, self.meta.mode)
-
-        # Set info by loading from paths
-        loadConfig(self, self.path.config)
+        resolveInfo(self, self.path.config)
 
         # Lock all the wrapper objects except info. That one we register to the save function
+        # Paths, network, etc, cannot be changed from here on out to discourage unsafe usage
         [x._lock() for x in [self.path, self.net, self.meta]]
         self.info.setOnChange(self.onInfoChange)
-
-        # Done with data initizlization. From here on out its configuration and state
 
         # initialize output. If filepath is set, logs to file.
         # If stealStdio is set intercepts all stderr and stdout and interprets it internally
@@ -389,6 +378,27 @@ class AttrWrapper(object):
             self.__dict__['onChange'](k, v)
 
 
+def resolveMeta(nex, nexusType, mode):
+    nex.meta.type = nexusType
+
+    # support for passing strings or the enum value
+    if isinstance(mode, str):
+        nex.meta.mode = eval('Mode.%s' % mode)
+    else:
+        nex.meta.mode = mode
+
+    '''
+    Saving this here for later. Might want something more useful
+
+    mode = args['--mode']
+    if mode not in 'production development test local'.split():
+        print 'You entered an invalid mode. Please enter one of [production, development, test, local]'
+        exit(1)
+    '''
+
+    nex.meta.version = nex.__class__.VERSION
+
+
 def resolveNetwork(nex, mode):
     ''' Given a nexus object and its mode, set its network values '''
     nex.net.webPort = eval('nex.__class__.PORT_HTTP_%s' % mode.name.upper())
@@ -454,7 +464,7 @@ def resolvePaths(nex):
             os.makedirs(x)
 
 
-def loadConfig(nexus, path):
+def resolveInfo(nexus, path):
     '''
     Given a path to the config file, load its contents and assign it to the
     config file as appropriate.

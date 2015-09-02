@@ -180,19 +180,7 @@ class Nexus(nexus.NexusBase):
     '''
 
     def __init__(self, mode, settings=[]):
-        # get a Mode.production, Mode.test, etc from the passed string
-        mode = eval('nexus.Mode.%s' % mode)
-
-        verbose = mode != nexus.Mode.production
-
-        # Want to change logging functionality? See optional args on the base class and pass them here
-        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=verbose)
-
-    def onStart(self):
-        super(Nexus, self).onStart()
-
-    def onStop(self):
-        super(Nexus, self).onStop()
+        super(Nexus, self).__init__(nexus.Type.tools, mode, settings=settings, stealStdio=False, printToConsole=False)
 
 
 def connectAndCall(command):
@@ -212,7 +200,6 @@ def connectAndCall(command):
     if not nexus.core.provisioned():
         print 'You must login first.'
         exit(0)
-
 
     # Unpublished
     if command == 'ping':
@@ -235,7 +222,6 @@ def connectAndCall(command):
 
     d.addErrback(showDocopt)
     d.addErrback(general.printFailure)
-
     d.addBoth(lambda x: reactor.stop())
 
 
@@ -244,12 +230,6 @@ def main():
     args = docopt.docopt(rootDoc, version=get_distribution('pdtools').version, options_first=True, help=True)
     argv = [args['<command>']] + args['<args>']
     command = args['<command>']
-
-    # Create and assign the root nexus object. Shouldnt this be in nexus?
-    mode = args['--mode']
-    if mode not in 'production development test local'.split():
-        print 'You entered an invalid mode. Please enter one of [production, development, test, local]'
-        exit(1)
 
     # Create the global nexus object and assign it as a global "singleton"
     nexus.core = Nexus(args['--mode'])
