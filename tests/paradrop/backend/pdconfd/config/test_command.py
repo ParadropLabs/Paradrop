@@ -4,18 +4,30 @@ from mock import MagicMock, patch
 from nose.tools import assert_raises
 
 
+@patch("paradrop.backend.pdconfd.config.command.out")
 @patch("subprocess.Popen")
-def test_Command_execute(Popen):
+def test_Command_execute(Popen, out):
     """
     Test the Command.execute method
     """
     from paradrop.backend.pdconfd.config.command import Command
 
-    command = Command(0, [])
+    proc = MagicMock()
+    proc.stdout = ["output"]
+    proc.stderr = ["error"]
+    Popen.return_value = proc
+
+    command = Command(0, ["callme"])
     command.parent = MagicMock()
 
     command.execute()
+    assert out.verbose.called_once_with("callme: output")
+    assert out.verbose.called_once_with("callme: error")
     assert command.parent.executed.append.called
+
+    Popen.side_effect = Exception("Boom!")
+    command.execute()
+    assert out.info.called
 
 
 @patch("paradrop.backend.pdconfd.config.command.Command.execute")
