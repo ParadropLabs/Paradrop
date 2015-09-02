@@ -109,9 +109,9 @@ class NexusBase(object):
     ###############################################################################
 
     PATH_SNAPPY = os.getenv("SNAP_APP_DATA_PATH", None)
-    PATH_LOCAL = os.path.expanduser('~') + '/.paradrop/local/'
-    PATH_HOME = os.path.expanduser('~') + '/.paradrop/'
-    PATH_CURRENT = os.getcwd() + '/.paradrop/'
+    PATH_LOCAL = os.path.expanduser('~') + '/.paradrop/local'
+    PATH_HOME = os.path.expanduser('~') + '/.paradrop'
+    PATH_CURRENT = os.getcwd() + '/.paradrop'
     PATH_ROOT = None                                   # nexus.core.path.root
 
     PATH_LOG = 'logs/'                                 # nexus.core.path.log
@@ -442,10 +442,10 @@ def resolvePaths(nex):
             nex.path.root = nex.__class__.PATH_SNAPPY
 
     # Set boring paths
-    nex.path.log = nex.path.root + nex.__class__.PATH_LOG
-    nex.path.key = nex.path.root + nex.__class__.PATH_KEY
-    nex.path.misc = nex.path.root + nex.__class__.PATH_MISC
-    nex.path.config = nex.path.root + nex.__class__.PATH_CONFIG
+    nex.path.log = os.path.join(nex.path.root, nex.__class__.PATH_LOG)
+    nex.path.key = os.path.join(nex.path.root, nex.__class__.PATH_KEY)
+    nex.path.misc = os.path.join(nex.path.root, nex.__class__.PATH_MISC)
+    nex.path.config = os.path.join(nex.path.root, nex.__class__.PATH_CONFIG)
     nex.path.docker = nex.__class__.DOCKER_BIN_DIR
 
     # Set old paths
