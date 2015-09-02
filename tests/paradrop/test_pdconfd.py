@@ -280,7 +280,7 @@ def test_config_dnsmasq():
     commands = manager.previousCommands
 
     # Unload should generate a kill command for the fake pid.
-    assert in_commands("kill 12345", commands)
+    assert in_commands("kill", commands)
     os.remove(pidFile)
 
 

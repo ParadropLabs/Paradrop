@@ -3,7 +3,7 @@ import ipaddress
 from pdtools.lib.output import out
 
 from .base import ConfigObject
-from .command import Command
+from .command import Command, KillCommand
 
 
 def get_all_dhcp_interfaces(allConfigs):
@@ -115,15 +115,8 @@ class ConfigDnsmasq(ConfigObject):
 
     def undoCommands(self, allConfigs):
         commands = list()
-        try:
-            with open(self.pidFile, "r") as inputFile:
-                pid = inputFile.read().strip()
-            cmd = ["kill", pid]
-            commands.append(Command(Command.PRIO_START_DAEMON, cmd, self))
-        except:
-            # No pid file --- maybe dnsmasq was not running?
-            out.warn("File not found: {}\n".format(
-                self.pidFile))
-            return []
+
+        commands.append(KillCommand(Command.PRIO_START_DAEMON,
+                            self.pidFile, self))
 
         return commands

@@ -1,7 +1,21 @@
 import tempfile
 
-from mock import patch
+from mock import MagicMock, patch
 from nose.tools import assert_raises
+
+
+@patch("subprocess.Popen")
+def test_Command_execute(Popen):
+    """
+    Test the Command.execute method
+    """
+    from paradrop.backend.pdconfd.config.command import Command
+
+    command = Command(0, [])
+    command.parent = MagicMock()
+
+    command.execute()
+    assert command.parent.executed.append.called
 
 
 @patch("paradrop.backend.pdconfd.config.command.Command.execute")
