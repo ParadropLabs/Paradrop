@@ -90,9 +90,9 @@ class KillCommand(Command):
         but it is meaningful you print the command object.
         """
         # This will not be a valid command if pid is a file path.
-        cmd = ["kill", pid]
+        command = ["kill", pid]
 
-        super(KillCommand, self).__init__(priority, cmd, parent)
+        super(KillCommand, self).__init__(priority, command, parent)
 
         # Is it a numeric pid or a path to a pid file?
         try:
@@ -117,5 +117,5 @@ class KillCommand(Command):
     def execute(self):
         pid = self.getPid()
         if pid is not None:
-            self.cmd = ["kill", str(pid)]
+            self.command = ["kill", str(pid)]
             super(KillCommand, self).execute()
