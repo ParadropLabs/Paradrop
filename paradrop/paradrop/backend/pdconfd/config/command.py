@@ -46,8 +46,13 @@ class Command(object):
 
     def execute(self):
         try:
-            proc = subprocess.Popen(self.command)
+            proc = subprocess.Popen(self.command, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
             self.pid = proc.pid
+            for line in proc.stdout:
+                out.verbose("{}: {}".format(self.command[0], line))
+            for line in proc.stderr:
+                out.verbose("{}: {}".format(self.command[0], line))
             self.result = proc.wait()
             out.info('Command "{}" returned {}\n'.format(
                      " ".join(self.command), self.result))
