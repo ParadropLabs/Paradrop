@@ -215,7 +215,13 @@ class ConfigManager(object):
 
             # If an existing section is identical (in content), we have
             # no new work to do for this section.
-            if matchByContent is None:
+            if matchByContent is not None:
+                # Just make sure the new config's internalName matches the old
+                # config's.  This is mainly for anonymous sections because they
+                # have auto-generated unique names.
+                config.internalName = matchByContent.internalName
+
+            else:
                 if matchByName is not None:
                     # Old section will need to be updated appropriately.
                     updatedConfigs.add(matchByName)
@@ -244,9 +250,13 @@ class ConfigManager(object):
         # First try to apply any updates, since these mess with our undoConfigs
         # and newConfigs sets.
         for config in updatedConfigs:
-            new = allConfigs[config.getTypeAndName()]
+            try:
+                new = allConfigs[config.getTypeAndName()]
+                updateCommands = config.update(new, allConfigs)
+            except:
+                out.warn("An error occurred updating {}\n".format(str(config)))
+                updateCommands = None
 
-            updateCommands = config.update(new, allConfigs)
             if updateCommands is None:
                 # Update function not implemented---need to undo old and
                 # implement new.

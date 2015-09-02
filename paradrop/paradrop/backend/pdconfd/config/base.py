@@ -5,14 +5,26 @@ class ConfigObject(object):
     typename = None
     options = []
 
-    def __init__(self):
+    def __init__(self, name=None):
         self.id = ConfigObject.nextId
         ConfigObject.nextId += 1
 
         self.source = None
-        self.name = "s{:08x}".format(self.id)
+        self.name = name
         self.comment = None
         self.dependents = set()
+
+        # name is the externally visible name, e.g. "lan" in 
+        # "config interface lan".  name is None for anonymous sections,
+        # e.g. "config wifi-iface".
+        #
+        # internalName is used for identifying config objects and must
+        # always be defined.  For anonymous sections, we generate a unique
+        # name from id.
+        if name is None:
+            self.internalName = "s{:08x}".format(self.id)
+        else:
+            self.internalName = name
 
         # Will be a running list of commands executed by request of this config
         # object.
@@ -25,7 +37,10 @@ class ConfigObject(object):
         return hash(self.getTypeAndName())
 
     def __str__(self):
-        return "config {} {}".format(self.typename, self.name)
+        if self.name is None:
+            return "config {}".format(self.typename)
+        else:
+            return "config {} {}".format(self.typename, self.name)
 
     def setup(self):
         """
@@ -78,7 +93,7 @@ class ConfigObject(object):
         """
         Return tuple (section type, section name).
         """
-        return (self.typename, self.name)
+        return (self.typename, self.internalName)
 
     def lookup(self, allConfigs, sectionType, sectionName, addDependent=True):
         """
@@ -141,13 +156,10 @@ class ConfigObject(object):
         options -- dictionary of options loaded from the section
         comment -- comment string or None
         """
-        obj = cls()
+        obj = cls(name)
         obj.manager = manager
         obj.source = source
         obj.comment = comment
-
-        if name is not None:
-            obj.name = name
 
         for opdef in cls.options:
             found = False
