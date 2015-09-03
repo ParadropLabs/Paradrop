@@ -64,6 +64,7 @@ usage:
     paradrop [options] router create <name> 
     paradrop [options] router provision <name> <host> <port>
     paradrop [options] router update <name> <snap> ...
+    paradrop [options] router ping <name>
 
 options:
    -v, --verbose    Show verbose internal output       
@@ -128,7 +129,10 @@ def routerMenu(s):
         return server.createRouter(args['<name>'])
 
     elif args['update']:
-        task.react(routers.update, (args['<name>'], args['<snap>']))
+        return routers.update(args['<name>'], args['<snap>'])
+
+    elif args['ping']:
+        return routers.ping(args['<name>'])
 
     else:
         print routerDoc
@@ -188,7 +192,7 @@ def connectAndCall(command):
     Wait for nexus to connect, make the requested calls. 
     '''
 
-    d = nexus.core.connect(cxbr.BaseSession)
+    d = nexus.core.connect(cxbr.BaseSession, debug=False)
 
     # If not provisioned, user is not logged in. User can still login, cant proceed further
     if command == 'login':

@@ -10,6 +10,7 @@ import yaml
 from os.path import expanduser
 
 from twisted.internet import defer
+from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 
 from pdtools.coms import general
 from pdtools.coms.client import RpcClient
@@ -49,7 +50,7 @@ def provisionRouter(name, host, port):
 
 @general.defaultCallbacks
 @defer.inlineCallbacks
-def update(r, name, sources):
+def update(name, sources):
     print 'Starting an update command!'
 
     target = nexus.core.info.pdid + '.' + name
@@ -63,9 +64,16 @@ def update(r, name, sources):
     print 'Conpleted with result: ' + result
 
 
+@defer.inlineCallbacks
+def ping(target):
+    target = nexus.core.info.pdid + '.' + target
+    ret = yield nexus.core.session.call(target, 'ping')
+    print 'Ping result: ' + str(ret)
+
 ###############################################################################
 # Chute Operations
 ###############################################################################
+
 
 def installChute(host, port, config):
     '''

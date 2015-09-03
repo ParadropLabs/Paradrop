@@ -241,13 +241,13 @@ class NexusBase(object):
         output.out.endLogging()
 
     @inlineCallbacks
-    def connect(self, sessionClass):
+    def connect(self, sessionClass, debug=False):
         '''
         Takes the given session class and attempts to connect to the crossbar fabric.
 
         If an existing session is connected, it is cleanly closed.
         '''
-        self.session = yield sessionClass.start(self.net.host, self.info.pdid)
+        self.session = yield sessionClass.start(self.net.host, self.info.pdid, debug=debug)
         returnValue(self.session)
 
     def onConnect(self):
