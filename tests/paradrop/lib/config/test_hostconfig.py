@@ -21,18 +21,20 @@ def test_generateHostConfig():
     assert config['wifi'][0]['interface'] == "wlan0"
 
 
+@patch("paradrop.lib.config.devices.detectSystemDevices")
 @patch("paradrop.lib.config.hostconfig.settings")
-def test_loadHostConfig(settings):
+def test_prepareHostConfig(settings, detectSystemDevices):
     """
-    Test paradrop.lib.config.hostconfig.loadHostConfig
+    Test paradrop.lib.config.hostconfig.prepareHostConfig
     """
-    from paradrop.lib.config.hostconfig import loadHostConfig
+    from paradrop.lib.config.hostconfig import prepareHostConfig
 
     devices = {
         'wan': [{'name': 'eth0'}],
         'lan': list(),
         'wifi': list()
     }
+    detectSystemDevices.return_value = devices
 
     source = tempfile.NamedTemporaryFile(delete=True)
     source.write("{test: value}")
@@ -40,25 +42,23 @@ def test_loadHostConfig(settings):
 
     settings.HOST_CONFIG_PATH = source.name
 
-    config = loadHostConfig(devices)
+    config = prepareHostConfig()
     assert config['test'] == 'value'
 
     with patch("paradrop.lib.config.hostconfig.yaml") as yaml:
-        yaml.load.side_effect = IOError()
-        yaml.dump.return_value = "{test: value}"
+        yaml.safe_load.side_effect = IOError()
+        yaml.safe_dump.return_value = "{test: value}"
 
-        config = loadHostConfig(devices)
+        config = prepareHostConfig()
         assert config['wan']['interface'] == 'eth0'
 
         # Now simulate failure to write to file.
-        # It should still return a config object.
-        yaml.dump.side_effect = IOError()
-        config = loadHostConfig(devices)
-        assert config['wan']['interface'] == 'eth0'
+        yaml.safe_dump.side_effect = IOError()
+        assert_raises(Exception, prepareHostConfig)
 
 
-@patch("paradrop.lib.config.hostconfig.loadHostConfig")
-def test_getHostconfig(loadHostConfig):
+@patch("paradrop.lib.config.hostconfig.prepareHostConfig")
+def test_getHostconfig(prepareHostConfig):
     """
     Test paradrop.lib.config.hostconfig.getHostConfig
     """

@@ -1,9 +1,12 @@
+import json
 import smokesignal
+
 from twisted.web import xmlrpc
 from twisted.internet import utils
 from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 
 from paradrop.lib import pdinstall
+from paradrop.lib.config import hostconfig
 from pdtools.lib.output import out
 from pdtools.lib import names, nexus, cxbr
 
@@ -18,6 +21,8 @@ class RouterSession(cxbr.BaseSession):
         yield self.register(self.ping, 'ping')
         yield self.register(self.update, 'update')
         # yield self.register(self.logsFromTime, 'logsFromTime')
+        yield self.register(self.getConfig, 'getConfig')
+        yield self.register(self.setConfig, 'setConfig')
 
         # route output to the logs call
         smokesignal.on('logs', self.logs)
@@ -85,6 +90,17 @@ class RouterSession(cxbr.BaseSession):
             return "Sent command to pdinstall"
         else:
             return "Sending command to pdinstall failed"
+
+    def getConfig(self, pdid):
+        config = hostconfig.prepareHostConfig()
+        result = json.dumps(config, separators=(',',':'))
+        return result
+
+    def setConfig(self, pdid, config):
+        config = json.loads(config)
+        hostconfig.save(config)
+        return "Wrote new configuration"
+
 
 ###############################################################################
 # Old

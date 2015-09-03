@@ -20,6 +20,7 @@ import yaml
 
 from pdtools.lib.output import out
 from paradrop.lib import settings
+from paradrop.lib.config import devices as config_devices
 
 
 SYS_DIR = "/sys/class/net"
@@ -28,6 +29,41 @@ CHANNELS = [1, 6, 11]
 
 # Strings that identify a virtual interface.
 VIF_MARKERS = [".", "veth"]
+
+
+def save(config, path=None):
+    """
+    Save host configuration.
+
+    May raise exception if unable to write the configuration file.
+    """
+    if path is None:
+        path = settings.HOST_CONFIG_PATH
+
+    with open(path, 'w') as output:
+        output.write(yaml.safe_dump(config, default_flow_style=False))
+
+
+def load(path=None):
+    """
+    Load host configuration.
+
+    Tries to load host configuration from persistent file.  If that does not
+    work, it will try to automatically generate a working configuration.
+
+    Returns a host config object on success or None on failure.
+    """
+    if path is None:
+        path = settings.HOST_CONFIG_PATH
+
+    try:
+        with open(path, 'r') as source:
+            data = yaml.safe_load(source.read())
+            return data
+    except IOError as e:
+        pass
+
+    return None
 
 
 def generateHostConfig(devices):
@@ -74,29 +110,22 @@ def generateHostConfig(devices):
     return config
 
 
-def loadHostConfig(devices, hostConfigPath=None):
+def prepareHostConfig(devices=None, hostConfigPath=None):
     """
-    Load host configuration.
+    Load an existing host configuration or generate one.
 
     Tries to load host configuration from persistent file.  If that does not
     work, it will try to automatically generate a working configuration.
     """
-    path = settings.HOST_CONFIG_PATH
+    config = load(hostConfigPath)
+    if config is not None:
+        return config
 
-    try:
-        with open(path, 'r') as source:
-            config = yaml.load(source.read())
-            return config
-    except IOError as e:
-        pass
-
+    if devices is None:
+        devices = config_devices.detectSystemDevices()
     config = generateHostConfig(devices)
 
-    try:
-        with open(path, 'w') as output:
-            output.write(yaml.dump(config, default_flow_style=False))
-    except IOError as e:
-        out.exception(e, True)
+    save(config)
 
     return config
 
@@ -114,5 +143,5 @@ def getHostConfig(update):
     # added, we should try to automatically configure it.  If a device was
     # removed, we should be aware of what is no longer valid.
     devices = update.new.getCache('networkDevices')
-    config = loadHostConfig(devices)
+    config = prepareHostConfig(devices)
     update.new.setCache('hostConfig', config)

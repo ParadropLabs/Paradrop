@@ -65,6 +65,8 @@ usage:
     paradrop [options] router provision <name> <host> <port>
     paradrop [options] router update <name> <snap> ...
     paradrop [options] router ping <name>
+    paradrop [options] router getConfig <name>
+    paradrop [options] router setConfig <name> <path-to-config>
 
 options:
    -v, --verbose    Show verbose internal output       
@@ -133,6 +135,12 @@ def routerMenu(s):
 
     elif args['ping']:
         return routers.ping(args['<name>'])
+
+    elif args['getConfig']:
+        return routers.getConfig(args['<name>'])
+
+    elif args['setConfig']:
+        return routers.setConfig(args['<name>'], args['<path-to-config>'])
 
     else:
         print routerDoc

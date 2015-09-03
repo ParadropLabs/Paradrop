@@ -17,7 +17,7 @@ import re
 from paradrop.lib.utils import pdos, uci
 from pdtools.lib.output import out
 from paradrop.lib import settings
-from paradrop.lib.config import hostconfig, uciutils
+from paradrop.lib.config import uciutils
 
 SYS_DIR = "/sys/class/net"
 EXCLUDE_IFACES = set(["lo"])

@@ -48,7 +48,6 @@ def provisionRouter(name, host, port):
     print 'Provisioning successful'
 
 
-@general.defaultCallbacks
 @defer.inlineCallbacks
 def update(name, sources):
     print 'Starting an update command!'
@@ -62,6 +61,30 @@ def update(name, sources):
 
     result = yield nexus.core.session.call(target, 'update', data)
     print 'Conpleted with result: ' + result
+    defer.returnValue(result)
+
+
+@defer.inlineCallbacks
+def getConfig(name):
+    target = nexus.core.info.pdid + '.' + name
+    result = yield nexus.core.session.call(target, 'getConfig')
+
+    config = json.loads(result)
+    print(yaml.safe_dump(config, default_flow_style=False))
+
+    defer.returnValue(result)
+
+
+@defer.inlineCallbacks
+def setConfig(name, path):
+    with open(path, 'r') as source:
+        config = yaml.safe_load(source)
+
+    target = nexus.core.info.pdid + '.' + name
+
+    data = json.dumps(config, separators=(',', ':'))
+    result = yield nexus.core.session.call(target, 'setConfig', data)
+    defer.returnValue(result)
 
 
 @defer.inlineCallbacks
