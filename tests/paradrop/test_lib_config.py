@@ -59,7 +59,7 @@ def mockListDir(path):
     Generate fake results for os.listdir
     """
     if path == "/sys/class/net":
-        return ["lo", "eth0", "eth1", "wlan0", "vethabcdef"]
+        return ["lo", "eth0", "eth1", "wlan0", "vethabcdef", "br-lan", "docker0"]
     else:
         return os.listdir(path)
 

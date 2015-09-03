@@ -88,6 +88,12 @@ def detectSystemDevices():
         if isVirtual(ifname):
             continue
 
+        # More special cases to ignore for now.
+        if ifname.startswith("br"):
+            continue
+        if ifname.startswith("docker"):
+            continue
+
         dev = {"name": ifname}
 
         if isWAN(ifname):
