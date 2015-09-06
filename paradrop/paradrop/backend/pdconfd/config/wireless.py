@@ -37,7 +37,12 @@ class ConfigWifiIface(ConfigObject):
         {"name": "ssid", "type": str, "required": True, "default": "Paradrop"},
         {"name": "network", "type": str, "required": True, "default": "lan"},
         {"name": "encryption", "type": str, "required": False, "default": None},
-        {"name": "key", "type": str, "required": False, "default": None}
+        {"name": "key", "type": str, "required": False, "default": None},
+
+        # NOTE: ifname is not defined in the UCI specs.  We use it to declare a
+        # desired name for the virtual wireless interface that should be
+        # created.
+        {"name": "ifname", "type": str, "required": False, "default": None}
     ]
 
     def apply(self, allConfigs):
@@ -65,16 +70,30 @@ class ConfigWifiIface(ConfigObject):
         # Look up the interface section.
         interface = self.lookup(allConfigs, "interface", self.network)
 
+        self.isVirtual = True
+
+        # Make this private variable because the real option variable (ifname)
+        # should really be read-only.  Changing it breaks our equality checks.
+        self._ifname = self.ifname
         if interface.config_ifname == wifiDevice.name:
             # This interface is using the physical device directly (eg. wlan0).
-            self.vifName = None
-        else:
-            # This interface is a virtual one (eg. foo.wlan0 using wlan0).
-            self.vifName = interface.config_ifname
+            self._ifname = interface.config_ifname
+            self.isVirtual = False
 
+            cmd = ["iw", "dev", wifiDevice.name, "set", "type", "__ap"]
+            commands.append(Command(cmd, self))
+
+        elif self.ifname is None:
+            # This interface is a virtual one (eg. foo.wlan0 using wlan0).  Get
+            # the virtual interface name from the network it's attached to.
+            # This is unusual behavior which may be dropped in favor of
+            # generating a name here.
+            self._ifname = interface.config_ifname
+
+        if self.isVirtual:
             # Command to create the virtual interface.
             cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
-                   self.vifName, "type", "__ap"]
+                   self._ifname, "type", "__ap"]
             commands.append(Command(cmd, self))
 
         confFile = self.makeHostapdConf(wifiDevice, interface)
@@ -97,12 +116,17 @@ class ConfigWifiIface(ConfigObject):
                              "pdconfd\n")
             outputFile.write("# Source: {}\n".format(self.source))
             outputFile.write("# Section: {}\n".format(str(self)))
+            outputFile.write("# Device: {}\n".format(str(wifiDevice)))
+            outputFile.write("# Interface: {}\n".format(str(interface)))
             outputFile.write("#" * 80 + "\n")
 
             # Write essential options.
-            outputFile.write("interface={}\n".format(interface.config_ifname))
+            outputFile.write("interface={}\n".format(self._ifname))
             outputFile.write("ssid={}\n".format(self.ssid))
             outputFile.write("channel={}\n".format(wifiDevice.channel))
+
+            if interface.type == "bridge":
+                outputFile.write("bridge={}\n".format(interface.config_ifname))
 
             # Optional encryption options.
             if self.encryption is None or self.encryption == "none":
@@ -127,8 +151,8 @@ class ConfigWifiIface(ConfigObject):
         commands.append(KillCommand(self.pidFile, self))
 
         # Delete our virtual interface.
-        if self.vifName is not None:
-            cmd = ["iw", "dev", self.vifName, "del"]
+        if self.isVirtual:
+            cmd = ["iw", "dev", self._ifname, "del"]
             commands.append(Command(cmd, self))
 
         return commands
@@ -141,25 +165,22 @@ class ConfigWifiIface(ConfigObject):
             # new.
             return self.apply(allConfigs)
 
-        if new.mode != "ap":
-            # Only implemented updates for AP mode.
-            return self.apply(allConfigs)
-
         commands = list()
 
-        # Look up the wifi-device section.
-        wifiDevice = new.lookup(allConfigs, "wifi-device", new.device)
+        if new.mode == "ap":
+            # Look up the wifi-device section.
+            wifiDevice = new.lookup(allConfigs, "wifi-device", new.device)
 
-        # Look up the interface section.
-        interface = new.lookup(allConfigs, "interface", new.network)
+            # Look up the interface section.
+            interface = new.lookup(allConfigs, "interface", new.network)
 
-        confFile = new.makeHostapdConf(wifiDevice, interface)
+            confFile = new.makeHostapdConf(wifiDevice, interface)
 
-        new.pidFile = "{}/hostapd-{}.pid".format(
-            new.manager.writeDir, self.internalName)
+            new.pidFile = "{}/hostapd-{}.pid".format(
+                new.manager.writeDir, self.internalName)
 
-        cmd = ["/apps/bin/hostapd", "-P", new.pidFile, "-B", confFile]
-        commands.append(Command(cmd, new))
+            cmd = ["/apps/bin/hostapd", "-P", new.pidFile, "-B", confFile]
+            commands.append(Command(cmd, new))
 
         return commands
 
@@ -171,13 +192,10 @@ class ConfigWifiIface(ConfigObject):
             # new.
             return self.revert(allConfigs)
 
-        if new.mode != "ap":
-            # Only implemented updates for AP mode.
-            return self.revert(allConfigs)
-
         commands = list()
 
-        # Bring down hostapd
-        commands.append(KillCommand(self.pidFile, self))
+        if self.mode == "ap":
+            # Bring down hostapd
+            commands.append(KillCommand(self.pidFile, self))
 
         return commands

@@ -209,6 +209,11 @@ def setSystemDevices(update):
 
             wirelessSections.append((config, options))
 
+    if 'wifi-interfaces' in hostConfig:
+        for iface in hostConfig['wifi-interfaces']:
+            config = {"type": "wifi-iface"}
+            wirelessSections.append((config, iface))
+
     setConfig(settings.RESERVED_CHUTE, dhcpSections,
               uci.getSystemPath("dhcp"))
     setConfig(settings.RESERVED_CHUTE, networkSections,

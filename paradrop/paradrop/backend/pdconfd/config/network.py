@@ -26,7 +26,7 @@ class ConfigInterface(ConfigObject):
         else:
             self.config_ifname = self.ifname[0]
 
-    def addToBridge(self, ifname, bridge):
+    def addToBridge(self, ifname):
         """ Generate commands to add ifname to bridge. """
         commands = list()
 
@@ -36,7 +36,8 @@ class ConfigInterface(ConfigObject):
         cmd = ["ip", "link", "set", "dev", ifname, "up"]
         commands.append(Command(cmd, self))
 
-        cmd = ["ip", "link", "set", "dev", ifname, "master", bridge]
+        cmd = ["ip", "link", "set", "dev", ifname, "master",
+                self.config_ifname]
         commands.append(Command(cmd, self))
 
         return commands
@@ -66,7 +67,7 @@ class ConfigInterface(ConfigObject):
 
             # Add all of the interfaces to the bridge.
             for ifname in self.ifname:
-                commands.extend(self.addToBridge(ifname, self.config_ifname))
+                commands.extend(self.addToBridge(ifname))
 
         if self.proto == "static":
             cmd = ["ip", "addr", "flush", "dev", self.config_ifname]
@@ -142,7 +143,7 @@ class ConfigInterface(ConfigObject):
 
             # Add interfaces that were not in the old bridge.
             for ifname in (new_ifnames - old_ifnames):
-                commands.extend(self.addToBridge(ifname, self.config_ifname))
+                commands.extend(self.addToBridge(ifname))
 
         return commands
 
@@ -160,8 +161,7 @@ class ConfigInterface(ConfigObject):
                 if self.gateway is not None:
                     cmd = ["ip", "route", "del", "default", "via", self.gateway,
                            "dev", self.config_ifname]
-                    commands.append(
-                            Command(cmd, self))
+                    commands.append(Command(cmd, self))
 
         if self.type == "bridge":
             old_ifnames = set(self.ifname)
