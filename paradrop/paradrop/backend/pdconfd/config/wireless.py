@@ -12,14 +12,6 @@ from .base import ConfigObject
 from .command import Command, KillCommand
 
 
-# Command priorities, lower numbers executed first.
-PRIO_CREATE_IFACE = 10
-PRIO_CONFIG_IFACE = 20
-PRIO_START_DAEMON = 30
-PRIO_ADD_IPTABLES = 40
-PRIO_DELETE_IFACE = 50
-
-
 def isHexString(data):
     """
     Test if a string contains only hex digits.
@@ -35,9 +27,6 @@ class ConfigWifiDevice(ConfigObject):
         {"name": "channel", "type": int, "required": True, "default": 1}
     ]
 
-    def update(self, new, allConfigs):
-        return list()
-
 
 class ConfigWifiIface(ConfigObject):
     typename = "wifi-iface"
@@ -51,7 +40,7 @@ class ConfigWifiIface(ConfigObject):
         {"name": "key", "type": str, "required": False, "default": None}
     ]
 
-    def commands(self, allConfigs):
+    def apply(self, allConfigs):
         commands = list()
 
         if self.mode == "ap":
@@ -64,7 +53,7 @@ class ConfigWifiIface(ConfigObject):
             #cmd = ["iw", "dev", wifiDevice.name, "set", "channel",
             #       str(wifiDevice.channel)]
 
-            #commands.append(Command(Command.PRIO_CREATE_IFACE, cmd, self))
+            #commands.append(Command(cmd, self))
             raise Exception("WiFi sta mode not implemented")
         else:
             raise Exception("Unsupported mode ({}) in {}".format(
@@ -86,7 +75,7 @@ class ConfigWifiIface(ConfigObject):
             # Command to create the virtual interface.
             cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
                    self.vifName, "type", "__ap"]
-            commands.append(Command(Command.PRIO_CREATE_IFACE, cmd, self))
+            commands.append(Command(cmd, self))
 
         confFile = self.makeHostapdConf(wifiDevice, interface)
 
@@ -94,7 +83,7 @@ class ConfigWifiIface(ConfigObject):
             self.manager.writeDir, self.internalName)
 
         cmd = ["/apps/bin/hostapd", "-P", self.pidFile, "-B", confFile]
-        commands.append(Command(Command.PRIO_START_DAEMON, cmd, self))
+        commands.append(Command(cmd, self))
 
         return commands
 
@@ -132,36 +121,31 @@ class ConfigWifiIface(ConfigObject):
                 raise Exception("Encryption type not supported")
         return outputPath
 
-    def undoCommands(self, allConfigs):
+    def revert(self, allConfigs):
         commands = list()
 
-        commands.append(KillCommand(Command.PRIO_START_DAEMON, 
-                self.pidFile, self))
+        commands.append(KillCommand(self.pidFile, self))
 
         # Delete our virtual interface.
         if self.vifName is not None:
             cmd = ["iw", "dev", self.vifName, "del"]
-            commands.append(Command(Command.PRIO_DELETE_IFACE, cmd, self))
+            commands.append(Command(cmd, self))
 
         return commands
 
-    def update(self, new, allConfigs):
+    def updateApply(self, new, allConfigs):
         if new.mode != self.mode or \
                 new.device != self.device or \
                 new.network != self.network:
             # Major change requires unloading the old section and applying the
             # new.
-            return None
+            return self.apply(allConfigs)
 
         if new.mode != "ap":
             # Only implemented updates for AP mode.
-            return None
+            return self.apply(allConfigs)
 
         commands = list()
-
-        # Bring down hostapd
-        commands.append(KillCommand(Command.PRIO_START_DAEMON, 
-                self.pidFile, self))
 
         # Look up the wifi-device section.
         wifiDevice = new.lookup(allConfigs, "wifi-device", new.device)
@@ -175,6 +159,25 @@ class ConfigWifiIface(ConfigObject):
             new.manager.writeDir, self.internalName)
 
         cmd = ["/apps/bin/hostapd", "-P", new.pidFile, "-B", confFile]
-        commands.append(Command(Command.PRIO_START_DAEMON, cmd, new))
+        commands.append(Command(cmd, new))
+
+        return commands
+
+    def updateRevert(self, new, allConfigs):
+        if new.mode != self.mode or \
+                new.device != self.device or \
+                new.network != self.network:
+            # Major change requires unloading the old section and applying the
+            # new.
+            return self.revert(allConfigs)
+
+        if new.mode != "ap":
+            # Only implemented updates for AP mode.
+            return self.revert(allConfigs)
+
+        commands = list()
+
+        # Bring down hostapd
+        commands.append(KillCommand(self.pidFile, self))
 
         return commands

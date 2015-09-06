@@ -224,18 +224,18 @@ def test_command():
     environments.
     """
     cmd = ["true"]
-    command = Command(0, cmd)
+    command = Command(cmd)
     command.execute()
     assert command.success()
 
     # Specifying the command as a string instead of a list.
     cmd = "true"
-    command = Command(0, cmd)
+    command = Command(cmd)
     command.execute()
     assert command.success()
 
     cmd = ["false"]
-    command = Command(0, cmd)
+    command = Command(cmd)
     command.execute()
     assert not command.success()
 
@@ -537,7 +537,8 @@ def test_interface_update():
     bridge2 = bridge1.copy()
     bridge2.ifname = ["eth2", "eth3"]
 
-    commands = bridge1.update(bridge2, {})
+    commands = bridge1.updateRevert(bridge2, {})
+    commands.extend(bridge1.updateApply(bridge2, {}))
     for cmd in commands:
         print(cmd)
     assert len(commands) == 6
@@ -552,7 +553,9 @@ def test_interface_update():
     bridge3.ipaddr = "192.168.2.2"
     bridge3.gateway = "192.168.2.1"
 
-    commands = bridge2.update(bridge3, {})
+    commands = bridge2.updateRevert(bridge3, {})
+    commands.extend(bridge2.updateApply(bridge3, {}))
+    print("---")
     for cmd in commands:
         print(cmd)
     assert len(commands) == 3
@@ -562,5 +565,9 @@ def test_interface_update():
     bridge4 = bridge3.copy()
     bridge4.proto = "dhcp"
 
-    commands = bridge4.update(bridge3, {})
-    assert commands is None
+    commands = bridge4.updateRevert(bridge3, {})
+    commands.extend(bridge4.updateApply(bridge3, {}))
+    print("---")
+    for cmd in commands:
+        print(cmd)
+    assert len(commands) == 14

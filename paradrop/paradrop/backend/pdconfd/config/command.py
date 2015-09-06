@@ -3,24 +3,15 @@ import subprocess
 from pdtools.lib.output import out
 
 class Command(object):
-    # Command priorities, lower numbers executed first.
-    PRIO_CREATE_IFACE = 10
-    PRIO_CONFIG_IFACE = 20
-    PRIO_START_DAEMON = 30
-    PRIO_ADD_IPTABLES = 40
-    PRIO_DELETE_IFACE = 50
-
-    def __init__(self, priority, command, parent=None):
+    def __init__(self, command, parent=None):
         """
         Construct command object.
 
-        priority: integer value, should be one of the PRIO_* constants
         command: array of strings specifying command and arguments
                  Passing a single string is also supported if there are
                  no spaces within arguments (only between them).
         parent: parent object (should be ConfigObject subclass)
         """
-        self.priority = priority
         self.parent = parent
 
         if type(command) == list:
@@ -77,7 +68,7 @@ class KillCommand(Command):
     """
     Special command object for killing a process
     """
-    def __init__(self, priority, pid, parent=None): 
+    def __init__(self, pid, parent=None): 
         """
         Create a kill command
 
@@ -92,7 +83,7 @@ class KillCommand(Command):
         # This will not be a valid command if pid is a file path.
         command = ["kill", pid]
 
-        super(KillCommand, self).__init__(priority, command, parent)
+        super(KillCommand, self).__init__(command, parent)
 
         # Is it a numeric pid or a path to a pid file?
         try:

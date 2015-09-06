@@ -1,23 +1,35 @@
 from mock import MagicMock
 
 
-def test_ConfigWifiIface_update():
+def test_ConfigWifiIface_apply():
     """
-    Test the update method on ConfigWifiIface
+    Test the apply method on ConfigWifiIface
     """
     from paradrop.backend.pdconfd.config.wireless import ConfigWifiIface
 
-    allConfigs = MagicMock()
+    wifiDevice = MagicMock()
+    wifiDevice.name = "wlan0"
 
-    config1 = ConfigWifiIface()
-    config1.mode = "sta"
+    interface = MagicMock()
+    interface.config_ifname = "wlan0"
 
-    config2 = ConfigWifiIface()
-    config2.mode = "ap"
+    allConfigs = {
+        ("wifi-device", "wlan0"): wifiDevice,
+        ("interface", "wifi"): interface
+    }
 
-    # Changing mode not supported
-    assert config1.update(config2, allConfigs) is None
+    # This config tests the specific case in which 
+    # wifiDevice.name == interface.config_ifname
+    config = ConfigWifiIface()
+    config.manager = MagicMock()
+    config.device = "wlan0"
+    config.mode = "ap"
+    config.network = "wifi"
 
-    # sta mode is completely unsupported
-    config2.mode = "sta"
-    assert config1.update(config2, allConfigs) is None
+    # Override this function that wants to write a file.
+    config.makeHostapdConf = MagicMock()
+
+    commands = config.apply(allConfigs)
+    for cmd in commands:
+        print(cmd)
+    assert len(commands) == 1

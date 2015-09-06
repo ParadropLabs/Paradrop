@@ -12,6 +12,8 @@ class ConfigObject(object):
         self.source = None
         self.name = name
         self.comment = None
+
+        self.parents = set()
         self.dependents = set()
 
         # name is the externally visible name, e.g. "lan" in 
@@ -52,17 +54,6 @@ class ConfigObject(object):
         """
         pass
 
-    def addDependent(self, dep):
-        self.dependents.add(dep)
-
-    def commands(self, allConfigs):
-        """
-        Return a list of commands to execute.
-
-        Each one is a Command object.
-        """
-        return []
-
     def copy(self):
         """
         Make a copy of the config object.
@@ -74,6 +65,8 @@ class ConfigObject(object):
         other.source = self.source
         other.name = self.name
         other.comment = self.comment
+        
+        other.parents = self.parents.copy()
         other.dependents = self.dependents.copy()
 
         for option in self.options:
@@ -106,32 +99,9 @@ class ConfigObject(object):
         """
         config = allConfigs[(sectionType, sectionName)]
         if addDependent:
-            config.addDependent(self)
+            self.parents.add(config)
+            config.dependents.add(self)
         return config
-
-    def undoCommands(self, allConfigs):
-        """
-        Return a list of commands to execute.
-
-        Each one is a Command object.
-        """
-        return []
-
-    def update(self, new, allConfigs):
-        """
-        Return a list of commands to update to new configuration.
-
-        This is called when a new configuration is loaded with the same name
-        but different options.  The default behavior is to revert the old
-        configuration (by calling undoCommands) and apply the new configuration
-        (by calling commands).  However, in certain cases that could be
-        disruptive, so we can do incremental updates by overriding this
-        function.
-
-        Return None to go with default behavior (described above) or return
-        a list of commands to perform the update.
-        """
-        return None
 
     def optionsMatch(self, other):
         """
@@ -143,6 +113,82 @@ class ConfigObject(object):
             if getattr(self, opdef['name']) != getattr(other, opdef['name']):
                 return False
         return True
+
+    #
+    # The following methods (apply, revert, updateApply, and updateRevert)
+    # are the most important for subclasses to override.
+    #
+    # These methods are expected to return a list of commands to make system
+    # changes when the section is loaded, deleted, or modified.
+    #
+    # Here is the methods are used:
+    #
+    # 1. When a section is loaded for the first time (new), the apply method
+    # is called to perform actions such as create an interface or firewall
+    # rule.
+    #
+    # 2. When a section is unloaded or detected as removed from a configuration
+    # file, the revert method is called to undo everything that was done by
+    # apply (e.g. delete an interface or rule).
+    #
+    # 3. When a section is reloaded (and has changed) or one or more of its
+    # dependencies have have changed, the two update methods are used.
+    # updateRevert selectively reverts actions that were done by apply; it can
+    # (and by default does) undo everything just as revert would.  Then
+    # updateApply is called to apply any changes needed to bring the system to
+    # the new required state.  A motivating example is in order.
+    #
+    # Suppose we have one or more APs running on a single WiFi device, and we
+    # loaded a new configuration that changes the channel.  The default
+    # behavior would be to call revert, then call apply.  Revert would not only
+    # bring down the hostapd instances but also destroy the AP-mode interfaces.
+    # The latter step, however, is not necessary to achieve a channel change,
+    # and if written carefully, updateRevert and updateApply can achieve the
+    # configuration change with less disruption.
+    #
+
+    def apply(self, allConfigs):
+        """
+        Return a list of commands to apply this configuration.
+
+        Most subclasses will need to implement this function.
+
+        Returns a list of Command objects.
+        """
+        return []
+
+    def revert(self, allConfigs):
+        """
+        Return a list of commands to revert this configuration.
+
+        Most subclasses will need to implement this function.
+
+        Returns a list of Command objects.
+        """
+        return []
+
+    def updateApply(self, new, allConfigs):
+        """
+        Return a list of commands to update to new configuration.
+
+        Implementing this is optional for subclasses.  The default behavior is
+        to call apply.
+
+        Returns a list of Command objects.
+        """
+        return self.apply(allConfigs)
+
+    def updateRevert(self, new, allConfigs):
+        """
+        Return a list of commands to (partially) revert the configuration.
+
+        The implementation can be selective about what it reverts (e.g. do not
+        delete an interface if we are only updating its IP address).  The
+        default behavior is to call revert.
+
+        Returns a list of Command objects.
+        """
+        return self.revert(allConfigs)
 
     @classmethod
     def build(cls, manager, source, name, options, comment):
@@ -201,3 +247,47 @@ class ConfigObject(object):
         obj.setup()
 
         return obj
+
+    @staticmethod
+    def _assignPriority(config, assigned):
+        """
+        Recursively assign priorities to config objects based on dependencies.
+
+        This is meant to be called by prioritizeConfigs.
+        """
+        if config in assigned:
+            return assigned[config]
+
+        priority = 0
+        for parent in config.parents:
+            pprio = ConfigObject._assignPriority(parent, assigned)
+            if pprio >= priority:
+                priority = pprio + 1
+
+        assigned[config] = priority
+        return priority
+
+    @staticmethod
+    def prioritizeConfigs(configs, reverse=False):
+        """
+        Assign priorities to config objects based on the dependency graph.
+
+        Priority zero is assigned to all configs with no dependencies.
+        
+        priority(config1) > priority(config2) means config1 should be applied
+        later than config2, and config1 should be reverted earlier than
+        config2.  For configs with the same priority value, it is presumed
+        that order does not matter.
+
+        If reverse is True, the priorities are made negative so that traversing
+        in increasing order gives the proper order for reverting.
+
+        Returns a list of tuples (priority, config).  This format is suitable
+        for heapq.
+        """
+        priorities = dict()
+        for config in configs:
+            ConfigObject._assignPriority(config, priorities)
+        mult = -1 if reverse else 1
+        return [(mult * prio, config) \
+                for (config, prio) in priorities.iteritems()]

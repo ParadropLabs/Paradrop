@@ -7,9 +7,16 @@ config wifi-iface
     option mode 'ap'
     option ssid 'Paradrop'
     option network 'lan'
+    option ifname 'v0000.wlan0'
+
+config wifi-iface
+    option device 'wifi0'
+    option mode 'ap'
+    option ssid 'Paradrop2'
+    option network 'lan'
+    option ifname 'v0001.wlan0'
 
 config interface lan
     option proto 'dhcp'
     option type 'bridge'
     list ifname 'eth1'
-    list ifname 'wlan0'

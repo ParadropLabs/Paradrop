@@ -59,31 +59,6 @@ def findConfigFiles(search=None):
     return files
 
 
-def sortCommands(commands):
-    """
-    Return commands in order by priority.
-
-    The input should be a list of command objects.  The output will be just the
-    command part in order according to priority (ascending).  For ties, the
-    order from the original list is maintained.
-    """
-    result = list()
-
-    n = len(commands)
-    for cmd in commands:
-        # This math (n * prio + i) ensures that the commands are sorted by
-        # priority level first, and by order added within each priority level.
-        # This is functionally identical to keeping separate FIFO queues for
-        # each priority level.  It is just nicer to deal with a single command
-        # queue than a bunch of them.
-        i = len(result)
-        heapq.heappush(result, (n * cmd.priority + i, cmd))
-
-    while len(result) > 0:
-        prio, cmd = heapq.heappop(result)
-        yield cmd
-
-
 class ConfigManager(object):
 
     def __init__(self, writeDir):
@@ -125,10 +100,10 @@ class ConfigManager(object):
         """
         Get the most recent command list.
         """
-        return sortCommands(self.previousCommands)
+        return self.previousCommands
 
     def execute(self, commands):
-        for cmd in sortCommands(commands):
+        for cmd in commands:
             cmd.execute()
 
     def findMatchingConfig(self, config, byName=False):
@@ -245,33 +220,28 @@ class ConfigManager(object):
         # updated configs that are supposed to be removed.
         updatedConfigs -= undoConfigs
 
-        # Generate list of commands to implement configuration.
-        #
-        # First try to apply any updates, since these mess with our undoConfigs
-        # and newConfigs sets.
-        for config in updatedConfigs:
-            try:
-                new = allConfigs[config.getTypeAndName()]
-                updateCommands = config.update(new, allConfigs)
-            except:
-                out.warn("An error occurred updating {}\n".format(str(config)))
-                updateCommands = None
+        undoWork = ConfigObject.prioritizeConfigs(updatedConfigs | undoConfigs,
+                reverse=True)
+        heapq.heapify(undoWork)
 
-            if updateCommands is None:
-                # Update function not implemented---need to undo old and
-                # implement new.
-                undoConfigs.add(config)
+        while undoWork:
+            prio, config = heapq.heappop(undoWork)
+            if config in undoConfigs:
+                commands.extend(config.revert(allConfigs))
             else:
-                # Update function implemented---only need to run the update
-                # commands.
-                commands.extend(updateCommands)
-                if new in newConfigs:
-                    newConfigs.remove(new)
+                new = allConfigs[config.getTypeAndName()]
+                commands.extend(config.updateRevert(new, allConfigs))
 
-        for config in undoConfigs:
-            commands.extend(config.undoCommands(self.currentConfig))
-        for config in newConfigs:
-            commands.extend(config.commands(allConfigs))
+        applyWork = ConfigObject.prioritizeConfigs(updatedConfigs | newConfigs)
+        heapq.heapify(applyWork)
+
+        while applyWork:
+            prio, config = heapq.heappop(applyWork)
+            if config in newConfigs:
+                commands.extend(config.apply(allConfigs))
+            else:
+                new = allConfigs[config.getTypeAndName()]
+                commands.extend(config.updateApply(new, allConfigs))
 
         # Finally, execute the commands.
         if execute:
@@ -365,9 +335,13 @@ class ConfigManager(object):
 
     def unload(self, execute=True):
         commands = list()
+        
+        undoWork = ConfigObject.prioritizeConfigs(self.currentConfig.values())
+        heapq.heapify(undoWork)
 
-        for config in self.currentConfig.values():
-            commands.extend(config.undoCommands(self.currentConfig))
+        while undoWork:
+            prio, config = heapq.heappop(undoWork)
+            commands.extend(config.revert(self.currentConfig))
 
         # Finally, execute the commands.
         if execute:

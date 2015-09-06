@@ -17,7 +17,7 @@ def test_Command_execute(Popen, out):
     proc.stderr = ["error"]
     Popen.return_value = proc
 
-    command = Command(0, ["callme"])
+    command = Command(["callme"])
     command.parent = MagicMock()
 
     command.execute()
@@ -38,7 +38,7 @@ def test_KillCommand(execute):
     from paradrop.backend.pdconfd.config.command import KillCommand
 
     # Test with a numeric pid.
-    command = KillCommand(0, 12345)
+    command = KillCommand(12345)
     assert command.getPid() == 12345
 
     expected = ["kill", "12345"]
@@ -52,7 +52,7 @@ def test_KillCommand(execute):
     pidFile.flush()
 
     # Test with a pid file.
-    command = KillCommand(0, pidFile.name)
+    command = KillCommand(pidFile.name)
     assert command.getPid() == 54321
 
     expected = ["kill", "54321"]
@@ -62,7 +62,7 @@ def test_KillCommand(execute):
     execute.reset_mock()
 
     # Test with a non-existent pid file.
-    command = KillCommand(0, "")
+    command = KillCommand("")
     assert command.getPid() is None
     
     command.execute()

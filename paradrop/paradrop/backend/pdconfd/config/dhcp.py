@@ -33,7 +33,7 @@ class ConfigDnsmasq(ConfigObject):
         {"name": "server", "type": list, "required": False, "default": None}
     ]
 
-    def commands(self, allConfigs):
+    def apply(self, allConfigs):
         commands = list()
 
         # visibleName will be used in choosing file names for this dnsmasq
@@ -108,15 +108,14 @@ class ConfigDnsmasq(ConfigObject):
 
         cmd = ["/apps/bin/dnsmasq", "--conf-file={}".format(outputPath),
                "--pid-file={}".format(pidFile)]
-        commands.append(Command(Command.PRIO_START_DAEMON, cmd, self))
+        commands.append(Command(cmd, self))
 
         self.pidFile = pidFile
         return commands
 
-    def undoCommands(self, allConfigs):
+    def revert(self, allConfigs):
         commands = list()
 
-        commands.append(KillCommand(Command.PRIO_START_DAEMON,
-                            self.pidFile, self))
+        commands.append(KillCommand(self.pidFile, self))
 
         return commands

@@ -2,6 +2,8 @@ import os
 import shutil
 import tempfile
 
+from mock import patch
+
 
 CONFIG_DIR = "tests/paradrop/backend/pdconfd/config/config.d"
 
@@ -65,3 +67,17 @@ def test_change_channel():
 
     # Cleanup
     shutil.rmtree(temp)
+
+
+@patch("paradrop.backend.pdconfd.config.command.Command.execute")
+def test_manager_execute(execute):
+    """
+    Test the manager execute method
+    """
+    from paradrop.backend.pdconfd.config.manager import ConfigManager
+
+    manager = ConfigManager(writeDir="/tmp")
+
+    source = os.path.join(CONFIG_DIR, "change_channel_1")
+    manager.loadConfig(search=source, execute=True)
+    assert execute.call_count > 1
