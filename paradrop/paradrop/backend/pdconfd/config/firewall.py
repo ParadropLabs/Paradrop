@@ -22,7 +22,7 @@ class ConfigRedirect(ConfigObject):
     # should not be specified in the iptables rule.
     ANY_PROTO = set([None, "any", "none"])
 
-    def __commands_dnat(self, allConfigs, action):
+    def __commands_dnat(self, allConfigs, action, prio):
         """
         Generate DNAT iptables rules.
         """
@@ -73,11 +73,11 @@ class ConfigRedirect(ConfigObject):
                 cmd.extend(["--match", "comment", "--comment",
                             "pdconfd {} {}".format(self.typename, self.name)])
 
-                commands.append(Command(cmd, self))
+                commands.append((prio, Command(cmd, self)))
 
         return commands
 
-    def __commands_snat(self, allConfigs, action):
+    def __commands_snat(self, allConfigs, action, prio):
         """
         Generate SNAT iptables rules.
         """
@@ -87,9 +87,11 @@ class ConfigRedirect(ConfigObject):
 
     def apply(self, allConfigs):
         if self.target == "DNAT":
-            commands = self.__commands_dnat(allConfigs, "--insert")
+            commands = self.__commands_dnat(allConfigs, "--insert",
+                    self.PRIO_CONFIG_IFACE)
         elif self.target == "SNAT":
-            commands = self.__commands_snat(allConfigs, "--insert")
+            commands = self.__commands_snat(allConfigs, "--insert",
+                    self.PRIO_CONFIG_IFACE)
         else:
             raise Exception("Unsupported target ({}) in config {} {}".format(
                 self.target, self.typename, self.name))
@@ -98,15 +100,17 @@ class ConfigRedirect(ConfigObject):
         if self.manager.forwardingCount == 1:
             cmd = ["sysctl", "--write",
                    "net.ipv4.conf.all.forwarding=1"]
-            commands.append(Command(cmd, self))
+            commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         return commands
 
     def revert(self, allConfigs):
         if self.target == "DNAT":
-            commands = self.__commands_dnat(allConfigs, "--delete")
+            commands = self.__commands_dnat(allConfigs, "--delete",
+                    -self.PRIO_CONFIG_IFACE)
         elif self.target == "SNAT":
-            commands = self.__commands_snat(allConfigs, "--delete")
+            commands = self.__commands_snat(allConfigs, "--delete",
+                    -self.PRIO_CONFIG_IFACE)
         else:
             commands = list()
 
@@ -114,7 +118,7 @@ class ConfigRedirect(ConfigObject):
         if self.manager.forwardingCount == 0:
             cmd = ["sysctl", "--write",
                    "net.ipv4.conf.all.forwarding=0"]
-            commands.append(Command(cmd, self))
+            commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         return commands
 
@@ -141,7 +145,7 @@ class ConfigZone(ConfigObject):
                 interface = self.lookup(allConfigs, "interface", networkName)
                 yield interface
 
-    def __commands_iptables(self, allConfigs, action):
+    def __commands_iptables(self, allConfigs, action, prio):
         commands = list()
 
         if self.masq:
@@ -152,29 +156,31 @@ class ConfigZone(ConfigObject):
                        "--jump", "MASQUERADE",
                        "--match", "comment", "--comment",
                        "pdconfd {} {}".format(self.typename, self.name)]
-                commands.append(Command(cmd, self))
+                commands.append((prio, Command(cmd, self)))
 
         return commands
 
     def apply(self, allConfigs):
-        commands = self.__commands_iptables(allConfigs, "--insert")
+        commands = self.__commands_iptables(allConfigs, "--insert",
+                self.PRIO_CONFIG_IFACE)
 
         if self.masq:
             self.manager.forwardingCount += 1
             if self.manager.forwardingCount == 1:
                 cmd = ["sysctl", "--write",
                        "net.ipv4.conf.all.forwarding=1"]
-                commands.append(Command(cmd, self))
+                commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         return commands
 
     def revert(self, allConfigs):
-        commands = self.__commands_iptables(allConfigs, "--delete")
+        commands = self.__commands_iptables(allConfigs, "--delete",
+                -self.PRIO_CONFIG_IFACE)
 
         if self.masq:
             self.manager.forwardingCount -= 1
             if self.manager.forwardingCount == 0:
                 cmd = ["sysctl", "--write",
                        "net.ipv4.conf.all.forwarding=0"]
-                commands.append(Command(cmd, self))
+                commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
         return commands

@@ -81,7 +81,7 @@ class ConfigWifiIface(ConfigObject):
             self.isVirtual = False
 
             cmd = ["iw", "dev", wifiDevice.name, "set", "type", "__ap"]
-            commands.append(Command(cmd, self))
+            commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         elif self.ifname is None:
             # This interface is a virtual one (eg. foo.wlan0 using wlan0).  Get
@@ -94,7 +94,7 @@ class ConfigWifiIface(ConfigObject):
             # Command to create the virtual interface.
             cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
                    self._ifname, "type", "__ap"]
-            commands.append(Command(cmd, self))
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         confFile = self.makeHostapdConf(wifiDevice, interface)
 
@@ -102,7 +102,7 @@ class ConfigWifiIface(ConfigObject):
             self.manager.writeDir, self.internalName)
 
         cmd = ["/apps/bin/hostapd", "-P", self.pidFile, "-B", confFile]
-        commands.append(Command(cmd, self))
+        commands.append((self.PRIO_START_DAEMON, Command(cmd, self)))
 
         return commands
 
@@ -148,12 +148,13 @@ class ConfigWifiIface(ConfigObject):
     def revert(self, allConfigs):
         commands = list()
 
-        commands.append(KillCommand(self.pidFile, self))
+        commands.append((-self.PRIO_START_DAEMON,
+            KillCommand(self.pidFile, self)))
 
         # Delete our virtual interface.
         if self.isVirtual:
             cmd = ["iw", "dev", self._ifname, "del"]
-            commands.append(Command(cmd, self))
+            commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         return commands
 
@@ -180,7 +181,7 @@ class ConfigWifiIface(ConfigObject):
                 new.manager.writeDir, self.internalName)
 
             cmd = ["/apps/bin/hostapd", "-P", new.pidFile, "-B", confFile]
-            commands.append(Command(cmd, new))
+            commands.append((self.PRIO_START_DAEMON, Command(cmd, new)))
 
         return commands
 
@@ -196,6 +197,7 @@ class ConfigWifiIface(ConfigObject):
 
         if self.mode == "ap":
             # Bring down hostapd
-            commands.append(KillCommand(self.pidFile, self))
+            commands.append((-self.PRIO_START_DAEMON,
+                KillCommand(self.pidFile, self)))
 
         return commands

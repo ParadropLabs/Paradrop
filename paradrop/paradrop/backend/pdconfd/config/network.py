@@ -31,14 +31,14 @@ class ConfigInterface(ConfigObject):
         commands = list()
 
         cmd = ["ip", "link", "set", "dev", ifname, "promisc", "on"]
-        commands.append(Command(cmd, self))
+        commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         cmd = ["ip", "link", "set", "dev", ifname, "up"]
-        commands.append(Command(cmd, self))
+        commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         cmd = ["ip", "link", "set", "dev", ifname, "master",
                 self.config_ifname]
-        commands.append(Command(cmd, self))
+        commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         return commands
 
@@ -47,13 +47,13 @@ class ConfigInterface(ConfigObject):
         commands = list()
 
         cmd = ["ip", "link", "set", "dev", ifname, "promisc", "off"]
-        commands.append(Command(cmd, self))
+        commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         cmd = ["ip", "link", "set", "dev", ifname, "down"]
-        commands.append(Command(cmd, self))
+        commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         cmd = ["ip", "link", "set", "dev", ifname, "nomaster"]
-        commands.append(Command(cmd, self))
+        commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         return commands
 
@@ -63,7 +63,7 @@ class ConfigInterface(ConfigObject):
         if self.type == "bridge":
             cmd = ["ip", "link", "add", "name", self.config_ifname, "type",
                    "bridge"]
-            commands.append(Command(cmd, self))
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
             # Add all of the interfaces to the bridge.
             for ifname in self.ifname:
@@ -71,21 +71,21 @@ class ConfigInterface(ConfigObject):
 
         if self.proto == "static":
             cmd = ["ip", "addr", "flush", "dev", self.config_ifname]
-            commands.append(Command(cmd, self))
+            commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
             cmd = ["ip", "addr", "add",
                    "{}/{}".format(self.ipaddr, self.netmask),
                    "dev", self.config_ifname]
-            commands.append(Command(cmd, self))
+            commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
             updown = "up" if self.enabled else "down"
             cmd = ["ip", "link", "set", "dev", self.config_ifname, updown]
-            commands.append(Command(cmd, self))
+            commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
             if self.gateway is not None:
                 cmd = ["ip", "route", "add", "default", "via", self.gateway,
                        "dev", self.config_ifname]
-                commands.append(Command(cmd, self))
+                commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         return commands
 
@@ -96,13 +96,13 @@ class ConfigInterface(ConfigObject):
             if self.gateway is not None:
                 cmd = ["ip", "route", "del", "default", "via", self.gateway,
                        "dev", self.config_ifname]
-                commands.append(Command(cmd, self))
+                commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
             # Remove the IP address that we added.
             cmd = ["ip", "addr", "del",
                    "{}/{}".format(self.ipaddr, self.netmask),
                    "dev", self.config_ifname]
-            commands.append(Command(cmd, self))
+            commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         if self.type == "bridge":
             # Remove all of the interfaces from the bridge.
@@ -110,7 +110,7 @@ class ConfigInterface(ConfigObject):
                 commands.extend(self.removeFromBridge(ifname))
 
             cmd = ["ip", "link", "delete", self.config_ifname]
-            commands.append(Command(cmd, self))
+            commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         return commands
 
@@ -128,14 +128,14 @@ class ConfigInterface(ConfigObject):
                 cmd = ["ip", "addr", "change",
                        "{}/{}".format(self.ipaddr, self.netmask),
                        "dev", self.config_ifname]
-                commands.append(Command(cmd, self))
+                commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
             if new.gateway != self.gateway:
                 if new.gateway is not None:
                     cmd = ["ip", "route", "add", "default", "via", new.gateway,
                             "dev", new.config_ifname]
-                    commands.append(
-                            Command(cmd, new))
+                    commands.append((self.PRIO_CONFIG_IFACE,
+                        Command(cmd, new)))
 
         if self.type == "bridge":
             old_ifnames = set(self.ifname)
@@ -161,7 +161,8 @@ class ConfigInterface(ConfigObject):
                 if self.gateway is not None:
                     cmd = ["ip", "route", "del", "default", "via", self.gateway,
                            "dev", self.config_ifname]
-                    commands.append(Command(cmd, self))
+                    commands.append((-self.PRIO_CONFIG_IFACE,
+                        Command(cmd, self)))
 
         if self.type == "bridge":
             old_ifnames = set(self.ifname)

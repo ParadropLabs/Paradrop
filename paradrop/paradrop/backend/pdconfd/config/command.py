@@ -2,6 +2,35 @@ import subprocess
 
 from pdtools.lib.output import out
 
+
+class CommandList(list):
+    def __contains__(self, s):
+        """
+        Test if the list contains a given string.
+        """
+        return any(s in cmd for prio, cmd in self)
+
+    def append(self, priority, command):
+        super(CommandList, self).append((priority, command))
+
+    def commands(self):
+        """
+        Iterate over commands in order by priority.
+
+        Commands are first sorted by assigned priority.  Within each priority
+        level, the order in which they were added is maintained.
+        """
+        result = list()
+        for i in range(len(self)):
+            prio, cmd = self[i]
+            result.append((prio, i, cmd))
+
+        result.sort()
+
+        for prio, i, cmd in result:
+            yield cmd
+
+
 class Command(object):
     def __init__(self, command, parent=None):
         """

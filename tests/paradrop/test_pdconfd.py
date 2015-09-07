@@ -192,7 +192,7 @@ def in_commands(substr, commands):
     """
     Test that a string is in the command list
     """
-    return any(substr in cmd for cmd in commands)
+    return any(substr in cmd[1] for cmd in commands)
 
 
 def test_base():
@@ -278,6 +278,8 @@ def test_config_dnsmasq():
 
     manager.unload(execute=False)
     commands = manager.previousCommands
+    for cmd in commands:
+        print(cmd)
 
     # Unload should generate a kill command for the fake pid.
     assert in_commands("kill", commands)

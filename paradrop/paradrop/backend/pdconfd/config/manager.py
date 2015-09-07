@@ -17,6 +17,7 @@ from . import network
 from . import wireless
 
 from .base import ConfigObject
+from .command import CommandList
 
 
 # Map of type names to the classes that handle them.
@@ -103,7 +104,12 @@ class ConfigManager(object):
         return self.previousCommands
 
     def execute(self, commands):
-        for cmd in commands:
+        """
+        Execute commands.
+
+        Takes a CommandList object.
+        """
+        for cmd in commands.commands():
             cmd.execute()
 
     def findMatchingConfig(self, config, byName=False):
@@ -166,7 +172,7 @@ class ConfigManager(object):
         undoConfigs = set()
 
         # Final list of commands to execute.
-        commands = list()
+        commands = CommandList()
 
         files = findConfigFiles(search)
 
@@ -334,7 +340,7 @@ class ConfigManager(object):
         return json.dumps(status)
 
     def unload(self, execute=True):
-        commands = list()
+        commands = CommandList()
         
         undoWork = ConfigObject.prioritizeConfigs(self.currentConfig.values())
         heapq.heapify(undoWork)

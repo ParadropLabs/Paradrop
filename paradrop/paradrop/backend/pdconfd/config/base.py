@@ -5,6 +5,12 @@ class ConfigObject(object):
     typename = None
     options = []
 
+    # Priorities to ensure proper interleaving of commands.
+    # Revert commands should use negated value.
+    PRIO_CREATE_IFACE = 20
+    PRIO_CONFIG_IFACE = 40
+    PRIO_START_DAEMON = 60
+
     def __init__(self, name=None):
         self.id = ConfigObject.nextId
         ConfigObject.nextId += 1
@@ -153,7 +159,7 @@ class ConfigObject(object):
 
         Most subclasses will need to implement this function.
 
-        Returns a list of Command objects.
+        Returns a list of (priority, Command) tuples.
         """
         return []
 
@@ -163,7 +169,7 @@ class ConfigObject(object):
 
         Most subclasses will need to implement this function.
 
-        Returns a list of Command objects.
+        Returns a list of (priority, Command) tuples.
         """
         return []
 
@@ -174,7 +180,7 @@ class ConfigObject(object):
         Implementing this is optional for subclasses.  The default behavior is
         to call apply.
 
-        Returns a list of Command objects.
+        Returns a list of (priority, Command) tuples.
         """
         return self.apply(allConfigs)
 
@@ -186,7 +192,7 @@ class ConfigObject(object):
         delete an interface if we are only updating its IP address).  The
         default behavior is to call revert.
 
-        Returns a list of Command objects.
+        Returns a list of (priority, Command) tuples.
         """
         return self.revert(allConfigs)
 

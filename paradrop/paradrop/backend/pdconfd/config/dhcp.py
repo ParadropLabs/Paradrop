@@ -108,7 +108,7 @@ class ConfigDnsmasq(ConfigObject):
 
         cmd = ["/apps/bin/dnsmasq", "--conf-file={}".format(outputPath),
                "--pid-file={}".format(pidFile)]
-        commands.append(Command(cmd, self))
+        commands.append((self.PRIO_START_DAEMON, Command(cmd, self)))
 
         self.pidFile = pidFile
         return commands
@@ -116,6 +116,7 @@ class ConfigDnsmasq(ConfigObject):
     def revert(self, allConfigs):
         commands = list()
 
-        commands.append(KillCommand(self.pidFile, self))
+        commands.append((-self.PRIO_START_DAEMON, 
+            KillCommand(self.pidFile, self)))
 
         return commands

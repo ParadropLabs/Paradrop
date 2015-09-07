@@ -4,6 +4,21 @@ from mock import MagicMock, patch
 from nose.tools import assert_raises
 
 
+def test_CommandList():
+    """
+    Test the CommandList class
+    """
+    from paradrop.backend.pdconfd.config.command import CommandList
+
+    clist = CommandList()
+    clist.append(20, "b")
+    clist.append(20, "c")
+    clist.append(10, "a")
+
+    commands = list(clist.commands())
+    assert commands == ["a", "b", "c"]
+
+
 @patch("paradrop.backend.pdconfd.config.command.out")
 @patch("subprocess.Popen")
 def test_Command_execute(Popen, out):
