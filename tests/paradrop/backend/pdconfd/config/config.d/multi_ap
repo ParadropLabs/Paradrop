@@ -1,0 +1,27 @@
+config wifi-device wifi0
+    option type 'auto'
+    option channel '1'
+
+config interface lan
+    option proto 'dhcp'
+    option type 'bridge'
+    list ifname 'eth1'
+
+config interface v0000.wlan0
+    option proto 'static'
+    option ipaddr '192.168.128.1'
+    option netmask '255.255.255.0'
+    list ifname 'v0000.wlan0'
+
+config wifi-iface
+    option device 'wifi0'
+    option mode 'ap'
+    option ssid 'Paradrop'
+    option network 'lan'
+    option ifname 'lan.wlan0'
+
+config wifi-iface
+    option device 'wifi0'
+    option mode 'ap'
+    option ssid 'Paradrop-Virt'
+    option network 'v0000.wlan0'
