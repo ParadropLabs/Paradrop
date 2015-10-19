@@ -91,6 +91,7 @@ def authSuccess(r):
     nexus.core.saveKey(r['ca'], 'ca.pem')
 
     print 'You have been successfully logged in.'
+    return True
 
 
 @inlineCallbacks
@@ -101,6 +102,7 @@ def login(s):
     # name, password = 'damouse', '12345678'
 
     ret = yield nexus.core.session.call('pd', 'login', name, password)
+    print ret
     authSuccess(ret)
 
 

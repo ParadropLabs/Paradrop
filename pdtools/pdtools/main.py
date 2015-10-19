@@ -199,17 +199,19 @@ def connectAndCall(command):
     '''
     Wait for nexus to connect, make the requested calls. 
     '''
-
+    found = False
     d = nexus.core.connect(cxbr.BaseSession, debug=False)
 
     # If not provisioned, user is not logged in. User can still login, cant proceed further
     if command == 'login':
         d.addCallback(server.login)
+        found = True
 
     if command == 'register':
         d.addCallback(server.register)
+        found = True
 
-    if not nexus.core.provisioned():
+    if not nexus.core.provisioned() and command not in ['login', 'register']:
         print 'You must login first.'
         exit(0)
 
@@ -221,7 +223,7 @@ def connectAndCall(command):
     elif command in 'router chute list logs'.split():
         d.addCallback(eval('%sMenu' % command))
 
-    else:
+    elif not Found:
         print "%r is not a paradrop command. See 'paradrop -h'." % command
 
     # Catch the docopt exceptions and print them. This is usage information.
