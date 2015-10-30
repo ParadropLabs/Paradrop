@@ -20,7 +20,9 @@ setup(
         'twisted>=14.2',
         'enum34',
         'smokesignal>=0.7.0',
-        'autobahn==0.10.5.post2'
+        'autobahn==0.10.5.post2',
+        'docker-py',
+        'txdbus'
     ],
 
     packages=find_packages(),
