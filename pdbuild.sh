@@ -307,7 +307,7 @@ check() {
         echo "Virtual machine is: UP"
     fi
     
-    ssh -p 8022 ubuntu@localhost systemctl status paradrop_pd_${SNAPPY_VERSION}.service
+    ssh -p 8022 ubuntu@localhost systemctl status paradrop_pd_*.service
 }
 
 logs() {
