@@ -223,7 +223,7 @@ def connectAndCall(command):
     elif command in 'router chute list logs'.split():
         d.addCallback(eval('%sMenu' % command))
 
-    elif not Found:
+    elif not found:
         print "%r is not a paradrop command. See 'paradrop -h'." % command
 
     # Catch the docopt exceptions and print them. This is usage information.
