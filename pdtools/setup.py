@@ -17,7 +17,7 @@ setup(
         'pyyaml>=3.11',
         'requests>=2.7.0',
         'service-identity>=14.0.0',
-        'twisted>=14.2',
+        'twisted==14.0.2',
         'enum34',
         'smokesignal>=0.7.0',
         'autobahn==0.10.5.post2'
