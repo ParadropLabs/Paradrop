@@ -1,8 +1,8 @@
 from paradrop.lib.utils import dockerapi
 from mock import patch, MagicMock
 
-HOST_CONFIG1 = {'RestartPolicy': {'MaximumRetryCount': 5, 'Name': 'on-failure'}, 'LxcConf': [], 'CapAdd': ['NET_ADMIN']}
-HOST_CONFIG2 = {'RestartPolicy': {'MaximumRetryCount': 5, 'Name': 'on-failure'}, 'PortBindings': {'80/tcp': [{'HostPort': '9000', 'HostIp': ''}]}, 'LxcConf': [], 'Dns': ['0.0.0.0', '8.8.8.8'], 'CapAdd': ['NET_ADMIN']}
+HOST_CONFIG1 = {'RestartPolicy': {'MaximumRetryCount': 5, 'Name': 'on-failure'}, 'NetworkMode': 'bridge', 'LxcConf': [], 'CapAdd': ['NET_ADMIN']}
+HOST_CONFIG2 = {'RestartPolicy': {'MaximumRetryCount': 5, 'Name': 'on-failure'}, 'NetworkMode': 'bridge', 'PortBindings': {'80/tcp': [{'HostPort': '9000', 'HostIp': ''}]}, 'LxcConf': [], 'Dns': ['0.0.0.0', '8.8.8.8'], 'CapAdd': ['NET_ADMIN']}
 
 DOCKER_CONF = """
 # Docker systemd configuration

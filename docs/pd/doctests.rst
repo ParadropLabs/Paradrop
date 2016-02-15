@@ -40,6 +40,10 @@ To manually run tests, install nosetest::
 
     pip install nose
 
+Install the required packages::
+
+    pip install -r docs/requirements.txt
+
 Run all tests::
 
     nosetests

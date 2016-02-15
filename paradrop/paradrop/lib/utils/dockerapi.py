@@ -208,6 +208,7 @@ def build_host_config(update):
         dns=config.get('dns'),
         #not supported/managed by us
         #network_mode=update.host_config.get('network_mode'),
+        network_mode='bridge',
         #extra_hosts=update.host_config.get('extra_hosts'),
         #binds=config.get('binds'),
         #links=config.get('links'),
