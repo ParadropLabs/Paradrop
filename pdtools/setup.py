@@ -20,7 +20,7 @@ setup(
         'twisted==14.0.2',
         'enum34',
         'smokesignal>=0.7.0',
-        'autobahn==0.10.5.post2'
+        'autobahn==0.10.5-2'
     ],
 
     packages=find_packages(),
