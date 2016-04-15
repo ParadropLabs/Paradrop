@@ -10,9 +10,9 @@ COLOR='\033[01;33m'
 SNAPPY_VERSION="0.1.0"
 DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
 HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
-PEX_CACHE="/var/lib/apps/paradrop/$SNAPPY_VERSION/pex/install"
-PARADROP_SNAP="https://paradrop.io/storage/snaps/v$SNAPPY_VERSION/paradrop_$SNAPPY_VERSION_all.snap"
-PDINSTALL_SNAP="https://paradrop.io/storage/snaps/v$SNAPPY_VERSION/pdinstall_$SNAPPY_VERSION_all.snap"
+PEX_CACHE="/var/lib/apps/paradrop/${SNAPPY_VERSION}/pex/install"
+PARADROP_SNAP="https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/paradrop_${SNAPPY_VERSION}_all.snap"
+PDINSTALL_SNAP="https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/pdinstall_${SNAPPY_VERSION}_all.snap"
 
 #Show help if no args passed
 if [ $# -lt 1 ]
