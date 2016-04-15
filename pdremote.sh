@@ -7,10 +7,12 @@ source pdremote.conf
 # in the case of errors
 COLOR='\033[01;33m' 
 
+SNAPPY_VERSION="0.1.0"
 DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
 HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
-SNAPPY_VERSION="0.1.0"
 PEX_CACHE="/var/lib/apps/paradrop/$SNAPPY_VERSION/pex/install"
+PARADROP_SNAP="https://paradrop.io/storage/snaps/v$SNAPPY_VERSION/paradrop_$SNAPPY_VERSION_all.snap"
+PDINSTALL_SNAP="https://paradrop.io/storage/snaps/v$SNAPPY_VERSION/pdinstall_$SNAPPY_VERSION_all.snap"
 
 #Show help if no args passed
 if [ $# -lt 1 ]
@@ -24,7 +26,7 @@ then
     echo -e "  build\t\t build and package dependencies, install paradrop locally"
     # echo -e "  clean\n\t remove virtual environment, clean packages"
     echo -e "  install \t get official snap and install on the remote machine."
-    echo -e "  install-dev \t get official snap and install on the remote machine."
+    echo -e "  install_dev \t get official snap and install on the remote machine."
     echo -e "  setup\t\t prepares environment for snappy testing"
     echo -e "  reboot\t\t reboots the hardware properly"
     echo -e "  connect\t connects to the snappy machine"
@@ -137,7 +139,7 @@ install_deps() {
     rm hostapd*.snap
 }
 
-install-dev() {
+install_dev() {
     if [ ! -f snaps/paradrop/bin/pd ]; then
         echo "Dependency pex not found! Have you built the dependencies yet?"
         echo -e "\t$ $0 build"
@@ -182,8 +184,8 @@ install() {
     echo -e "${COLOR}Building snap" && tput sgr0
     
     # Get the official snaps
-    wget https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/paradrop_${SNAPPY_VERSION}_all.snap
-    wget https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/pdinstall_${SNAPPY_VERSION}_all.snap
+    wget ${PARADROP_SNAP}
+    wget ${PDINSTALL_SNAP}
 
     echo -e "${COLOR}Installing snap" && tput sgr0
     snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "paradrop_${SNAPPY_VERSION}_all.snap"
@@ -243,6 +245,7 @@ case "$1" in
     # "clean") clean;;
     "install_deps") install_deps;;
     "install") install;;
+    "install_dev") install_dev;;
     "setup") setup;;
     "connect") connect;;
     "reboot") reboot;;
