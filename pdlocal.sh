@@ -1,15 +1,19 @@
-#!/bin/bash 
+#!/bin/bash
 
-#used to differentiate our output from other. Other output is still shown 
-# in the case of errors
-COLOR='\033[01;33m' 
+# Include common functions and defines for both local and remote
+source pdcommon.sh
 
-DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
-HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
-SNAPPY_VERSION="0.1.0"
-PEX_CACHE="/var/lib/apps/paradrop/$SNAPPY_VERSION/pex/install"
+#############
+# Static defines
+###
 
-#Show help if no args passed
+TARGET="ubuntu@localhost"
+TARGET_PORT="8022"
+
+#############
+# Help
+###
+
 if [ $# -lt 1 ]
 then
     echo -e "${COLOR}Paradrop build tools." && tput sgr0
@@ -22,6 +26,7 @@ then
     # echo -e "  clean\n\t remove virtual environment, clean packages"
     echo -e "  run\t\t run paradrop locally"
     echo -e "  install \t compile snap and install on local snappy virtual machine."
+    echo -e "  uninstall \t removes paradrop from the local vm"
     echo -e "  setup\t\t prepares environment for local snappy testing"
     echo -e "  up\t\t starts a local snappy virtual machine, add wifi interface with 'up wifi-BUS-ADDR'"
     echo -e "  down\t\t closes a local snappy virtual machine"
@@ -37,7 +42,7 @@ then
 fi
 
 
-###
+#############
 # Utils
 ###
 killvm() {
@@ -51,150 +56,10 @@ killvm() {
     fi
 }
 
-###
-# Operations
-###
-
-#  commented lines are from the older virtualenv way of packaging the app. This seems cleaner
-build() {
-    echo "Cleaning build directories"
-
-    rm -rf buildenv
-    rm -rf paradrop/paradrop.egg-info
-    rm -rf paradrop/build
-    rm snaps/paradrop/bin/pd
-
-    mkdir buildenv
-
-    echo -e "${COLOR}Loading and building python dependencies"
-    # echo -e "${COLOR}Bootstrapping environment" && tput sgr0
-
-    # ./venv.pex buildenv/env
-    # source buildenv/env/bin/activate
-
-    echo -e "${COLOR}Installing paradrop" && tput sgr0
-
-    if ! type "pex" > /dev/null; then
-        echo 'Please install pex. Try:'
-        echo "pip install pex"
-        exit
-    fi
-
-    # pip install pex
-    # pip install -e ./paradrop
-
-    #also-- we can get away without saving the requirements just fine, but readthedocs needs them
-    # pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
-    # pex -r docs/requirements.txt -o snap/bin/pd.pex -m paradrop.main:main -f buildenv/dist
-
-    # pip and bdist doesn't play well together. Turn off the virtualenv.
-    # deactivate 
-
-    #the above is somewhat redundant now, but meh
-    cd paradrop
-    python setup.py bdist_egg -d ../buildenv
-    cd ..
-    if [ ! -f snaps/paradrop/bin/pipework ]; then
-        wget https://raw.githubusercontent.com/jpetazzo/pipework/3bccb3adefe81b6acd97c50cfc6cda11420be109/pipework -O snaps/paradrop/bin/pipework
-        chmod 755 snaps/paradrop/bin/pipework
-    fi
-
-    echo -e "${COLOR}Building paradrop-snappy..." && tput sgr0
-    
-    #Unexpected, but it doesn't like trying to overrite the existing pex
-    if [ -f snaps/paradrop/bin/pd ]; then
-        rm snaps/paradrop/bin/pd
-    fi
-
-    pex --disable-cache paradrop -o snaps/paradrop/bin/pd -m paradrop:main -f buildenv/
-    pex --disable-cache pdinstall -o snaps/pdinstall/bin/pdinstall -m pdinstall.main:main -f buildenv/
-    rm -rf *.egg-info
-}
-
-# Generates docs 
-docs() {
-    virtualenv buildenv/env
-    source buildenv/env/bin/activate
-
-    rm docs/requirements.txt
-    pip install -e ./paradrop
-    pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt
-}
-
-clean() {
-    echo "Cleaning build directories"
-
-    rm -rf buildenv
-    rm -rf paradrop/paradrop.egg-info
-    rm snaps/paradrop/bin/pd
-}
-
-run() {
-    echo -e "${COLOR}Starting Paradrop" && tput sgr0
-
-    if [ ! -f snaps/paradrop/bin/pd ]; then
-        echo "Dependency pex not found! Have you built the dependencies yet?"
-        echo -e "\t$ $0 build"
-        exit
-    fi
-
-    # Tell it to write to /tmp instead of the default location, so we know it
-    # is writable for unprivileged users.
-    export PDCONFD_WRITE_DIR="/tmp/pdconfd"
-    export UCI_CONFIG_DIR="/tmp/config.d"
-    export HOST_CONFIG_PATH="/tmp/hostconfig.yaml"
-
-    snaps/paradrop/bin/pd
-}
-
-install_deps() {
-    #assuming all snappy dev tools are installed if this one is (snappy-remote, for example)
-    if ! type "snappy" > /dev/null; then
-        echo 'Snappy development tools not installed. Try:'
-        echo "$0 setup"
-        exit
-    fi
-
-    ssh -p 8022 ubuntu@localhost sudo snappy install docker
-
-    wget --quiet $DNSMASQ_SNAP
-    snappy-remote --url=ssh://localhost:8022 install dnsmasq*.snap
-    rm dnsmasq*.snap
-
-    wget --quiet $HOSTAPD_SNAP
-    snappy-remote --url=ssh://localhost:8022 install hostapd*.snap
-    rm hostapd*.snap
-}
-
-install() {
-    if [ ! -f snaps/paradrop/bin/pd ]; then
-        echo "Dependency pex not found! Have you built the dependencies yet?"
-        echo -e "\t$ $0 build"
-        exit
-    fi
-
-    #assuming all snappy dev tools are installed if this one is (snappy-remote, for example)
-    if ! type "snappy" > /dev/null; then
-        echo 'Snappy development tools not installed. Try:'
-        echo "$0 setup"
-        exit
-    fi
-
-    echo -e "${COLOR}Purging pex cache on target" && tput sgr0
-    ssh -p 8022 ubuntu@localhost sudo rm -rf "$PEX_CACHE"
-
-    echo -e "${COLOR}Building snap" && tput sgr0
-    
-    #build the snap using snappy dev tools and extract the name of the snap
-    snappy build snaps/paradrop
-    snappy build snaps/pdinstall
-
-    echo -e "${COLOR}Installing snap" && tput sgr0
-    snappy-remote --url=ssh://localhost:8022 install "paradrop_${SNAPPY_VERSION}_all.snap"
-    snappy-remote --url=ssh://localhost:8022 install "pdinstall_${SNAPPY_VERSION}_all.snap"
-    rm *.snap
-    
-    exit
+removekey() {
+    # Remove the localhost key if they started a different image
+    echo -e 'Removing old ssh key pair'
+    ssh-keygen -f "~/.ssh/known_hosts" -R [localhost]:8022
 }
 
 # Perhaps overkill, but preps the local environment for snappy testing
@@ -227,6 +92,10 @@ setup() {
 
     echo -e "${COLOR}Snappy development tools installed" && tput sgr0
 }
+
+#############
+# Operations
+###
 
 up() {
     if [ -f pid.txt ]; then
@@ -309,7 +178,7 @@ check() {
         echo -e "$0 up"
         exit 1
     fi
-    
+
     PID=`cat pid.txt`
     if [[ `ps -a | grep -E "^ *${PID}.*" | wc -l` -ne 1 ]]; then
         echo -e "Virtual machine is: DOWN\t\tPID: ${PID}"
@@ -317,7 +186,7 @@ check() {
     else
         echo "Virtual machine is: UP"
     fi
-    
+
     ssh -p 8022 ubuntu@localhost systemctl status paradrop_pd_*.service
 }
 
@@ -327,22 +196,11 @@ logs() {
         echo -e "$0 up"
         exit 1
     fi
-    
+
     ssh -p 8022 ubuntu@localhost sudo /apps/paradrop/current/bin/dump_log.py
 }
 
-update-tools() {
-    cd pdtools
-
-    python setup.py sdist bdist_wheel
-    twine upload dist/* 
-
-    rm -rf build/ dist/ *.egg-info
-
-    sudo pip install pdtools -U
-}
-
-###
+##########
 # Call Operations
 ###
 
@@ -351,7 +209,9 @@ case "$1" in
     # "clean") clean;;
     "run") run;;
     "install_deps") install_deps;;
+    "install_dev") install_dev;;
     "install") install;;
+    "uninstall") uninstall;;
     "setup") setup;;
     "up") up "$2";;
     "down") down;;
