@@ -86,6 +86,7 @@ case "$1" in
     # "clean") clean;;
     "install_deps") install_deps;;
     "install") install;;
+    "uninstall") uninstall;;
     "install_dev") install_dev;;
     "setup") setup;;
     "connect") connect;;
