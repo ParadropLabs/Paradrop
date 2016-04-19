@@ -6,9 +6,11 @@ source pdcommon.sh
 # Include the remote address of the device
 source pdremote.conf
 
-#Show help if no args passed
-if [ $# -lt 1 ]
-then
+#############
+# Help
+###
+
+printhelp() {
     echo -e "${COLOR}Paradrop build tools." && tput sgr0
     echo -e "This tool installs all needed dependencies in a local virtual environment and can set up Snappy development\n"
 
@@ -29,6 +31,12 @@ then
     echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"
     echo -e "  update-tools\t uploads build tools to pypi. Requires authentication."
     exit
+}
+
+#Show help if no args passed
+if [ $# -lt 1 ]
+then
+    printhelp
 fi
 
 #############
@@ -73,7 +81,8 @@ logs() {
 ###
 
 case "$1" in
-    "build") build;;
+    "help") printhelp;;
+    "--help") printhelp;;
     # "clean") clean;;
     "install_deps") install_deps;;
     "install") install;;
