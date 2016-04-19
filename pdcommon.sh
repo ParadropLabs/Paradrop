@@ -196,9 +196,9 @@ install() {
 # If there is a failed install of paradrop, we need to clean up the files that are still around
 # in order to attempt a second install
 uninstall() {
-    ssh -p 8022 ubuntu@localhost sudo snappy remove pdinstall
-    ssh -p 8022 ubuntu@localhost sudo snappy remove paradrop
-    ssh -p 8022 ubuntu@localhost sudo rm -rf /writable/system-data/var/lib/apps/paradrop \
+    ssh -p ${TARGET_PORT} ${TARGET} sudo snappy remove pdinstall
+    ssh -p ${TARGET_PORT} ${TARGET} sudo snappy remove paradrop
+    ssh -p ${TARGET_PORT} ${TARGET} sudo rm -rf /writable/system-data/var/lib/apps/paradrop \
         /writable/system-data/etc/dbus-1/system.d/paradrop_pd_* \
         /writable/system-data/etc/systemd/system/paradrop_pd_* \
         /writable/system-data/etc/systemd/system/multi-user.target.wants/paradrop_pd_* \
