@@ -119,9 +119,9 @@ class ConfigWifiIface(ConfigObject):
             outputFile.write("# Device: {}\n".format(str(wifiDevice)))
             outputFile.write("# Interface: {}\n".format(str(interface)))
             outputFile.write("#" * 80 + "\n")
-            # Try to enable 802.11ac
-            outputFile.write("hw_mode=a\n")
-            outputFile.write("ieee80211ac=1\n")
+            # 802.11ac not working, need to find out why
+            outputFile.write("hw_mode=g\n")
+            #outputFile.write("ieee80211ac=1\n")
 
             # Write essential options.
             outputFile.write("interface={}\n".format(self._ifname))
