@@ -84,6 +84,7 @@ logs() {
 case "$1" in
     "help") printhelp;;
     "--help") printhelp;;
+    "build") build;;
     # "clean") clean;;
     "install_deps") install_deps;;
     "install") install;;
