@@ -21,6 +21,7 @@ printhelp() {
     # echo -e "  clean\n\t remove virtual environment, clean packages"
     echo -e "  install \t get official snaps and install on the remote machine."
     echo -e "  install_dev \t build the paradrop snaps and install on the remote machine."
+    echo -e "  uninstall \t removes paradrop on the remote machine."
     echo -e "  setup\t\t prepares environment for snappy testing"
     echo -e "  reboot\t\t reboots the hardware properly"
     echo -e "  connect\t connects to the snappy machine"
