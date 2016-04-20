@@ -7,6 +7,7 @@
 pdfcd.server.
 Contains the classes required to establish a RESTful API server using Twisted.
 '''
+from twisted.web import static
 from twisted.web.server import Site
 from twisted.internet import reactor
 
@@ -280,6 +281,11 @@ def setup(args=None):
     api = ParadropAPIServer(reactor)
     api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
+
+    # Setup local root of the website
+    root = static.File("/var/lib/apps/paradrop/www")
+    website = Site(root)
+    reactor.listenTCP(80, website)
 
     # Development mode
     if(args and args.development):

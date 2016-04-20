@@ -15,6 +15,7 @@ PEX_CACHE="/var/lib/apps/paradrop/${SNAPPY_VERSION}/pex/install"
 PARADROP_SNAP="https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/paradrop_${SNAPPY_VERSION}_all.snap"
 PDINSTALL_SNAP="https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/pdinstall_${SNAPPY_VERSION}_all.snap"
 PEX_CACHE="/var/lib/apps/paradrop/$SNAPPY_VERSION/pex/install"
+LOCALWEB_LOCATION="paradrop/localweb/app/."
 
 
 #############
@@ -158,6 +159,13 @@ install_dev() {
     snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "paradrop_${SNAPPY_VERSION}_all.snap"
     snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "pdinstall_${SNAPPY_VERSION}_all.snap"
     rm *.snap
+
+    # Make the www directory and make it writable for scp
+    ssh -p ${TARGET_PORT} ${TARGET} sudo mkdir /var/lib/apps/paradrop/www
+    ssh -p ${TARGET_PORT} ${TARGET} sudo chown ubuntu:ubuntu /var/lib/apps/paradrop/www
+
+    # Installing static webpage
+    scp -r -P ${TARGET_PORT} ${LOCALWEB_LOCATION} ${TARGET}:/var/lib/apps/paradrop/www 
 
     exit
 }
