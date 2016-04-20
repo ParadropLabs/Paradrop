@@ -15,7 +15,7 @@ PEX_CACHE="/var/lib/apps/paradrop/${SNAPPY_VERSION}/pex/install"
 PARADROP_SNAP="https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/paradrop_${SNAPPY_VERSION}_all.snap"
 PDINSTALL_SNAP="https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/pdinstall_${SNAPPY_VERSION}_all.snap"
 PEX_CACHE="/var/lib/apps/paradrop/$SNAPPY_VERSION/pex/install"
-LOCALWEB_LOCATION="paradrop/localweb/app/."
+LOCALWEB_LOCATION="paradrop/localweb/."
 
 
 #############
