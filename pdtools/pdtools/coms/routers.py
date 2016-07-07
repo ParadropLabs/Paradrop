@@ -18,6 +18,38 @@ from pdtools.lib import pdutils, riffle, cxbr, nexus
 from pdtools.lib.output import out
 
 
+def readChuteConfig(filename):
+    # Read local yaml into a config_json to send via post request
+    try:
+        with open(filename, 'r') as stream:
+            config_json = yaml.load(stream)
+            config_json['date'] = config_json['date'].isoformat()
+    except IOError as e:
+        print 'Error: ' + config + ' not found.'
+        return
+
+    # Verify the config provided in some way.
+    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str})
+    if cfg_verf:
+        print 'ERROR: ' + cfg_verf
+        return
+
+    # Only allowed one way to provide a dockerfile order is local, remote, inline
+    if 'local' in config_json['dockerfile']:
+        with open(config_json['dockerfile']['local'], 'r') as stream:
+            config_json['dockerfile'] = stream.read()
+    elif 'remote' in config_json['dockerfile']:
+        print 'Remote Dockerfile not supported yet.'
+        return
+    elif 'inline' in config_json['dockerfile']:
+        config_json['dockerfile'] = config_json['dockerfile']['inline']
+    else:
+        print 'ERROR: No Dockerfile specified in config file.'
+        return
+
+    return config_json
+
+
 @defer.inlineCallbacks
 def provisionRouter(name, host, port):
 
@@ -93,6 +125,49 @@ def ping(target):
     ret = yield nexus.core.session.call(target, 'ping')
     print 'Ping result: ' + str(ret)
 
+
+###############################################################################
+# Alternate Chute Operations
+#
+# These chute operations are sent over WAMP instead of the local HTTP
+# connection.  There are advantages and disadvanteges to this.  These can be
+# called from anywhere by only using the router name.
+#
+# TODO Finalize details for remote configuration protocol.  Do we issue a call
+# and block until the entire operation is done (current implementation)?
+###############################################################################
+
+
+@defer.inlineCallbacks
+def createChuteAlt(target, filename):
+    target = nexus.core.info.pdid + '.' + target
+    config = readChuteConfig(filename)
+    if config is not None:
+        ret = yield nexus.core.session.call(target, 'createChute', config)
+        print(ret['message'])
+
+
+@defer.inlineCallbacks
+def deleteChuteAlt(target, name):
+    target = nexus.core.info.pdid + '.' + target
+    ret = yield nexus.core.session.call(target, 'deleteChute', name)
+    print(ret['message'])
+
+
+@defer.inlineCallbacks
+def startChuteAlt(target, name):
+    target = nexus.core.info.pdid + '.' + target
+    ret = yield nexus.core.session.call(target, 'startChute', name)
+    print(ret['message'])
+
+
+@defer.inlineCallbacks
+def stopChuteAlt(target, name):
+    target = nexus.core.info.pdid + '.' + target
+    ret = yield nexus.core.session.call(target, 'stopChute', name)
+    print(ret['message'])
+
+
 ###############################################################################
 # Chute Operations
 ###############################################################################
@@ -102,33 +177,8 @@ def installChute(host, port, config):
     '''
     Take a local config yaml file and launch chute of given host with pdfcd running on specified port.
     '''
-
-    # Read local yaml into a config_json to send via post request
-    try:
-        with open(config, 'r') as stream:
-            config_json = yaml.load(stream)
-            config_json['date'] = config_json['date'].isoformat()
-    except IOError as e:
-        print 'Error: ' + config + ' not found.'
-        return
-
-    # Verify the config provided in some way.
-    cfg_verf = pdutils.check(config_json, dict, {'dockerfile': dict, 'name': str, 'owner': str})
-    if cfg_verf:
-        print 'ERROR: ' + cfg_verf
-        return
-
-    # Only allowed one way to provide a dockerfile order is local, remote, inline
-    if 'local' in config_json['dockerfile']:
-        with open(config_json['dockerfile']['local'], 'r') as stream:
-            config_json['dockerfile'] = stream.read()
-    elif 'remote' in config_json['dockerfile']:
-        print 'Remote Dockerfile not supported yet.'
-        return
-    elif 'inline' in config_json['dockerfile']:
-        config_json['dockerfile'] = config_json['dockerfile']['inline']
-    else:
-        print 'ERROR: No Dockerfile specified in config file.'
+    config_json = readChuteConfig(config)
+    if config_json is None:
         return
 
     print 'Installing chute...\n'

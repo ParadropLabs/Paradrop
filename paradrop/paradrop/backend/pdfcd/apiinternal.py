@@ -10,8 +10,15 @@ from paradrop.lib.config import hostconfig
 from pdtools.lib.output import out
 from pdtools.lib import names, nexus, cxbr
 
+from . import apibridge
+
 
 class RouterSession(cxbr.BaseSession):
+
+    def __init__(self, *args, **kwargs):
+        self.bridge = apibridge.APIBridge()
+
+        super(RouterSession, self).__init__(*args, **kwargs)
 
     @inlineCallbacks
     def onJoin(self, details):
@@ -23,6 +30,11 @@ class RouterSession(cxbr.BaseSession):
         # yield self.register(self.logsFromTime, 'logsFromTime')
         yield self.register(self.getConfig, 'getConfig')
         yield self.register(self.setConfig, 'setConfig')
+
+        yield self.register(self.createChute, 'createChute')
+        yield self.register(self.deleteChute, 'deleteChute')
+        yield self.register(self.startChute, 'startChute')
+        yield self.register(self.stopChute, 'stopChute')
 
         # route output to the logs call
         smokesignal.on('logs', self.logs)
@@ -100,6 +112,22 @@ class RouterSession(cxbr.BaseSession):
         config = json.loads(config)
         hostconfig.save(config)
         return "Wrote new configuration"
+
+    def createChute(self, pdid, config):
+        out.info('Creating chute...')
+        return self.bridge.createChute(config)
+
+    def deleteChute(self, pdid, name):
+        out.info('Deleting chute...')
+        return self.bridge.deleteChute(name)
+
+    def startChute(self, pdid, name):
+        out.info('Starting chute...')
+        return self.bridge.startChute(name)
+
+    def stopChute(self, pdid, name):
+        out.info('Stopping chute...')
+        return self.bridge.stopChute(name)
 
 
 ###############################################################################
