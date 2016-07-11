@@ -1,9 +1,6 @@
 from paradrop.lib.utils import dockerapi
 from mock import patch, MagicMock
 
-HOST_CONFIG1 = {'RestartPolicy': {'MaximumRetryCount': 5, 'Name': 'on-failure'}, 'NetworkMode': 'bridge', 'LxcConf': [], 'CapAdd': ['NET_ADMIN']}
-HOST_CONFIG2 = {'RestartPolicy': {'MaximumRetryCount': 5, 'Name': 'on-failure'}, 'NetworkMode': 'bridge', 'PortBindings': {'80/tcp': [{'HostPort': '9000', 'HostIp': ''}]}, 'LxcConf': [], 'Dns': ['0.0.0.0', '8.8.8.8'], 'CapAdd': ['NET_ADMIN']}
-
 DOCKER_CONF = """
 # Docker systemd configuration
 #
@@ -14,6 +11,9 @@ DOCKER_CONF = """
 DOCKER_OPTIONS="--restart=false"
 """
 
+def fake_create_host_config(**kwargs):
+    return kwargs
+
 
 def fake_update():
     class Object(object):
@@ -23,22 +23,27 @@ def fake_update():
     update.new = Object()
     return update
 
+
 def test_build_host_config():
     """
     Test that the build_host_config function does it's job.
     """
+    # We don't want to open an actual Docker client connection to do this unit
+    # test, so mock out the create_host_config to return whatever is passed to
+    # it.
+    client = MagicMock()
+    client.create_host_config = fake_create_host_config
+
     #Check that an empty host_config gives us certain default settings
     u = fake_update()
-    res = dockerapi.build_host_config(u)
-    print '\nExpected: ', HOST_CONFIG1, '\nResult: ', res, '\n'
-    assert res == HOST_CONFIG1
+    res = dockerapi.build_host_config(u, client)
+    assert res['network_mode'] == 'bridge'
 
     #Check that passing things through host_config works
     u = MagicMock()
     u.new.host_config = {'port_bindings': { 80:9000}, 'dns': ['0.0.0.0', '8.8.8.8']}
-    res = dockerapi.build_host_config(u)
-    print '\nExpected: ', HOST_CONFIG2, '\nResult: ', res, '\n'
-    assert res == HOST_CONFIG2
+    res = dockerapi.build_host_config(u, client)
+    assert res['dns'] == ['0.0.0.0', '8.8.8.8']
 
 @patch('paradrop.lib.utils.dockerapi.out')
 @patch('docker.Client')
@@ -148,7 +153,7 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail
     client.create_container.return_value = {'Id': 123}
     mockDocker.return_value = client
     dockerapi.startChute(update)
-    mockConfig.assert_called_once_with(update)
+    mockConfig.assert_called_once_with(update, client)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     client.images.assert_called_once_with(quiet=True, all=False)
     client.containers.assert_called_once_with(quiet=True, all=True)
