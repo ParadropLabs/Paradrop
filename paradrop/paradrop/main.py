@@ -88,6 +88,10 @@ def main():
     else:
         from paradrop.backend import pdconfd
         from paradrop.backend import pdfcd
+        from paradrop.lib.reporting import sendStateReport
+
+        # Create a report of the system state to send out.
+        sendStateReport()
 
         # Start the configuration service as a thread
         pdconfd.main.run_thread()

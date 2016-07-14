@@ -110,12 +110,15 @@ def generateHostConfig(devices):
     return config
 
 
-def prepareHostConfig(devices=None, hostConfigPath=None):
+def prepareHostConfig(devices=None, hostConfigPath=None, write=True):
     """
     Load an existing host configuration or generate one.
 
     Tries to load host configuration from persistent file.  If that does not
     work, it will try to automatically generate a working configuration.
+
+    write: if True and host config was automatically generated, then write
+    the new host config to a file.
     """
     config = load(hostConfigPath)
     if config is not None:
@@ -125,7 +128,8 @@ def prepareHostConfig(devices=None, hostConfigPath=None):
         devices = config_devices.detectSystemDevices()
     config = generateHostConfig(devices)
 
-    save(config)
+    if write:
+        save(config)
 
     return config
 
