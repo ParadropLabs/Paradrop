@@ -27,6 +27,7 @@ class StateReport(object):
         # multiple.
         self.timestamp = time.time()
 
+        self.name = None
         self.paradropVersion = None
         self.pdinstallVersion = None
         self.chutes = []
@@ -42,6 +43,8 @@ class StateReportBuilder(object):
 
     def prepare(self):
         report = StateReport()
+
+        report.name = nexus.core.info.pdid
 
         # TODO: Get paradrop and pdinstall versions.
         # TODO: Get chute version, time created, etc.
@@ -76,7 +79,7 @@ class ReportSender(object):
         agent = Agent(reactor)
 
         method = 'POST'
-        url = "{}/state".format(nexus.core.net.webHost)
+        url = "{}/pdserver/state".format(nexus.core.net.webHost)
         headers = Headers({
             # TODO: Authorization
             'Content-Type': ['application/json']
