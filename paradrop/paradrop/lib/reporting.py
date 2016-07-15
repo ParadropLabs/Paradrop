@@ -59,7 +59,7 @@ class StateReportBuilder(object):
                 'version': None
             })
 
-        report.devices = devices.detectSystemDevices()
+        report.devices = devices.listSystemDevices()
         report.hostConfig = hostconfig.prepareHostConfig(write=False)
 
         return report
