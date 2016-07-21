@@ -3,6 +3,7 @@
 #############
 # Static defines
 ###
+source pdbuild.conf
 
 #used to differentiate our output from other. Other output is still shown 
 # in the case of errors
@@ -17,6 +18,158 @@ PDINSTALL_SNAP="https://paradrop.io/storage/snaps/v${SNAPPY_VERSION}/pdinstall_$
 PEX_CACHE="/var/lib/apps/paradrop/$SNAPPY_VERSION/pex/install"
 LOCALWEB_LOCATION="paradrop/localweb/."
 
+if [ "$INSTANCE" = "remote" ]; then
+    ENVIRONMENT="remote"
+elif [ "$INSTANCE" = "local" ]; then
+    ENVIRONMENT="virtual"
+    TARGET="ubuntu@localhost"
+    TARGET_PORT="8022"
+fi
+
+#############
+# Utils
+###
+killvm() {
+    if [ -f pid.txt ]; then
+        echo -e "${COLOR}Killing snappy virtual machine" && tput sgr0
+        KVM="$(cat pid.txt)"
+        kill "${KVM}"
+        rm pid.txt
+    else
+        echo -e "${COLOR}Snappy virtual machine is not running" && tput sgr0
+    fi
+}
+
+down() {
+    killvm
+}
+
+# Removes the ssh key in known_hosts
+removekey() {
+    echo -e 'Removing old ssh key pair'
+    if [ $ENVIRONMENT = "virtual" ]; then
+        # Remove the localhost key if they started a different image
+        ssh-keygen -f "~/.ssh/known_hosts" -R [localhost]:8022
+    else
+        ssh-keygen -f "~/.ssh/known_hosts" -R ${TARGET}
+    fi
+}
+
+# Perhaps overkill, but preps the local environment for snappy testing
+setup() {
+    if [ $ENVIRONMENT = "virtual" ]; then
+        if ! type "kvm" > /dev/null; then
+            echo -e '${COLOR}Installing kvm' && tput sgr0
+            sudo apt-get install qemu-kvm -y
+        fi
+
+        #check for image only download if it does not already exist
+        if [ ! -f snappy-vm.img ]; then
+            echo -e "${COLOR}Downloading Snappy image." && tput sgr0
+
+            if ! [ -d "./buildenv" ]; then
+                mkdir buildenv
+            fi
+
+            wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz 
+            unxz ubuntu-15.04-snappy-amd64-generic.img.xz
+            mv ubuntu-15.04-snappy-amd64-generic.img snappy-vm.img
+            rm -rf releases.ubuntu.com
+        fi
+    fi
+    if ! type "snappy" > /dev/null; then
+        echo -e "${COLOR} Installing snappy tools" && tput sgr0
+        sudo add-apt-repository ppa:snappy-dev/tools
+        sudo apt-get update
+        sudo apt-get install snappy-tools bzr
+    fi
+
+    echo -e "${COLOR}Snappy development tools installed" && tput sgr0
+}
+
+up() {
+    if [ $ENVIRONMENT = "virtual" ]; then
+        if [ -f pid.txt ]; then
+            echo "Snappy virtual machine is already running. If you believe this to be an error, try:"
+            echo -e "$0 down"
+            exit
+        fi
+
+        if [ ! -f snappy-vm.img ]; then
+            echo "Snappy image not found. Try:"
+            echo -e "\t$0 setup"
+            exit
+        fi
+
+        # Check for WiFi arg
+        if [ ! -z "$1" ]; then
+            WIFI=(`echo "$1" | tr "-" " "`)
+            WIFI_BUS="${WIFI[1]}"
+            WIFI_ADDR="${WIFI[2]}"
+            echo "Enabling wifi with $WIFI_BUS:$WIFI_ADDR"
+            WIFI_CMD="-usb -device usb-host,hostbus=$WIFI_BUS,hostaddr=$WIFI_ADDR"
+        else
+            WIFI_CMD=""
+        fi
+
+        echo "Starting snappy instance on local ssh port 8022."
+        echo "Please wait for the virtual machine to load."
+        echo "Default username:password is ubuntu:ubuntu."
+
+        if [ ! -f /dev/kvm ]; then
+           #qemu-system-x86_64 -nographic -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
+           qemu-system-x86_64 -nographic -vga none -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
+                -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
+        else
+            if [ `pidof X` ]; then
+                kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
+                    -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
+            else
+                kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
+                    -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD -nographic snappy-vm.img &
+            fi
+        fi
+
+        # mickey has trouble with the kvm forwarding numbers. Might be something already on the port
+        # kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9001-:9000 \
+        #         -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
+
+        echo $! > pid.txt
+    else
+        echo "Instance is set to remove, exiting..."
+}
+
+
+#############
+# Help
+###
+
+printhelp() {
+    echo -e "${COLOR}Paradrop build tools." && tput sgr0
+    echo -e "This tool installs all needed dependencies in a local virtual environment and can set up Snappy development\n"
+
+    echo -e "To get paradrop on a snappy instance as quickly as possible, run build and install\n"
+
+    echo "Usage:"
+    echo -e "  build\t\t build and package dependencies, install paradrop locally"
+    # echo -e "  clean\n\t remove virtual environment, clean packages"
+    echo -e "  run\t\t run paradrop locally"
+    echo -e "  install \t compile snap and install on snappy ${ENVIRONMENT} machine."
+    echo -e "  install_dev \t build the paradrop snaps and install on the ${ENVIRONMENT} machine."
+    echo -e "  uninstall \t removes paradrop from the ${ENVIRONMENT} machine"
+    echo -e "  setup\t\t prepares environment for local snappy testing"
+    echo -e "  up\t\t starts a local snappy virtual machine, add wifi interface with 'up wifi-BUS-ADDR'"
+    echo -e "  down\t\t closes a local snappy virtual machine"
+    echo -e "  reboot\t\t reboots the ${ENVIRONMENT} machine properly"
+    echo -e "  connect\t ssh connect to snappy ${ENVIRONMENT} machine"
+    echo -e "  check\t\t checks the state of the ${ENVIRONMENT} machine and Paradrop instance tools in the ${ENVIRONMENT} machine"
+    echo -e "  logs\t\t print out the logs from in the ${ENVIRONMENT} machine directly to screen (only use to debug issues)"
+
+    echo -e "\nDevelopment operations"
+    echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"
+    echo -e "  update-tools\t uploads build tools to pypi. Requires authentication."
+    exit
+}
 
 #############
 # build()
@@ -238,3 +391,87 @@ update-tools() {
     sudo pip install pdtools -U
 }
 
+reboot() {
+    if [ $ENVIRONMENT = "virtual" ]; then
+        if [ ! -f pid.txt ]; then
+            echo "No Snappy virtual machine running. Try:"
+            echo -e "$0 up"
+            exit
+        fi
+    fi
+    echo -e "${COLOR} Rebooting the ${ENVIRONMENT} machine" && tput sgr0
+    ssh -p ${TARGET_PORT} ${TARGET} sudo reboot
+}
+
+connect() {
+    echo -e "${COLOR} SSH Connecting to the ${ENVIRONMENT} machine. user: ubuntu password: ubuntu" && tput sgr0
+    ssh -p ${TARGET_PORT} ${TARGET}
+}
+
+check() {
+    if [ $ENVIRONMENT = "virtual" ]; then
+        if [ ! -f pid.txt ]; then
+            echo "No Snappy virtual machine running. Try:"
+            echo -e "$0 up"
+            exit 1
+        fi
+
+        PID=`cat pid.txt`
+        if [[ `ps -a | grep -E "^ *${PID}.*" | wc -l` -ne 1 ]]; then
+            echo -e "Virtual machine is: DOWN\t\tPID: ${PID}"
+            exit 1
+        else
+            echo "Virtual machine is: UP"
+        fi
+    fi
+    ssh -p ${TARGET_PORT} ${TARGET} systemctl status paradrop_pd_${SNAPPY_VERSION}.service
+}
+
+
+logs() {
+    if [ $ENVIRONMENT = "virtual" ]; then
+        if [ ! -f pid.txt ]; then
+            echo "No Snappy virtual machine running. Try:"
+            echo -e "$0 up"
+            exit 1
+        fi
+    fi
+
+    ssh -p ${TARGET_PORT} ${TARGET} ubuntu@localhost sudo /apps/paradrop/current/bin/dump_log.py
+}
+
+#Show help if no args passed
+if [ $# -lt 1 ]
+then
+    printhelp
+fi
+
+###
+# Call Operations
+###
+
+case "$1" in
+    "help") printhelp;;
+    "--help") printhelp;;
+    "build") build;;
+    # "clean") clean;;
+    "run") run;;
+    "install_deps") install_deps;;
+    "install_dev") install_dev;;
+    "install") install;;
+    "uninstall") uninstall;;
+    "setup") setup;;
+    "up") up "$2";;
+    "down") down;;
+    "connect") connect;;
+    "reboot") reboot;;
+    "check") check;;
+    "docs") docs;;
+    "logs") logs;;
+    "update-tools") update-tools;;
+    "bui") build
+        uninstall
+        install_dev;;
+    *) echo "Unknown input $1"
+   ;;
+esac
