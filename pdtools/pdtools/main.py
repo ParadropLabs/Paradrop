@@ -67,6 +67,10 @@ usage:
     paradrop [options] router ping <name>
     paradrop [options] router getConfig <name>
     paradrop [options] router setConfig <name> <path-to-config>
+    paradrop [options] router createChute <name> <path-to-config>
+    paradrop [options] router deleteChute <name> <chute>
+    paradrop [options] router startChute <name> <chute>
+    paradrop [options] router stopChute <name> <chute>
 
 options:
    -v, --verbose    Show verbose internal output       
@@ -141,6 +145,18 @@ def routerMenu(s):
 
     elif args['setConfig']:
         return routers.setConfig(args['<name>'], args['<path-to-config>'])
+
+    elif args['createChute']:
+        return routers.createChuteAlt(args['<name>'], args['<path-to-config>'])
+
+    elif args['deleteChute']:
+        return routers.deleteChuteAlt(args['<name>'], args['<chute>'])
+
+    elif args['startChute']:
+        return routers.startChuteAlt(args['<name>'], args['<chute>'])
+
+    elif args['stopChute']:
+        return routers.stopChuteAlt(args['<name>'], args['<chute>'])
 
     else:
         print routerDoc

@@ -176,6 +176,12 @@ class UpdateChute(UpdateObject):
 
         super(UpdateChute, self).__init__(obj)
 
+        # If the old state is missing, we are probably trying to start a chute
+        # that does not exist.  Another section of code should detect this
+        # problem, but don't try to pull values from the old state.
+        if self.old is None:
+            return
+
         # for start and restart updates we need to get the config info from the
         # old config without overwriting new update info
         if self.updateType == "start" or self.updateType == "restart":

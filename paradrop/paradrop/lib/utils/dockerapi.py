@@ -74,9 +74,9 @@ def startChute(update):
     dockerfile = update.dockerfile
     name = update.name
 
-    host_config = build_host_config(update)
-
     c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+
+    host_config = build_host_config(update, c)
 
     #Get Id's of current images for comparison upon failure
     validImages = c.images(quiet=True, all=False)
@@ -188,21 +188,24 @@ def failAndCleanUpDocker(validImages, validContainers):
     #Throw exception so abort plan is called and user is notified
     raise Exception('Building or starting of docker image failed check your Dockerfile for errors.')
 
-def build_host_config(update):
+def build_host_config(update, client=None):
     """
     Build the host_config dict for a docker container based on the passed in update.
 
     :param update: The update object containing information about the chute.
     :type update: obj
+    :param client: Docker client object.
     :returns: (dict) The host_config dict which docker needs in order to create the container.
     """
+    if client is None:
+        client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
 
     if not hasattr(update.new, 'host_config') or update.new.host_config == None:
         config = dict()
     else:
         config = update.new.host_config
 
-    host_conf = docker.utils.create_host_config(
+    host_conf = client.create_host_config(
         #TO support
         port_bindings=config.get('port_bindings'),
         dns=config.get('dns'),

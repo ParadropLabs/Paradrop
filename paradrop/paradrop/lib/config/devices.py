@@ -80,6 +80,31 @@ def detectSystemDevices():
     devices['wifi'] = list()
     devices['lan'] = list()
 
+    for dev in listSystemDevices():
+        devices[dev['type']].append(dev)
+        del dev['type']
+
+    return devices
+
+
+def getMACAddress(ifname):
+    path = "{}/{}/address".format(SYS_DIR, ifname)
+    try:
+        with open(path, 'r') as source:
+            return source.read().strip()
+    except:
+        return None
+
+
+def listSystemDevices():
+    """
+    Detect devices on the system.
+
+    The result is a single list of dictionaries, each containing information
+    about a network device.
+    """
+    devices = list()
+
     for ifname in pdos.listdir(SYS_DIR):
         if ifname in EXCLUDE_IFACES:
             continue
@@ -94,14 +119,19 @@ def detectSystemDevices():
         if ifname.startswith("docker"):
             continue
 
-        dev = {"name": ifname}
+        dev = {
+            'name': ifname,
+            'mac': getMACAddress(ifname)
+        }
 
         if isWAN(ifname):
-            devices['wan'].append(dev)
+            dev['type'] = 'wan'
         elif isWireless(ifname):
-            devices['wifi'].append(dev)
+            dev['type'] = 'wifi'
         else:
-            devices['lan'].append(dev)
+            dev['type'] = 'lan'
+
+        devices.append(dev)
 
     return devices
 

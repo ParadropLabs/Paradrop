@@ -55,8 +55,6 @@ class ChuteAPI:
 
         out.info('Deleting chute...')
 
-        # TODO implement
-
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='delete', name=apiPkg.inputArgs.get('name'),
                       tok=timeint(), pkg=apiPkg, func=self.rest.complete)

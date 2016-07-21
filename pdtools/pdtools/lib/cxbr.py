@@ -2,12 +2,45 @@
 Wamp utility methods. 
 '''
 
+import urlparse
+
+from autobahn.twisted import wamp, websocket
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.wamp.types import RegisterOptions, SubscribeOptions, CallOptions, PublishOptions, ComponentConfig
+from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
-from autobahn.wamp.types import RegisterOptions, SubscribeOptions, CallOptions, PublishOptions
+from twisted.internet.protocol import ReconnectingClientFactory
+from twisted.internet.ssl import ClientContextFactory
 
 
 from pdtools.lib.output import out
+
+
+# pylint: disable=inconsistent-mro
+class BaseClientFactory(websocket.WampWebSocketClientFactory, ReconnectingClientFactory):
+    # factor and jitter are two variables that control the exponential backoff.
+    # The default values in ReconnectingClientFactory seem reasonable.
+    initialDelay = 1
+    maxDelay = 600
+
+    def clientConnectionFailed(self, connector, reason):
+        out.info("Connection failed with reason: " + str(reason))
+        ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
+
+    def clientConnectionLost(self, connector, reason):
+        out.info("Connection lost with reason: " + str(reason))
+        ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+
+
+class BaseSessionFactory(wamp.ApplicationSessionFactory):
+    def __init__(self, config, deferred=None):
+        super(BaseSessionFactory, self).__init__(config)
+        self.dee = deferred
+
+    def __call__(self, *args, **kwargs):
+        sess = super(BaseSessionFactory, self).__call__(*args, **kwargs)
+        sess.dee = self.dee
+        return sess
 
 
 class BaseSession(ApplicationSession):
@@ -19,7 +52,8 @@ class BaseSession(ApplicationSession):
         self.pdid = config.extra
 
     @classmethod
-    def start(klass, address, pdid, realm='crossbardemo', start_reactor=False, debug=False):
+    def start(klass, address, pdid, realm='crossbardemo', start_reactor=False,
+            debug=False, extra=None, reconnect=True):
         '''
         Creates a new instance of this session and attaches it to the router
         at the given address and realm. The pdid is set manually now since we trust
@@ -27,25 +61,46 @@ class BaseSession(ApplicationSession):
 
         For now the realm is automatically set as a demo realm since we are not 
         using multiple realms.
+
+        reconnect: The session will attempt to reconnect on connection failure
+            and continue trying indefinitely.
         '''
         dee = Deferred()
 
-        def maker(cfg):
-            sess = klass(cfg)
-            sess.dee = dee
+        component_config = ComponentConfig(realm=u''+realm, extra=u''+pdid)
+        session_factory = BaseSessionFactory(config=component_config, deferred=dee)
+        session_factory.session = klass
 
-            # print 'Assigning deferred to ' + sess
-            return sess
+        transport_factory = BaseClientFactory(session_factory, url=address)
+        if not reconnect:
+            transport_factory.maxRetries = 0
 
-        runner = ApplicationRunner(address, u'' + realm, extra=pdid, debug_wamp=debug, debug=debug,)
-        runner.run(maker, start_reactor=start_reactor)
+        #uri = urlparse.urlparse(address)
+        #transport_factory.host = uri.hostname
+        #transport_factory.port = uri.port
+        #transport_factory.isSecure = (uri.scheme == 'wss')
+
+        context_factory = ClientContextFactory()
+
+        websocket.connectWS(transport_factory, context_factory)
+
+        if start_reactor:
+            reactor.run()
 
         return dee
+
+    def leave(self):
+        # Do not retry if explicitly asked to leave.
+        self._transport.factory.maxRetries = 0
+        super(BaseSession, self).leave()
 
     @inlineCallbacks
     def onJoin(self, details):
         out.info(str(self.__class__.__name__) + ' crossbar session connected')
         yield
+
+        # Reset exponential backoff timer after a successful connection.
+        self._transport.factory.resetDelay()
 
         # Inform whoever created us that the session has finished connecting.
         # Useful in situations where you need to fire off a single call and not a
