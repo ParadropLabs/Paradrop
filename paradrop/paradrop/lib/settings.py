@@ -50,6 +50,11 @@ FC_CHUTESTORAGE_SAVE_TIMER = 60
 RESERVED_CHUTE = "__PARADROP__"
 
 #
+# local portal
+#
+PORTAL_SERVER_PORT = 8090
+
+#
 # Host configuration file
 #
 HOST_CONFIG_PATH = "/etc/paradrop_host_config"

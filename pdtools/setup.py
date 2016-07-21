@@ -29,5 +29,5 @@ setup(
         'console_scripts': [
             'paradrop=pdtools.main:main',
         ],
-    },
+    }
 )

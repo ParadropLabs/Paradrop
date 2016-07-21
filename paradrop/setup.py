@@ -5,7 +5,14 @@ setup(
     version="0.1.1",
     author="Paradrop Labs",
     description="Paradrop wireless virtualization",
-    install_requires=['docker-py', 'ipaddress', 'twisted', 'txdbus', 'wget', 'pyyaml', 'pdtools', 'mock'],
+    install_requires=['docker-py',
+                      'ipaddress',
+                      'twisted',
+                      'txdbus',
+                      'wget',
+                      'pyyaml',
+                      'pdtools',
+                      'mock'],
     packages=find_packages(),
 
     entry_points={
@@ -14,4 +21,6 @@ setup(
             'pdconfd=paradrop:run_pdconfd'
         ],
     },
+
+    include_package_data = True
 )

@@ -6,7 +6,7 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-import smokesignal
+#import smokesignal
 from twisted.internet import reactor, defer
 from autobahn.twisted.wamp import ApplicationRunner
 
@@ -89,6 +89,7 @@ def main():
         from paradrop.backend import pdconfd
         from paradrop.backend import pdfcd
         from paradrop.lib.reporting import sendStateReport
+        from paradrop.lib.portal import startPortal
         from paradrop.backend.pdfcd.apibridge import updateManager
 
         # Set up communication with pdserver.
@@ -99,6 +100,9 @@ def main():
 
         # Start the configuration service as a thread
         pdconfd.main.run_thread()
+
+        # Start the web server for the Paradrop portal
+        startPortal()
 
         # Now setup the RESTful API server for Paradrop
         pdfcd.server.setup(args)
