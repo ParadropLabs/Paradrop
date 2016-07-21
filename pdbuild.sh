@@ -137,6 +137,7 @@ up() {
         echo $! > pid.txt
     else
         echo "Instance is set to remove, exiting..."
+    fi
 }
 
 
