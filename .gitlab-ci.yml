@@ -1,8 +1,5 @@
 image: python:2.7
 
-services:
-  - mongo:2.6.12
-
 test:
   script:
   - pip install -r requirements.txt
