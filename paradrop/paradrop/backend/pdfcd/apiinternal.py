@@ -25,6 +25,8 @@ class RouterSession(cxbr.BaseSession):
         # TEMP: ping the server, let it know we just came up
         # yield self.call('pd', 'routerConnected', self._session_id)
 
+        yield self.subscribe(self.updatesPending, 'updatesPending')
+
         yield self.register(self.ping, 'ping')
         yield self.register(self.update, 'update')
         # yield self.register(self.logsFromTime, 'logsFromTime')
@@ -128,6 +130,10 @@ class RouterSession(cxbr.BaseSession):
     def stopChute(self, pdid, name):
         out.info('Stopping chute...')
         return self.bridge.stopChute(name)
+
+    def updatesPending(self, pdid):
+        out.info('Notified of updates...')
+        apibridge.updateManager.startUpdate()
 
 
 ###############################################################################
