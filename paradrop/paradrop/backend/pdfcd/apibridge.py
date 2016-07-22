@@ -6,7 +6,7 @@ import json
 
 from StringIO import StringIO
 
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 from twisted.internet.defer import Deferred
 from twisted.web.client import Agent, FileBodyProducer
 from twisted.web.http_headers import Headers
@@ -14,6 +14,14 @@ from twisted.web.http_headers import Headers
 from paradrop.lib.utils.http import JSONReceiver
 from pdtools.lib import nexus
 from pdtools.lib.pdutils import timeint
+
+
+# Interval (in seconds) for polling the server for updates.  This is a fallback
+# in case the notifications over WAMP fail, so it can be relatively infrequent.
+#
+# The automatic polling does not start until after updateManager.startUpdate
+# has been called at least once.
+UPDATE_POLL_INTERVAL = 1 * 60
 
 
 class BridgeRequest(object):
@@ -106,7 +114,10 @@ class UpdateManager(object):
         # repeats.
         self.updatesInProgress = set()
 
-    def startUpdate(self):
+        # The LoopingCall will be used to do periodic polling.
+        self.scheduledCall = task.LoopingCall(self.startUpdate, _auto=True)
+
+    def startUpdate(self, _auto=False):
         """
         Start updates by polling the server for the latest updates.
 
@@ -115,7 +126,14 @@ class UpdateManager(object):
 
         Call chain:
         startUpdate -> queryOpened -> updatesReceived -> updateComplete
+
+        _auto: Set to True when called by the scheduled LoopingCall.
         """
+        # If this call was triggered externally (_auto=False), then reset the
+        # timer for the next scheduled call so we do not poll again too soon.
+        if not _auto and self.scheduledCall.running:
+            self.scheduledCall.reset()
+
         agent = Agent(reactor)
 
         method = 'GET'
@@ -127,6 +145,10 @@ class UpdateManager(object):
 
         d = agent.request(method, url, headers, None)
         d.addCallback(self.queryOpened)
+
+        # Make sure the LoopingCall is scheduled to run later.
+        if not self.scheduledCall.running:
+            self.scheduledCall.start(UPDATE_POLL_INTERVAL, now=False)
 
     def queryOpened(self, response):
         """
