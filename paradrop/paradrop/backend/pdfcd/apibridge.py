@@ -7,10 +7,11 @@ import json
 from StringIO import StringIO
 
 from twisted.internet import reactor, task
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList
 from twisted.web.client import Agent, FileBodyProducer
 from twisted.web.http_headers import Headers
 
+from paradrop.lib.reporting import sendStateReport
 from paradrop.lib.utils.http import JSONReceiver
 from pdtools.lib import nexus
 from pdtools.lib.pdutils import timeint
@@ -163,6 +164,8 @@ class UpdateManager(object):
         """
         Internal: callback after list of updates has been received.
         """
+        deferreds = list()
+
         print("Received {} update(s) from server.".format(len(updates)))
         for item in updates:
             if item['_id'] in self.updatesInProgress:
@@ -170,14 +173,25 @@ class UpdateManager(object):
             else:
                 self.updatesInProgress.add(item['_id'])
 
+            d = Deferred()
+            d.addCallback(self.updateComplete)
+            deferreds.append(d)
+
             update = dict(updateClass=item['updateClass'],
                     updateType=item['updateType'],
                     tok=timeint(),
                     pkg=BridgePackage(),
-                    func=self.updateComplete)
+                    func=d.callback)
             update['_id'] = item['_id']
             update.update(item['config'])
             APIBridge.configurer.updateList(**update)
+
+        # Use a DeferredList to wait until all updates have completed to then
+        # send a complete state update to the server.  We only need to do
+        # this if there was at least one update.
+        if len(deferreds) > 0:
+            dlist = DeferredList(deferreds)
+            dlist.addBoth(self.allUpdatesComplete)
 
     def updateComplete(self, update):
         """
@@ -209,6 +223,10 @@ class UpdateManager(object):
         # build in some other mechanism to inform the server.
         d = agent.request(method, url, headers, body)
         d.addCallback(serverNotified)
+
+    def allUpdatesComplete(self, *args, **kwargs):
+        print("All updates complete, sending state report to server...")
+        sendStateReport()
 
 
 updateManager = UpdateManager()
