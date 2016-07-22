@@ -21,7 +21,7 @@ from pdtools.lib.pdutils import timeint
 #
 # The automatic polling does not start until after updateManager.startUpdate
 # has been called at least once.
-UPDATE_POLL_INTERVAL = 1 * 60
+UPDATE_POLL_INTERVAL = 15 * 60
 
 
 class BridgeRequest(object):
