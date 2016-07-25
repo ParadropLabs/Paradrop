@@ -5,8 +5,11 @@ from pdtools.lib.output import out
 
 
 def getOSWirelessConfig(update):
+    """
+    Read settings from networkInterfaces for wireless interfaces.
+    Store wireless configuration settings in osWirelessConfig.
+    """
     # old code under lib.internal.chs.chutelxc same function name
-    # Basically the same as the networking version of this
 
     interfaces = update.new.getCache('networkInterfaces')
     if interfaces is None:
@@ -38,8 +41,9 @@ def getOSWirelessConfig(update):
 
 
 def setOSWirelessConfig(update):
-    # Basically the same as the networking version of this
-
+    """
+    Write settings from osWirelessConfig out to UCI files.
+    """
     changed = uciutils.setConfig(update.new, update.old,
                                  cacheKeys=['osWirelessConfig'],
                                  filepath=uci.getSystemPath("wireless"))

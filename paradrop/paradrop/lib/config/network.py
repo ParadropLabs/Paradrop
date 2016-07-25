@@ -130,6 +130,8 @@ def getNetworkConfig(update):
     For the Chute provided, return the dict object of a 100% filled out
     configuration set of network configuration. This would include determining
     what the IP addresses, interfaces names, etc...
+
+    Store configuration in networkInterfaces cache entry.
     """
 
     # Notes:

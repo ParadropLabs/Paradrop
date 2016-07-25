@@ -85,7 +85,6 @@ class PDConfigurer:
                     if more exist it calls itself again more quickly
                     else it puts itself to sleep for a little while
         """
-
         #add any chutes that should already be running to the front of the update queue before processing any updates
         startQueue = reloadChutes()
         self.updateLock.acquire()
