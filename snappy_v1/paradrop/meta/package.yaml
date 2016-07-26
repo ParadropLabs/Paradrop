@@ -1,6 +1,6 @@
 name: paradrop
-version: 0.1.0
-vendor: Paradrop Labs <snappy-devel@lists.ubuntu.com>
+version: 0.2.0
+vendor: Paradrop Labs <info@paradrop.io>
 type: framework
 frameworks: 
     - docker

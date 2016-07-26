@@ -2,16 +2,15 @@ from setuptools import setup, find_packages
 
 setup(
     name="paradrop",
-    version="0.1.1",
+    version="0.2.0",
     author="Paradrop Labs",
     description="Paradrop wireless virtualization",
     install_requires=['docker-py',
                       'ipaddress',
-                      'twisted',
                       'txdbus',
                       'wget',
                       'pyyaml',
-                      'pdtools',
+                      'pdtools>=0.2.00',
                       'mock'],
     packages=find_packages(),
 

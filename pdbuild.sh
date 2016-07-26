@@ -181,7 +181,7 @@ build() {
     rm -rf buildenv
     rm -rf paradrop/paradrop.egg-info
     rm -rf paradrop/build
-    rm snaps/paradrop/bin/pd
+    rm -f snappy_v1/paradrop/bin/pd
 
     mkdir buildenv
 
@@ -196,21 +196,30 @@ build() {
     cd paradrop
     python setup.py bdist_egg -d ../buildenv
     cd ..
-    if [ ! -f snaps/paradrop/bin/pipework ]; then
-        wget https://raw.githubusercontent.com/jpetazzo/pipework/3bccb3adefe81b6acd97c50cfc6cda11420be109/pipework -O snaps/paradrop/bin/pipework
-        chmod 755 snaps/paradrop/bin/pipework
+
+    cd pdtools
+    python setup.py bdist_egg -d ../buildenv
+    cd ..
+
+    if [ ! -f snappy_v1/paradrop/bin/pipework ]; then
+        wget https://raw.githubusercontent.com/jpetazzo/pipework/3bccb3adefe81b6acd97c50cfc6cda11420be109/pipework -O snappy_v1/paradrop/bin/pipework
+        chmod 755 snappy_v1/paradrop/bin/pipework
     fi
 
     echo -e "${COLOR}Building paradrop-snap..." && tput sgr0
 
     #Unexpected, but it doesn't like trying to overrite the existing pex
-    if [ -f snaps/paradrop/bin/pd ]; then
-        rm snaps/paradrop/bin/pd
+    if [ -f snappy_v1/paradrop/bin/pd ]; then
+        rm snappy_v1/paradrop/bin/pd
     fi
 
-    pex --disable-cache paradrop -o snaps/paradrop/bin/pd -m paradrop:main -f buildenv/
-    pex --disable-cache pdinstall -o snaps/pdinstall/bin/pdinstall -m pdinstall.main:main -f buildenv/
+    pex --disable-cache paradrop -o snappy_v1/paradrop/bin/pd -m paradrop:main -f buildenv/
+    pex --disable-cache pdinstall -o snappy_v1/pdinstall/bin/pdinstall -m pdinstall.main:main -f buildenv/
     rm -rf *.egg-info
+
+    #build the snap using snappy dev tools and extract the name of the snap
+    snappy build snappy_v1/paradrop -o snappy_v1
+    snappy build snappy_v1/pdinstall -o snappy_v1
 }
 
 #############
@@ -233,7 +242,7 @@ clean() {
 
     rm -rf buildenv
     rm -rf paradrop/paradrop.egg-info
-    rm snaps/paradrop/bin/pd
+    rm snappy_v1/paradrop/bin/pd
 }
 
 #############
@@ -242,7 +251,7 @@ clean() {
 run() {
     echo -e "${COLOR}Starting Paradrop" && tput sgr0
 
-    if [ ! -f snaps/paradrop/bin/pd ]; then
+    if [ ! -f snappy_v1/paradrop/bin/pd ]; then
         echo "Dependency pex not found! Have you built the dependencies yet?"
         echo -e "\t$ $0 build"
         exit
@@ -254,7 +263,7 @@ run() {
     export UCI_CONFIG_DIR="/tmp/config.d"
     export HOST_CONFIG_PATH="/tmp/hostconfig.yaml"
 
-    snaps/paradrop/bin/pd
+    snappy_v1/paradrop/bin/pd
 }
 
 #############
@@ -287,7 +296,7 @@ install_deps() {
 }
 
 install_dev() {
-    if [ ! -f snaps/paradrop/bin/pd ]; then
+    if [ ! -f snappy_v1/paradrop/bin/pd ]; then
         echo "Dependency pex not found! Have you built the dependencies yet?"
         echo -e "\t$ $0 build"
         exit
@@ -305,10 +314,6 @@ install_dev() {
 
     echo -e "${COLOR}Building snap" && tput sgr0
 
-    #build the snap using snappy dev tools and extract the name of the snap
-    snappy build snaps/paradrop
-    snappy build snaps/pdinstall
-
     echo -e "${COLOR}Installing snap" && tput sgr0
     snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "paradrop_${SNAPPY_VERSION}_all.snap"
     snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "pdinstall_${SNAPPY_VERSION}_all.snap"
@@ -318,7 +323,7 @@ install_dev() {
 }
 
 install() {
-    if [ ! -f snaps/paradrop/bin/pd ]; then
+    if [ ! -f snappy_v1/paradrop/bin/pd ]; then
         echo "Dependency pex not found! Have you built the dependencies yet?"
         echo -e "\t$ $0 build"
         exit
