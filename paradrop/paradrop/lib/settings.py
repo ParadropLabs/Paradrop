@@ -52,7 +52,7 @@ RESERVED_CHUTE = "__PARADROP__"
 #
 # local portal
 #
-PORTAL_SERVER_PORT = 8090
+PORTAL_SERVER_PORT = 80
 
 #
 # Host configuration file
