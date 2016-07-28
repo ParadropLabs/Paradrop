@@ -9,7 +9,7 @@ source pdbuild.conf
 # in the case of errors
 COLOR='\033[01;33m'
 
-SNAPPY_VERSION="0.1.0"
+SNAPPY_VERSION="0.2.0"
 DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
 HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
 PEX_CACHE="/var/lib/apps/paradrop/${SNAPPY_VERSION}/pex/install"
@@ -315,8 +315,8 @@ install_dev() {
     echo -e "${COLOR}Building snap" && tput sgr0
 
     echo -e "${COLOR}Installing snap" && tput sgr0
-    snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "paradrop_${SNAPPY_VERSION}_all.snap"
-    snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "pdinstall_${SNAPPY_VERSION}_all.snap"
+    snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "snappy_v1/paradrop_${SNAPPY_VERSION}_all.snap"
+    snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "snappy_v1/pdinstall_${SNAPPY_VERSION}_all.snap"
     rm *.snap
 
     exit
@@ -436,7 +436,7 @@ logs() {
         fi
     fi
 
-    ssh -p ${TARGET_PORT} ${TARGET} ubuntu@localhost sudo /apps/paradrop/current/bin/dump_log.py
+    ssh -p ${TARGET_PORT} ${TARGET} sudo /apps/paradrop/current/bin/dump_log.py
 }
 
 #Show help if no args passed
