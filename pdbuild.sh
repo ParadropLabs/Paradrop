@@ -258,13 +258,8 @@ run() {
         exit
     fi
 
-    # Tell it to write to /tmp instead of the default location, so we know it
-    # is writable for unprivileged users.
-    export PDCONFD_WRITE_DIR="/tmp/pdconfd"
-    export UCI_CONFIG_DIR="/tmp/config.d"
-    export HOST_CONFIG_PATH="/tmp/hostconfig.yaml"
-
-    snappy_v1/paradrop/bin/pd
+    source snappy_v1/paradrop/bin/env.sh
+    snappy_v1/paradrop/bin/pd -l
 }
 
 #############

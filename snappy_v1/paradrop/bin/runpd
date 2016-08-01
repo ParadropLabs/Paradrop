@@ -11,4 +11,6 @@ function cleanup {
 }
 trap cleanup EXIT
 
+source $SNAP_APP_PATH/bin/env.sh
+
 $SNAP_APP_PATH/bin/pd

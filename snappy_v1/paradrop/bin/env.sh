@@ -1,0 +1,20 @@
+#!/bin/bash
+
+export PORT_HTTP_PRODUCTION=14321
+export PORT_HTTP_DEVELOPMENT=14321
+export PORT_HTTP_TEST=14321
+export PORT_HTTP_LOCAL=14321
+
+export HOST_WS_PRODUCTION=ws://paradrop.io:PORT/ws
+export HOST_WS_DEVELOPMENT=ws://paradrop.io:PORT/ws
+export HOST_WS_TEST=ws://127.0.0.1:PORT/ws
+export HOST_WS_LOCAL=ws://127.0.0.1:PORT/ws
+
+export PORT_WS_PRODUCTION=9080
+export PORT_WS_DEVELOPMENT=9080
+export PORT_WS_TEST=9080
+export PORT_WS_LOCAL=9080
+
+export DEBUG_MODE=False
+export VERBOSE=False
+export PORTAL_SERVER_PORT=80

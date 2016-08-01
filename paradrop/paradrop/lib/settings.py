@@ -11,19 +11,13 @@
         from paradrop import settings
         print(settings.STUFF)
 
-    These settings can be overriden by a file defined which contains the following syntax:
-
-        # This changes a string default setting
-        EXACT_SETTING_NAME0 "new string setting"
-        
-        # This changes a int default setting
-        EXACT_SETTING_NAME1 int0
+    These settings can be overriden by a KYE:VALUE array
 
     If settings need to be changed, they should be done so by the initialization code
     (such as pdfcd, pdapi_server, pdfc_config, etc...)
 
     This is done by calling the following function:
-        settings.updateSettings(filepath)
+        settings.updateSettings(settings_array)
 """
 
 import os
@@ -123,7 +117,6 @@ def parseValue(key):
 
     # Otherwise, its just a string:
     return key
-
 
 def updateSettings(slist=[]):
     """
