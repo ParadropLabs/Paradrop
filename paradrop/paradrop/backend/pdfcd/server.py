@@ -9,6 +9,8 @@ Contains the classes required to establish a RESTful API server using Twisted.
 '''
 from twisted.web.server import Site
 from twisted.internet import reactor
+import json
+import psutil
 
 from pdtools.lib.output import out
 from pdtools.lib import names
@@ -234,6 +236,21 @@ class ParadropAPIServer(pdrest.APIResource):
         out.info('Test called (%s)\n' % (ip))
         request.setResponseCode(*pdapi.getResponse(pdapi.OK))
         return "SUCCESS\n"
+
+    @pdrest.GET('^/data.json')
+    def GET_data(self, request):
+        """
+        A method for getting system information output in json format
+        """
+        # initialize cpu, memory, disks
+        data = dict()
+        data['cpu'] = psutil.cpu_percent(interval=None)
+        data['memory'] = psutil.virtual_memory()
+        data['disks'] = psutil.disk_partitions()
+        request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)                                                                                                                                                                                        
+        #request.write(json.dumps(data))                                                                                                                                                                                                                                     
+        request.setResponseCode(*pdapi.getResponse(pdapi.OK))                                                                                                                                                                                                                
+        return json.dumps(data)
 
     @pdrest.ALL('^/')
     def default(self, request):

@@ -10,6 +10,7 @@ setup(
                       'txdbus',
                       'wget',
                       'pyyaml',
+                      'psutil',
                       'pdtools>=0.2.00',
                       'mock'],
     packages=find_packages(),
