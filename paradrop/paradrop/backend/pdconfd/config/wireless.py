@@ -75,8 +75,18 @@ class ConfigWifiIface(ConfigObject):
         # Make this private variable because the real option variable (ifname)
         # should really be read-only.  Changing it breaks our equality checks.
         self._ifname = self.ifname
-        if interface.config_ifname == wifiDevice.name:
+
+        if self.ifname == wifiDevice.name:
             # This interface is using the physical device directly (eg. wlan0).
+            # This case is when the configuration specified the ifname option.
+            self.isVirtual = False
+
+            cmd = ["iw", "dev", wifiDevice.name, "set", "type", "__ap"]
+            commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
+
+        elif interface.config_ifname == wifiDevice.name:
+            # This interface is using the physical device directly (eg. wlan0).
+            # TODO: Remove this case if it is not used.
             self._ifname = interface.config_ifname
             self.isVirtual = False
 

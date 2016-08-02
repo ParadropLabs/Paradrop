@@ -201,6 +201,13 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
             #######################################################################################
             func(theSelf, apiPackage, *args, **kwargs)
 
+            # These assignments allow the SUCCESS and FAILURE code paths to
+            # proceed without undefined variable exceptions, but I do not know
+            # how they were originally intended to be assigned.
+            failureKey = None
+            failureDict = None
+            devid = None
+
             # NOT_DONE_YET
             if(apiPackage.result is None):
                 return NOT_DONE_YET

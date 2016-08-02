@@ -69,7 +69,7 @@ class APIBridge(object):
         """
         cls.configurer = configurer
 
-    def updateChute(self, updateType, **options):
+    def update(self, updateType, **options):
         """
         Initiate a chute operation.
 
@@ -86,8 +86,10 @@ class APIBridge(object):
 
         d = Deferred()
 
-        update = dict(updateClass='CHUTE',
-                updateType=updateType,
+        if 'updateClass' not in options:
+            options['updateClass'] = 'CHUTE'
+
+        update = dict(updateType=updateType,
                 tok=timeint(),
                 pkg=BridgePackage(),
                 func=UpdateCallback(d))
@@ -97,16 +99,19 @@ class APIBridge(object):
         return d
 
     def createChute(self, config):
-        return self.updateChute('create', **config)
+        return self.update('create', **config)
 
     def deleteChute(self, name):
-        return self.updateChute('delete', name=name)
+        return self.update('delete', name=name)
 
     def startChute(self, name):
-        return self.updateChute('start', name=name)
+        return self.update('start', name=name)
 
     def stopChute(self, name):
-        return self.updateChute('stop', name=name)
+        return self.update('stop', name=name)
+
+    def updateHostConfig(self):
+        return self.update('sethostconfig', updateClass='ROUTER', name='__HOSTCONFIG__')
 
 
 class UpdateManager(object):
