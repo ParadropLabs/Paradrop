@@ -201,11 +201,31 @@ class UpdateChute(UpdateObject):
             self.chuteStor.saveChute(self.new)
 
 
+class UpdateRouter(UpdateObject):
+    """
+    Updates specifically tailored to router configuration.
+    """
+    # List of all modules that need to be called during execution planning
+    updateModuleList = [
+        exc.name,
+        exc.state,
+        exc.struct,
+        exc.resource,
+        exc.traffic,
+        exc.runtime
+    ]
+
+    def __init__(self, obj):
+        updateType = obj.get('updateType', None)
+        super(UpdateRouter, self).__init__(obj)
+
+
 ###################################################################################################
 # Module functions and variables
 ###################################################################################################
 UPDATE_CLASSES = {
-    "CHUTE": UpdateChute
+    "CHUTE": UpdateChute,
+    "ROUTER": UpdateRouter
 }
 
 

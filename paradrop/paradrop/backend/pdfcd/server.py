@@ -28,6 +28,7 @@ from paradrop.backend import fc
 from . import apibridge
 from . import apiutils
 from . import apichute
+from . import apiconfig
 
 # temp
 from paradrop.backend.pdfcd.apiinternal import Base
@@ -73,6 +74,7 @@ class ParadropAPIServer(pdrest.APIResource):
 
         # Allow each module to register their API calls
         apichute.ChuteAPI(self)
+        apiconfig.ConfigAPI(self)
 
         # Store failure information for default method.
         self.defaultFailures = dict()
