@@ -12,7 +12,7 @@ from twisted.web.client import Agent, FileBodyProducer
 from twisted.web.http_headers import Headers
 
 from paradrop.lib.reporting import sendStateReport
-from paradrop.lib.utils.http import JSONReceiver
+from paradrop.lib.utils.http import JSONReceiver, buildAuthString
 from pdtools.lib import nexus
 from pdtools.lib.pdutils import timeint
 
@@ -146,7 +146,7 @@ class UpdateManager(object):
         url = "{}/pdserver/updates/?router={}&completed=false".format(
                 nexus.core.net.webHost, nexus.core.info.pdid)
         headers = Headers({
-            # TODO: Authorization
+            'Authorization': [buildAuthString()]
         })
 
         d = agent.request(method, url, headers, None)
@@ -170,6 +170,10 @@ class UpdateManager(object):
         Internal: callback after list of updates has been received.
         """
         deferreds = list()
+
+        if updates is None:
+            print("There was an error receiving updates from the server.")
+            return
 
         print("Received {} update(s) from server.".format(len(updates)))
         for item in updates:
@@ -215,7 +219,7 @@ class UpdateManager(object):
         url = "{}/pdserver/updates/{}".format(
                 nexus.core.net.webHost, update._id)
         headers = Headers({
-            # TODO: Authorization
+            'Authorization': [buildAuthString()],
             'Content-Type': ['application/json']
         })
         body = FileBodyProducer(StringIO(data))

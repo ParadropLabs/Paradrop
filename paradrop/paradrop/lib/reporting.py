@@ -17,6 +17,7 @@ from twisted.web.http_headers import Headers
 from paradrop.backend.fc import chutestorage
 from paradrop.lib.config import devices, hostconfig
 
+from paradrop.lib.utils.http import buildAuthString
 from pdtools.lib import nexus
 from pdtools.lib.output import out
 
@@ -81,7 +82,7 @@ class ReportSender(object):
         method = 'POST'
         url = "{}/pdserver/state".format(nexus.core.net.webHost)
         headers = Headers({
-            # TODO: Authorization
+            'Authorization': [buildAuthString()],
             'Content-Type': ['application/json']
         })
         body = FileBodyProducer(StringIO(report.toJSON()))

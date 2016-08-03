@@ -1,8 +1,12 @@
+import base64
 import json
+import os
 
 import twisted
 from twisted.internet.defer import Deferred
 from twisted.internet.protocol import Protocol
+
+from pdtools.lib import nexus
 
 
 class JSONReceiver(Protocol):
@@ -17,6 +21,11 @@ class JSONReceiver(Protocol):
     finished = Deferred()
     response.deliverBody(JSONReceiver(finished))
     finished.addCallback(func_that_takes_result)
+
+    Some error conditions will result in the callback firing with a result of
+    None.  The receiver needs to check for this.  This seems to occur on 403
+    errors where the server does not return any data, but twisted just passes
+    us a ResponseDone object the same type as a normal result.
     """
     def __init__(self, finished):
         """
@@ -36,6 +45,41 @@ class JSONReceiver(Protocol):
         internal: handles connection close events.
         """
         if reason.check(twisted.web.client.ResponseDone):
-            self.finished.callback(json.loads(self.data))
+            try:
+                result = json.loads(self.data)
+            except ValueError:
+                result = None
+            self.finished.callback(result)
         else:
             raise Exception(reason.getErrorMessage())
+
+
+def getAPIToken():
+    """
+    Get the API token.
+
+    This is currently stored in a file called 'apitoken' under the configured
+    keys directory.
+
+    Returns None if the file does not exist.
+    """
+    path = os.path.join(nexus.core.path.key, 'apitoken')
+    try:
+        with open(path, 'r') as source:
+            token = source.read().rstrip()
+            return token
+    except IOError:
+        return None
+
+
+def buildAuthString():
+    """
+    Use the pdid and API token to construct a string for an HTTP Authorization
+    header.
+
+    Example:
+    "Basic <base64 representation of pdid:token>"
+    """
+    basic = "{}:{}".format(nexus.core.info.pdid, getAPIToken())
+    b64value = base64.b64encode(basic)
+    return "Basic {}".format(b64value)
