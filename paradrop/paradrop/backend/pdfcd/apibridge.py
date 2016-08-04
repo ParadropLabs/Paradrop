@@ -143,7 +143,7 @@ class UpdateManager(object):
         agent = Agent(reactor)
 
         method = 'GET'
-        url = "{}/pdserver/updates/?router={}&completed=false".format(
+        url = "{}/pdrouters/updates/?router={}&completed=false".format(
                 nexus.core.net.webHost, nexus.core.info.pdid)
         headers = Headers({
             'Authorization': [buildAuthString()]
@@ -216,7 +216,7 @@ class UpdateManager(object):
         data = json.dumps(changes)
 
         method = 'PUT'
-        url = "{}/pdserver/updates/{}".format(
+        url = "{}/pdrouters/updates/{}".format(
                 nexus.core.net.webHost, update._id)
         headers = Headers({
             'Authorization': [buildAuthString()],

@@ -80,7 +80,7 @@ class ReportSender(object):
         agent = Agent(reactor)
 
         method = 'POST'
-        url = "{}/pdserver/state".format(nexus.core.net.webHost)
+        url = "{}/pdrouters/state".format(nexus.core.net.webHost)
         headers = Headers({
             'Authorization': [buildAuthString()],
             'Content-Type': ['application/json']
