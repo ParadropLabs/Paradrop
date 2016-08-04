@@ -19,11 +19,12 @@ def getIP(req):
     called 'X-Real-IP', so we need to check for this first, otherwise the
     request.getClientIP() is always going to return 'localhost' to us.
     """
-    ip = req.received_headers.get('X-Real-IP')
-    if(ip is None):
-        return req.getClientIP()
+    if (req.requestHeaders.hasHeader(b'X-Real-IP')):
+        realIpHeaders = req.requestHeaders.getRawHeaders(b'X-Real-IP')
+        # There should be only one 'X-Real-IP' header
+        return realIpHeaders[0]
     else:
-        return ip
+        return req.getClientIP()
 
 
 def addressInNetwork(ipaddr, netTuple):

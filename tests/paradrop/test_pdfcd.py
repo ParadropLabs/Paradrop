@@ -134,7 +134,8 @@ def test_server_default():
     server = ParadropAPIServer(reactor)
 
     request = MagicMock()
-    request.received_headers = {'X-Real-IP': '192.168.1.1'}
+    request.requestHeaders.hasHeader.return_value = True
+    request.requestHeaders.getRawHeader = ['192.168.1.1']
 
     # Exercise path where preprocess returns something
     server.preprocess = make_dummy("stuff")

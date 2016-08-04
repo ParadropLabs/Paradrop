@@ -9,8 +9,6 @@ Contains the classes required to establish a RESTful API server using Twisted.
 '''
 from twisted.web.server import Site
 from twisted.internet import reactor
-import json
-import psutil
 
 from pdtools.lib.output import out
 from pdtools.lib import names
@@ -29,6 +27,7 @@ from . import apibridge
 from . import apiutils
 from . import apichute
 from . import apiconfig
+from . import apistatus
 
 # temp
 from paradrop.backend.pdfcd.apiinternal import Base
@@ -75,6 +74,7 @@ class ParadropAPIServer(pdrest.APIResource):
         # Allow each module to register their API calls
         apichute.ChuteAPI(self)
         apiconfig.ConfigAPI(self)
+        apistatus.StatusAPI(self)
 
         # Store failure information for default method.
         self.defaultFailures = dict()
@@ -201,7 +201,7 @@ class ParadropAPIServer(pdrest.APIResource):
         else:
             request.setResponseCode(*pdapi.getResponse(errType))
 
-        headers = request.received_headers
+        headers = request.requestHeaders
         if(logUsage is not None):
             tictoc, devid = logUsage
 
@@ -238,21 +238,6 @@ class ParadropAPIServer(pdrest.APIResource):
         out.info('Test called (%s)\n' % (ip))
         request.setResponseCode(*pdapi.getResponse(pdapi.OK))
         return "SUCCESS\n"
-
-    @pdrest.GET('^/data.json')
-    def GET_data(self, request):
-        """
-        A method for getting system information output in json format
-        """
-        # initialize cpu, memory, disks
-        data = dict()
-        data['cpu'] = psutil.cpu_percent(interval=None)
-        data['memory'] = psutil.virtual_memory()
-        data['disks'] = psutil.disk_partitions()
-        request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)                                                                                                                                                                                        
-        #request.write(json.dumps(data))                                                                                                                                                                                                                                     
-        request.setResponseCode(*pdapi.getResponse(pdapi.OK))                                                                                                                                                                                                                
-        return json.dumps(data)
 
     @pdrest.ALL('^/')
     def default(self, request):
