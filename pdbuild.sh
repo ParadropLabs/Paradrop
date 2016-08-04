@@ -313,7 +313,6 @@ install_dev() {
     echo -e "${COLOR}Installing snap" && tput sgr0
     snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "snappy_v1/paradrop_${DEV_SNAPPY_VERSION}_all.snap"
     snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "snappy_v1/pdinstall_${DEV_SNAPPY_VERSION}_all.snap"
-    rm *.snap
 
     exit
 }
