@@ -1,6 +1,5 @@
 import base64
 import json
-import os
 
 import twisted
 from twisted.internet.defer import Deferred
@@ -63,13 +62,7 @@ def getAPIToken():
 
     Returns None if the file does not exist.
     """
-    path = os.path.join(nexus.core.path.key, 'apitoken')
-    try:
-        with open(path, 'r') as source:
-            token = source.read().rstrip()
-            return token
-    except IOError:
-        return None
+    return nexus.core.getKey('apitoken')
 
 
 def buildAuthString():

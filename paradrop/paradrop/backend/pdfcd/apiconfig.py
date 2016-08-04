@@ -1,5 +1,6 @@
 import json
 
+from pdtools.lib import nexus
 from pdtools.lib.output import out
 from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 
@@ -18,6 +19,8 @@ class ConfigAPI(object):
         self.rest = rest
         self.rest.register('GET', '^/v1/hostconfig', self.GET_hostconfig)
         self.rest.register('PUT', '^/v1/hostconfig', self.PUT_hostconfig)
+        self.rest.register('PUT', '^/v1/pdid', self.PUT_pdid)
+        self.rest.register('PUT', '^/v1/apitoken', self.PUT_apitoken)
 
     @APIDecorator()
     def GET_hostconfig(self, apiPkg):
@@ -55,3 +58,27 @@ class ConfigAPI(object):
         # Tell our system we aren't done yet (the configurer will deal with
         # closing the connection)
         apiPkg.setNotDoneYet()
+
+    @APIDecorator(requiredArgs=["pdid"])
+    def PUT_pdid(self, apiPkg):
+        """
+        Set the router identity (pdid).
+
+        Arguments:
+            pdid: a string (e.g. pd.lance.halo06)
+        """
+        pdid = apiPkg.inputArgs.get('pdid')
+        nexus.core.provision(pdid, None)
+        apiPkg.setSuccess("")
+
+    @APIDecorator(requiredArgs=["apitoken"])
+    def PUT_apitoken(self, apiPkg):
+        """
+        Set the router API token.
+
+        Arguments:
+            apitoken: a string
+        """
+        apitoken = apiPkg.inputArgs.get('apitoken')
+        nexus.core.saveKey(apitoken, 'apitoken')
+        apiPkg.setSuccess("")
