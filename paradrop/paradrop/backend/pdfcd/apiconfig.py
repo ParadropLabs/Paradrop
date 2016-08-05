@@ -4,6 +4,7 @@ from pdtools.lib import nexus
 from pdtools.lib.output import out
 from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 
+from paradrop.backend.pdfcd.apiinternal import RouterSession
 from paradrop.lib.api.pdrest import APIDecorator
 from paradrop.lib.api import pdapi
 
@@ -21,6 +22,7 @@ class ConfigAPI(object):
         self.rest.register('PUT', '^/v1/hostconfig', self.PUT_hostconfig)
         self.rest.register('PUT', '^/v1/pdid', self.PUT_pdid)
         self.rest.register('PUT', '^/v1/apitoken', self.PUT_apitoken)
+        self.rest.register('POST', '^/v1/provision', self.POST_provision)
 
     @APIDecorator()
     def GET_hostconfig(self, apiPkg):
@@ -82,3 +84,49 @@ class ConfigAPI(object):
         apitoken = apiPkg.inputArgs.get('apitoken')
         nexus.core.saveKey(apitoken, 'apitoken')
         apiPkg.setSuccess("")
+
+    @APIDecorator(requiredArgs=["pdid", "apitoken"])
+    def POST_provision(self, apiPkg):
+        """
+        Provision the router.
+
+        Provisioning assigns a name and keys used to connect to pdserver.
+
+        Arguments:
+            pdid: a string such as pd.lance.halo06
+            apitoken: a string, token used to interact with pdserver
+        """
+        pdid = apiPkg.inputArgs.get('pdid')
+        apitoken = apiPkg.inputArgs.get('apitoken')
+
+        apiPkg.request.setHeader('Content-Type', 'text/plain')
+        apiPkg.setNotDoneYet()
+
+        changed = False
+        if pdid != nexus.core.info.pdid:
+            apiPkg.request.write("Changing pdid from {} to {}\n".format(
+                    nexus.core.info.pdid, pdid))
+            nexus.core.provision(pdid, None)
+            changed = True
+        if apitoken != nexus.core.getKey('apitoken'):
+            apiPkg.request.write("Setting apitoken\n")
+            nexus.core.saveKey(apitoken, 'apitoken')
+            changed = True
+
+        if changed:
+            apiPkg.request.write("Initiating crossbar connection\n")
+
+            def onConnected(session):
+                apiPkg.request.write("Connected as {}\n".format(pdid))
+                apiPkg.request.finish()
+            def onFailure(error):
+                apiPkg.request.write("Failed to connect: {}\n".format(error))
+                apiPkg.request.finish()
+
+            d = nexus.core.connect(RouterSession)
+            d.addCallback(onConnected)
+            d.addErrback(onFailure)
+
+        else:
+            apiPkg.request.write("Router is already provisioned as {}\n".format(pdid))
+            apiPkg.request.finish()

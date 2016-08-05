@@ -75,11 +75,6 @@ class BaseSession(ApplicationSession):
         if not reconnect:
             transport_factory.maxRetries = 0
 
-        #uri = urlparse.urlparse(address)
-        #transport_factory.host = uri.hostname
-        #transport_factory.port = uri.port
-        #transport_factory.isSecure = (uri.scheme == 'wss')
-
         context_factory = ClientContextFactory()
 
         websocket.connectWS(transport_factory, context_factory)
