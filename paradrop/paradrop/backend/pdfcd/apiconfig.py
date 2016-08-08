@@ -20,8 +20,10 @@ class ConfigAPI(object):
         self.rest = rest
         self.rest.register('GET', '^/v1/hostconfig', self.GET_hostconfig)
         self.rest.register('PUT', '^/v1/hostconfig', self.PUT_hostconfig)
+        self.rest.register('GET', '^/v1/pdid', self.GET_pdid)
         self.rest.register('PUT', '^/v1/pdid', self.PUT_pdid)
         self.rest.register('PUT', '^/v1/apitoken', self.PUT_apitoken)
+        self.rest.register('GET', '^/v1/provision', self.GET_provision)
         self.rest.register('POST', '^/v1/provision', self.POST_provision)
 
     @APIDecorator()
@@ -61,6 +63,20 @@ class ConfigAPI(object):
         # closing the connection)
         apiPkg.setNotDoneYet()
 
+    @APIDecorator()
+    def GET_pdid(self, apiPkg):
+        """
+        Get the router identity (pdid).
+
+        Returns the pdid as plain text or an empty string if it has not been
+        set.
+        """
+        pdid = nexus.core.info.pdid
+        if pdid is None:
+            pdid = ""
+        apiPkg.request.setHeader('Content-Type', 'text/plain')
+        apiPkg.setSuccess(pdid)
+
     @APIDecorator(requiredArgs=["pdid"])
     def PUT_pdid(self, apiPkg):
         """
@@ -84,6 +100,29 @@ class ConfigAPI(object):
         apitoken = apiPkg.inputArgs.get('apitoken')
         nexus.core.saveKey(apitoken, 'apitoken')
         apiPkg.setSuccess("")
+
+    @APIDecorator()
+    def GET_provision(self, apiPkg):
+        """
+        Get the provision status of this router.
+
+        Returns a JSON object containing the following fields:
+        pdid - (string or null) the router identity
+        has_apitoken - (boolean) whether the router has an API token
+        is_provisioned - (boolean) whether the router has been provisioned
+        """
+        status = dict()
+
+        status['pdid'] = nexus.core.info.pdid
+
+        apitoken = nexus.core.getKey('apitoken')
+        status['has_apitoken'] = (apitoken is not None)
+
+        status['is_provisioned'] = (status['pdid'] is not None \
+                and status['has_apitoken'])
+
+        apiPkg.request.setHeader('Content-Type', 'application/json')
+        apiPkg.setSuccess(json.dumps(status, separators=(',',':')))
 
     @APIDecorator(requiredArgs=["pdid", "apitoken"])
     def POST_provision(self, apiPkg):
