@@ -175,6 +175,13 @@ class UpdateManager(object):
             print("There was an error receiving updates from the server.")
             return
 
+        # In case of error response such as authentication failure, the server
+        # returns a dictionary with a message fields instead of a list.
+        if isinstance(updates, dict):
+            message = updates.get('message', 'unknown error')
+            print("Error fetching updates from pdserver: {}".format(message))
+            return
+
         print("Received {} update(s) from server.".format(len(updates)))
         for item in updates:
             if item['_id'] in self.updatesInProgress:
