@@ -12,7 +12,7 @@ COLOR='\033[01;33m'
 DEV_SNAPPY_VERSION="0.2.0"
 RELEASE_SNAPPY_VERSION="0.1.0"
 DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
-HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4-1_all.snap"
+HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4_all.snap"
 PEX_CACHE="/var/lib/apps/paradrop/${DEV_SNAPPY_VERSION}/pex/install"
 PARADROP_SNAP="https://paradrop.io/storage/snaps/v${RELEASE_SNAPPY_VERSION}/paradrop_${RELEASE_SNAPPY_VERSION}_all.snap"
 PDINSTALL_SNAP="https://paradrop.io/storage/snaps/v${RELEASE_SNAPPY_VERSION}/pdinstall_${RELEASE_SNAPPY_VERSION}_all.snap"
@@ -183,6 +183,9 @@ build() {
     rm -rf paradrop/paradrop.egg-info
     rm -rf paradrop/build
     rm -f snappy_v1/paradrop/bin/pd
+    rm -rf pdinstall/pdinstall.egg-info
+    rm -rf pdinstall/build
+    rm -f snappy_v1/pdinstall/bin/pdinstall
 
     mkdir buildenv
 
@@ -198,6 +201,10 @@ build() {
     python setup.py bdist_egg -d ../buildenv
     cd ..
 
+    cd pdinstall
+    python setup.py bdist_egg -d ../buildenv
+    cd ..
+
     cd pdtools
     python setup.py bdist_egg -d ../buildenv
     cd ..
@@ -207,7 +214,7 @@ build() {
         chmod 755 snappy_v1/paradrop/bin/pipework
     fi
 
-    echo -e "${COLOR}Building paradrop-snap..." && tput sgr0
+    echo -e "${COLOR}Building paradrop-snap and pdinstall-snap ..." && tput sgr0
 
     #Unexpected, but it doesn't like trying to overrite the existing pex
     if [ -f snappy_v1/paradrop/bin/pd ]; then
@@ -307,8 +314,6 @@ install_dev() {
 
     echo -e "${COLOR}Purging pex cache on target" && tput sgr0
     ssh -p ${TARGET_PORT} ${TARGET} sudo rm -rf "$PEX_CACHE"
-
-    echo -e "${COLOR}Building snap" && tput sgr0
 
     echo -e "${COLOR}Installing snap" && tput sgr0
     snappy-remote --url=ssh://${TARGET}:${TARGET_PORT} install "snappy_v1/paradrop_${DEV_SNAPPY_VERSION}_all.snap"
