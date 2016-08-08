@@ -32,3 +32,4 @@ websocket-client==0.37.0
 wsgiref==0.1.2
 zope.interface==4.2.0
 psutil==4.3
+txrestapi==0.2

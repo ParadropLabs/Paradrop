@@ -2,8 +2,12 @@ import json
 
 from mock import Mock
 from nose.tools import assert_raises
+from twisted.web.server import Request
 
 from paradrop.lib.api import pdrest
+from txrestapi.resource import APIResource, _FakeResource, maybeResource
+from txrestapi.methods import GET, POST, PUT, ALL
+
 from .pdmock import do_nothing
 
 
@@ -30,7 +34,7 @@ def test_fake_resource():
     """
     Test _FakeResource class
     """
-    resource = pdrest._FakeResource("hello")
+    resource = _FakeResource("hello")
 
     request = Mock()
     assert resource.render(request) == "hello"
@@ -42,21 +46,26 @@ def test_maybe_resource():
     """
     method = Mock()
     request = Mock()
-    resource = pdrest.maybeResource(do_nothing)()
+    resource = maybeResource(do_nothing)()
     resource.render(request)
 
+class FakeChannel(object):
+    transport = None
+
+def getRequest(method, url):
+    req = Request(FakeChannel(), None)
+    req.method = method
+    req.path = url
+    return req
 
 def test_api_resource():
     """
     Test APIResource class
     """
-    resource = pdrest.APIResource()
+    resource = APIResource()
     resource.register("method", "method", do_nothing)
 
-    request = Mock()
-
-    request.method = "method"
-    request.path = "method"
+    request = getRequest("method", "method")
     result = resource._get_callback(request)
     assert result[0] == do_nothing
 

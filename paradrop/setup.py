@@ -12,6 +12,7 @@ setup(
                       'pyyaml',
                       'psutil',
                       'pdtools>=0.2.00',
+                      'txrestapi',
                       'mock'],
     packages=find_packages(),
 

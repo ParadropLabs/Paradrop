@@ -15,7 +15,8 @@ from pdtools.lib import names
 
 from pdtools.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
-from paradrop.lib.api import pdrest
+from txrestapi.resource import APIResource
+from txrestapi.methods import GET, POST, PUT, ALL
 from paradrop.lib import settings
 from paradrop.lib.utils import dockerapi
 
@@ -49,7 +50,7 @@ class AccessInfo(object):
         self.attempts += 1
 
 
-class ParadropAPIServer(pdrest.APIResource):
+class ParadropAPIServer(APIResource):
 
     """
     The main API server module.
@@ -62,7 +63,7 @@ class ParadropAPIServer(pdrest.APIResource):
     WHITELIST_IP = list()
 
     def __init__(self, lclreactor):
-        pdrest.APIResource.__init__(self)
+        APIResource.__init__(self)
         self.reactor = lclreactor
 
         # Establish the configurer which is the launch point for all chute related endeavors
@@ -228,7 +229,7 @@ class ParadropAPIServer(pdrest.APIResource):
         if(errorStmt):
             return errorStmt % ("Null")
 
-    @pdrest.GET('^/v1/test')
+    @GET('^/v1/test')
     def GET_test(self, request):
         """
         A Simple test method to ping if the API server is working properly.
@@ -239,7 +240,7 @@ class ParadropAPIServer(pdrest.APIResource):
         request.setResponseCode(*pdapi.getResponse(pdapi.OK))
         return "SUCCESS\n"
 
-    @pdrest.ALL('^/')
+    @ALL('^/')
     def default(self, request):
         """
         A dummy catch for all API calls that are not caught by any other module.
