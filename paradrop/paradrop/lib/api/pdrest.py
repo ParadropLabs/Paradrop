@@ -172,8 +172,8 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
     def realDecorator(func):
         def wrapper(theSelf, request, *args, **kwargs):
             tictoc = 0  # theSelf.perf.tic()
-            ip = '0.0.0.0'  # TODO getIP(request)
-            out.verbose('HTTP request from IP %s\n' % (ip))
+            ip = request.getClientIP()
+            out.verbose('HTTP {} {} from {}'.format(request.method, request.path, ip))
             request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)
 
             apiPackage = APIPackage(request)
