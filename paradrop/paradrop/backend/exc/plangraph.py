@@ -38,16 +38,17 @@ DHCP_GET_VIRT_RULES             = 22
 # Write Configuration Data
 NAME_SETUP_DIRS                 = 50
 STRUCT_SET_SYSTEM_DEVICES       = 51
-STRUCT_SET_OS_WIRELESS          = 52
-STRUCT_SET_OS_NETWORK           = 53
-TRAFFIC_SET_OS_FIREWALL         = 54
+STRUCT_SET_HOST_CONFIG          = 52
+STRUCT_SET_OS_WIRELESS          = 53
+STRUCT_SET_OS_NETWORK           = 54
+TRAFFIC_SET_OS_FIREWALL         = 55
 RUNTIME_SET_VIRT_SCRIPT         = 56
 RESOURCE_SET_VIRT_QOS           = 57
 NAME_MNT_PART                   = 58
 STATE_SET_VIRT_CONFIG           = 59
 STATE_SET_VIRT_SCRIPT           = 60
-DHCP_SET_VIRT_RULES             = 62
 RUNTIME_SET_VIRT_DHCP           = 61
+DHCP_SET_VIRT_RULES             = 62
 RUNTIME_RELOAD_CONFIG           = 63
 
 ###############################################################################

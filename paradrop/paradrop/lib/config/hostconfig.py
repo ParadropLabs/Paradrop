@@ -142,10 +142,45 @@ def prepareHostConfig(devices=None, hostConfigPath=None, write=True):
 def getHostConfig(update):
     """
     Load host configuration.
+
+    Read device information from networkDevices.
+    Store host configuration in hostConfig.
     """
     # TODO We need to check for changes in hardware.  If a new device was
     # added, we should try to automatically configure it.  If a device was
     # removed, we should be aware of what is no longer valid.
     devices = update.new.getCache('networkDevices')
     config = prepareHostConfig(devices)
+
+    # update.old is not guaranteed to contain the old host configuration, so
+    # save a backup copy in update.new.  This will be used by revertHostConfig
+    # if we need to back out.
+    update.new.setCache('oldHostConfig', config)
+
+    # If this is a sethostconfig operation, then read the host config from the
+    # update object.  Ordinary chute operations should not alter the host
+    # configuration.
+    if update.updateType == 'sethostconfig':
+        config = update.hostconfig
+
     update.new.setCache('hostConfig', config)
+
+
+def setHostConfig(update):
+    """
+    Write host configuration to persistent storage.
+
+    Read host configuration from hostConfig.
+    """
+    config = update.new.getCache('hostConfig')
+    save(config)
+
+
+def revertHostConfig(update):
+    """
+    Restore host configuration from before update.
+
+    Uses oldHostConfig cache entry.
+    """
+    config = update.new.getCache('oldHostConfig')
+    save(config)

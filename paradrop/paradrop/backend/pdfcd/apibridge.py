@@ -110,8 +110,9 @@ class APIBridge(object):
     def stopChute(self, name):
         return self.update('stop', name=name)
 
-    def updateHostConfig(self):
-        return self.update('sethostconfig', updateClass='ROUTER', name='__HOSTCONFIG__')
+    def updateHostConfig(self, config):
+        return self.update('sethostconfig', updateClass='ROUTER',
+                name='__HOSTCONFIG__', hostconfig=config)
 
 
 class UpdateManager(object):

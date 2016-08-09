@@ -36,7 +36,10 @@ def generatePlans(update):
 
     update.plans.addPlans(plangraph.STRUCT_GET_HOST_CONFIG,
                           (config.hostconfig.getHostConfig, ))
-    
+    update.plans.addPlans(plangraph.STRUCT_SET_HOST_CONFIG,
+                          (config.hostconfig.setHostConfig, ),
+                          (config.hostconfig.revertHostConfig, ))
+
     # Save current network configuration into chute cache (key: 'networkInterfaces')
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK,
                           (config.network.getNetworkConfig, ))

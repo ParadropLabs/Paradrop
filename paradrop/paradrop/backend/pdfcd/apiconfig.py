@@ -50,11 +50,10 @@ class ConfigAPI(object):
             an object containing message and success fields.
         """
         config = apiPkg.inputArgs.get('config')
-        hostconfig.save(config)
 
         update = dict(updateClass='ROUTER', updateType='sethostconfig',
                 name='__HOSTCONFIG__', tok=timeint(), pkg=apiPkg,
-                func=self.rest.complete)
+                hostconfig=config, func=self.rest.complete)
         self.rest.configurer.updateList(**update)
 
         apiPkg.request.setHeader('Content-Type', 'application/json')

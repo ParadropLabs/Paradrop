@@ -147,7 +147,7 @@ def setConfig(chuteName, sections, filepath):
     if not uci.chuteConfigsMatch(oldSections, sections):
         cfgFile.delConfigs(oldSections)
         cfgFile.addConfigs(sections)
-        cfgFile.save(internalid=chuteName)
+        cfgFile.save(backupToken="paradrop", internalid=chuteName)
 
 
 #
