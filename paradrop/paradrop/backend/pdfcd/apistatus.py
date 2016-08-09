@@ -5,6 +5,7 @@ from pdtools.lib.output import out
 
 from paradrop.lib.api.pdrest import APIDecorator
 from paradrop.lib.api import pdapi
+from paradrop.lib import settings
 
 class StatusAPI:
     """
@@ -25,7 +26,7 @@ class StatusAPI:
         data = dict()
         data['cpu'] = psutil.cpu_percent()
         data['memory'] = psutil.virtual_memory()
-        data['disks'] = psutil.disk_usage('/writable')
+        data['disks'] = psutil.disk_usage(settings.HOST_DATA_PARTITION)
         data['net'] = psutil.net_io_counters(True)
         result = json.dumps(data)
         apiPkg.request.setHeader('Content-Type', 'application/json')

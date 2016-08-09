@@ -53,6 +53,8 @@ PORTAL_SERVER_PORT = 80
 #
 HOST_CONFIG_PATH = "/etc/paradrop_host_config"
 
+HOST_DATA_PARTITION = "/writable"
+
 #
 # UCI configuration files
 #

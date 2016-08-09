@@ -70,6 +70,7 @@ def main():
         settings.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
         settings.UCI_CONFIG_DIR = "/tmp/config.d"
         settings.HOST_CONFIG_PATH = "/tmp/hostconfig.yaml"
+        settings.HOST_DATA_PARTITION = "/"
 
     # Check for settings to overwrite (MOVE TO NEXUS)
     settings.updateSettings(args.settings)
