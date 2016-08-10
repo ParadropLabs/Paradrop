@@ -45,8 +45,8 @@ def test_update_settings():
         assert settings.PD_TEST_VAR == "stuff"
         assert settings.PDFCD_PORT == -1
 
-    with patch.dict(os.environ, {'SNAP_APP_DATA_PATH': '/stuff'}):
+    with patch.dict(os.environ, {'SNAP_APP_DATA_PATH': '/tmp/test'}):
         settings.updateSettings()
 
-        assert settings.FC_CHUTESTORAGE_SAVE_PATH.startswith("/stuff")
-        assert settings.UCI_CONFIG_DIR.startswith("/stuff")
+        assert settings.FC_CHUTESTORAGE_SAVE_PATH.startswith("/tmp/test")
+        assert settings.UCI_CONFIG_DIR.startswith("/tmp/test")

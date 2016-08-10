@@ -327,7 +327,9 @@ class UCIConfig:
         """
             Puts a backup of this config to the location specified in @backupPath.
         """
-        backupPath = '/tmp/%s-%s' % (self.myname, backupToken)
+        pdosq.makedirs(settings.UCI_BACKUP_DIR)
+        backupPath = "{}/{}-{}".format(settings.UCI_BACKUP_DIR, self.myname,
+                backupToken)
         pdos.copy(self.filepath, backupPath)
 
     def restore(self, backupToken, saveBackup=True):
@@ -339,7 +341,8 @@ class UCIConfig:
                 saveBackup : A flag to keep a backup copy or delete it (default is keep backup)
         """
         # Make sure it exists!
-        backupPath = '/tmp/%s-%s' % (self.myname, backupToken)
+        backupPath = "{}/{}-{}".format(settings.UCI_BACKUP_DIR, self.myname,
+                backupToken)
         if(pdos.exists(backupPath)):
             if(saveBackup):
                 pdos.copy(backupPath, self.filepath)
@@ -357,7 +360,7 @@ class UCIConfig:
                 chuteConfigs.append((c,o))
         return chuteConfigs
 
-    def save(self, backupToken=None, internalid=None):
+    def save(self, backupToken="paradrop", internalid=None):
         """
             Saves out the file in the proper format.
             

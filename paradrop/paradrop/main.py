@@ -69,6 +69,7 @@ def main():
     if args.local:
         settings.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
         settings.UCI_CONFIG_DIR = "/tmp/config.d"
+        settings.UCI_BACKUP_DIR = "/tmp/config-backup.d"
         settings.HOST_CONFIG_PATH = "/tmp/hostconfig.yaml"
         settings.HOST_DATA_PARTITION = "/"
 

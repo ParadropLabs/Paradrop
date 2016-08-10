@@ -59,6 +59,7 @@ HOST_DATA_PARTITION = "/writable"
 # UCI configuration files
 #
 UCI_CONFIG_DIR = "/etc/config"
+UCI_BACKUP_DIR = "/tmp"
 
 #
 # pdconfd
@@ -141,6 +142,7 @@ def updateSettings(slist=[]):
     if dataPath is not None:
         mod.FC_CHUTESTORAGE_SAVE_PATH = os.path.join(dataPath, "chutes")
         mod.UCI_CONFIG_DIR = os.path.join(dataPath, "config.d")
+        mod.UCI_BACKUP_DIR = os.path.join(dataPath, "config-backup.d")
         mod.HOST_CONFIG_PATH = os.path.join(dataPath, "hostconfig.yaml")
 
     # First overwrite settings they may have provided with the arg list

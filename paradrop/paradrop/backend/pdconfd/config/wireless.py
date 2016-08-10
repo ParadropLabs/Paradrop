@@ -1,6 +1,7 @@
 import heapq
 import ipaddress
 import os
+import random
 import string
 import subprocess
 from pprint import pprint
@@ -104,6 +105,12 @@ class ConfigWifiIface(ConfigObject):
             # Command to create the virtual interface.
             cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
                    self._ifname, "type", "__ap"]
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
+
+            # Assign a random MAC address to avoid conflict with other
+            # interfaces using the same device.
+            cmd = ["ip", "link", "set", "dev", self._ifname,
+                    "address", self.getRandomMAC()]
             commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         confFile = self.makeHostapdConf(wifiDevice, interface)
@@ -214,3 +221,15 @@ class ConfigWifiIface(ConfigObject):
                 KillCommand(self.pidFile, self)))
 
         return commands
+
+    def getRandomMAC(self):
+        """
+        Generate a random MAC address.
+
+        Returns a string "02:xx:xx:xx:xx:xx".  The first byte is 02, which
+        indicates a locally administered address.
+        """
+        parts = ["02"]
+        for i in range(5):
+            parts.append("{:02x}".format(random.randrange(0, 255)))
+        return ":".join(parts)

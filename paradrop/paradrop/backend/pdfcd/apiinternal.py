@@ -112,8 +112,7 @@ class RouterSession(cxbr.BaseSession):
 
     def setConfig(self, pdid, config):
         config = json.loads(config)
-        hostconfig.save(config)
-        return self.bridge.updateHostConfig()
+        return self.bridge.updateHostConfig(config)
 
     def createChute(self, pdid, config):
         out.info('Creating chute...')
