@@ -249,19 +249,27 @@ class ParadropAPIServer(APIResource):
         ip = apiutils.getIP(request)
         uri = request.uri
         method = request.method
-        # Get data about who done it
-        out.err("Default caught API call (%s => %s:%s)\n" % (ip, method, uri))
+        # Response the preflight requests
+        if (method == 'OPTIONS'):
+            request.setHeader('Access-Control-Allow-Origin', '*')
+            request.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST')
+            request.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+            request.setResponseCode(*pdapi.getResponse(pdapi.OK))
+            return "SUCCESS\n"
+        else:
+            # Get data about who done it
+            out.err("Default caught API call (%s => %s:%s)\n" % (ip, method, uri))
 
-        # TODO: What is this?
-        tictoc = None
+            # TODO: What is this?
+            tictoc = None
 
-        # Someone might be trying something bad, track their IP
-        res = self.preprocess(request, (ip, None, ip, self.defaultFailures), tictoc)
-        if(res):
-            return res
+            # Someone might be trying something bad, track their IP
+            res = self.preprocess(request, (ip, None, ip, self.defaultFailures), tictoc)
+            if(res):
+                return res
 
-        self.failprocess(ip, request, (ip, self.defaultFailures), None, (tictoc, None), pdapi.ERR_BADMETHOD)
-        return ""
+            self.failprocess(ip, request, (ip, self.defaultFailures), None, (tictoc, None), pdapi.ERR_BADMETHOD)
+            return ""
 
 
 ###############################################################################

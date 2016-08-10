@@ -80,6 +80,7 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
             ip = request.getClientIP()
             out.verbose('HTTP {} {} from {}'.format(request.method, request.path, ip))
             request.setHeader('Access-Control-Allow-Origin', settings.PDFCD_HEADER_VALUE)
+            request.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT')
 
             apiPackage = APIPackage(request)
             # Extract required arguments
