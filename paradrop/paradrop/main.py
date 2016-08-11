@@ -90,15 +90,7 @@ def main():
     else:
         from paradrop.backend import pdconfd
         from paradrop.backend import pdfcd
-        from paradrop.lib.reporting import sendStateReport
         from paradrop.lib.portal import startPortal
-        from paradrop.backend.pdfcd.apibridge import updateManager
-
-        # Set up communication with pdserver.
-        # 1. Create a report of the current system state and send that.
-        # 2. Poll for a list of updates that should be applied.
-        sendStateReport()
-        updateManager.startUpdate()
 
         # Start the configuration service as a thread
         pdconfd.main.run_thread()

@@ -9,6 +9,8 @@ from paradrop.lib.api.pdrest import APIDecorator
 from paradrop.lib.api import pdapi
 
 from paradrop.lib.config import hostconfig
+from paradrop.backend.pdfcd.apibridge import updateManager
+from paradrop.lib.reporting import sendStateReport
 
 class ConfigAPI(object):
     """
@@ -21,8 +23,6 @@ class ConfigAPI(object):
         self.rest.register('GET', '^/v1/hostconfig', self.GET_hostconfig)
         self.rest.register('PUT', '^/v1/hostconfig', self.PUT_hostconfig)
         self.rest.register('GET', '^/v1/pdid', self.GET_pdid)
-        self.rest.register('PUT', '^/v1/pdid', self.PUT_pdid)
-        self.rest.register('PUT', '^/v1/apitoken', self.PUT_apitoken)
         self.rest.register('GET', '^/v1/provision', self.GET_provision)
         self.rest.register('POST', '^/v1/provision', self.POST_provision)
 
@@ -75,30 +75,6 @@ class ConfigAPI(object):
             pdid = ""
         apiPkg.request.setHeader('Content-Type', 'text/plain')
         apiPkg.setSuccess(pdid)
-
-    @APIDecorator(requiredArgs=["pdid"])
-    def PUT_pdid(self, apiPkg):
-        """
-        Set the router identity (pdid).
-
-        Arguments:
-            pdid: a string (e.g. pd.lance.halo06)
-        """
-        pdid = apiPkg.inputArgs.get('pdid')
-        nexus.core.provision(pdid, None)
-        apiPkg.setSuccess("")
-
-    @APIDecorator(requiredArgs=["apitoken"])
-    def PUT_apitoken(self, apiPkg):
-        """
-        Set the router API token.
-
-        Arguments:
-            apitoken: a string
-        """
-        apitoken = apiPkg.inputArgs.get('apitoken')
-        nexus.core.saveKey(apitoken, 'apitoken')
-        apiPkg.setSuccess("")
 
     @APIDecorator()
     def GET_provision(self, apiPkg):
@@ -157,6 +133,7 @@ class ConfigAPI(object):
             def onConnected(session):
                 apiPkg.request.write("Connected as {}\n".format(pdid))
                 apiPkg.request.finish()
+
             def onFailure(error):
                 apiPkg.request.write("Failed to connect: {}\n".format(error))
                 apiPkg.request.finish()
@@ -164,6 +141,13 @@ class ConfigAPI(object):
             d = nexus.core.connect(RouterSession)
             d.addCallback(onConnected)
             d.addErrback(onFailure)
+
+            # TODO: can we provision a router again?
+            # Set up communication with pdserver.
+            # 1. Create a report of the current system state and send that.
+            # 2. Poll for a list of updates that should be applied.
+            sendStateReport()
+            updateManager.startUpdate()
 
         else:
             apiPkg.request.write("Router is already provisioned as {}\n".format(pdid))
