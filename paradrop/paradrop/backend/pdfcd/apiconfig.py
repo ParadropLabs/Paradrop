@@ -1,4 +1,5 @@
 import json
+from twisted.internet import reactor
 
 from pdtools.lib import nexus
 from pdtools.lib.output import out
@@ -114,41 +115,51 @@ class ConfigAPI(object):
         apitoken = apiPkg.inputArgs.get('apitoken')
 
         apiPkg.request.setHeader('Content-Type', 'text/plain')
-        apiPkg.setNotDoneYet()
 
         changed = False
         if pdid != nexus.core.info.pdid:
-            apiPkg.request.write("Changing pdid from {} to {}\n".format(
-                    nexus.core.info.pdid, pdid))
             nexus.core.provision(pdid, None)
             changed = True
         if apitoken != nexus.core.getKey('apitoken'):
-            apiPkg.request.write("Setting apitoken\n")
             nexus.core.saveKey(apitoken, 'apitoken')
             changed = True
 
         if changed:
-            apiPkg.request.write("Initiating crossbar connection\n")
-
-            def onConnected(session):
-                apiPkg.request.write("Connected as {}\n".format(pdid))
-                apiPkg.request.finish()
+            # the API token is used to authenticate both HTTP and WAMP
 
             def onFailure(error):
-                apiPkg.request.write("Failed to connect: {}\n".format(error))
+                result = dict()
+                result['provisioned'] = True
+                result['connected'] = False
+                result['error'] = error
+                apiPkg.request.write(json.dumps(result))
+                apiPkg.request.finish()
+
+            # The router might try to connect to the backend server continuously,
+            # and we will never get errback
+            # We have to response the request somehow...
+            callId = reactor.callLater(2, onFailure, 'timeout')
+
+            def onConnected(session):
+                callId.cancel()
+
+                result = dict()
+                result['provisioned'] = True
+                result['connected'] = True
+                apiPkg.request.write(json.dumps(result))
                 apiPkg.request.finish()
 
             d = nexus.core.connect(RouterSession)
             d.addCallback(onConnected)
             d.addErrback(onFailure)
 
-            # TODO: can we provision a router again?
             # Set up communication with pdserver.
             # 1. Create a report of the current system state and send that.
             # 2. Poll for a list of updates that should be applied.
             sendStateReport()
             updateManager.startUpdate()
 
+            apiPkg.setNotDoneYet()
+
         else:
-            apiPkg.request.write("Router is already provisioned as {}\n".format(pdid))
-            apiPkg.request.finish()
+            apiPkg.setFailure(pdapi.ERR_BADPARAM, "Router is already provisioned as {}: %s\n".format(pdid))

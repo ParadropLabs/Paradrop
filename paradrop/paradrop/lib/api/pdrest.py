@@ -126,7 +126,8 @@ def APIDecorator(admin=False, permission=None, requiredArgs=[], optionalArgs=[])
                 errMsg = apiPackage.errMsg
                 errType = apiPackage.errType
                 if(apiPackage.countFailure):
-                    return theSelf.rest.failprocess(ip, request, (failureKey, failureDict), errMsg, (tictoc, devid), errType)
+                    # TODO: implement the failureKey and failureDict
+                    return theSelf.rest.failprocess(ip, request, None, errMsg, (tictoc, devid), errType)
                 else:
                     return theSelf.rest.failprocess(ip, request, None, errMsg, (tictoc, devid), errType)
 
