@@ -77,7 +77,21 @@ def mockReadFile(filename):
         return list()
 
 
-def mockStatusString():
+def mockStatusStringGood():
+    """
+    Generate a fake status string for pdconf reload
+    """
+    status = list()
+    status.append({
+        'comment': 'GoodChute',
+        'success': True,
+        'type': 'interface',
+        'name': 'lan'
+    })
+    return json.dumps(status)
+
+
+def mockStatusStringBad():
     """
     Generate a fake status string for pdconf reload
     """
@@ -108,7 +122,7 @@ def fake_rules_list():
     return rules
 
 
-@patch("paradrop.backend.pdconfd.client.reloadAll", mockStatusString)
+@patch("paradrop.backend.pdconfd.client.reloadAll", mockStatusStringGood)
 def test_configservice():
     """
     Test paradrop.lib.config.configservice
@@ -118,6 +132,14 @@ def test_configservice():
     # This one should succeed
     update = MockUpdate(name="GoodChute")
     assert configservice.reloadAll(update) is None
+
+
+@patch("paradrop.backend.pdconfd.client.reloadAll", mockStatusStringBad)
+def test_configservice():
+    """
+    Test paradrop.lib.config.configservice
+    """
+    from paradrop.lib.config import configservice
 
     # This one should raise an exception
     update = MockUpdate(name="BadChute")

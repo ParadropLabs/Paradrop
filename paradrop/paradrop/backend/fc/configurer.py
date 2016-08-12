@@ -74,6 +74,15 @@ class PDConfigurer:
         self.updateQueue.append(updateObj)
         self.updateLock.release()
 
+    def makeHostconfigUpdate(self):
+        """
+        Makes an update object for initializing hostconfig.
+        """
+        def updateFinished(update):
+            pass
+        return dict(updateClass='ROUTER', updateType='inithostconfig',
+                name='__HOSTCONFIG__', tok=timeint(), func=updateFinished)
+
     def performUpdates(self):
         """This is the main working function of the PDConfigurer class.
             It should be executed as a separate thread, it does the following:
@@ -85,12 +94,17 @@ class PDConfigurer:
                     if more exist it calls itself again more quickly
                     else it puts itself to sleep for a little while
         """
-        #add any chutes that should already be running to the front of the update queue before processing any updates
+        # add any chutes that should already be running to the front of the
+        # update queue before processing any updates
         startQueue = reloadChutes()
         self.updateLock.acquire()
-        # insert the data into the front of our update queue so that all old chutes restart befor new ones are processed
+        # insert the data into the front of our update queue so that all old
+        # chutes restart befor new ones are processed
         for updateObj in startQueue:
             self.updateQueue.insert(0, updateObj)
+        # Finally, insert an update the initializes the hostconfig.
+        # This should happen before everything else.
+        self.updateQueue.insert(0, self.makeHostconfigUpdate())
         self.updateLock.release()
 
         # Always perform this work
