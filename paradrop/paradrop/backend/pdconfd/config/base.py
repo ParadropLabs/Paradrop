@@ -71,7 +71,7 @@ class ConfigObject(object):
         other.source = self.source
         other.name = self.name
         other.comment = self.comment
-        
+
         other.parents = self.parents.copy()
         other.dependents = self.dependents.copy()
 
@@ -279,7 +279,7 @@ class ConfigObject(object):
         Assign priorities to config objects based on the dependency graph.
 
         Priority zero is assigned to all configs with no dependencies.
-        
+
         priority(config1) > priority(config2) means config1 should be applied
         later than config2, and config1 should be reverted earlier than
         config2.  For configs with the same priority value, it is presumed
