@@ -53,7 +53,7 @@ class ConfigAPI(object):
         config = apiPkg.inputArgs.get('config')
 
         update = dict(updateClass='ROUTER', updateType='sethostconfig',
-                name='__HOSTCONFIG__', tok=timeint(), pkg=apiPkg,
+                name='__PARADROP__', tok=timeint(), pkg=apiPkg,
                 hostconfig=config, func=self.rest.complete)
         self.rest.configurer.updateList(**update)
 

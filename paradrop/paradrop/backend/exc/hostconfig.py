@@ -1,7 +1,13 @@
 ###################################################################
-# Copyright 2013-2015 All Rights Reserved
+# Copyright 2013-2016 All Rights Reserved
 # Authors: The Paradrop Team
 ###################################################################
+
+"""
+This module generates update plans for a host configuration operation.  It is
+separate from the modules that generate plans for chute operations because we
+only need to do a subset of the operations.
+"""
 
 from pdtools.lib.output import out
 from paradrop.backend.exc import plangraph
@@ -9,13 +15,6 @@ from paradrop.backend.exc import plangraph
 from paradrop.lib import config
 
 def generatePlans(update):
-    """
-        This function looks at a diff of the current Chute (in @chuteStor) and the @newChute,
-        then adds Plan() calls to make the Chute match the @newChute.
-
-        Returns:
-            True: abort the plan generation process
-    """
     out.verbose("%r\n" % (update))
 
     # Detect system devices and set up basic configuration for them (WAN
@@ -24,9 +23,15 @@ def generatePlans(update):
     #
     # abortNetworkConfig is added as an abort command here so that it runs when
     # config.network.getNetworkConfig or just about anything else fails.
+    #
+    # reloadAll is added as an abort command here so that it runs when any of
+    # the set* plans fail and back out.
     update.plans.addPlans(plangraph.STRUCT_GET_SYSTEM_DEVICES,
                           (config.devices.getSystemDevices, ),
                           (config.network.abortNetworkConfig, ))
+    update.plans.addPlans(plangraph.STRUCT_SET_SYSTEM_DEVICES,
+                          (config.devices.setSystemDevices, ),
+                          (config.configservice.reloadAll, ))
 
     update.plans.addPlans(plangraph.STRUCT_GET_HOST_CONFIG,
                           (config.hostconfig.getHostConfig, ))
@@ -38,23 +43,12 @@ def generatePlans(update):
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK,
                           (config.network.getNetworkConfig, ))
 
-    # Setup changes to push into OS config files (key: 'osNetworkConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_OS_NETWORK, (config.network.getOSNetworkConfig, ))
 
-    # Setup changes to push into OS config files (key: 'osWirelessConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_OS_WIRELESS, (config.wifi.getOSWirelessConfig, ))
-
-    # Setup changes into virt configuration file (key: 'virtNetworkConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_VIRT_NETWORK, (config.network.getVirtNetworkConfig, ))
-
-    # Changes for networking
-    todoPlan = (config.network.setOSNetworkConfig, )
-    abtPlan = (config.osconfig.revertConfig, 'network')
-    update.plans.addPlans(plangraph.STRUCT_SET_OS_NETWORK, todoPlan, abtPlan)
-
-    # Changes for wifi
-    todoPlan = (config.wifi.setOSWirelessConfig, )
-    abtPlan = (config.osconfig.revertConfig, 'wireless')
-    update.plans.addPlans(plangraph.STRUCT_SET_OS_WIRELESS, todoPlan, abtPlan)
-
-    return None
+    # Reload configuration files
+    todoPlan = (config.configservice.reloadAll, )
+    abtPlan = [(config.osconfig.revertConfig, "dhcp"),
+               (config.osconfig.revertConfig, "firewall"),
+               (config.osconfig.revertConfig, "network"),
+               (config.osconfig.revertConfig, "wireless"),
+               (config.configservice.reloadAll, )]
+    update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)

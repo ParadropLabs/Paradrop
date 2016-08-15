@@ -76,6 +76,8 @@ def setConfig(chute, old, cacheKeys, filepath):
 
     if (uci.chuteConfigsMatch(oldconfigs, newconfigs)):
         # configs match, skipping reloading
+        # Save a backup in case we need to restore.
+        cfgFile.backup(backupToken="paradrop")
         return False
     else:
         # We need to make changes so delete old configs, load new configs

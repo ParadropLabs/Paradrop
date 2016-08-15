@@ -206,13 +206,12 @@ class UpdateRouter(UpdateObject):
     Updates specifically tailored to router configuration.
     """
     # List of all modules that need to be called during execution planning
+    #
+    # All of the modules listed in UpdateChute perform an extensive series of
+    # steps that are largely irrelevant for host config updates.  Therefore, we
+    # use a different module here.
     updateModuleList = [
-        exc.name,
-        exc.state,
-        exc.struct,
-        exc.resource,
-        exc.traffic,
-        exc.runtime
+        exc.hostconfig
     ]
 
     def __init__(self, obj):

@@ -148,6 +148,9 @@ def setConfig(chuteName, sections, filepath):
         cfgFile.delConfigs(oldSections)
         cfgFile.addConfigs(sections)
         cfgFile.save(backupToken="paradrop", internalid=chuteName)
+    else:
+        # Save a backup of the file even though there were no changes.
+        cfgFile.backup(backupToken="paradrop")
 
 
 #
@@ -168,6 +171,8 @@ def getSystemDevices(update):
 def setSystemDevices(update):
     """
     Initialize system configuration files.
+
+    This section should only be run for host configuration updates.
 
     Creates basic sections that all chutes require such as the "wan" interface.
     """

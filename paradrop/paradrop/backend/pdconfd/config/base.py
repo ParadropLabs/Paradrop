@@ -88,6 +88,26 @@ class ConfigObject(object):
 
         return other
 
+    def dump(self):
+        """
+        Return full configuration section as a string.
+        """
+        result = "# internal id: s{:08x}\n".format(self.id)
+
+        if self.name is None:
+            result += "config {}".format(self.typename)
+        else:
+            result += "config {} {}".format(self.typename, self.name)
+        if self.comment is not None:
+            result += " #" + self.comment
+        result += "\n"
+
+        for opdef in self.options:
+            value = getattr(self, opdef['name'])
+            result += "\toption {} '{}'\n".format(opdef['name'], value)
+
+        return result
+
     def getTypeAndName(self):
         """
         Return tuple (section type, section name).
