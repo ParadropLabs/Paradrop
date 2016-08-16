@@ -1,4 +1,6 @@
+import attr
 import copy
+
 
 class ConfigObject(object):
     nextId = 0
@@ -39,7 +41,7 @@ class ConfigObject(object):
         self.executed = list()
 
         for option in self.options:
-            setattr(self, option['name'], option['default'])
+            setattr(self, option.name, option.default)
 
     def __hash__(self):
         return hash(self.getTypeAndName())
@@ -79,8 +81,8 @@ class ConfigObject(object):
             # We use copy here because it works with both the str- and
             # list-typed values.  Any lists are lists of strings, so
             # shallow-copy here is fine.
-            copied = copy.copy(getattr(self, option['name']))
-            setattr(other, option['name'], copied)
+            copied = copy.copy(getattr(self, option.name))
+            setattr(other, option.name, copied)
 
         # We should call setup on a new config object after all of the option
         # values are filled in.
@@ -103,8 +105,16 @@ class ConfigObject(object):
         result += "\n"
 
         for opdef in self.options:
-            value = getattr(self, opdef['name'])
-            result += "\toption {} '{}'\n".format(opdef['name'], value)
+            value = getattr(self, opdef.name)
+            if value is None:
+                continue
+            elif opdef.type == bool:
+                result += "\toption {} '{}'\n".format(opdef.name, 1 * value)
+            elif opdef.type == list:
+                for v in value:
+                    result += "\tlist {} '{}'\n".format(opdef.name, v)
+            else:
+                result += "\toption {} '{}'\n".format(opdef.name, value)
 
         return result
 
@@ -136,7 +146,7 @@ class ConfigObject(object):
         if not isinstance(other, self.__class__):
             return False
         for opdef in self.options:
-            if getattr(self, opdef['name']) != getattr(other, opdef['name']):
+            if getattr(self, opdef.name) != getattr(other, opdef.name):
                 return False
         return True
 
@@ -236,11 +246,11 @@ class ConfigObject(object):
         for opdef in cls.options:
             found = False
 
-            if opdef['type'] == list:
-                if "list" in options and opdef['name'] in options['list']:
-                    value = options['list'][opdef['name']]
+            if opdef.type == list:
+                if "list" in options and opdef.name in options['list']:
+                    value = options['list'][opdef.name]
                     found = True
-                elif opdef['name'] in options:
+                elif opdef.name in options:
                     # Sometimes we expect a list but get a single value instead.
                     # Example:
                     #   ...
@@ -250,25 +260,25 @@ class ConfigObject(object):
                     #   ...
                     #   list network 'lan'
                     #   ...
-                    value = [options[opdef['name']]]
+                    value = [options[opdef.name]]
                     found = True
-            elif opdef['type'] == bool:
-                if opdef['name'] in options:
-                    value = options[opdef['name']] != '0'
+            elif opdef.type == bool:
+                if opdef.name in options:
+                    value = options[opdef.name] != '0'
                     found = True
             else:
-                if opdef['name'] in options:
-                    value = opdef['type'](options[opdef['name']])
+                if opdef.name in options:
+                    value = opdef.type(options[opdef.name])
                     found = True
 
             if not found:
-                if opdef['required']:
+                if opdef.required:
                     raise Exception("Missing required option {} in {}:{}:{}".format(
-                        opdef['name'], source, cls.typename, name))
+                        opdef.name, source, cls.typename, name))
                 else:
-                    value = opdef['default']
+                    value = opdef.default
 
-            setattr(obj, opdef['name'], value)
+            setattr(obj, opdef.name, value)
 
         obj.setup()
 
@@ -317,3 +327,11 @@ class ConfigObject(object):
         mult = -1 if reverse else 1
         return [(mult * prio, config) \
                 for (config, prio) in priorities.iteritems()]
+
+
+@attr.s(slots=True)
+class ConfigOption(object):
+    name = attr.ib(convert=str)
+    type = attr.ib(default=str, validator=attr.validators.instance_of(type))
+    required = attr.ib(convert=bool, default=False)
+    default = attr.ib(default=None)

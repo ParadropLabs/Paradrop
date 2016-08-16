@@ -2,7 +2,7 @@ import ipaddress
 
 from pdtools.lib.output import out
 
-from .base import ConfigObject
+from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand
 
 
@@ -16,11 +16,11 @@ class ConfigDhcp(ConfigObject):
     typename = "dhcp"
 
     options = [
-        {"name": "interface", "type": str, "required": True, "default": None},
-        {"name": "leasetime", "type": str, "required": True, "default": "12h"},
-        {"name": "limit", "type": int, "required": True, "default": 150},
-        {"name": "start", "type": int, "required": True, "default": 100},
-        {"name": "dhcp_option", "type": list, "required": False, "default": ""}
+        ConfigOption(name="interface", required=True),
+        ConfigOption(name="leasetime", required=True),
+        ConfigOption(name="limit", type=int, required=True),
+        ConfigOption(name="start", type=int, required=True),
+        ConfigOption(name="dhcp_option", type=list)
     ]
 
 
@@ -28,9 +28,9 @@ class ConfigDnsmasq(ConfigObject):
     typename = "dnsmasq"
 
     options = [
-        {"name": "interface", "type": list, "required": False, "default": None},
-        {"name": "noresolv", "type": bool, "required": False, "default": False},
-        {"name": "server", "type": list, "required": False, "default": None}
+        ConfigOption(name="interface", type=list),
+        ConfigOption(name="noresolv", type=bool, default=False),
+        ConfigOption(name="server", type=list)
     ]
 
     def apply(self, allConfigs):
