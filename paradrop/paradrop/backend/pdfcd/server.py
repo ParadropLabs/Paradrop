@@ -66,6 +66,8 @@ class ParadropAPIServer(APIResource):
         APIResource.__init__(self)
         self.reactor = lclreactor
 
+        self.clientFailures = {}
+
         # Establish the configurer which is the launch point for all chute related endeavors
         self.configurer = fc.configurer.PDConfigurer(None, lclreactor)
 
