@@ -211,9 +211,11 @@ class ConfigManager(object):
                     # one's change.
                     updatedConfigs.update(matchByName.dependents)
 
-                # If it did not exist or is different, add it to our queue
-                # of sections to execute.
-                newConfigs.add(config)
+                else:
+                    # If it did not exist or is different, add it to our queue
+                    # of sections to execute.
+                    newConfigs.add(config)
+
                 allConfigs[config.getTypeAndName()] = config
 
         # Items from the deletion set should be deleted from memory as well as

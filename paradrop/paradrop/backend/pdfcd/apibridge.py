@@ -112,7 +112,7 @@ class APIBridge(object):
 
     def updateHostConfig(self, config):
         return self.update('sethostconfig', updateClass='ROUTER',
-                name='__HOSTCONFIG__', hostconfig=config)
+                name='__PARADROP__', hostconfig=config)
 
 
 class UpdateManager(object):

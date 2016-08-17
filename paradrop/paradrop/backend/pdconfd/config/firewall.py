@@ -1,4 +1,4 @@
-from .base import ConfigObject
+from .base import ConfigObject, ConfigOption
 from .command import Command
 
 
@@ -6,16 +6,16 @@ class ConfigRedirect(ConfigObject):
     typename = "redirect"
 
     options = [
-        {"name": "src", "type": str, "required": False, "default": None},
-        {"name": "src_ip", "type": str, "required": False, "default": None},
-        {"name": "src_dip", "type": str, "required": False, "default": None},
-        {"name": "src_port", "type": str, "required": False, "default": None},
-        {"name": "src_dport", "type": str, "required": False, "default": None},
-        {"name": "proto", "type": str, "required": True, "default": "tcpudp"},
-        {"name": "dest", "type": str, "required": False, "default": None},
-        {"name": "dest_ip", "type": str, "required": False, "default": None},
-        {"name": "dest_port", "type": str, "required": False, "default": None},
-        {"name": "target", "type": str, "required": False, "default": "DNAT"}
+        ConfigOption(name="src"),
+        ConfigOption(name="src_ip"),
+        ConfigOption(name="src_dip"),
+        ConfigOption(name="src_port"),
+        ConfigOption(name="src_dport"),
+        ConfigOption(name="proto", required=True),
+        ConfigOption(name="dest"),
+        ConfigOption(name="dest_ip"),
+        ConfigOption(name="dest_port"),
+        ConfigOption(name="target", default="DNAT")
     ]
 
     # Any of these values will be interpreted to mean that --proto and ports
@@ -127,12 +127,12 @@ class ConfigZone(ConfigObject):
     typename = "zone"
 
     options = [
-        {"name": "name", "type": str, "required": True, "default": None},
-        {"name": "network", "type": list, "required": False, "default": None},
-        {"name": "masq", "type": bool, "required": False, "default": False},
-        {"name": "input", "type": str, "required": False, "default": "DROP"},
-        {"name": "forward", "type": str, "required": False, "default": "DROP"},
-        {"name": "output", "type": str, "required": False, "default": "DROP"}
+        ConfigOption(name="name", required=True),
+        ConfigOption(name="network", type=list),
+        ConfigOption(name="masq", type=bool, default=False),
+        ConfigOption(name="input", default="DROP"),
+        ConfigOption(name="forward", default="DROP"),
+        ConfigOption(name="output", default="DROP")
     ]
 
     def interfaces(self, allConfigs):

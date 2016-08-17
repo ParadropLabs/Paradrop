@@ -1,4 +1,4 @@
-from .base import ConfigObject
+from .base import ConfigObject, ConfigOption
 from .command import Command
 
 
@@ -6,15 +6,15 @@ class ConfigInterface(ConfigObject):
     typename = "interface"
 
     options = [
-        {"name": "proto", "type": str, "required": True, "default": None},
-        {"name": "ifname", "type": list, "required": True, "default": None},
-        {"name": "type", "type": str, "required": False, "default": None},
-        {"name": "enabled", "type": bool, "required": False, "default": True},
+        ConfigOption(name="proto", required=True),
+        ConfigOption(name="ifname", type=list, required=True),
+        ConfigOption(name="type"),
+        ConfigOption(name="enabled", type=bool, default=True),
 
         # Options for "static" protocol:
-        {"name": "ipaddr", "type": str, "required": False, "default": None},
-        {"name": "netmask", "type": str, "required": False, "default": None},
-        {"name": "gateway", "type": str, "required": False, "default": None}
+        ConfigOption(name="ipaddr"),
+        ConfigOption(name="netmask"),
+        ConfigOption(name="gateway")
     ]
 
     def setup(self):

@@ -81,7 +81,7 @@ class PDConfigurer:
         def updateFinished(update):
             pass
         return dict(updateClass='ROUTER', updateType='inithostconfig',
-                name='__HOSTCONFIG__', tok=timeint(), func=updateFinished)
+                name='__PARADROP__', tok=timeint(), func=updateFinished)
 
     def performUpdates(self):
         """This is the main working function of the PDConfigurer class.
