@@ -18,7 +18,7 @@ class RouterSession(cxbr.BaseSession):
 
     def __init__(self, *args, **kwargs):
         self.bridge = apibridge.APIBridge()
-
+        self.uriPrefix = 'org.paradrop.'
         super(RouterSession, self).__init__(*args, **kwargs)
 
     def onConnect(self):
@@ -57,19 +57,17 @@ class RouterSession(cxbr.BaseSession):
         out.info('Router session joined')
         # TEMP: ping the server, let it know we just came up
         # yield self.call('pd', 'routerConnected', self._session_id)
-
-        yield self.subscribe(self.updatesPending, 'updatesPending')
-
-        yield self.register(self.ping, 'ping')
-        yield self.register(self.update, 'update')
+        yield self.subscribe(self.updatesPending, self.uriPrefix + 'updatesPending')
+        yield self.register(self.ping, self.uriPrefix + 'ping')
+        yield self.register(self.update, self.uriPrefix + 'update')
         # yield self.register(self.logsFromTime, 'logsFromTime')
-        yield self.register(self.getConfig, 'getConfig')
-        yield self.register(self.setConfig, 'setConfig')
+        yield self.register(self.getConfig, self.uriPrefix + 'getConfig')
+        yield self.register(self.setConfig, self.uriPrefix + 'setConfig')
 
-        yield self.register(self.createChute, 'createChute')
-        yield self.register(self.deleteChute, 'deleteChute')
-        yield self.register(self.startChute, 'startChute')
-        yield self.register(self.stopChute, 'stopChute')
+        yield self.register(self.createChute, self.uriPrefix + 'createChute')
+        yield self.register(self.deleteChute, self.uriPrefix + 'deleteChute')
+        yield self.register(self.startChute, self.uriPrefix + 'startChute')
+        yield self.register(self.stopChute, self.uriPrefix + 'stopChute')
 
         # route output to the logs call
         smokesignal.on('logs', self.logs)
@@ -112,24 +110,6 @@ class RouterSession(cxbr.BaseSession):
         '''
 
         return out.getLogsSince(start, purge=False)
-
-    # Does not allow the shutdown call to go out before the system goes down
-    # @inlineCallbacks
-    # def onClose(self, a):
-    #     print 'Asked to close!'
-    #     yield self.call('pd._disconnected', self.pdid)
-
-    # @inlineCallbacks
-    # def onLeave(self, details):
-    #     print 'On Leave'
-    # yield self.call('pd._disconnected', self.pdid)
-    #     cxbr.BaseSession.onLeave(self, details)
-
-    # def onDisconnect(self):
-    #     out.info("Crossbar session detaching")
-
-    # self.call('pd._disconnected', self.pdid)
-    #     smokesignal.disconnect(self.logs)
 
     def ping(self, pdid):
         print 'Router ping'

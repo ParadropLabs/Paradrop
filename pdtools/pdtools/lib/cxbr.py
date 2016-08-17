@@ -61,28 +61,33 @@ class BaseSession(ApplicationSession):
         reconnect: The session will attempt to reconnect on connection failure
             and continue trying indefinitely.
         '''
-#        dee = Deferred()
+        # Enable log messages of autobahn for debugging
+        #import txaio
+        #txaio.start_logging()
 
-#        component_config = ComponentConfig(realm=u''+realm, extra=u''+pdid)
-#        session_factory = BaseSessionFactory(config=component_config, deferred=dee)
+        dee = Deferred()
 
-#        session_factory.session = klass
+        component_config = ComponentConfig(realm=u''+realm, extra=u''+pdid)
+        session_factory = BaseSessionFactory(config=component_config, deferred=dee)
+        session_factory.session = klass
 
-#        transport_factory = BaseClientFactory(session_factory, url=address)
-#        if not reconnect:
-#            transport_factory.maxRetries = 0
+        transport_factory = BaseClientFactory(session_factory, url=address)
+        if not reconnect:
+            transport_factory.maxRetries = 0
 
-#        context_factory = ClientContextFactory()
+        context_factory = ClientContextFactory()
 
-#        websocket.connectWS(transport_factory, context_factory)
+        websocket.connectWS(transport_factory, context_factory)
 
-#        if start_reactor:
-#            reactor.run()
+        if start_reactor:
+            reactor.run()
 
-#        return dee
+        return dee
 
-        runner = ApplicationRunner(url=u''+address, realm=u''+realm)
-        return runner.run(klass, start_reactor=start_reactor, auto_reconnect=reconnect)
+        # This the the recommended way to start the WAMP component,
+        # but it is friendly to customize the component
+        #runner = ApplicationRunner(url=u''+address, realm=u''+realm)
+        #return runner.run(klass, start_reactor=start_reactor, auto_reconnect=reconnect)
 
     def leave(self):
         # Do not retry if explicitly asked to leave.
@@ -92,7 +97,6 @@ class BaseSession(ApplicationSession):
     @inlineCallbacks
     def onJoin(self, details):
         out.info(str(self.__class__.__name__) + ' crossbar session connected')
-        yield
 
         # Reset exponential backoff timer after a successful connection.
         self._transport.factory.resetDelay()
@@ -100,29 +104,8 @@ class BaseSession(ApplicationSession):
         # Inform whoever created us that the session has finished connecting.
         # Useful in situations where you need to fire off a single call and not a
         # full wamplet
-        try:
-            if self.dee is not None:
-                yield self.dee.callback(self)
-        except:
-            # print 'No onJoin deferred callback set.'
-            pass
-
-    def pdRegister(self, name, *args, **kwargs):
-        '''
-        Very quick and dirty RPC registration that prepends the currently set PDID
-        to the given method name.
-
-        Incomplete. 
-        '''
-
-        if self.pdid is None:
-            raise Exception("No PDID set! Cannot register!")
-
-        ApplicationSession.register()
-
-    # def onDisconnect(self):
-    # print "disconnected"
-    #     reactor.stop()
+        if self.dee is not None:
+            yield self.dee.callback(self)
 
     ###################################################
     # Overridden CX interaction methods
@@ -138,38 +121,22 @@ class BaseSession(ApplicationSession):
     absence of crossbar router changes. 
     '''
 
-    # def publish(self, topic, *args, **kwargs):
-    #     kwargs['options'] = PublishOptions(disclose_me=True)
-    #     return ApplicationSession.publish(self, topic, *args, **kwargs)
-
-    # def subscribe(self, handler, topic=None, options=None):
-    #     options = SubscribeOptions(details_arg='details')
-    #     return ApplicationSession.subscribe(self, handler, topic=topic, options=options)
-
-    # def call(self, procedure, *args, **kwargs):
-    #     kwargs['options'] = CallOptions(disclose_me=True)
-    #     return ApplicationSession.call(self, procedure, *args, **kwargs)
-
-    # def register(self, endpoint, procedure=None, options=None):
-    #     options = RegisterOptions(details_arg='details')
-    #     return ApplicationSession.register(self, endpoint, procedure=procedure, options=options)
-
-    def publish(self, pdid, topic, *args, **kwargs):
+    def publish(self, topic, *args, **kwargs):
         # kwargs['options'] = PublishOptions(disclose_me=True)
         args = (self.pdid,) + args
-        topic = _prepend(pdid, topic)
+        topic = _prepend(self.pdid, topic)
         # out.info('cxbr: (%s) publish (%s)' % (self.pdid, topic,))
         return ApplicationSession.publish(self, topic, *args, **kwargs)
 
-    def subscribe(self, handler, pdid, topic=None, options=None):
-        topic = _prepend(pdid, topic)
+    def subscribe(self, handler, topic=None, options=None):
+        topic = _prepend(self.pdid, topic)
         out.info('cxbr: (%s) subscribe (%s)' % (self.pdid, topic,))
         return ApplicationSession.subscribe(self, handler, topic=topic, options=options)
 
-    def call(self, pdid, procedure, *args, **kwargs):
+    def call(self, procedure, *args, **kwargs):
         # kwargs['options'] = CallOptions(disclose_me=True)
         args = (self.pdid,) + args
-        procedure = _prepend(pdid, procedure)
+        procedure = _prepend(self.pdid, procedure)
         # out.info('cxbr: (%s) calling (%s)' % (self.pdid, procedure,))
         return ApplicationSession.call(self, procedure, *args, **kwargs)
 
@@ -182,53 +149,29 @@ class BaseSession(ApplicationSession):
     ###################################################
     # Access to the original methods, without convenience modifiers
     ###################################################
-    def stockPublish(self, pdid, topic, *args, **kwargs):
+    def stockPublish(self, topic, *args, **kwargs):
         out.info('cxbr: (%s) publish (%s)' % (self.pdid, topic,))
-        return ApplicationSession.publish(self, topic, *args, **kwargs)
+        return ApplicationSession.publish(self, u''+topic, *args, **kwargs)
 
     def stockSubscribe(self, handler, topic=None, options=None):
         out.info('cxbr: (%s) subscribe (%s)' % (self.pdid, topic,))
-        return ApplicationSession.subscribe(self, handler, topic=topic, options=options)
+        return ApplicationSession.subscribe(self, handler, topic=u''+topic, options=options)
 
-    def stockCall(self, pdid, procedure, *args, **kwargs):
+    def stockCall(self, procedure, *args, **kwargs):
         out.info('cxbr: (%s) calling (%s)' % (self.pdid, procedure,))
-        return ApplicationSession.call(self, procedure, *args, **kwargs)
+        return ApplicationSession.call(self, u''+procedure, *args, **kwargs)
 
     def stockRegister(self, endpoint, procedure=None, options=None):
         out.info('cxbr: (%s) registering (%s)' % (self.pdid, procedure,))
-        return ApplicationSession.register(self, endpoint, procedure=procedure, options=options)
+        return ApplicationSession.register(self, endpoint, procedure=u''+procedure, options=options)
 
 
 def _prepend(pdid, topic):
     '''
     In order to make subscription and execution code cleaner, this method automatically
-    injects this classes pdid to the start of any publish or register call. 
+    injects this classes pdid to the end of any publish or register call. 
 
-    The topic is also converted to a unicode string. An underscore is inserted to the 
-    start of every topic. No consideration is given to 'valid' topics-- thats on you.
+    The topic is also converted to a unicode string.
+    No consideration is given to 'valid' topics-- thats on you.
     '''
-    return u'' + pdid + '._' + topic
-
-
-@inlineCallbacks
-def cxCall(session, address, realm, extra=None):
-    '''
-    One shot crossbar utility method. Creates a session object and starts it,
-    returns a deferred that contains the object. 
-
-    Take a session and returns once the session has connected. 
-    '''
-
-    # WAMP ApplicationSession is already using 'd,' so went with something a little more creative
-    dee = Deferred()
-
-    def maker(cfg):
-        sess = session(cfg)
-        sess.dee = dee
-        return sess
-
-    runner = ApplicationRunner(address, realm, extra=extra, debug_wamp=False, debug=False,)
-    yield runner.run(maker, start_reactor=False)
-
-    session = yield dee
-    returnValue(session)
+    return u'' + topic + '.' + pdid
