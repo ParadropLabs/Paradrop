@@ -105,10 +105,7 @@ def startChute(update):
     # Set environment variables for the new container.
     # PARADROP_ROUTER_ID can be used to change application behavior based on
     # what router it is running on.
-    environment = {
-        'PARADROP_CHUTE_NAME': update.name,
-        'PARADROP_ROUTER_ID': nexus.core.info.pdid
-    }
+    environment = prepare_environment(update)
 
     try:
         container = c.create_container(
@@ -277,3 +274,14 @@ def setup_net_interfaces(update):
             out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
             out.exception(e, True)
             raise e
+
+
+def prepare_environment(update):
+    """
+    Prepare environment variables for a chute container.
+    """
+    env = {
+        'PARADROP_CHUTE_NAME': update.name,
+        'PARADROP_ROUTER_ID': nexus.core.info.pdid
+    }
+    return env

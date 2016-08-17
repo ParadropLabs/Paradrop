@@ -132,12 +132,13 @@ def test_removeChute(mockDocker, mockOutput):
     client.remove_container.assert_called_once_with(container=update.name, force=True)
     assert update.complete.call_count == 1
 
+@patch('paradrop.lib.utils.dockerapi.prepare_environment')
 @patch('paradrop.lib.utils.dockerapi.failAndCleanUpDocker')
 @patch('paradrop.lib.utils.dockerapi.build_host_config')
 @patch('paradrop.lib.utils.dockerapi.setup_net_interfaces')
 @patch('paradrop.lib.utils.dockerapi.out')
 @patch('docker.Client')
-def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail):
+def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail, prepare_environment):
     """
     Test that the startChute function does it's job.
     """
@@ -152,13 +153,14 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail
     client.build.return_value = ['{"stream": "test"}','{"value": {"test": "testing"}}','{"tests": "stuff"}']
     client.create_container.return_value = {'Id': 123}
     mockDocker.return_value = client
+    prepare_environment.return_value = {}
     dockerapi.startChute(update)
     mockConfig.assert_called_once_with(update, client)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     client.images.assert_called_once_with(quiet=True, all=False)
     client.containers.assert_called_once_with(quiet=True, all=True)
     client.build.assert_called_once_with(rm=True, tag='test:latest', fileobj='Dockerfile')
-    client.create_container.assert_called_once_with(image='test:latest', name='test', host_config='ConfigDict')
+    client.create_container.assert_called_once_with(image='test:latest', name='test', host_config='ConfigDict', environment={})
     client.start.assert_called_once_with(123)
     assert update.pkg.request.write.call_count == 2
     mockInterfaces.assert_called_once_with(update)
