@@ -14,6 +14,7 @@ import os
 import subprocess
 
 from paradrop.lib import settings
+from pdtools.lib import nexus
 
 
 DOCKER_CONF = """
@@ -101,9 +102,18 @@ def startChute(update):
     if buildFailed:
         failAndCleanUpDocker(validImages, validContainers)
 
+    # Set environment variables for the new container.
+    # PARADROP_ROUTER_ID can be used to change application behavior based on
+    # what router it is running on.
+    environment = {
+        'PARADROP_CHUTE_NAME': update.name,
+        'PARADROP_ROUTER_ID': nexus.core.info.pdid
+    }
+
     try:
         container = c.create_container(
-            image=repo, name=name, host_config=host_config
+            image=repo, name=name, host_config=host_config,
+            environment=environment
         )
         c.start(container.get('Id'))
         out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
