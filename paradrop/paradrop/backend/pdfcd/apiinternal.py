@@ -4,6 +4,7 @@ import smokesignal
 from twisted.web import xmlrpc
 from twisted.internet import utils
 from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
+from autobahn.wamp import auth
 
 from paradrop.lib import pdinstall
 from paradrop.lib.config import hostconfig
@@ -20,8 +21,40 @@ class RouterSession(cxbr.BaseSession):
 
         super(RouterSession, self).__init__(*args, **kwargs)
 
+    def onConnect(self):
+        out.info('Router session connected.')
+        if (nexus.core.info.pdid and nexus.core.getKey('wamppassword')):
+            out.info('Starting WAMP-CRA authentication on realm "{}" as user "{}"...'\
+                     .format(self.config.realm, nexus.core.info.pdid))
+            self.join(self.config.realm, [u'wampcra'], nexus.core.info.pdid)
+
+    def onChallenge(self, challenge):
+        if challenge.method == u"wampcra":
+            out.verbose("WAMP-CRA challenge received: {}".format(challenge))
+
+            wampPassword = nexus.core.getKey('wamppassword')
+            if u'salt' in challenge.extra:
+                # salted secret
+                key = auth.derive_key(wampPassword,
+                                      challenge.extra['salt'],
+                                      challenge.extra['iterations'],
+                                      challenge.extra['keylen'])
+            else:
+                # plain, unsalted secret
+                key = wampPassword
+
+            # compute signature for challenge, using the key
+            signature = auth.compute_wcs(key, challenge.extra['challenge'])
+
+            # return the signature to the router for verification
+            return signature
+
+        else:
+            raise Exception("Invalid authmethod {}".format(challenge.method))
+
     @inlineCallbacks
     def onJoin(self, details):
+        out.info('Router session joined')
         # TEMP: ping the server, let it know we just came up
         # yield self.call('pd', 'routerConnected', self._session_id)
 
@@ -42,6 +75,13 @@ class RouterSession(cxbr.BaseSession):
         smokesignal.on('logs', self.logs)
 
         yield cxbr.BaseSession.onJoin(self, details)
+
+    def onLeave(self, details):
+        out.info("Router session left: {}".format(details))
+        self.disconnect()
+
+    def onDisconnect(self):
+        out.info("Router session disconnected.")
 
     @inlineCallbacks
     def logs(self, logs):

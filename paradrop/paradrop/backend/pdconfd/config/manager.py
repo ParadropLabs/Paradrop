@@ -300,9 +300,10 @@ class ConfigManager(object):
 
                 try:
                     obj = cls.build(self, fn, name, options, comment)
-                except:
+                except Exception as e:
                     out.warn("Error building object from section {}:{} in "
                              "{}\n".format(section['type'], name, fn))
+                    out.warn(e)
                     continue
 
                 key = obj.getTypeAndName()

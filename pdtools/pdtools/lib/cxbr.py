@@ -52,37 +52,37 @@ class BaseSession(ApplicationSession):
         self.pdid = config.extra
 
     @classmethod
-    def start(klass, address, pdid, realm='crossbardemo', start_reactor=False,
-            debug=False, extra=None, reconnect=True):
+    def start(klass, address, pdid, realm='paradrop', start_reactor=False,
+              debug=False, extra=None, reconnect=True):
         '''
         Creates a new instance of this session and attaches it to the router
-        at the given address and realm. The pdid is set manually now since we trust
-        clients. Excessively.
-
-        For now the realm is automatically set as a demo realm since we are not 
-        using multiple realms.
+        at the given address and realm.
 
         reconnect: The session will attempt to reconnect on connection failure
             and continue trying indefinitely.
         '''
-        dee = Deferred()
+#        dee = Deferred()
 
-        component_config = ComponentConfig(realm=u''+realm, extra=u''+pdid)
-        session_factory = BaseSessionFactory(config=component_config, deferred=dee)
-        session_factory.session = klass
+#        component_config = ComponentConfig(realm=u''+realm, extra=u''+pdid)
+#        session_factory = BaseSessionFactory(config=component_config, deferred=dee)
 
-        transport_factory = BaseClientFactory(session_factory, url=address)
-        if not reconnect:
-            transport_factory.maxRetries = 0
+#        session_factory.session = klass
 
-        context_factory = ClientContextFactory()
+#        transport_factory = BaseClientFactory(session_factory, url=address)
+#        if not reconnect:
+#            transport_factory.maxRetries = 0
 
-        websocket.connectWS(transport_factory, context_factory)
+#        context_factory = ClientContextFactory()
 
-        if start_reactor:
-            reactor.run()
+#        websocket.connectWS(transport_factory, context_factory)
 
-        return dee
+#        if start_reactor:
+#            reactor.run()
+
+#        return dee
+
+        runner = ApplicationRunner(url=u''+address, realm=u''+realm)
+        return runner.run(klass, start_reactor=start_reactor, auto_reconnect=reconnect)
 
     def leave(self):
         # Do not retry if explicitly asked to leave.
