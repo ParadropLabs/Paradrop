@@ -12,6 +12,7 @@ from paradrop.lib.api import pdapi
 from paradrop.lib.config import hostconfig
 from paradrop.backend.pdfcd.apibridge import updateManager
 from paradrop.lib.reporting import sendStateReport
+from paradrop.lib import status
 
 class ConfigAPI(object):
     """
@@ -87,18 +88,20 @@ class ConfigAPI(object):
         has_apitoken - (boolean) whether the router has an API token
         is_provisioned - (boolean) whether the router has been provisioned
         """
-        status = dict()
+        result = dict()
 
-        status['pdid'] = nexus.core.info.pdid
+        result['pdid'] = nexus.core.info.pdid
 
         apitoken = nexus.core.getKey('apitoken')
-        status['has_apitoken'] = (apitoken is not None)
-
-        status['is_provisioned'] = (status['pdid'] is not None \
-                and status['has_apitoken'])
+        wamppassword = nexus.core.getKey('wamppassword')
+        result['provisioned'] = (result['pdid'] and \
+                                 wamppassword is not None and \
+                                 apitoken is not None)
+        result['http_connected'] = status.apiTokenVerified
+        result['wamp_connected'] = status.wampConnected
 
         apiPkg.request.setHeader('Content-Type', 'application/json')
-        apiPkg.setSuccess(json.dumps(status, separators=(',',':')))
+        apiPkg.setSuccess(json.dumps(result, separators=(',',':')))
 
     @APIDecorator(requiredArgs=["pdid", "apitoken", "wamppassword"])
     def POST_provision(self, apiPkg):
@@ -134,7 +137,8 @@ class ConfigAPI(object):
             def onFailure(error):
                 result = dict()
                 result['provisioned'] = True
-                result['connected'] = False
+                result['http_connected'] = status.apiTokenVerified
+                result['wamp_connected'] = status.wampConnected
                 result['error'] = error
                 apiPkg.request.write(json.dumps(result))
                 apiPkg.request.finish()
@@ -149,7 +153,8 @@ class ConfigAPI(object):
 
                 result = dict()
                 result['provisioned'] = True
-                result['connected'] = True
+                result['http_connected'] = status.apiTokenVerified
+                result['wamp_connected'] = status.wampConnected
                 apiPkg.request.write(json.dumps(result))
                 apiPkg.request.finish()
 

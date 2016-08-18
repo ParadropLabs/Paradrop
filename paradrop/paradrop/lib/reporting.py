@@ -16,6 +16,7 @@ from twisted.web.http_headers import Headers
 # Sources of system state:
 from paradrop.backend.fc import chutestorage
 from paradrop.lib.config import devices, hostconfig
+from paradrop.lib import status
 
 from paradrop.lib.utils.http import buildAuthString
 from pdtools.lib import nexus
@@ -94,12 +95,16 @@ class ReportSender(object):
                     response.code))
                 reactor.callLater(self.retryDelay, self.send, report)
                 self.increaseDelay()
+                status.apiTokenVerified = False
+            else:
+                status.apiTokenVerified = True
 
         # Check for connection failures and retry.
         def cberror(ignored):
             out.warn('{} to {} failed'.format(method, url))
             reactor.callLater(self.retryDelay, self.send, report)
             self.increaseDelay()
+            status.apiTokenVerified = False
 
         d = agent.request(method, url, headers, body)
         d.addCallback(cbresponse)

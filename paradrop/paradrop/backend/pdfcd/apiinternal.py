@@ -6,7 +6,7 @@ from twisted.internet import utils
 from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 from autobahn.wamp import auth
 
-from paradrop.lib import pdinstall
+from paradrop.lib import pdinstall, status
 from paradrop.lib.config import hostconfig
 from pdtools.lib.output import out
 from pdtools.lib import names, nexus, cxbr
@@ -55,6 +55,9 @@ class RouterSession(cxbr.BaseSession):
     @inlineCallbacks
     def onJoin(self, details):
         out.info('Router session joined')
+
+        status.wampConnected = True
+
         # TEMP: ping the server, let it know we just came up
         # yield self.call('pd', 'routerConnected', self._session_id)
         yield self.subscribe(self.updatesPending, self.uriPrefix + 'updatesPending')
@@ -76,6 +79,7 @@ class RouterSession(cxbr.BaseSession):
 
     def onLeave(self, details):
         out.info("Router session left: {}".format(details))
+        status.wampConnected = False
         self.disconnect()
 
     def onDisconnect(self):
