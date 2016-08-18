@@ -237,10 +237,14 @@ def setSystemDevices(update):
     if 'wifi' in hostConfig:
         for dev in hostConfig['wifi']:
             config = {"type": "wifi-device", "name": dev['interface']}
-            options = {
-                'type': 'auto',
-                'channel': dev['channel']
-            }
+
+            # We want to copy over all fields except interface.
+            options = dev.copy()
+            del options['interface']
+
+            # If type is missing, then add it because it is a required field.
+            if 'type' not in options:
+                options['type'] = 'auto'
 
             wirelessSections.append((config, options))
 

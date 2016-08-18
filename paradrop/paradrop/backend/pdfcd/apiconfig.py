@@ -55,8 +55,10 @@ class ConfigAPI(object):
                 "interface": "wlan0"
             },
             {
-                "channel": 6,
-                "interface": "wlan1"
+                "channel": 36,
+                "interface": "wlan1",
+                "hwmode": "11a",
+                "htmode": "HT40+"
             }
         ],
         "wifi-interfaces": [
@@ -66,6 +68,13 @@ class ConfigAPI(object):
                 "mode": "ap",
                 "network": "lan",
                 "ifname": "wlan0"
+            },
+            {
+                "device": "wlan1",
+                "ssid": "paradrop-5G",
+                "mode": "ap",
+                "network": "lan",
+                "ifname": "wlan1"
             }
         ]
     }
@@ -101,6 +110,14 @@ class ConfigAPI(object):
     - If we want to add WPA2, set encryption="psk2" and key="the passphrase"
       in the wifi-interface section for the AP.
       Based on standard, the Passphrase of WPA2 must be between 8 and 63 characters, inclusive.
+
+    Advanced wifi device settings:
+    - For 2.4 GHz channels, set hwmode="11g", and for 5 GHz, set hwmode="11a".
+    It may default to 802.11b (bad, slow) otherwise.
+    - For a 40 MHz channel width in 802.11n, set htmode="HT40+" or htmode="HT40-".
+    Plus means add the next higher channel, and minus means add the lower channel.
+    For example, setting channel=36 and htmode="HT40+" results in using
+    channels 36 and 40.
     """
     @APIDecorator()
     def GET_hostconfig(self, apiPkg):
