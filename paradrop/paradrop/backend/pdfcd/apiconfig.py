@@ -28,6 +28,80 @@ class ConfigAPI(object):
         self.rest.register('GET', '^/v1/provision', self.GET_provision)
         self.rest.register('POST', '^/v1/provision', self.POST_provision)
 
+    """
+    Hostconfig example:
+    {
+        "lan": {
+            "dhcp": {
+                "leasetime": "12h",
+                "limit": 100,
+                "start": 100
+            },
+            "interfaces": [
+                "eth1",
+                "eth2"
+            ],
+            "ipaddr": "192.168.1.1",
+            "netmask": "255.255.255.0",
+            "proto": "static"
+        },
+        "wan": {
+            "interface": "eth0",
+            "proto": "dhcp"
+        },
+        "wifi": [
+            {
+                "channel": 1,
+                "interface": "wlan0"
+            },
+            {
+                "channel": 6,
+                "interface": "wlan1"
+            }
+        ],
+        "wifi-interfaces": [
+            {
+                "device": "wlan0",
+                "ssid": "paradrop",
+                "mode": "ap",
+                "network": "lan",
+                "ifname": "wlan0"
+            }
+        ]
+    }
+
+    The "wifi" section sets up physical device settings.
+    Right now it is just the channel number.
+    Other settings related to 11n or 11ac may go there as we implement them.
+
+    The "wifi-interfaces" section sets up virtual interfaces.  Each virtual
+    interface has an underlying physical device, but there can be multiple
+    interfaces per device up to a limit set somewhere in the driver,
+    firmware, or hardware.  Virtual interfaces can be configured as APs as
+    in the example. They could also be set to client mode and connect to
+    other APs, but this is not supported currently.
+
+    Therefore, it enables one card in the sense that it starts an AP using
+    one of the cards but does not start anything on the second card.  On the
+    other hand, it enables two cards in the sense that it configures one
+    card to use channel 1 and the second one to use channel 6, and a chute
+    may start an AP on the second card.
+
+    Here are a few ways we can modify the example configuration:
+    - If we want to run a second AP on the second device, we can add a
+      section to wifi-interfaces with device="wlan1" and ifname="wlan1".
+    - If we want to run a second AP on the first device, we can add a
+      section to wifi-interfaces with device="wlan0" and an ifname that is
+      different from all others interfaces sharing the device.
+      We should avoid anything that starts with "wlan" except the case
+      where the name exactly matches the device.
+      For device "wlan0", acceptable names would be "wlan0", "pd-wlan", etc.
+      Avoid "vwlan0.X" and the like because that would conflict with chute interfaces,
+      but "hwlan0.X" would be fine.
+    - If we want to add WPA2, set encryption="psk2" and key="the passphrase"
+      in the wifi-interface section for the AP.
+      Based on standard, the Passphrase of WPA2 must be between 8 and 63 characters, inclusive.
+    """
     @APIDecorator()
     def GET_hostconfig(self, apiPkg):
         """
