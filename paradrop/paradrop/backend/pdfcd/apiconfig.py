@@ -14,6 +14,9 @@ from paradrop.backend.pdfcd.apibridge import updateManager
 from paradrop.lib.reporting import sendStateReport
 from paradrop.lib import status
 
+from .apibridge import updateManager
+
+
 class ConfigAPI(object):
     """
     Configuration API.
@@ -27,6 +30,7 @@ class ConfigAPI(object):
         self.rest.register('GET', '^/v1/pdid', self.GET_pdid)
         self.rest.register('GET', '^/v1/provision', self.GET_provision)
         self.rest.register('POST', '^/v1/provision', self.POST_provision)
+        self.rest.register('POST', '^/v1/startUpdate', self.POST_startUpdate)
 
     """
     Hostconfig example:
@@ -263,3 +267,17 @@ class ConfigAPI(object):
 
         else:
             apiPkg.setFailure(pdapi.ERR_BADPARAM, "Router is already provisioned as {}: %s\n".format(pdid))
+
+    @APIDecorator()
+    def POST_startUpdate(self, apiPkg):
+        """
+        Start polling for updates from pdserver.
+
+        This triggers an immediate poll, which could be useful to manually
+        trigger an update if the automatic mechanisms are not working (e.g.
+        when testing with an incomplete server setup).
+        """
+        updateManager.startUpdate()
+
+        apiPkg.request.setHeader('Content-Type', 'text/plain')
+        apiPkg.setSuccess("OK")

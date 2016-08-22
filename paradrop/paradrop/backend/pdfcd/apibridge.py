@@ -232,7 +232,7 @@ class UpdateManager(object):
         })
         body = FileBodyProducer(StringIO(data))
 
-        def serverNotified():
+        def serverNotified(ignored):
             if update._id in self.updatesInProgress:
                 self.updatesInProgress.remove(update._id)
 

@@ -100,7 +100,8 @@ def startChute(update):
 
     #If we failed to build skip creating and starting clean up and fail
     if buildFailed:
-        failAndCleanUpDocker(validImages, validContainers)
+        cleanUpDocker(validImages, validContainers)
+        raise Exception("Building docker image failed; check your Dockerfile for errors.")
 
     # Set environment variables for the new container.
     # PARADROP_ROUTER_ID can be used to change application behavior based on
@@ -115,8 +116,8 @@ def startChute(update):
         c.start(container.get('Id'))
         out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
     except Exception as e:
-        failAndCleanUpDocker(validImages, validContainers)
-    
+        cleanUpDocker(validImages, validContainers)
+        raise e
 
     setup_net_interfaces(update)
 
@@ -166,10 +167,9 @@ def restartChute(update):
 
     setup_net_interfaces(update)
 
-def failAndCleanUpDocker(validImages, validContainers):
+def cleanUpDocker(validImages, validContainers):
     """
-    Clean up any intermediate containers that may have resulted from a failure and throw an Exception so that
-    the abort process is called.
+    Clean up any intermediate containers that may have resulted from a failure.
 
     :param validImages: A list of dicts containing the Id's of all the images that should exist on the system.
     :type validImages: list
@@ -192,8 +192,6 @@ def failAndCleanUpDocker(validImages, validContainers):
         if not img in validImages:
             out.info('Removing Invalid image with id: %s' % str(img))
             c.remove_image(image=img)
-    #Throw exception so abort plan is called and user is notified
-    raise Exception('Building or starting of docker image failed check your Dockerfile for errors.')
 
 def build_host_config(update, client=None):
     """
