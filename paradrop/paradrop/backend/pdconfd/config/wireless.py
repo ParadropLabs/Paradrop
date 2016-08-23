@@ -121,7 +121,16 @@ class ConfigWifiDevice(ConfigObject):
         ConfigOption(name="htmode"),
         ConfigOption(name="beacon_int", type=int),
         ConfigOption(name="frag", type=int),
-        ConfigOption(name="rts", type=int)
+        ConfigOption(name="rts", type=int),
+
+        # 802.11n Capabilities
+        ConfigOption(name="short_gi_20", type=bool),
+        ConfigOption(name="short_gi_40", type=bool),
+        ConfigOption(name="dsss_cck_40", type=bool),
+
+        # 802.11ac Capabilities
+        ConfigOption(name="short_gi_80", type=bool),
+        ConfigOption(name="short_gi_160", type=bool)
     ]
 
 
@@ -133,6 +142,7 @@ class ConfigWifiIface(ConfigObject):
         ConfigOption(name="mode", required=True),
         ConfigOption(name="ssid", required=True),
         ConfigOption(name="hidden", type=bool, default=False),
+        ConfigOption(name="wmm", type=bool, default=True),
         ConfigOption(name="network", required=True),
         ConfigOption(name="encryption"),
         ConfigOption(name="key"),
@@ -377,6 +387,8 @@ class HostapdConfGenerator(object):
         if self.wifiDevice.frag is not None:
             options.append(("fragm_threshold", self.wifiDevice.rts))
 
+        options.append(("wmm_enabled", 1 * self.wifiIface.wmm))
+
         return options
 
     def get11nOptions(self):
@@ -384,16 +396,25 @@ class HostapdConfGenerator(object):
 
         options.append(("ieee80211n", 1 * self.enable11n))
 
-        if self.wifiDevice.htmode is None:
-            pass
-        elif self.wifiDevice.htmode.startswith("HT40"):
-            # TODO: Add other ht_capab flags.
-            options.append(("ht_capab", "[{}]".format(self.wifiDevice.htmode)))
+        ht_capab = ""
+        if self.wifiDevice.htmode.startswith("HT40"):
+            ht_capab += "[{}]".format(self.wifiDevice.htmode)
         elif self.wifiDevice.htmode in ["VHT40", "VHT80", "VHT160"]:
             if self.wifiDevice.channel in HT40_LOWER_CHANNELS:
-                options.append(("ht_capab", "[HT40+]"))
+                ht_capab += "[HT40+]"
             elif self.wifiDevice.channel in HT40_UPPER_CHANNELS:
-                options.append(("ht_capab", "[HT40-]"))
+                ht_capab += "[HT40-]"
+
+        if self.wifiDevice.short_gi_20:
+            ht_capab += "[SHORT-GI-20]"
+        if self.wifiDevice.short_gi_40:
+            ht_capab += "[SHORT-GI-40]"
+        if self.wifiDevice.dsss_cck_40:
+            ht_capab += "[DSSS_CCK-40]"
+
+        if len(ht_capab) > 0:
+            options.append(("ht_capab", ht_capab))
+
         if self.wifiDevice.require_mode == "n":
             options.append(("require_ht", 1))
 
@@ -421,6 +442,14 @@ class HostapdConfGenerator(object):
             seg0_idx = VHT160_CENTER_INDEX[self.wifiDevice.channel]
         # TODO: How does the admin request 80+80 mode (chwidth=3)?
         # We need a second channel number to specify seg1_idx in that case.
+
+        vht_capab = ""
+        if self.wifiDevice.short_gi_80:
+            vht_capab += "[SHORT-GI-80]"
+        if self.wifiDevice.short_gi_160:
+            vht_capab += "[SHORT-GI-160]"
+        if len(vht_capab) > 0:
+            options.append(("vht_capab", vht_capab))
 
         options.append(("vht_oper_chwidth", chwidth))
         options.append(("vht_oper_centr_freq_seg0_idx", seg0_idx))

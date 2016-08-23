@@ -62,7 +62,8 @@ class ConfigAPI(object):
                 "channel": 36,
                 "interface": "wlan1",
                 "hwmode": "11a",
-                "htmode": "HT40+"
+                "htmode": "HT40+",
+                "short_gi_40": true
             }
         ],
         "wifi-interfaces": [
@@ -122,6 +123,10 @@ class ConfigAPI(object):
     Plus means add the next higher channel, and minus means add the lower channel.
     For example, setting channel=36 and htmode="HT40+" results in using
     channels 36 and 40.
+    - If the hardware supports it, you can enable short guard interval
+    for slightly higher data rates.  There are separate settings for each
+    channel width, short_gi_20, short_gi_40, short_gi_80, short_gi_160.
+    Most 11n hardware can support short_gi_40 at the very least.
     """
     @APIDecorator()
     def GET_hostconfig(self, apiPkg):
