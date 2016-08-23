@@ -335,6 +335,13 @@ class HostapdConfGenerator(object):
                 options.append(("wpa_psk", self.wifiIface.key))
             else:
                 options.append(("wpa_passphrase", self.wifiIface.key))
+
+            # Encryption for WPA
+            options.append(("wpa_pairwise", "TKIP"))
+
+            # Encryption for WPA2
+            options.append(("rsn_pairwise", "CCMP"))
+
         else:
             out.warn("Encryption type {} not supported (supported: "
                      "none|psk2)".format(self.wifiIface.encryption))

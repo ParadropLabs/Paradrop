@@ -1,6 +1,50 @@
+import errno
+import os
+import signal
 import subprocess
+import time
 
 from pdtools.lib.output import out
+
+
+def kill(pid, kill_signal=4, timeout=8):
+    """
+    Kill a child process and wait with timeout.
+
+    1. Send a SIGTERM signal to the process.
+    2. Wait up to `kill_signal` seconds for the process to exit.
+    3. If process is still running, send a SIGKILL signal.
+    4. Wait up to `timeout` seconds (cumulative with `kill_signal`) for the
+    process to exit.
+
+    Returns True if the process exited before `timeout` seconds elapsed.
+    """
+    os.kill(pid, signal.SIGTERM)
+
+    start = time.time()
+    while (time.time() - start) < kill_signal:
+        time.sleep(0.1)
+        _, status = os.waitpid(pid, os.WNOHANG)
+        if status != 0:
+            return True
+
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except OSError as error:
+        if error.errno == errno.ESRCH:
+            # The process exited between the time that we checked it and when
+            # we tried to send a SIGKILL.  This is not an error.
+            return True
+        else:
+            raise error
+
+    while (time.time() - start) < timeout:
+        time.sleep(0.1)
+        _, status = os.waitpid(pid, os.WNOHANG)
+        if status != 0:
+            return True
+
+    return False
 
 
 class CommandList(list):
@@ -136,6 +180,15 @@ class KillCommand(Command):
 
     def execute(self):
         pid = self.getPid()
-        if pid is not None:
-            self.command = ["kill", str(pid)]
-            super(KillCommand, self).execute()
+
+        if pid is None:
+            self.result = 0
+            return True
+
+        try:
+            kill(pid)
+            self.result = 0
+        except Exception as e:
+            self.result = e
+
+        return (self.result == 0)
