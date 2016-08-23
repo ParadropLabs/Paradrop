@@ -331,11 +331,13 @@ class HostapdConfGenerator(object):
             options = self.getMainOptions()
             self.writeOptions(options, output)
 
-            options = self.get11nOptions()
-            self.writeOptions(options, output, title="802.11n")
+            if self.enable11n:
+                options = self.get11nOptions()
+                self.writeOptions(options, output, title="802.11n")
 
-            options = self.get11acOptions()
-            self.writeOptions(options, output, title="802.11ac")
+            if self.enable11ac:
+                options = self.get11acOptions()
+                self.writeOptions(options, output, title="802.11ac")
 
             options = self.getSecurityOptions()
             self.writeOptions(options, output, title="Security")
