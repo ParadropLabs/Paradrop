@@ -21,6 +21,86 @@ HOSTAPD_HWMODE = {
 }
 
 
+HT40_LOWER_CHANNELS = set([36, 44, 52, 60, 100, 108, 116, 124, 132, 140, 149, 157])
+HT40_UPPER_CHANNELS = set([40, 48, 56, 64, 104, 112, 120, 128, 136, 144, 153, 161])
+
+# Map 20 Mhz channel to index of 40 Mhz channel that contains it.
+VHT40_CENTER_INDEX = {
+    36: 38,
+    40: 38,
+    44: 46,
+    48: 46,
+    52: 54,
+    56: 54,
+    60: 62,
+    64: 62,
+    100: 102,
+    104: 102,
+    108: 110,
+    112: 110,
+    116: 118,
+    120: 118,
+    124: 126,
+    128: 126,
+    132: 134,
+    136: 134,
+    140: 142,
+    144: 142,
+    149: 151,
+    153: 151,
+    157: 159,
+    161: 159
+}
+
+# Map 20 Mhz channel to index of 80 Mhz channel that contains it.
+VHT80_CENTER_INDEX = {
+    36: 42,
+    40: 42,
+    44: 42,
+    48: 42,
+    52: 58,
+    56: 58,
+    60: 58,
+    64: 58,
+    100: 106,
+    104: 106,
+    108: 106,
+    112: 106,
+    116: 122,
+    120: 122,
+    124: 122,
+    128: 122,
+    132: 138,
+    136: 138,
+    140: 138,
+    144: 138,
+    149: 155,
+    153: 155,
+    157: 155,
+    161: 155
+}
+
+# Map 20 Mhz channel to index of 160 Mhz channel that contains it.
+VHT160_CENTER_INDEX = {
+    36: 50,
+    40: 50,
+    44: 50,
+    48: 50,
+    52: 50,
+    56: 50,
+    60: 50,
+    64: 50,
+    100: 114,
+    104: 114,
+    108: 114,
+    112: 114,
+    116: 114,
+    120: 114,
+    124: 114,
+    128: 114
+}
+
+
 def isHexString(data):
     """
     Test if a string contains only hex digits.
@@ -307,6 +387,13 @@ class HostapdConfGenerator(object):
         elif self.wifiDevice.htmode.startswith("HT40"):
             # TODO: Add other ht_capab flags.
             options.append(("ht_capab", "[{}]".format(self.wifiDevice.htmode)))
+        elif self.wifiDevice.htmode in ["VHT40", "VHT80", "VHT160"]:
+            if self.wifiDevice.channel in HT40_LOWER_CHANNELS:
+                options.append(("ht_capab", "[HT40+]"))
+            elif self.wifiDevice.channel in HT40_UPPER_CHANNELS:
+                options.append(("ht_capab", "[HT40-]"))
+        if self.wifiDevice.require_mode == "n":
+            options.append(("require_ht", 1))
 
         return options
 
@@ -315,7 +402,28 @@ class HostapdConfGenerator(object):
 
         options.append(("ieee80211ac", 1 * self.enable11ac))
 
-        # TODO: implement VHT settings to go above 40 MHz channel width
+        if self.wifiDevice.require_mode == "ac":
+            options.append(("require_vht", 1))
+
+        # Default chwidth=0 means 20 or 40 Mhz.
+        chwidth = 0
+        seg0_idx = self.wifiDevice.channel
+        seg1_idx = None
+        if self.wifiDevice.htmode == "VHT40":
+            seg0_idx = VHT40_CENTER_INDEX[self.wifiDevice.channel]
+        elif self.wifiDevice.htmode == "VHT80":
+            chwidth = 1
+            seg0_idx = VHT80_CENTER_INDEX[self.wifiDevice.channel]
+        elif self.wifiDevice.htmode == "VHT160":
+            chwidth = 2
+            seg0_idx = VHT160_CENTER_INDEX[self.wifiDevice.channel]
+        # TODO: How does the admin request 80+80 mode (chwidth=3)?
+        # We need a second channel number to specify seg1_idx in that case.
+
+        options.append(("vht_oper_chwidth", chwidth))
+        options.append(("vht_oper_centr_freq_seg0_idx", seg0_idx))
+        if seg1_idx is not None:
+            options.append(("vht_oper_centr_freq_seg1_idx", seg1_idx))
 
         return options
 
