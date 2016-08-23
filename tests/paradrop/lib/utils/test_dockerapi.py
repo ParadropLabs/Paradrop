@@ -1,5 +1,6 @@
 from paradrop.lib.utils import dockerapi
 from mock import patch, MagicMock
+from nose.tools import assert_raises
 
 DOCKER_CONF = """
 # Docker systemd configuration
@@ -47,7 +48,7 @@ def test_build_host_config():
 
 @patch('paradrop.lib.utils.dockerapi.out')
 @patch('docker.Client')
-def test_failAndCleanUpDocker(mockDocker, mockOutput):
+def test_cleanUpDocker(mockDocker, mockOutput):
     """
     Test that the failure and clean up function does it's job.
     """
@@ -58,11 +59,7 @@ def test_failAndCleanUpDocker(mockDocker, mockOutput):
         #fake that docker is returning the second list in the pair as the current images and containers on the device
         client.containers.return_value = pair[1]
         client.images.return_value = pair[1]
-        try:
-            dockerapi.failAndCleanUpDocker(pair[0],pair[0])
-        except Exception as e:
-            #we should always see this exception
-            assert e.message == 'Building or starting of docker image failed check your Dockerfile for errors.'
+        dockerapi.cleanUpDocker(pair[0],pair[0])
         mockDocker.assert_called_with(base_url='unix://var/run/docker.sock', version='auto')
         client.containers.assert_called_once_with(quiet=True, all=True)
         client.images.assert_called_once_with(quiet=True, all=False)
@@ -133,7 +130,7 @@ def test_removeChute(mockDocker, mockOutput):
     assert update.complete.call_count == 1
 
 @patch('paradrop.lib.utils.dockerapi.prepare_environment')
-@patch('paradrop.lib.utils.dockerapi.failAndCleanUpDocker')
+@patch('paradrop.lib.utils.dockerapi.cleanUpDocker')
 @patch('paradrop.lib.utils.dockerapi.build_host_config')
 @patch('paradrop.lib.utils.dockerapi.setup_net_interfaces')
 @patch('paradrop.lib.utils.dockerapi.out')
@@ -167,18 +164,18 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail
 
     #Test failed build
     client.build.return_value = ['{"errorDetail": "Errors"}']
-    dockerapi.startChute(update)
+    assert_raises(Exception, dockerapi.startChute, update)
     mockFail.assert_called_once_with('images', 'containers')
 
     #Test when create or start throws exceptions
     mockFail.reset_mock()
     client.build.return_value = ['{"stream": "test"}','{"value": {"test": "testing"}}','{"tests": "stuff"}']
     client.create_container.side_effect = Exception('create container exception')
-    dockerapi.startChute(update)
+    assert_raises(Exception, dockerapi.startChute, update)
     mockFail.assert_called_once_with('images', 'containers')
     mockFail.reset_mock()
     client.start.side_effect = Exception('start exception')
-    dockerapi.startChute(update)
+    assert_raises(Exception, dockerapi.startChute, update)
     mockFail.assert_called_once_with('images', 'containers')
 
 @patch('paradrop.lib.utils.dockerapi.os')
