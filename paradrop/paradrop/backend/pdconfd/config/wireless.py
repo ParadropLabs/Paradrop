@@ -476,7 +476,7 @@ class HostapdConfGenerator(object):
                 options.append(("wpa_passphrase", self.wifiIface.key))
 
             # Encryption for WPA
-            options.append(("wpa_pairwise", "TKIP"))
+            options.append(("wpa_pairwise", "TKIP CCMP"))
 
             # Encryption for WPA2
             options.append(("rsn_pairwise", "CCMP"))
