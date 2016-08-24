@@ -199,6 +199,8 @@ class NexusBase(object):
         self.conf = AttrWrapper()
         self.info = AttrWrapper()
 
+        self.session = None
+
         # Replace values with settings or environ vars
         overrideSettingsList(self.__class__, settings)
         overrideSettingsEnv(self.__class__)
@@ -248,7 +250,10 @@ class NexusBase(object):
         If an existing session is connected, it is cleanly closed.
         '''
 
-        print 'Connecting to node at URI: ' + str(self.net.host)
+        if (self.session is not None):
+            yield self.session.leave()
+
+        output.out.info('Connecting to node at URI: %s' % str(self.net.host))
         self.session = yield sessionClass.start(self.net.host, self.info.pdid, debug=debug)
         returnValue(self.session)
 
