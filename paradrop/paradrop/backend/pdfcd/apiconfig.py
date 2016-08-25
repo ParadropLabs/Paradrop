@@ -239,7 +239,6 @@ class ConfigAPI(object):
                 result['provisioned'] = True
                 result['http_connected'] = status.apiTokenVerified
                 result['wamp_connected'] = status.wampConnected
-                result['error'] = error
                 apiPkg.request.write(json.dumps(result))
                 apiPkg.request.finish()
 
