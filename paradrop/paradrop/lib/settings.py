@@ -28,6 +28,11 @@ DEBUG_MODE = False
 # VERBOSE = False
 
 #
+# pdserver
+#
+PDSERVER_URL = "https://paradrop.io"
+
+#
 # pdfcd
 #
 PDFCD_PORT = 14321

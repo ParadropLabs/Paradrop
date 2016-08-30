@@ -150,19 +150,15 @@ class BaseSession(ApplicationSession):
     # Access to the original methods, without convenience modifiers
     ###################################################
     def stockPublish(self, topic, *args, **kwargs):
-        out.info('cxbr: (%s) publish (%s)' % (self.pdid, topic,))
         return ApplicationSession.publish(self, u''+topic, *args, **kwargs)
 
     def stockSubscribe(self, handler, topic=None, options=None):
-        out.info('cxbr: (%s) subscribe (%s)' % (self.pdid, topic,))
         return ApplicationSession.subscribe(self, handler, topic=u''+topic, options=options)
 
     def stockCall(self, procedure, *args, **kwargs):
-        out.info('cxbr: (%s) calling (%s)' % (self.pdid, procedure,))
         return ApplicationSession.call(self, u''+procedure, *args, **kwargs)
 
     def stockRegister(self, endpoint, procedure=None, options=None):
-        out.info('cxbr: (%s) registering (%s)' % (self.pdid, procedure,))
         return ApplicationSession.register(self, endpoint, procedure=u''+procedure, options=options)
 
 

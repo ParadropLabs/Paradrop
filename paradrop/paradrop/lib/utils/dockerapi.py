@@ -93,10 +93,9 @@ def startChute(update):
         for key, value in json.loads(line).iteritems():
             if isinstance(value, dict):
                 continue
-            elif key == 'stream':
-                update.pkg.request.write(str(value))
             else:
-                update.pkg.request.write(str(value) + '\n')
+                msg = str(value).rstrip()
+                update.progress(msg)
 
     #If we failed to build skip creating and starting clean up and fail
     if buildFailed:

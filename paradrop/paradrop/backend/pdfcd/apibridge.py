@@ -11,6 +11,7 @@ from twisted.internet.defer import Deferred, DeferredList
 from twisted.web.client import Agent, FileBodyProducer
 from twisted.web.http_headers import Headers
 
+from paradrop.lib import settings
 from paradrop.lib.reporting import sendStateReport
 from paradrop.lib.utils.http import JSONReceiver, buildAuthString
 from pdtools.lib import nexus
@@ -145,7 +146,7 @@ class UpdateManager(object):
 
         method = 'GET'
         url = "{}/pdrouters/updates/?router={}&completed=false".format(
-                nexus.core.net.webHost, nexus.core.info.pdid)
+                settings.PDSERVER_URL, nexus.core.info.pdid)
         headers = Headers({
             'Authorization': [buildAuthString()]
         })
@@ -225,7 +226,7 @@ class UpdateManager(object):
 
         method = 'PUT'
         url = "{}/pdrouters/updates/{}".format(
-                nexus.core.net.webHost, update._id)
+                settings.PDSERVER_URL, update._id)
         headers = Headers({
             'Authorization': [buildAuthString()],
             'Content-Type': ['application/json']

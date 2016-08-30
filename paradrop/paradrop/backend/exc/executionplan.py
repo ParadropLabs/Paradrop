@@ -78,6 +78,7 @@ def executePlans(update):
         # We are in a try-except block so if func isn't callable that will catch it
         try:
             out.verbose('Calling %s\n' % (func))
+            update.progress("Calling {}".format(func.__name__))
             #
             # Call the function from the execution plan
             #

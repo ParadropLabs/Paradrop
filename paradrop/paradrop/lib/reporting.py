@@ -16,7 +16,7 @@ from twisted.web.http_headers import Headers
 # Sources of system state:
 from paradrop.backend.fc import chutestorage
 from paradrop.lib.config import devices, hostconfig
-from paradrop.lib import status
+from paradrop.lib import settings, status
 
 from paradrop.lib.utils.http import buildAuthString
 from pdtools.lib import nexus
@@ -81,7 +81,7 @@ class ReportSender(object):
         agent = Agent(reactor)
 
         method = 'POST'
-        url = "{}/pdrouters/state".format(nexus.core.net.webHost)
+        url = "{}/pdrouters/state".format(settings.PDSERVER_URL)
         headers = Headers({
             'Authorization': [buildAuthString()],
             'Content-Type': ['application/json']

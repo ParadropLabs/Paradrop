@@ -10,9 +10,11 @@ import time
 
 from paradrop.backend import exc
 from paradrop.backend.fc import chutestorage
-from pdtools.lib.output import out
 from paradrop.lib import settings
 from paradrop.lib import chute
+
+from pdtools.lib import nexus
+from pdtools.lib.output import out
 
 UPDATE_SPECIFIC_ARGS = ["pkg", "func"]
 
@@ -37,6 +39,8 @@ class UpdateObject(object):
     updateModuleList = []
 
     def __init__(self, obj):
+        self.pkg = None
+
         # Pull in all the keys from the obj identified
         self.__dict__.update(obj)
         # Any module can add notes and warnings here
@@ -68,6 +72,27 @@ class UpdateObject(object):
         """
         pass
 
+    def progress(self, message):
+        if nexus.core is not None and nexus.core.session is not None:
+            data = {
+                'router': nexus.core.info.pdid,
+                'time': time.time(),
+                'local_update_id': self.tok,
+                'message': message
+            }
+
+            # The _id field is set for updates from pdserver but not for
+            # locally-initiated (sideloaded) updates.
+            #
+            # Note that 'local_update_id', on the other hand, will be defined for
+            # all updates because it's just an integer timestamp for the updaet.
+            data['update_id'] = getattr(self, '_id', None)
+
+            nexus.core.session.stockPublish("org.paradrop.updateProgress", data)
+
+        if self.pkg is not None:
+            self.pkg.request.write(message + '\n')
+
     def complete(self, **kwargs):
         """
             Signal to the API server that any action we need to perform is
@@ -95,6 +120,9 @@ class UpdateObject(object):
 
         # Call the function we were provided
         self.func(self)
+
+        if 'message' in kwargs:
+            self.progress(kwargs['message'])
 
     def execute(self):
         """

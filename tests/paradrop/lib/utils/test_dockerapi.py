@@ -159,7 +159,6 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail
     client.build.assert_called_once_with(rm=True, tag='test:latest', fileobj='Dockerfile')
     client.create_container.assert_called_once_with(image='test:latest', name='test', host_config='ConfigDict', environment={})
     client.start.assert_called_once_with(123)
-    assert update.pkg.request.write.call_count == 2
     mockInterfaces.assert_called_once_with(update)
 
     #Test failed build
