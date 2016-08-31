@@ -254,6 +254,11 @@ class NexusBase(object):
             yield self.session.leave()
 
         output.out.info('Connecting to node at URI: %s' % str(self.net.host))
+
+        # Setting self.session here only works for the first connection but
+        # becomes stale if the connection fails and we reconnect.  In that case
+        # a new session object is automatically created.  For this reason, we
+        # also update this session reference in BaseSession.onJoin.
         self.session = yield sessionClass.start(self.net.host, self.info.pdid, debug=debug)
         returnValue(self.session)
 

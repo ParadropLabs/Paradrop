@@ -98,6 +98,11 @@ class BaseSession(ApplicationSession):
     def onJoin(self, details):
         out.info(str(self.__class__.__name__) + ' crossbar session connected')
 
+        # Update global session reference.  It's hacky, but we do the import
+        # here to solve the circular import problem.  TODO Refactor.
+        from pdtools.lib import nexus
+        nexus.core.session = self
+
         # Reset exponential backoff timer after a successful connection.
         self._transport.factory.resetDelay()
 

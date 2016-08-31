@@ -88,7 +88,13 @@ class UpdateObject(object):
             # all updates because it's just an integer timestamp for the updaet.
             data['update_id'] = getattr(self, '_id', None)
 
-            nexus.core.session.stockPublish("org.paradrop.updateProgress", data)
+            # Catch the occasional Exception due to connectivity failure.  We
+            # don't want to fail a chute installation just because we had problems
+            # sending the log messages.
+            try:
+                nexus.core.session.stockPublish("org.paradrop.updateProgress", data)
+            except Exception as error:
+                out.warn("Publish failed: {} {}".format(error.__class__, error))
 
         if self.pkg is not None:
             self.pkg.request.write(message + '\n')
