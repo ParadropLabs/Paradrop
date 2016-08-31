@@ -62,8 +62,13 @@ def findConfigFiles(search=None):
 
 class ConfigManager(object):
 
-    def __init__(self, writeDir):
+    def __init__(self, writeDir, execCommands=True):
+        """
+        writeDir: directory to use for generated config files (e.g. hostapd.conf).
+        execCommands: whether or not to run commands (set to False for testing).
+        """
         self.writeDir = writeDir
+        self.execCommands = execCommands
 
         # Make sure directory exists.
         pdosq.makedirs(writeDir)
@@ -252,7 +257,7 @@ class ConfigManager(object):
                 commands.extend(config.updateApply(new, allConfigs))
 
         # Finally, execute the commands.
-        if execute:
+        if execute and self.execCommands:
             self.execute(commands)
 
         self.previousCommands = commands
@@ -353,7 +358,7 @@ class ConfigManager(object):
             commands.extend(config.revert(self.currentConfig))
 
         # Finally, execute the commands.
-        if execute:
+        if execute and self.execCommands:
             self.execute(commands)
 
         self.previousCommands = commands

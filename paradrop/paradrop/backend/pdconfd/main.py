@@ -80,22 +80,22 @@ def listen():
         print("Failed to export DBus object: {}".format(e))
 
 
-def run_thread():
+def run_thread(execute=True):
     """
     Start pdconfd service as a thread.
 
     This function schedules pdconfd to run as a thread and returns immediately.
     """
-    ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR)
+    ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR, execute)
     reactor.callFromThread(listen)
 
 
-def run_pdconfd():
+def run_pdconfd(execute=True):
     """
     Start pdconfd daemon.
 
     This enters the pdconfd main loop.
     """
-    ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR)
+    ConfigService.configManager = ConfigManager(settings.PDCONFD_WRITE_DIR, execute)
     reactor.callWhenRunning(listen)
     reactor.run()

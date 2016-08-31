@@ -51,6 +51,8 @@ def main():
                    action='store_true')
     p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test, local]',
                    action='store', type=str, default='production')
+    p.add_argument('--no-exec', help='Skip execution of configuration commands',
+                   action='store_false', dest='execute')
 
     # Things to replace
     p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
@@ -107,7 +109,7 @@ def main():
             updateManager.startUpdate()
 
         # Start the configuration service as a thread
-        pdconfd.main.run_thread()
+        pdconfd.main.run_thread(execute=args.execute)
 
         # Start the web server for the Paradrop portal
         startPortal()
