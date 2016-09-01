@@ -112,7 +112,7 @@ def startChute(update):
                 fileobj=update.dockerfile)
     elif hasattr(update, 'download'):
         # download field should be an object with at least 'url' but may also
-        # container 'user' and 'secret' for authentication.
+        # contain 'user' and 'secret' for authentication.
         download_args = update.download
         with downloader(**download_args) as dl:
             workDir, meta = dl.fetch()
