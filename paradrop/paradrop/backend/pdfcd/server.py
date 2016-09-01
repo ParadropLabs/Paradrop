@@ -18,7 +18,7 @@ from paradrop.lib.api import pdapi
 from txrestapi.resource import APIResource
 from txrestapi.methods import GET, POST, PUT, ALL
 from paradrop.lib import settings
-from paradrop.lib.utils import dockerapi
+from paradrop.lib.container import dockerapi
 
 from paradrop.backend import fc
 

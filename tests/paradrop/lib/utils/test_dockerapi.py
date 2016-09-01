@@ -1,4 +1,4 @@
-from paradrop.lib.utils import dockerapi
+from paradrop.lib.container import dockerapi
 from mock import patch, MagicMock
 from nose.tools import assert_raises
 
@@ -46,7 +46,7 @@ def test_build_host_config():
     res = dockerapi.build_host_config(u, client)
     assert res['dns'] == ['0.0.0.0', '8.8.8.8']
 
-@patch('paradrop.lib.utils.dockerapi.out')
+@patch('paradrop.lib.container.dockerapi.out')
 @patch('docker.Client')
 def test_cleanUpDocker(mockDocker, mockOutput):
     """
@@ -75,8 +75,8 @@ def test_cleanUpDocker(mockDocker, mockOutput):
             assert client.remove_container.call_count == 2
         client.reset_mock()
 
-@patch('paradrop.lib.utils.dockerapi.setup_net_interfaces')
-@patch('paradrop.lib.utils.dockerapi.out')
+@patch('paradrop.lib.container.dockerapi.setup_net_interfaces')
+@patch('paradrop.lib.container.dockerapi.out')
 @patch('docker.Client')
 def test_restartChute(mockDocker, mockOutput, mockInterfaces):
     """
@@ -91,7 +91,7 @@ def test_restartChute(mockDocker, mockOutput, mockInterfaces):
     mockInterfaces.assert_called_once_with(update)
     client.start.assert_called_once_with(container=update.name)
 
-@patch('paradrop.lib.utils.dockerapi.out')
+@patch('paradrop.lib.container.dockerapi.out')
 @patch('docker.Client')
 def test_stopChute(mockDocker, mockOutput):
     """
@@ -105,7 +105,7 @@ def test_stopChute(mockDocker, mockOutput):
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     client.stop.assert_called_once_with(container=update.name)
 
-@patch('paradrop.lib.utils.dockerapi.out')
+@patch('paradrop.lib.container.dockerapi.out')
 @patch('docker.Client')
 def test_removeChute(mockDocker, mockOutput):
     """
@@ -129,11 +129,11 @@ def test_removeChute(mockDocker, mockOutput):
     client.remove_container.assert_called_once_with(container=update.name, force=True)
     assert update.complete.call_count == 1
 
-@patch('paradrop.lib.utils.dockerapi.prepare_environment')
-@patch('paradrop.lib.utils.dockerapi.cleanUpDocker')
-@patch('paradrop.lib.utils.dockerapi.build_host_config')
-@patch('paradrop.lib.utils.dockerapi.setup_net_interfaces')
-@patch('paradrop.lib.utils.dockerapi.out')
+@patch('paradrop.lib.container.dockerapi.prepare_environment')
+@patch('paradrop.lib.container.dockerapi.cleanUpDocker')
+@patch('paradrop.lib.container.dockerapi.build_host_config')
+@patch('paradrop.lib.container.dockerapi.setup_net_interfaces')
+@patch('paradrop.lib.container.dockerapi.out')
 @patch('docker.Client')
 def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail, prepare_environment):
     """
@@ -177,9 +177,9 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail
     assert_raises(Exception, dockerapi.startChute, update)
     mockFail.assert_called_once_with('images', 'containers')
 
-@patch('paradrop.lib.utils.dockerapi.os')
-@patch('paradrop.lib.utils.dockerapi.subprocess')
-@patch('paradrop.lib.utils.dockerapi.out')
+@patch('paradrop.lib.container.dockerapi.os')
+@patch('paradrop.lib.container.dockerapi.subprocess')
+@patch('paradrop.lib.container.dockerapi.out')
 def test_setup_net_interfaces(mockOutput, mockSubproc, mockOS):
     """
     Test that the setup_net_interfaces function does it's job.
@@ -206,8 +206,8 @@ def test_setup_net_interfaces(mockOutput, mockSubproc, mockOS):
         assert e.message == 'BAD!'
 
 @patch('__builtin__.open')
-@patch('paradrop.lib.utils.dockerapi.os')
-@patch('paradrop.lib.utils.dockerapi.out')
+@patch('paradrop.lib.container.dockerapi.os')
+@patch('paradrop.lib.container.dockerapi.out')
 def test_writeDockerConfig(mockOutput, mockOS, mock_open):
     """
     Test that the writeDockerConfig function does it's job.

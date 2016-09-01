@@ -14,6 +14,7 @@ import os
 import subprocess
 
 from paradrop.lib import settings
+from paradrop.lib.container.downloader import downloader
 from pdtools.lib import nexus
 
 
@@ -61,6 +62,30 @@ def writeDockerConfig():
     return written
 
 
+def buildImage(update, client, **buildArgs):
+    """
+    Build the Docker image and monitor progress.
+
+    Returns True on success, False on failure.
+    """
+    output = client.build(**buildArgs)
+
+    buildSuccess = True
+    for line in output:
+        #if we encountered an error make note of it
+        if 'errorDetail' in line:
+            buildSuccess = False
+
+        for key, value in json.loads(line).iteritems():
+            if isinstance(value, dict):
+                continue
+            else:
+                msg = str(value).rstrip()
+                update.progress(msg)
+
+    return buildSuccess
+
+
 def startChute(update):
     """
     Build and deploy a docker container based on the passed in update.
@@ -72,7 +97,6 @@ def startChute(update):
     out.info('Attempting to start new Chute %s \n' % (update.name))
 
     repo = update.name + ":latest"
-    dockerfile = update.dockerfile
     name = update.name
 
     c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
@@ -83,22 +107,22 @@ def startChute(update):
     validImages = c.images(quiet=True, all=False)
     validContainers = c.containers(quiet=True, all=True)
 
-    buildFailed = False
-    for line in c.build(rm=True, tag=repo, fileobj=dockerfile):
-
-        #if we encountered an error make note of it
-        if 'errorDetail' in line:
-            buildFailed = True
-
-        for key, value in json.loads(line).iteritems():
-            if isinstance(value, dict):
-                continue
-            else:
-                msg = str(value).rstrip()
-                update.progress(msg)
+    if hasattr(update, 'dockerfile'):
+        buildSuccess = buildImage(update, c, rm=True, tag=repo,
+                fileobj=update.dockerfile)
+    elif hasattr(update, 'download'):
+        # download field should be an object with at least 'url' but may also
+        # container 'user' and 'secret' for authentication.
+        download_args = update.download
+        with downloader(**download_args) as dl:
+            workDir, meta = dl.fetch()
+            buildSuccess = buildImage(update, c, rm=True, tag=repo,
+                    path=workDir)
+    else:
+        raise Exception("No Dockerfile or download location supplied.")
 
     #If we failed to build skip creating and starting clean up and fail
-    if buildFailed:
+    if not buildSuccess:
         cleanUpDocker(validImages, validContainers)
         raise Exception("Building docker image failed; check your Dockerfile for errors.")
 

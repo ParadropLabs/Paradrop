@@ -8,7 +8,7 @@ from paradrop.backend.exc import plangraph
 from paradrop.lib import chute, settings
 from pdtools.lib.pdutils import jsonPretty
 
-from paradrop.lib.utils import dockerapi as virt
+from paradrop.lib.container import dockerapi
 
 
 def generatePlans(update):
@@ -31,7 +31,7 @@ def generatePlans(update):
             return True
         # If we are now running then everything has to be setup for the first time
         if(update.new.state == chute.STATE_RUNNING):
-            update.plans.addPlans(plangraph.STATE_CALL_START, (virt.startChute,))
+            update.plans.addPlans(plangraph.STATE_CALL_START, (dockerapi.startChute,))
 
         # Check if the state is invalid, we should return bad things in this case (don't do anything)
         elif(update.new.state == chute.STATE_INVALID):
@@ -45,19 +45,19 @@ def generatePlans(update):
             if update.old.state == chute.STATE_RUNNING:
                 update.failure = update.name + " already running."
                 return True
-            update.plans.addPlans(plangraph.STATE_CALL_START, (virt.restartChute,))
+            update.plans.addPlans(plangraph.STATE_CALL_START, (dockerapi.restartChute,))
         elif update.updateType == 'restart':
-            update.plans.addPlans(plangraph.STATE_CALL_START, (virt.restartChute,))
+            update.plans.addPlans(plangraph.STATE_CALL_START, (dockerapi.restartChute,))
         elif update.updateType == 'create':
             update.failure = update.name + " already exists on this device."
             return True
         elif update.new.state == chute.STATE_STOPPED:
             if update.updateType == 'delete':
-                update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.removeChute,))
+                update.plans.addPlans(plangraph.STATE_CALL_STOP, (dockerapi.removeChute,))
             if update.updateType == 'stop':
                 if update.old.state == chute.STATE_STOPPED:
                     update.failure = update.name + " already stopped."
                     return True
-                update.plans.addPlans(plangraph.STATE_CALL_STOP, (virt.stopChute,))
+                update.plans.addPlans(plangraph.STATE_CALL_STOP, (dockerapi.stopChute,))
 
     return None
