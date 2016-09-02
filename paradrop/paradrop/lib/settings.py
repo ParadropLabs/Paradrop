@@ -30,7 +30,7 @@ DEBUG_MODE = False
 #
 # pdserver
 #
-PDSERVER_URL = "https://paradrop.io"
+PDSERVER_URL = "http://paradrop.org:8060"
 
 #
 # pdfcd

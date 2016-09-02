@@ -73,7 +73,7 @@ class UpdateObject(object):
         pass
 
     def progress(self, message):
-        if nexus.core is not None and nexus.core.session is not None:
+        if nexus.core is not None and getattr(nexus.core, 'session', None) is not None:
             data = {
                 'router': nexus.core.info.pdid,
                 'time': time.time(),
