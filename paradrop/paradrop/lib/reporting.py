@@ -10,7 +10,6 @@ import time
 from StringIO import StringIO
 
 from twisted.internet import reactor
-from twisted.web.client import Agent, FileBodyProducer
 from twisted.web.http_headers import Headers
 
 # Sources of system state:
@@ -18,7 +17,7 @@ from paradrop.backend.fc import chutestorage
 from paradrop.lib.config import devices, hostconfig
 from paradrop.lib import settings, status
 
-from paradrop.lib.utils.http import buildAuthString
+from paradrop.lib.utils.http import PDServerRequest
 from pdtools.lib import nexus
 from pdtools.lib.output import out
 
@@ -78,21 +77,14 @@ class ReportSender(object):
             self.retryDelay = self.maxRetryDelay
 
     def send(self, report):
-        agent = Agent(reactor)
-
-        method = 'POST'
-        url = "{}/pdrouters/state".format(settings.PDSERVER_URL)
-        headers = Headers({
-            'Authorization': [buildAuthString()],
-            'Content-Type': ['application/json']
-        })
-        body = FileBodyProducer(StringIO(report.toJSON()))
+        request = PDServerRequest('/pdrouters/state')
+        d = request.post(**report.__dict__)
 
         # Check for error code and retry.
         def cbresponse(response):
-            if response.code != 200:
-                out.warn('{} to {} returned code {}'.format(method, url,
-                    response.code))
+            if not response.success:
+                out.warn('{} to {} returned code {}'.format(request.method,
+                    request.url, response.code))
                 reactor.callLater(self.retryDelay, self.send, report)
                 self.increaseDelay()
                 status.apiTokenVerified = False
@@ -101,12 +93,11 @@ class ReportSender(object):
 
         # Check for connection failures and retry.
         def cberror(ignored):
-            out.warn('{} to {} failed'.format(method, url))
+            out.warn('{} to {} failed'.format(request.method, request.url))
             reactor.callLater(self.retryDelay, self.send, report)
             self.increaseDelay()
             status.apiTokenVerified = False
 
-        d = agent.request(method, url, headers, body)
         d.addCallback(cbresponse)
         d.addErrback(cberror)
 

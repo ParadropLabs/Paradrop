@@ -8,12 +8,11 @@ from StringIO import StringIO
 
 from twisted.internet import reactor, task
 from twisted.internet.defer import Deferred, DeferredList
-from twisted.web.client import Agent, FileBodyProducer
 from twisted.web.http_headers import Headers
 
 from paradrop.lib import settings
 from paradrop.lib.reporting import sendStateReport
-from paradrop.lib.utils.http import JSONReceiver, buildAuthString
+from paradrop.lib.utils.http import PDServerRequest
 from pdtools.lib import nexus
 from pdtools.lib.pdutils import timeint
 
@@ -142,48 +141,25 @@ class UpdateManager(object):
         if not _auto and self.scheduledCall.running:
             self.scheduledCall.reset()
 
-        agent = Agent(reactor)
-
-        method = 'GET'
-        url = "{}/pdrouters/updates/?router={}&completed=false".format(
-                settings.PDSERVER_URL, nexus.core.info.pdid)
-        headers = Headers({
-            'Authorization': [buildAuthString()]
-        })
-
-        d = agent.request(method, url, headers, None)
-        d.addCallback(self.queryOpened)
+        request = PDServerRequest('/pdrouters/updates')
+        d = request.get(router=nexus.core.info.pdid, completed=False)
+        d.addCallback(self.updatesReceived)
 
         # Make sure the LoopingCall is scheduled to run later.
         if not self.scheduledCall.running:
             self.scheduledCall.start(UPDATE_POLL_INTERVAL, now=False)
 
-    def queryOpened(self, response):
-        """
-        Internal: callback after GET request has been opened and set up for
-        receiving the list of updates.
-        """
-        finished = Deferred()
-        response.deliverBody(JSONReceiver(finished))
-        finished.addCallback(self.updatesReceived)
-
-    def updatesReceived(self, updates):
+    def updatesReceived(self, response):
         """
         Internal: callback after list of updates has been received.
         """
         deferreds = list()
 
-        if updates is None:
+        if not response.success or response.data is None:
             print("There was an error receiving updates from the server.")
             return
 
-        # In case of error response such as authentication failure, the server
-        # returns a dictionary with a message fields instead of a list.
-        if isinstance(updates, dict):
-            message = updates.get('message', 'unknown error')
-            print("Error fetching updates from pdserver: {}".format(message))
-            return
-
+        updates = response.data.get('updates', [])
         print("Received {} update(s) from server.".format(len(updates)))
         for item in updates:
             if item['_id'] in self.updatesInProgress:
@@ -216,22 +192,9 @@ class UpdateManager(object):
         Internal: callback after an update operation has been completed
         (successfuly or otherwise) and send a notification to the server.
         """
-        agent = Agent(reactor)
 
-        changes = {
-            'completed': True,
-            'result': update.result
-        }
-        data = json.dumps(changes)
-
-        method = 'PUT'
-        url = "{}/pdrouters/updates/{}".format(
-                settings.PDSERVER_URL, update._id)
-        headers = Headers({
-            'Authorization': [buildAuthString()],
-            'Content-Type': ['application/json']
-        })
-        body = FileBodyProducer(StringIO(data))
+        request = PDServerRequest('/pdrouters/updates/{}'.format(update._id))
+        d = request.put(completed=True, result=update.result)
 
         def serverNotified(ignored):
             if update._id in self.updatesInProgress:
@@ -239,7 +202,6 @@ class UpdateManager(object):
 
         # TODO: If this notification fails to go through, we should retry or
         # build in some other mechanism to inform the server.
-        d = agent.request(method, url, headers, body)
         d.addCallback(serverNotified)
 
     def allUpdatesComplete(self, *args, **kwargs):
