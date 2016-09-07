@@ -78,9 +78,13 @@ setup() {
             rm -rf releases.ubuntu.com
         fi
     fi
+    if ! type "add-apt-repository" > /dev/null; then
+        echo -e "${COLOR} Installing add-apt-repository" && tput sgr0
+        sudo apt-get install -y software-properties-common
+    fi
     if ! type "snappy" > /dev/null; then
         echo -e "${COLOR} Installing snappy tools" && tput sgr0
-        sudo add-apt-repository ppa:snappy-dev/tools
+        sudo add-apt-repository -y ppa:snappy-dev/tools
         sudo apt-get update
         sudo apt-get install snappy-tools bzr
     fi
