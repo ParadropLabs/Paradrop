@@ -34,7 +34,7 @@ killvm() {
     if [ -f pid.txt ]; then
         echo -e "${COLOR}Killing snappy virtual machine" && tput sgr0
         KVM="$(cat pid.txt)"
-        kill "${KVM}"
+        sudo kill "${KVM}"
         rm pid.txt
     else
         echo -e "${COLOR}Snappy virtual machine is not running" && tput sgr0
@@ -63,7 +63,12 @@ setup() {
             echo -e '${COLOR}Installing kvm' && tput sgr0
             sudo apt-get install qemu-kvm -y
         fi
-
+    echo -e "${COLOR}Setting up virtualenv" && tput sgr0
+    if [ ! -f ~/venv/bin/activate ]; then
+        sudo apt-get install python-setuptools python-dev build-essential libcurl4-gnutls-dev libffi-dev
+        sudo easy_install pip
+        sudo pip install --upgrade virtualenv
+    fi
         #check for image only download if it does not already exist
         if [ ! -f snappy-vm.img ]; then
             echo -e "${COLOR}Downloading Snappy image." && tput sgr0
@@ -117,20 +122,22 @@ up() {
             WIFI_CMD=""
         fi
 
-        echo "Starting snappy instance on local ssh port 8022."
-        echo "Please wait for the virtual machine to load."
-        echo "Default username:password is ubuntu:ubuntu."
+        echo -e "${COLOR}Starting snappy instance on local ssh port 8022."
+        echo -e "${COLOR}Please wait for the virtual machine to load."
+        echo -e "${COLOR}Default username:password is ubuntu:ubuntu."
 
-        if [ ! -f /dev/kvm ]; then
+        if [ ! -e /dev/kvm ]; then
+            echo -e "${COLOR}/dev/kvm not found, booting with qemu" && tput sgr0
            #qemu-system-x86_64 -nographic -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
            qemu-system-x86_64 -nographic -vga none -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
                 -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
         else
+            echo -e "${COLOR}Booting with kvm" && tput sgr0
             if [ `pidof X` ]; then
-                kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
+                sudo kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
                     -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
             else
-                kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
+                sudo kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
                     -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD -nographic snappy-vm.img &
             fi
         fi
