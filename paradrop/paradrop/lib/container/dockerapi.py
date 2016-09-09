@@ -11,6 +11,7 @@ from pdtools.lib.output import out
 import docker
 import json
 import os
+import re
 import subprocess
 
 from paradrop.lib import settings
@@ -27,6 +28,14 @@ DOCKER_CONF = """
 # Tell docker not to start containers automatically on startup.
 DOCKER_OPTIONS="--restart=false"
 """
+
+# Used to match and suppress noisy progress messages from Docker output.
+#
+# Example:
+# Extracting
+# 862a3e9af0ae
+# [================================================>  ] 64.06 MB/65.7 MB
+suppress_re = re.compile("^(Downloading|Extracting|[a-z0-9]+|\[=*>?\s*\].*)$")
 
 
 def writeDockerConfig():
@@ -81,7 +90,8 @@ def buildImage(update, client, **buildArgs):
                 continue
             else:
                 msg = str(value).rstrip()
-                update.progress(msg)
+                if len(msg) > 0 and suppress_re.match(msg) is None:
+                    update.progress(msg)
 
     return buildSuccess
 
