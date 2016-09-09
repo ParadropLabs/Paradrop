@@ -96,7 +96,7 @@ class PDServerResponse(object):
         self.phrase = response.phrase
         self.headers = response.headers
         self.length = response.length
-        self.success = (response.code == 200)
+        self.success = (response.code >= 200 and response.code < 300)
         self.data = data
 
 
@@ -114,6 +114,12 @@ class PDServerRequest(object):
 
     PDServerRequest objects are not reusable; create a new one for each
     request.
+
+    URL String Substitutions:
+    id -> the router pdid
+
+    Example:
+    /routers/{id}/states -> /routers/halo06/states
     """
 
     # Auth token (JWT): we will automatically request as needed (for the first
@@ -124,10 +130,13 @@ class PDServerRequest(object):
     def __init__(self, path, auth=True):
         self.path = path
 
-        self.url = settings.PDSERVER_URL
+        url = settings.PDSERVER_URL
         if not path.startswith('/'):
-            self.url += '/'
-        self.url += path
+            url += '/'
+        url += path
+
+        # Perform string substitutions.
+        self.url = url.format(id=nexus.core.info.pdid)
 
         self.headers = Headers({
             'Accept': ['application/json'],
@@ -183,18 +192,16 @@ class PDServerRequest(object):
         return d
 
     def receiveResponse(self, response):
-        if response.code in [401, 403]:
+        if response.code == 401:
             # 401 (Unauthorized) may mean our token is no longer valid.
             # Request a new token and then retry the request.
-            #
-            # We also detect 403 (Forbidden) here in case the implementation
-            # returns that instead of 401.
-            authRequest = PDServerRequest('login', auth=False)
-            d = authRequest.post(name=nexus.core.info.pdid,
+            authRequest = PDServerRequest('/auth/router', auth=False)
+            d = authRequest.post(id=nexus.core.info.pdid,
                     password=nexus.core.getKey('apitoken'))
 
             def cbLogin(authResponse):
                 if authResponse.success:
+                    print(authResponse.data)
                     PDServerRequest.token = authResponse.data.get('token', None)
 
                     # Add the new token to our headers.
@@ -211,7 +218,7 @@ class PDServerRequest(object):
 
             d.addCallback(cbLogin)
 
-        elif response.code == 200:
+        elif response.code >= 200 and response.code < 300:
             # Parse the response and trigger callback when ready.
             response.deliverBody(JSONReceiver(response, self.deferred))
 
@@ -219,7 +226,7 @@ class PDServerRequest(object):
             self.deferred.callback(PDServerResponse(response))
 
     def receiveRetryResponse(self, response):
-        if response.code == 200:
+        if response.code >= 200 and response.code < 300:
             # Parse the response and trigger callback when ready.
             response.deliverBody(JSONReceiver(response, self.deferred))
         else:
