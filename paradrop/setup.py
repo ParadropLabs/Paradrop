@@ -10,6 +10,7 @@ setup(
                       'txdbus',
                       'wget',
                       'pyyaml',
+                      'pycurl',
                       'psutil',
                       'pdtools>=0.2.00',
                       'txrestapi',
