@@ -12,7 +12,7 @@ Required Fields
 - updateType: string
   This can one of ["create", "delete", "start", "stop"] for chute operations
   or "sethostconfig" for router operations.
-- name: string, either the chute name or "__PARADROP__" for router operations.
+- name: string, either the chute name or `__PARADROP__` for router operations.
   This field must be present for delete, start, and stop operations which only
   need the name of the chute.
 - config: config object (see either chute or hostconfig below)
@@ -45,7 +45,7 @@ Examples
 {
     "updateClass": "CHUTE",
     "updateType": "delete",
-    "name": "hello-world
+    "name": "hello-world"
 }
 ```
 
