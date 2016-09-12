@@ -8,7 +8,7 @@ import twisted
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.protocol import Protocol
-from twisted.web.client import Agent, FileBodyProducer, Response
+from twisted.web.client import Agent, FileBodyProducer, HTTPConnectionPool, Response
 from twisted.web.http_headers import Headers
 
 from paradrop.lib import settings
@@ -127,6 +127,11 @@ class PDServerRequest(object):
     # requests.
     token = None
 
+    # Using a connection pool enables persistent connections, so we can avoid
+    # the connection setup overhead when sending multiple messages to the
+    # server.
+    pool = HTTPConnectionPool(reactor)
+
     def __init__(self, path, auth=True):
         self.path = path
 
@@ -187,7 +192,7 @@ class PDServerRequest(object):
         return self.deferred
 
     def request(self):
-        agent = Agent(reactor)
+        agent = Agent(reactor, pool=PDServerRequest.pool)
         d = agent.request(self.method, self.url, self.headers, self.body)
         return d
 
