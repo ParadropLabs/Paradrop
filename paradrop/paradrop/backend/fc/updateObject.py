@@ -103,7 +103,7 @@ class UpdateObject(object):
         #d = request.post(**data)
 
         session = getattr(nexus.core, 'session', None)
-        if session is not None
+        if session is not None:
             # Catch the occasional Exception due to connectivity failure.  We
             # don't want to fail a chute installation just because we had problems
             # sending the log messages.
