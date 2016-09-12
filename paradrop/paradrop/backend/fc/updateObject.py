@@ -12,6 +12,7 @@ from paradrop.backend import exc
 from paradrop.backend.fc import chutestorage
 from paradrop.lib import settings
 from paradrop.lib import chute
+from paradrop.lib.utils.http import PDServerRequest
 
 from pdtools.lib import nexus
 from pdtools.lib.output import out
@@ -73,31 +74,43 @@ class UpdateObject(object):
         pass
 
     def progress(self, message):
-        if nexus.core is not None and getattr(nexus.core, 'session', None) is not None:
-            data = {
-                'router': nexus.core.info.pdid,
-                'time': time.time(),
-                'local_update_id': self.tok,
-                'message': message
-            }
+        if self.pkg is not None:
+            self.pkg.request.write(message + '\n')
 
-            # The _id field is set for updates from pdserver but not for
-            # locally-initiated (sideloaded) updates.
-            #
-            # Note that 'local_update_id', on the other hand, will be defined for
-            # all updates because it's just an integer timestamp for the updaet.
-            data['update_id'] = getattr(self, '_id', None)
+        # TODO Look into this.
+        # This might happen during router initialization.  If nexus.core is
+        # None, we do not know the router's identity, so we cannot publish any
+        # messages.
+        if nexus.core is None:
+            return
 
+        data = {
+            'router': nexus.core.info.pdid,
+            'time': time.time(),
+            'local_update_id': self.tok,
+            'message': message
+        }
+
+        # The _id field is set for updates from pdserver but not for
+        # locally-initiated (sideloaded) updates.
+        #
+        # Note that 'local_update_id', on the other hand, will be defined for
+        # all updates because it's just an integer timestamp for the updaet.
+        data['update_id'] = getattr(self, '_id', None)
+
+        # TODO: When the server code is ready, post messages.
+        #request = PDServerRequest('/api/progress')
+        #d = request.post(**data)
+
+        session = getattr(nexus.core, 'session', None)
+        if session is not None
             # Catch the occasional Exception due to connectivity failure.  We
             # don't want to fail a chute installation just because we had problems
             # sending the log messages.
             try:
-                nexus.core.session.stockPublish("org.paradrop.updateProgress", data)
+                session.publish(session.uriPrefix + 'updateProgress', data)
             except Exception as error:
                 out.warn("Publish failed: {} {}".format(error.__class__, error))
-
-        if self.pkg is not None:
-            self.pkg.request.write(message + '\n')
 
     def complete(self, **kwargs):
         """
