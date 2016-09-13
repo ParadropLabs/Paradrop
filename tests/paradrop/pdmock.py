@@ -39,9 +39,12 @@ class MockChuteStorage(object):
 class MockPlans(object):
     def __init__(self):
         self.plans = list()
+        self.abortPlans = list()
 
-    def addPlans(self, priority, plans):
+    def addPlans(self, priority, plans, abortPlans=None):
         self.plans.extend(plans)
+        if abortPlans is not None:
+            self.abortPlans.extend(abortPlans)
 
 
 class MockUpdate(object):

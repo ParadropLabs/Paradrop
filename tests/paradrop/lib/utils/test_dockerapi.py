@@ -36,44 +36,15 @@ def test_build_host_config():
     client.create_host_config = fake_create_host_config
 
     #Check that an empty host_config gives us certain default settings
-    u = fake_update()
-    res = dockerapi.build_host_config(u, client)
+    chute = MagicMock()
+    res = dockerapi.build_host_config(chute, client)
     assert res['network_mode'] == 'bridge'
 
     #Check that passing things through host_config works
-    u = MagicMock()
-    u.new.host_config = {'port_bindings': { 80:9000}, 'dns': ['0.0.0.0', '8.8.8.8']}
-    res = dockerapi.build_host_config(u, client)
+    chute = MagicMock()
+    chute.host_config = {'port_bindings': { 80:9000}, 'dns': ['0.0.0.0', '8.8.8.8']}
+    res = dockerapi.build_host_config(chute, client)
     assert res['dns'] == ['0.0.0.0', '8.8.8.8']
-
-@patch('paradrop.lib.container.dockerapi.out')
-@patch('docker.Client')
-def test_cleanUpDocker(mockDocker, mockOutput):
-    """
-    Test that the failure and clean up function does it's job.
-    """
-    client = MagicMock()
-    mockDocker.return_value = client
-    #call clean up with empty sets, matching sets, and different sets for valid and current images and test
-    for pair in [[[],[]], [[1, 2, 3], [1, 2, 3]], [[{'Id': 1}, {'Id': 2}, {'Id': 3}], [{'Id': 1}, {'Id': 2}, {'Id': 3}, {'Id': 4}, {'Id': 5}]]]:
-        #fake that docker is returning the second list in the pair as the current images and containers on the device
-        client.containers.return_value = pair[1]
-        client.images.return_value = pair[1]
-        dockerapi.cleanUpDocker(pair[0],pair[0])
-        mockDocker.assert_called_with(base_url='unix://var/run/docker.sock', version='auto')
-        client.containers.assert_called_once_with(quiet=True, all=True)
-        client.images.assert_called_once_with(quiet=True, all=False)
-        if pair[1] == pair[0]:
-            assert client.remove_image.call_count == 0
-            assert client.remove_container.call_count == 0
-        else:
-            img_expected = "[call(image={'Id': 4}), call(image={'Id': 5})]"
-            cntr_expected = "[call(container=4), call(container=5)]"
-            assert str(client.remove_image.call_args_list) == img_expected
-            assert str(client.remove_container.call_args_list) == cntr_expected
-            assert client.remove_image.call_count == 2
-            assert client.remove_container.call_count == 2
-        client.reset_mock()
 
 @patch('paradrop.lib.container.dockerapi.setup_net_interfaces')
 @patch('paradrop.lib.container.dockerapi.out')
@@ -88,7 +59,7 @@ def test_restartChute(mockDocker, mockOutput, mockInterfaces):
     mockDocker.return_value = client
     dockerapi.restartChute(update)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
-    mockInterfaces.assert_called_once_with(update)
+    mockInterfaces.assert_called_once_with(update.new)
     client.start.assert_called_once_with(container=update.name)
 
 @patch('paradrop.lib.container.dockerapi.out')
@@ -109,7 +80,7 @@ def test_stopChute(mockDocker, mockOutput):
 @patch('docker.Client')
 def test_removeChute(mockDocker, mockOutput):
     """
-    Test that the stopChute function does it's job.
+    Test that the removeChute function does it's job.
     """
     update = MagicMock()
     update.name = 'test'
@@ -118,7 +89,7 @@ def test_removeChute(mockDocker, mockOutput):
     dockerapi.removeChute(update)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     client.remove_container.assert_called_once_with(container=update.name, force=True)
-    client.remove_image.assert_called_once_with(image='test:latest')
+    client.remove_image.assert_called_once()
     assert update.complete.call_count == 0
     client.reset_mock()
     client.remove_container.side_effect = Exception('Test')
@@ -127,15 +98,13 @@ def test_removeChute(mockDocker, mockOutput):
     except Exception as e:
         assert e.message == 'Test'
     client.remove_container.assert_called_once_with(container=update.name, force=True)
-    assert update.complete.call_count == 1
 
 @patch('paradrop.lib.container.dockerapi.prepare_environment')
-@patch('paradrop.lib.container.dockerapi.cleanUpDocker')
 @patch('paradrop.lib.container.dockerapi.build_host_config')
 @patch('paradrop.lib.container.dockerapi.setup_net_interfaces')
 @patch('paradrop.lib.container.dockerapi.out')
 @patch('docker.Client')
-def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail, prepare_environment):
+def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, prepare_environment):
     """
     Test that the startChute function does it's job.
     """
@@ -152,30 +121,18 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, mockFail
     mockDocker.return_value = client
     prepare_environment.return_value = {}
     dockerapi.startChute(update)
-    mockConfig.assert_called_once_with(update, client)
+    mockConfig.assert_called_once_with(update.new, client)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
-    client.images.assert_called_once_with(quiet=True, all=False)
-    client.containers.assert_called_once_with(quiet=True, all=True)
-    client.build.assert_called_once_with(rm=True, tag='test:latest', fileobj='Dockerfile')
-    client.create_container.assert_called_once_with(image='test:latest', name='test', host_config='ConfigDict', environment={})
+    client.create_container.assert_called_once()
     client.start.assert_called_once_with(123)
-    mockInterfaces.assert_called_once_with(update)
-
-    #Test failed build
-    client.build.return_value = ['{"errorDetail": "Errors"}']
-    assert_raises(Exception, dockerapi.startChute, update)
-    mockFail.assert_called_once_with('images', 'containers')
+    mockInterfaces.assert_called_once_with(update.new)
 
     #Test when create or start throws exceptions
-    mockFail.reset_mock()
     client.build.return_value = ['{"stream": "test"}','{"value": {"test": "testing"}}','{"tests": "stuff"}']
     client.create_container.side_effect = Exception('create container exception')
     assert_raises(Exception, dockerapi.startChute, update)
-    mockFail.assert_called_once_with('images', 'containers')
-    mockFail.reset_mock()
     client.start.side_effect = Exception('start exception')
     assert_raises(Exception, dockerapi.startChute, update)
-    mockFail.assert_called_once_with('images', 'containers')
 
 @patch('paradrop.lib.container.dockerapi.os')
 @patch('paradrop.lib.container.dockerapi.subprocess')
@@ -185,23 +142,23 @@ def test_setup_net_interfaces(mockOutput, mockSubproc, mockOS):
     Test that the setup_net_interfaces function does it's job.
     """
     #Test successful setup
-    update = MagicMock()
-    update.name = 'testing'
-    update.new.getCache.return_value = [{'netType': 'wifi', 'ipaddrWithPrefix': '0.0.0.0/24', 'internalIntf': 'Inside', 'externalIntf': 'Outside'}, {'netType': 'lan'}]
+    chute = MagicMock()
+    chute.name = 'testing'
+    chute.getCache.return_value = [{'netType': 'wifi', 'ipaddrWithPrefix': '0.0.0.0/24', 'internalIntf': 'Inside', 'externalIntf': 'Outside'}, {'netType': 'lan'}]
     mockOS.environ.get.return_value  = ""
     proc = MagicMock()
     mockSubproc.Popen.return_value = proc
     mockSubproc.PIPE = 'piping'
     proc.stdout = ['test1', 'test2']
     proc.stderr = ['error']
-    dockerapi.setup_net_interfaces(update)
-    mockSubproc.Popen.assert_called_once_with(['/apps/paradrop/current/bin/pipework', 'Outside', '-i', 'Inside', update.name, '0.0.0.0/24' ],
+    dockerapi.setup_net_interfaces(chute)
+    mockSubproc.Popen.assert_called_once_with(['/apps/paradrop/current/bin/pipework', 'Outside', '-i', 'Inside', chute.name, '0.0.0.0/24' ],
             stdout=mockSubproc.PIPE, stderr=mockSubproc.PIPE, env={"PATH": ":/apps/bin"})
 
     #Test subprocess throwing an exception
     mockSubproc.Popen.side_effect = OSError('BAD!')
     try:
-        dockerapi.setup_net_interfaces(update)
+        dockerapi.setup_net_interfaces(chute)
     except OSError as e:
         assert e.message == 'BAD!'
 

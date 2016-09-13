@@ -356,7 +356,7 @@ def setup_net_interfaces(chute):
             env['PATH'] += ":" + settings.DOCKER_BIN_DIR
 
         cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i',
-               internalIntf, update.name,  IP]
+               internalIntf, chute.name,  IP]
         out.info("Calling: {}\n".format(" ".join(cmd)))
         try:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
