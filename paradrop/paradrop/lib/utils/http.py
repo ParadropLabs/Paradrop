@@ -132,8 +132,9 @@ class PDServerRequest(object):
     # server.
     pool = HTTPConnectionPool(reactor)
 
-    def __init__(self, path, auth=True):
+    def __init__(self, path, setAuthHeader=True):
         self.path = path
+        self.setAuthHeader = setAuthHeader
 
         url = settings.PDSERVER_URL
         if not path.startswith('/'):
@@ -149,7 +150,7 @@ class PDServerRequest(object):
             'User-Agent': ['ParaDrop/2.5']
         })
 
-        if auth and PDServerRequest.token is not None:
+        if setAuthHeader and PDServerRequest.token is not None:
             auth = 'Bearer {}'.format(PDServerRequest.token)
             self.headers.setRawHeaders('Authorization', [auth])
 
@@ -197,16 +198,20 @@ class PDServerRequest(object):
         return d
 
     def receiveResponse(self, response):
-        if response.code == 401:
+        if response.code == 401 and self.setAuthHeader:
             # 401 (Unauthorized) may mean our token is no longer valid.
             # Request a new token and then retry the request.
-            authRequest = PDServerRequest('/auth/router', auth=False)
+            #
+            # Watch out for infinite recursion here!  If this inner request
+            # returns a 401 code, meaning the id/password is invalid, it should
+            # not go down this code path again (prevented by check against
+            # self.setAuthHeader above).
+            authRequest = PDServerRequest('/auth/router', setAuthHeader=False)
             d = authRequest.post(id=nexus.core.info.pdid,
                     password=nexus.core.getKey('apitoken'))
 
             def cbLogin(authResponse):
                 if authResponse.success:
-                    print(authResponse.data)
                     PDServerRequest.token = authResponse.data.get('token', None)
 
                     # Add the new token to our headers.
