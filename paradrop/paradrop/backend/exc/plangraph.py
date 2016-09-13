@@ -35,6 +35,10 @@ RUNTIME_GET_VIRT_DHCP           = 21
 DHCP_GET_VIRT_RULES             = 22
 
 ###############################################################################
+# Build Docker Image
+STATE_BUILD_IMAGE               = 30
+
+###############################################################################
 # Write Configuration Data
 NAME_SETUP_DIRS                 = 50
 STRUCT_SET_SYSTEM_DEVICES       = 51
@@ -69,11 +73,12 @@ DHCP_RELOAD                     = 89
 STATE_MAKE_EXEC                 = 90
 
 ###############################################################################
-# Manipulate Chute
+# Manipulate Chute Container
 STATE_CALL_STOP                 = 91
 STATE_CALL_UNFREEZE             = 92
 STATE_CALL_START                = 93
 STATE_CALL_FREEZE               = 94
+STATE_CALL_CLEANUP              = 95
 STATE_FILES_START               = 96
 
 COAP_CHANGE_PROCESSES           = 100

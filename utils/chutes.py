@@ -5,6 +5,7 @@ cloud management.
 
 Usage:
     python chutes.py install <host> <port> <config>
+    python chutes.py update <host> <port> <config>
     python chutes.py delete <host> <port> <chute>
     python chutes.py start <host> <port> <chute>
     python chutes.py stop <host> <port> <chute>
@@ -61,6 +62,29 @@ def installChute(host, port, config):
     print 'Installing chute...\n'
     params = {'config': config_json}
     r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/create', data=json.dumps(params), stream=True)
+    for line in r.iter_lines():
+        if line:
+            try:
+                line = json.loads(line)
+                if line.get('success'):
+                    print line.get('message')
+                else:
+                    print 'ERROR: Failed to install chute.(' + urllib.unquote(str(line.get('message'))) + ')'
+            except Exception as e:
+                print line
+
+
+def updateChute(host, port, config):
+    '''
+    Take a local config yaml file and launch chute of given host with pdfcd running on specified port.
+    '''
+    config_json = readChuteConfig(config)
+    if config_json is None:
+        return
+
+    print 'Updating chute...\n'
+    params = {'config': config_json}
+    r = requests.post('http://' + host + ':' + str(port) + '/v1/chute/update', data=json.dumps(params), stream=True)
     for line in r.iter_lines():
         if line:
             try:
@@ -140,7 +164,7 @@ def startChute(host, port, name):
 
 
 def printUsage():
-    print("Usage: {} <install|delete|stop|start> <host> <port> <config>".format(sys.argv[0]))
+    print("Usage: {} <install|update|delete|stop|start> <host> <port> <config>".format(sys.argv[0]))
 
 
 if __name__ == "__main__":
@@ -155,6 +179,8 @@ if __name__ == "__main__":
 
     if cmd == "install":
         installChute(host, port, config)
+    elif cmd == "update":
+        updateChute(host, port, config)
     elif cmd == "delete":
         deleteChute(host, port, config)
     elif cmd == "stop":

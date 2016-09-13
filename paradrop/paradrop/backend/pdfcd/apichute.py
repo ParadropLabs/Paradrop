@@ -15,6 +15,7 @@ class ChuteAPI:
     def __init__(self, rest):
         self.rest = rest
         self.rest.register('POST', '^/v1/chute/create$', self.POST_createChute)
+        self.rest.register('POST', '^/v1/chute/update$', self.POST_updateChute)
         self.rest.register('POST', '^/v1/chute/delete$', self.POST_deleteChute)
         self.rest.register('POST', '^/v1/chute/stop$', self.POST_stopChute)
         self.rest.register('POST', '^/v1/chute/start$', self.POST_startChute)
@@ -33,6 +34,29 @@ class ChuteAPI:
         out.info('Creating chute...')
         # For now fake out a create chute message
         update = dict(updateClass='CHUTE', updateType='create',
+                      tok=timeint(), pkg=apiPkg, func=self.rest.complete)
+
+        update.update(apiPkg.inputArgs.get('config'))
+        self.rest.configurer.updateList(**update)
+
+        # Tell our system we aren't done yet (the configurer will deal with
+        # closing the connection)
+        apiPkg.setNotDoneYet()
+
+    @APIDecorator(requiredArgs=["config"])
+    def POST_updateChute(self, apiPkg):
+        """
+           Description:
+           Arguments:
+               POST request:
+           Returns:
+               On success: SUCCESS object
+               On failure: FAILURE object
+        """
+
+        out.info('Updating chute...')
+        # For now fake out a create chute message
+        update = dict(updateClass='CHUTE', updateType='update',
                       tok=timeint(), pkg=apiPkg, func=self.rest.complete)
 
         update.update(apiPkg.inputArgs.get('config'))

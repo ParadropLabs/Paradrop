@@ -38,6 +38,14 @@ DOCKER_OPTIONS="--restart=false"
 suppress_re = re.compile("^(Downloading|Extracting|[a-z0-9]+|\[=*>?\s*\].*)$")
 
 
+def getImageName(chute):
+    if hasattr(chute, 'version'):
+        return "{}:{}".format(chute.name, chute.version)
+    else:
+        # Compatibility with old chutes missing version numbers.
+        return "{}:latest".format(chute.name)
+
+
 def writeDockerConfig():
     """
     Write options to Docker configuration.
@@ -71,9 +79,38 @@ def writeDockerConfig():
     return written
 
 
-def buildImage(update, client, **buildArgs):
+def buildImage(update):
     """
     Build the Docker image and monitor progress.
+    """
+    out.info('Building image for {}\n'.format(update.new))
+
+    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+
+    repo = getImageName(update.new)
+
+    if hasattr(update, 'dockerfile'):
+        buildSuccess = _buildImage(update, client, rm=True, tag=repo,
+                fileobj=update.dockerfile)
+    elif hasattr(update, 'download'):
+        # download field should be an object with at least 'url' but may also
+        # contain 'user' and 'secret' for authentication.
+        download_args = update.download
+        with downloader(**download_args) as dl:
+            workDir, meta = dl.fetch()
+            buildSuccess = _buildImage(update, client, rm=True, tag=repo,
+                    path=workDir)
+    else:
+        raise Exception("No Dockerfile or download location supplied.")
+
+    #If we failed to build skip creating and starting clean up and fail
+    if not buildSuccess:
+        raise Exception("Building docker image failed; check your Dockerfile for errors.")
+
+
+def _buildImage(update, client, **buildArgs):
+    """
+    Build the Docker image and monitor progress (worker function).
 
     Returns True on success, False on failure.
     """
@@ -96,50 +133,67 @@ def buildImage(update, client, **buildArgs):
     return buildSuccess
 
 
+def removeNewImage(update):
+    """
+    Remove the newly built image during abort sequence.
+    """
+    image = getImageName(update.new)
+    out.info("Removing image {}\n".format(image))
+
+    try:
+        client = docker.Client(base_url="unix://var/run/docker.sock",
+                version='auto')
+        client.remove_image(image=image)
+    except Exception as error:
+        out.warn("Error removing image: {}".format(error))
+
+
+def removeOldImage(update):
+    """
+    Remove the image for the old version of the chute.
+    """
+    image = getImageName(update.old)
+    out.info("Removing image {}\n".format(image))
+
+    try:
+        client = docker.Client(base_url="unix://var/run/docker.sock",
+                version='auto')
+        client.remove_image(image=image)
+    except Exception as error:
+        out.warn("Error removing image: {}".format(error))
+
+
 def startChute(update):
     """
-    Build and deploy a docker container based on the passed in update.
-
-    :param update: The update object containing information about the chute.
-    :type update: obj
-    :returns: None
+    Create a docker container based on the passed in update.
     """
-    out.info('Attempting to start new Chute %s \n' % (update.name))
+    _startChute(update.new)
 
-    repo = update.name + ":latest"
-    name = update.name
+
+def startOldContainer(update):
+    """
+    Create a docker container using the old version of the image.
+    """
+    _startChute(update.old)
+
+
+def _startChute(chute):
+    """
+    Create a docker container based on the passed in chute object.
+    """
+    out.info('Attempting to start new Chute %s \n' % (chute.name))
+
+    repo = getImageName(chute)
+    name = chute.name
 
     c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
 
-    host_config = build_host_config(update, c)
-
-    #Get Id's of current images for comparison upon failure
-    validImages = c.images(quiet=True, all=False)
-    validContainers = c.containers(quiet=True, all=True)
-
-    if hasattr(update, 'dockerfile'):
-        buildSuccess = buildImage(update, c, rm=True, tag=repo,
-                fileobj=update.dockerfile)
-    elif hasattr(update, 'download'):
-        # download field should be an object with at least 'url' but may also
-        # contain 'user' and 'secret' for authentication.
-        download_args = update.download
-        with downloader(**download_args) as dl:
-            workDir, meta = dl.fetch()
-            buildSuccess = buildImage(update, c, rm=True, tag=repo,
-                    path=workDir)
-    else:
-        raise Exception("No Dockerfile or download location supplied.")
-
-    #If we failed to build skip creating and starting clean up and fail
-    if not buildSuccess:
-        cleanUpDocker(validImages, validContainers)
-        raise Exception("Building docker image failed; check your Dockerfile for errors.")
+    host_config = build_host_config(chute, c)
 
     # Set environment variables for the new container.
     # PARADROP_ROUTER_ID can be used to change application behavior based on
     # what router it is running on.
-    environment = prepare_environment(update)
+    environment = prepare_environment(chute)
 
     try:
         container = c.create_container(
@@ -149,10 +203,25 @@ def startChute(update):
         c.start(container.get('Id'))
         out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
     except Exception as e:
-        cleanUpDocker(validImages, validContainers)
         raise e
 
-    setup_net_interfaces(update)
+    setup_net_interfaces(chute)
+
+
+def removeNewContainer(update):
+    """
+    Remove the newly started container during abort sequence.
+    """
+    name = update.new.name
+    out.info("Removing container {}\n".format(name))
+
+    try:
+        client = docker.Client(base_url="unix://var/run/docker.sock",
+                version='auto')
+        client.remove_container(container=name, force=True)
+    except Exception as error:
+        out.warn("Error removing container: {}".format(error))
+
 
 def removeChute(update):
     """
@@ -164,15 +233,36 @@ def removeChute(update):
     """
     out.info('Attempting to remove chute %s\n' % (update.name))
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
-    repo = update.name + ":latest"
+    repo = getImageName(update.old)
     name = update.name
+
     try:
         c.remove_container(container=name, force=True)
+    except Exception as e:
+        update.progress(str(e))
+
+    try:
         c.remove_image(image=repo)
     except Exception as e:
-        #TODO: Might want to notify ourselves we could have removed container but failed to remove image for a number of reasons
-        update.complete(success=False, message=e.message)
-        raise e
+        update.progress(str(e))
+
+
+def removeOldContainer(update):
+    """
+    Remove the docker container for the old version of a chute.
+
+    :param update: The update object containing information about the chute.
+    :type update: obj
+    :returns: None
+    """
+    out.info('Attempting to remove chute %s\n' % (update.name))
+    client = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
+
+    try:
+        client.remove_container(container=update.old.name, force=True)
+    except Exception as e:
+        update.progress(str(e))
+
 
 def stopChute(update):
     """
@@ -198,50 +288,24 @@ def restartChute(update):
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     c.start(container=update.name)
 
-    setup_net_interfaces(update)
+    setup_net_interfaces(update.new)
 
-def cleanUpDocker(validImages, validContainers):
-    """
-    Clean up any intermediate containers that may have resulted from a failure.
-
-    :param validImages: A list of dicts containing the Id's of all the images that should exist on the system.
-    :type validImages: list
-    :param validContainers: A list of the Id's of all the containers that should exist on the system.
-    :type validContainers: list
-    :returns: None
-    """
-    c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-
-    #Clean up containers from failed build/start
-    currContainers = c.containers(quiet=True, all=True)
-    for cntr in currContainers:
-        if not cntr in validContainers:
-            out.info('Removing Invalid container with id: %s' % str(cntr.get('Id')))
-            c.remove_container(container=cntr.get('Id'))
-
-    #Clean up images from failed build
-    currImages = c.images(quiet=True, all=False)
-    for img in currImages:
-        if not img in validImages:
-            out.info('Removing Invalid image with id: %s' % str(img))
-            c.remove_image(image=img)
-
-def build_host_config(update, client=None):
+def build_host_config(chute, client=None):
     """
     Build the host_config dict for a docker container based on the passed in update.
 
-    :param update: The update object containing information about the chute.
-    :type update: obj
+    :param chute: The chute object containing information about the chute.
+    :type chute: obj
     :param client: Docker client object.
     :returns: (dict) The host_config dict which docker needs in order to create the container.
     """
     if client is None:
         client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
 
-    if not hasattr(update.new, 'host_config') or update.new.host_config == None:
+    if not hasattr(chute, 'host_config') or chute.host_config == None:
         config = dict()
     else:
-        config = update.new.host_config
+        config = chute.host_config
 
     host_conf = client.create_host_config(
         #TO support
@@ -266,15 +330,15 @@ def build_host_config(update, client=None):
     return host_conf
 
 
-def setup_net_interfaces(update):
+def setup_net_interfaces(chute):
     """
     Link interfaces in the host to the internal interface in the docker container using pipework.
 
-    :param update: The update object containing information about the chute.
+    :param chute: The chute object containing information about the chute.
     :type update: obj
     :returns: None
     """
-    interfaces = update.new.getCache('networkInterfaces')
+    interfaces = chute.getCache('networkInterfaces')
     for iface in interfaces:
         if iface.get('netType') == 'wifi':
             IP = iface.get('ipaddrWithPrefix')
@@ -307,12 +371,16 @@ def setup_net_interfaces(update):
             raise e
 
 
-def prepare_environment(update):
+def prepare_environment(chute):
     """
     Prepare environment variables for a chute container.
     """
     env = {
-        'PARADROP_CHUTE_NAME': update.name,
+        'PARADROP_CHUTE_NAME': chute.name,
         'PARADROP_ROUTER_ID': nexus.core.info.pdid
     }
+
+    if hasattr(chute, 'version'):
+        env['PARADROP_CHUTE_VERSION'] = chute.version
+
     return env

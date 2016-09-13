@@ -101,6 +101,9 @@ class APIBridge(object):
     def createChute(self, config):
         return self.update('create', **config)
 
+    def updateChute(self, config):
+        return self.update('update', **config)
+
     def deleteChute(self, name):
         return self.update('delete', name=name)
 

@@ -68,6 +68,7 @@ class RouterSession(cxbr.BaseSession):
         yield self.register(self.setConfig, self.uriPrefix + 'setConfig')
 
         yield self.register(self.createChute, self.uriPrefix + 'createChute')
+        yield self.register(self.updateChute, self.uriPrefix + 'updateChute')
         yield self.register(self.deleteChute, self.uriPrefix + 'deleteChute')
         yield self.register(self.startChute, self.uriPrefix + 'startChute')
         yield self.register(self.stopChute, self.uriPrefix + 'stopChute')
@@ -141,6 +142,10 @@ class RouterSession(cxbr.BaseSession):
     def createChute(self, pdid, config):
         out.info('Creating chute...')
         return self.bridge.createChute(config)
+
+    def updateChute(self, pdid, config):
+        out.info('Updating chute...')
+        return self.bridge.updateChute(config)
 
     def deleteChute(self, pdid, name):
         out.info('Deleting chute...')

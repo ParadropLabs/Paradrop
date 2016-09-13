@@ -21,6 +21,11 @@ def generatePlans(update):
     """
     out.verbose("%r\n" % (update))
 
+    if update.updateType in ['create', 'update']:
+        update.plans.addPlans(plangraph.STATE_BUILD_IMAGE,
+                (dockerapi.buildImage, ),
+                (dockerapi.removeNewImage, ))
+
     # If this chute is new (no old version)
     if(update.old is None):
         out.verbose('new chute\n')
@@ -31,7 +36,9 @@ def generatePlans(update):
             return True
         # If we are now running then everything has to be setup for the first time
         if(update.new.state == chute.STATE_RUNNING):
-            update.plans.addPlans(plangraph.STATE_CALL_START, (dockerapi.startChute,))
+            update.plans.addPlans(plangraph.STATE_CALL_START,
+                    (dockerapi.startChute, ),
+                    (dockerapi.removeNewContainer, ))
 
         # Check if the state is invalid, we should return bad things in this case (don't do anything)
         elif(update.new.state == chute.STATE_INVALID):
@@ -51,6 +58,22 @@ def generatePlans(update):
         elif update.updateType == 'create':
             update.failure = update.name + " already exists on this device."
             return True
+        elif update.updateType == 'update':
+            if update.new.version == update.old.version:
+                update.failure = "Version {} already exists on this device.".format(update.new.version)
+                return True
+            elif update.new.version < update.old.version:
+                update.failure = "A newer version ({}) already exists on this device.".format(update.old.version)
+                return True
+            else:
+                update.plans.addPlans(plangraph.STATE_CALL_STOP,
+                        (dockerapi.removeOldContainer, ),
+                        (dockerapi.startOldContainer, ))
+                update.plans.addPlans(plangraph.STATE_CALL_START,
+                        (dockerapi.startChute, ),
+                        (dockerapi.removeNewContainer, ))
+                update.plans.addPlans(plangraph.STATE_CALL_CLEANUP,
+                        (dockerapi.removeOldImage, ))
         elif update.new.state == chute.STATE_STOPPED:
             if update.updateType == 'delete':
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (dockerapi.removeChute,))

@@ -12,12 +12,10 @@ from io import BytesIO
 
 
 def getVirtPreamble(update):
-    out.warn('TODO implement me\n')
-    if update.updateType == 'create':
-        if not hasattr(update, 'dockerfile'):
-            return
-        if update.dockerfile is None:
-            return
-        else:
-            out.info('Using prexisting dockerfile.\n')
-            update.dockerfile = BytesIO(update.dockerfile.encode('utf-8'))
+    if not hasattr(update, 'dockerfile'):
+        return
+    if update.dockerfile is None:
+        return
+    else:
+        out.info('Using prexisting dockerfile.\n')
+        update.dockerfile = BytesIO(update.dockerfile.encode('utf-8'))

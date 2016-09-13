@@ -22,7 +22,7 @@ class Chute(object):
         self.warning = None
 
         self._cache = {}
-        
+
         # See if we need to rm anything from descriptor since we grab the whole thing
         if(strip):
             d = descriptor
@@ -31,13 +31,12 @@ class Chute(object):
             self.__dict__.update(d)
         else:
             self.__dict__.update(descriptor)
-        
+
     def __repr__(self):
         return "<Chute %s - %s>" % (self.name, self.state)
-    
+
     def __str__(self):
-        s = "Chute:%s" % (self.name)
-        return s
+        return "Chute:{}".format(self.name)
 
     def isValid(self):
         """Return True only if the Chute object we have has all the proper things defined to be in a valid state."""
@@ -49,7 +48,7 @@ class Chute(object):
         """Delete the key:val from the _cache dict object."""
         if(key in self._cache.keys()):
             del(self._cache[key])
-    
+
     def setCache(self, key, val):
         """Set the key:val into the _cache dict object to carry around."""
         self._cache[key] = val
@@ -64,7 +63,7 @@ class Chute(object):
             In case of catastrophic failure dump all cache content so we can debug.
         """
         return "\n".join(["%s:%s" % (k,v) for k,v in self._cache.iteritems()])
-    
+
     def appendCache(self, key, val):
         """
             Finds the key they requested and appends the val into it, this function assumes the cache object

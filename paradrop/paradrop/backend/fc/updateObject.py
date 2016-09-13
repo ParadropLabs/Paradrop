@@ -17,6 +17,8 @@ from paradrop.lib.utils.http import PDServerRequest
 from pdtools.lib import nexus
 from pdtools.lib.output import out
 
+
+# Fields that should be present in updates but not chute objects.
 UPDATE_SPECIFIC_ARGS = ["pkg", "func"]
 
 
@@ -195,6 +197,7 @@ class UpdateObject(object):
 # This gives the new chute state if an update of a given type succeeds.
 NEW_CHUTE_STATE = {
     'create': chute.STATE_RUNNING,
+    'update': chute.STATE_RUNNING,
     'start': chute.STATE_RUNNING,
     'restart': chute.STATE_RUNNING,
     'delete': chute.STATE_STOPPED,
@@ -236,6 +239,12 @@ class UpdateChute(UpdateObject):
                           set(self.new.__dict__.keys())
             for k in missingKeys:
                 setattr(self.new, k, getattr(self.old, k))
+
+        # For compatibility with old chutes, patch missing version numbers.
+        if not hasattr(self.old, 'version'):
+            self.old.version = 0
+        if not hasattr(self.new, 'version'):
+            self.new.version = 0
 
     def saveState(self):
         """
