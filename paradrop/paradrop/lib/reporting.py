@@ -57,7 +57,8 @@ class StateReportBuilder(object):
                 'name': chute.name,
                 'state': chute.state,
                 'warning': chute.warning,
-                'version': getattr(chute, 'version', None)
+                'version': getattr(chute, 'version', None),
+                'environment': getattr(chute, 'environment', None)
             })
 
         report.devices = devices.listSystemDevices()

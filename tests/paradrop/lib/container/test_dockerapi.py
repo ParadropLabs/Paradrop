@@ -87,6 +87,7 @@ def test_prepare_environment(core):
     chute = MagicMock()
     chute.name = "test"
     chute.version = 5
+    chute.environment = {'CUSTOM_VARIABLE': 42}
 
     core.info.pdid = 'halo42'
 
@@ -94,3 +95,4 @@ def test_prepare_environment(core):
     assert env['PARADROP_CHUTE_NAME'] == chute.name
     assert env['PARADROP_CHUTE_VERSION'] == chute.version
     assert env['PARADROP_ROUTER_ID'] == core.info.pdid
+    assert env['CUSTOM_VARIABLE'] == 42

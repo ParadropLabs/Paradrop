@@ -374,10 +374,10 @@ def prepare_environment(chute):
     """
     Prepare environment variables for a chute container.
     """
-    env = {
-        'PARADROP_CHUTE_NAME': chute.name,
-        'PARADROP_ROUTER_ID': nexus.core.info.pdid
-    }
+    env = getattr(chute, 'environment', {})
+
+    env['PARADROP_CHUTE_NAME'] = chute.name
+    env['PARADROP_ROUTER_ID'] = nexus.core.info.pdid
 
     if hasattr(chute, 'version'):
         env['PARADROP_CHUTE_VERSION'] = chute.version

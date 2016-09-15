@@ -179,8 +179,7 @@ class PDServerRequest(object):
         """
         self.method = 'PATCH'
 
-        datastr = json.dumps(ops)
-        self.body = FileBodyProducer(StringIO(datastr))
+        self.body = json.dumps(ops)
 
         d = self.request()
         d.addCallback(self.receiveResponse)
@@ -190,8 +189,7 @@ class PDServerRequest(object):
     def post(self, **data):
         self.method = 'POST'
 
-        datastr = json.dumps(data)
-        self.body = FileBodyProducer(StringIO(datastr))
+        self.body = json.dumps(data)
 
         d = self.request()
         d.addCallback(self.receiveResponse)
@@ -201,8 +199,7 @@ class PDServerRequest(object):
     def put(self, **data):
         self.method = 'PUT'
 
-        datastr = json.dumps(data)
-        self.body = FileBodyProducer(StringIO(datastr))
+        self.body = json.dumps(data)
 
         d = self.request()
         d.addCallback(self.receiveResponse)
@@ -210,9 +207,12 @@ class PDServerRequest(object):
         return self.deferred
 
     def request(self):
+        body = None
+        if self.body is not None:
+            body = FileBodyProducer(StringIO(self.body))
+
         agent = Agent(reactor, pool=PDServerRequest.pool)
-        d = agent.request(self.method, self.url, self.headers, self.body)
-        return d
+        return agent.request(self.method, self.url, self.headers, body)
 
     def receiveResponse(self, response):
         if response.code == 401 and self.setAuthHeader:
