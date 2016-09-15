@@ -5,18 +5,27 @@ Update objects are used to install and delete chutes as well as change
 the router host configuration.  The updateClass and updateType fields
 are used to indicate what operation should be performed.
 
+The chute operation called "update" will behave install a chute under
+the following conditions:
+- No version of the chute is currently installed.
+- The new version is greater than the currently installed version.
+
+If a failure is detected while performing an update operation, the system
+gracefully rolls back to the previous working state.  This includes restoring
+the previously installed version of a chute.
+
 Required Fields
 ---------------
 
 - updateClass: string, one of ["ROUTER", "CHUTE"]
 - updateType: string
-  This can one of ["create", "delete", "start", "stop"] for chute operations
-  or "sethostconfig" for router operations.
+  This can one of ["create", "update", "delete", "start", "stop"] for
+  chute operations or "sethostconfig" for router operations.
 - name: string, either the chute name or `__PARADROP__` for router operations.
   This field must be present for delete, start, and stop operations which only
   need the name of the chute.
 - config: config object (see either chute or hostconfig below)
-  This must be present for create or sethostconfig operations.
+  This must be present for create, update or sethostconfig operations.
 
 Examples
 --------
@@ -31,9 +40,13 @@ Examples
         "owner": "Paradrop",
         "date": "2015-07-30",
         "name": "hello-world",
+        "version": 1,
         "description": "Hello world chute",
         "download": {
             "url": "https://github.com/lhartung/test-chute"
+        },
+        "environment": {
+            "CUSTOM_VARIABLE": 42
         }
     }
 }
@@ -65,6 +78,7 @@ Required Fields
 - date: string in YYYY-mm-dd format (not used)
 - name: string, name of the chute
 - description: string
+- version: int > 0
 
 Optional Fields
 ---------------
@@ -80,6 +94,9 @@ projects and any web URL that points to tar/tar.gz file.
 - host_config: object, used to request settings such as port bindings.
 - net: object, used to configure the chute's network environment,
   particularly wireless settings.
+- environment: dictionary of environment variables to set on
+  the running container, these can be used to specify configuration
+  options or secrets for the application at install time.
 
 Host Configuration
 ==================
