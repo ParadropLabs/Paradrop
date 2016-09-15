@@ -116,10 +116,10 @@ class PDServerRequest(object):
     request.
 
     URL String Substitutions:
-    id -> the router pdid
+    router_id -> router id
 
     Example:
-    /routers/{id}/states -> /routers/halo06/states
+    /routers/{router_id}/states -> /routers/halo06/states
     """
 
     # Auth token (JWT): we will automatically request as needed (for the first
@@ -142,7 +142,7 @@ class PDServerRequest(object):
         url += path
 
         # Perform string substitutions.
-        self.url = url.format(id=nexus.core.info.pdid)
+        self.url = url.format(router_id=nexus.core.info.pdid)
 
         self.headers = Headers({
             'Accept': ['application/json'],
@@ -164,6 +164,23 @@ class PDServerRequest(object):
 
         if len(query) > 0:
             self.url += '?' + urlEncodeParams(query)
+
+        d = self.request()
+        d.addCallback(self.receiveResponse)
+
+        return self.deferred
+
+    def patch(self, *ops):
+        """
+        Expects a list of operations in jsonpatch format (http://jsonpatch.com/).
+
+        An example operation would be:
+        {'op': 'replace', 'path': '/completed', 'value': True}
+        """
+        self.method = 'PATCH'
+
+        datastr = json.dumps(ops)
+        self.body = FileBodyProducer(StringIO(datastr))
 
         d = self.request()
         d.addCallback(self.receiveResponse)

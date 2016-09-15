@@ -87,9 +87,7 @@ class UpdateObject(object):
             return
 
         data = {
-            'router': nexus.core.info.pdid,
             'time': time.time(),
-            'local_update_id': self.tok,
             'message': message
         }
 
@@ -98,14 +96,17 @@ class UpdateObject(object):
         #
         # Note that 'local_update_id', on the other hand, will be defined for
         # all updates because it's just an integer timestamp for the updaet.
-        data['update_id'] = getattr(self, '_id', None)
+        update_id = getattr(self, '_id', None)
 
-        # TODO: When the server code is ready, post messages.
-        #request = PDServerRequest('/api/progress')
-        #d = request.post(**data)
+        if update_id is not None:
+            request = PDServerRequest('/api/routers/{}/updates/{}/messages'
+                    .format(nexus.core.info.pdid, update_id))
+            d = request.post(**data)
 
         session = getattr(nexus.core, 'session', None)
         if session is not None:
+            data['update_id'] = update_id
+
             # Catch the occasional Exception due to connectivity failure.  We
             # don't want to fail a chute installation just because we had problems
             # sending the log messages.
@@ -139,11 +140,11 @@ class UpdateObject(object):
         except Exception as e:
             out.exception(e, True)
 
-        # Call the function we were provided
-        self.func(self)
-
         if 'message' in kwargs:
             self.progress(kwargs['message'])
+
+        # Call the function we were provided
+        self.func(self)
 
     def execute(self):
         """

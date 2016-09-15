@@ -144,8 +144,8 @@ class UpdateManager(object):
         if not _auto and self.scheduledCall.running:
             self.scheduledCall.reset()
 
-        request = PDServerRequest('/pdrouters/updates')
-        d = request.get(router=nexus.core.info.pdid, completed=False)
+        request = PDServerRequest('/api/routers/{router_id}/updates')
+        d = request.get(completed=False)
         d.addCallback(self.updatesReceived)
 
         # Make sure the LoopingCall is scheduled to run later.
@@ -162,7 +162,7 @@ class UpdateManager(object):
             print("There was an error receiving updates from the server.")
             return
 
-        updates = response.data.get('updates', [])
+        updates = response.data
         print("Received {} update(s) from server.".format(len(updates)))
         for item in updates:
             if item['_id'] in self.updatesInProgress:
@@ -180,7 +180,13 @@ class UpdateManager(object):
                     pkg=BridgePackage(),
                     func=d.callback)
             update['_id'] = item['_id']
-            update.update(item['config'])
+
+            # Backend might send us garbage; be sure that we only accept the
+            # config field if it is present and is a dict.
+            config = item.get('config', {})
+            if isinstance(config, dict):
+                update.update(config)
+
             APIBridge.configurer.updateList(**update)
 
         # Use a DeferredList to wait until all updates have completed to then
@@ -195,9 +201,10 @@ class UpdateManager(object):
         Internal: callback after an update operation has been completed
         (successfuly or otherwise) and send a notification to the server.
         """
-
-        request = PDServerRequest('/pdrouters/updates/{}'.format(update._id))
-        d = request.put(completed=True, result=update.result)
+        request = PDServerRequest('/api/routers/{router_id}/updates/' + str(update._id))
+        d = request.patch(
+            {'op': 'replace', 'path': '/completed', 'value': True}
+        )
 
         def serverNotified(ignored):
             if update._id in self.updatesInProgress:

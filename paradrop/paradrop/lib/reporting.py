@@ -77,7 +77,7 @@ class ReportSender(object):
             self.retryDelay = self.maxRetryDelay
 
     def send(self, report):
-        request = PDServerRequest('/api/routers/{id}/states')
+        request = PDServerRequest('/api/routers/{router_id}/states')
         d = request.post(**report.__dict__)
 
         # Check for error code and retry.

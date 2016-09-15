@@ -137,22 +137,21 @@ def removeNewImage(update):
     """
     Remove the newly built image during abort sequence.
     """
-    image = getImageName(update.new)
-    out.info("Removing image {}\n".format(image))
-
-    try:
-        client = docker.Client(base_url="unix://var/run/docker.sock",
-                version='auto')
-        client.remove_image(image=image)
-    except Exception as error:
-        out.warn("Error removing image: {}".format(error))
+    _removeImage(update.new)
 
 
 def removeOldImage(update):
     """
     Remove the image for the old version of the chute.
     """
-    image = getImageName(update.old)
+    _removeImage(update.old)
+
+
+def _removeImage(chute):
+    """
+    Remove the image for a chute.
+    """
+    image = getImageName(chute)
     out.info("Removing image {}\n".format(image))
 
     try:
