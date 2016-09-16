@@ -118,6 +118,9 @@ class PDConfigurer:
             try:
                 # Take the object and identify the update type
                 update = updateObject.parse(updateObj)
+
+                # Mark update as having been started.
+                update.started()
                 out.info('Performing update %s\n' % (update))
 
                 # TESTING start

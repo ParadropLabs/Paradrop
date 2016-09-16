@@ -75,6 +75,30 @@ class UpdateObject(object):
         """
         pass
 
+    def started(self):
+        """
+        This function should be called when the updated object is dequeued and
+        execution is about to begin.
+
+        Sends a notification to the pdserver if this is a tracked update.
+        """
+        # TODO Look into this.
+        # This might happen during router initialization.  If nexus.core is
+        # None, we do not know the router's identity, so we cannot publish any
+        # messages.
+        if nexus.core is None:
+            return
+
+        # The _id field is set for updates from pdserver but not for
+        # locally-initiated (sideloaded) updates.
+        #
+        # Note that 'local_update_id', on the other hand, will be defined for
+        # all updates because it's just an integer timestamp for the updaet.
+        update_id = getattr(self, '_id', None)
+        if update_id is not None:
+            request = PDServerRequest('/api/routers/{router_id}/updates/' + str(update_id))
+            request.patch({'op': 'replace', 'path': '/started', 'value': True})
+
     def progress(self, message):
         if self.pkg is not None:
             self.pkg.request.write(message + '\n')
