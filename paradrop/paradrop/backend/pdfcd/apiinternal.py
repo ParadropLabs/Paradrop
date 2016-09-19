@@ -23,7 +23,7 @@ class RouterSession(cxbr.BaseSession):
 
     def onConnect(self):
         out.info('Router session connected.')
-        if (nexus.core.info.pdid and nexus.core.getKey('wamppassword')):
+        if (nexus.core.info.pdid and nexus.core.getKey('apitoken')):
             out.info('Starting WAMP-CRA authentication on realm "{}" as user "{}"...'\
                      .format(self.config.realm, nexus.core.info.pdid))
             self.join(self.config.realm, [u'wampcra'], nexus.core.info.pdid)
@@ -32,7 +32,7 @@ class RouterSession(cxbr.BaseSession):
         if challenge.method == u"wampcra":
             out.verbose("WAMP-CRA challenge received: {}".format(challenge))
 
-            wampPassword = nexus.core.getKey('wamppassword')
+            wampPassword = nexus.core.getKey('apitoken')
             if u'salt' in challenge.extra:
                 # salted secret
                 key = auth.derive_key(wampPassword,
@@ -107,7 +107,7 @@ class RouterSession(cxbr.BaseSession):
 
     def logsFromTime(self, start):
         '''
-        Loads logs that have timestamps after the given time. 
+        Loads logs that have timestamps after the given time.
 
         :param start: seconds since epoch from which to start returning logs
         :type start: int.
@@ -172,7 +172,7 @@ class RouterSession(cxbr.BaseSession):
 @inlineCallbacks
 def api_provision(pdid, key, cert):
     '''
-    Provision this router with an id and a set of keys. 
+    Provision this router with an id and a set of keys.
 
     This is a temporary call until the provisioning process is finalized.
     '''

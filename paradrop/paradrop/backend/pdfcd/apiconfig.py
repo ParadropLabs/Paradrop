@@ -193,9 +193,7 @@ class ConfigAPI(object):
         result['pdid'] = nexus.core.info.pdid
 
         apitoken = nexus.core.getKey('apitoken')
-        wamppassword = nexus.core.getKey('wamppassword')
         result['provisioned'] = (result['pdid'] and \
-                                 wamppassword is not None and \
                                  apitoken is not None)
         result['http_connected'] = status.apiTokenVerified
         result['wamp_connected'] = status.wampConnected
@@ -203,7 +201,7 @@ class ConfigAPI(object):
         apiPkg.request.setHeader('Content-Type', 'application/json')
         apiPkg.setSuccess(json.dumps(result, separators=(',',':')))
 
-    @APIDecorator(requiredArgs=["pdid", "apitoken", "wamppassword"])
+    @APIDecorator(requiredArgs=["pdid", "apitoken"])
     def POST_provision(self, apiPkg):
         """
         Provision the router.
@@ -216,7 +214,6 @@ class ConfigAPI(object):
         """
         pdid = apiPkg.inputArgs.get('pdid')
         apitoken = apiPkg.inputArgs.get('apitoken')
-        wamppassword = apiPkg.inputArgs.get('wamppassword')
 
         apiPkg.request.setHeader('Content-Type', 'text/plain')
 
@@ -226,9 +223,6 @@ class ConfigAPI(object):
             changed = True
         if apitoken != nexus.core.getKey('apitoken'):
             nexus.core.saveKey(apitoken, 'apitoken')
-            changed = True
-        if wamppassword != nexus.core.getKey('wamppassword'):
-            nexus.core.saveKey(wamppassword, 'wamppassword')
             changed = True
 
         if changed:
