@@ -5,7 +5,7 @@
 ###
 source pdbuild.conf
 
-#used to differentiate our output from other. Other output is still shown 
+#used to differentiate our output from other. Other output is still shown
 # in the case of errors
 COLOR='\033[01;33m'
 
@@ -77,7 +77,7 @@ setup() {
                 mkdir buildenv
             fi
 
-            wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz 
+            wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz
             unxz ubuntu-15.04-snappy-amd64-generic.img.xz
             mv ubuntu-15.04-snappy-amd64-generic.img snappy-vm.img
             rm -rf releases.ubuntu.com
@@ -187,9 +187,7 @@ printhelp() {
 #############
 # build()
 ###
-build() {
-    echo "Cleaning build directories"
-
+build_pre() {
     rm -rf buildenv
     rm -rf paradrop/paradrop.egg-info
     rm -rf paradrop/build
@@ -236,6 +234,28 @@ build() {
     pex --disable-cache pdinstall -o snappy_v1/pdinstall/bin/pdinstall -m pdinstall.main:main -f buildenv/
     rm -rf *.egg-info
 
+    sed "s/<DEV_MACHINE_IP>/$DEV_MACHINE_IP/g" snappy_v1/paradrop/bin/env_template.sh > snappy_v1/paradrop/bin/env.sh
+}
+
+# Build the snaps for development
+build() {
+    echo "Cleaning build directories"
+
+    build_pre
+
+    cp snappy_v1/paradrop/bin/runpd.dev snappy_v1/paradrop/bin/runpd
+    #build the snap using snappy dev tools and extract the name of the snap
+    snappy build snappy_v1/paradrop -o snappy_v1
+    snappy build snappy_v1/pdinstall -o snappy_v1
+}
+
+build_prod() {
+    echo "Cleaning build directories"
+
+    build_pre
+
+    cp snappy_v1/paradrop/bin/runpd.prod snappy_v1/paradrop/bin/runpd
+
     #build the snap using snappy dev tools and extract the name of the snap
     snappy build snappy_v1/paradrop -o snappy_v1
     snappy build snappy_v1/pdinstall -o snappy_v1
@@ -276,6 +296,7 @@ run() {
         exit
     fi
 
+    sed "s/<DEV_MACHINE_IP>/$DEV_MACHINE_IP/g" snappy_v1/paradrop/bin/env_template.sh > snappy_v1/paradrop/bin/env.sh
     source snappy_v1/paradrop/bin/env.sh
     snappy_v1/paradrop/bin/pd -l -m development
 }
@@ -394,7 +415,7 @@ update-tools() {
     cd pdtools
 
     python setup.py sdist bdist_wheel
-    twine upload dist/* 
+    twine upload dist/*
 
     rm -rf build/ dist/ *.egg-info
 
@@ -456,14 +477,20 @@ then
     printhelp
 fi
 
+if [ -z $DEV_MACHINE_IP ];
+then
+    echo "DEV_MACHINE_IP is unset, please define it in pdbuild.conf!"
+    exit 1
+fi
+
 ###
 # Call Operations
 ###
-
 case "$1" in
     "help") printhelp;;
     "--help") printhelp;;
     "build") build;;
+    "build_prod") build_prod;;
     # "clean") clean;;
     "run") run;;
     "install_deps") install_deps;;

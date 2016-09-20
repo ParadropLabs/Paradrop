@@ -91,3 +91,6 @@ snap/bin/pipework
 pid.txt
 log.txt
 third-party/
+
+snappy_v1/paradrop/bin/runpd
+snappy_v1/paradrop/bin/env.sh

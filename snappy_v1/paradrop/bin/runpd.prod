@@ -12,5 +12,6 @@ function cleanup {
 trap cleanup EXIT
 
 source $SNAP_APP_PATH/bin/env.sh
+export PDSERVER_URL=$PDSERVER_URL_PRODUCTION
 
 $SNAP_APP_PATH/bin/pd
