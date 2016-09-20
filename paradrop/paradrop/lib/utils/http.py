@@ -6,7 +6,7 @@ from cStringIO import StringIO
 
 import twisted
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredSemaphore
 from twisted.internet.protocol import Protocol
 from twisted.web.client import Agent, FileBodyProducer, HTTPConnectionPool, Response
 from twisted.web.http_headers import Headers
@@ -130,7 +130,13 @@ class PDServerRequest(object):
     # Using a connection pool enables persistent connections, so we can avoid
     # the connection setup overhead when sending multiple messages to the
     # server.
-    pool = HTTPConnectionPool(reactor)
+    pool = HTTPConnectionPool(reactor, persistent=True)
+
+    # Used to control the number of concurrent requests because
+    # HTTPConnectionPool does not do that on its own.
+    # Discussed here:
+    # http://stackoverflow.com/questions/25552432/how-to-make-pooling-http-connection-with-twisted
+    sem = DeferredSemaphore(settings.PDSERVER_MAX_CONCURRENT_REQUESTS)
 
     def __init__(self, path, setAuthHeader=True):
         self.path = path
@@ -146,6 +152,7 @@ class PDServerRequest(object):
 
         self.headers = Headers({
             'Accept': ['application/json'],
+            'Connection': ['keep-alive'],
             'Content-Type': ['application/json'],
             'User-Agent': ['ParaDrop/2.5']
         })
@@ -161,13 +168,10 @@ class PDServerRequest(object):
 
     def get(self, **query):
         self.method = 'GET'
-
         if len(query) > 0:
             self.url += '?' + urlEncodeParams(query)
-
         d = self.request()
         d.addCallback(self.receiveResponse)
-
         return self.deferred
 
     def patch(self, *ops):
@@ -178,41 +182,53 @@ class PDServerRequest(object):
         {'op': 'replace', 'path': '/completed', 'value': True}
         """
         self.method = 'PATCH'
-
         self.body = json.dumps(ops)
-
         d = self.request()
         d.addCallback(self.receiveResponse)
-
         return self.deferred
 
     def post(self, **data):
         self.method = 'POST'
-
         self.body = json.dumps(data)
-
         d = self.request()
         d.addCallback(self.receiveResponse)
-
         return self.deferred
 
     def put(self, **data):
         self.method = 'PUT'
-
         self.body = json.dumps(data)
-
         d = self.request()
         d.addCallback(self.receiveResponse)
-
         return self.deferred
 
     def request(self):
-        body = None
-        if self.body is not None:
-            body = FileBodyProducer(StringIO(self.body))
+        def makeRequest(ignored):
+            body = None
+            if self.body is not None:
+                body = FileBodyProducer(StringIO(self.body))
 
-        agent = Agent(reactor, pool=PDServerRequest.pool)
-        return agent.request(self.method, self.url, self.headers, body)
+            agent = Agent(reactor, pool=PDServerRequest.pool)
+            d = agent.request(self.method, self.url, self.headers, body)
+
+            # Release the semaphore regardless of how the request goes.
+            d.addBoth(releaseSemaphore)
+
+            # Important: return the Deferred object so that caller can wait for
+            # the result of the request.
+            return d
+
+        def releaseSemaphore(result):
+            PDServerRequest.sem.release()
+
+            # Forward the result to the next handler.
+            return result
+
+        d = PDServerRequest.sem.acquire()
+
+        # Make the request once we acquire the semaphore.
+        d.addCallback(makeRequest)
+
+        return d
 
     def receiveResponse(self, response):
         if response.code == 401 and self.setAuthHeader:
@@ -258,3 +274,8 @@ class PDServerRequest(object):
             response.deliverBody(JSONReceiver(response, self.deferred))
         else:
             self.deferred.callback(PDServerResponse(response))
+
+
+# Set the number of connections that can be kept alive in the connection pool.
+# Setting this equal to the size of the semaphore should prevent churn.
+PDServerRequest.pool.maxPersistentPerHost = settings.PDSERVER_MAX_CONCURRENT_REQUESTS

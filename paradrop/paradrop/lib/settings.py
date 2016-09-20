@@ -31,6 +31,7 @@ DEBUG_MODE = False
 # pdserver
 #
 PDSERVER_URL = "https://paradrop.org"
+PDSERVER_MAX_CONCURRENT_REQUESTS = 2
 
 #
 # pdfcd
