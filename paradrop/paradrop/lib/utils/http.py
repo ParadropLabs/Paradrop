@@ -7,6 +7,7 @@ from cStringIO import StringIO
 import twisted
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredSemaphore
+from twisted.internet.error import ConnectionDone
 from twisted.internet.protocol import Protocol
 from twisted.web.client import Agent, FileBodyProducer, HTTPConnectionPool, Response
 from twisted.web.http_headers import Headers
@@ -210,9 +211,6 @@ class PDServerRequest(object):
             agent = Agent(reactor, pool=PDServerRequest.pool)
             d = agent.request(self.method, self.url, self.headers, body)
 
-            # Release the semaphore regardless of how the request goes.
-            d.addBoth(releaseSemaphore)
-
             # Important: return the Deferred object so that caller can wait for
             # the result of the request.
             return d
@@ -223,10 +221,23 @@ class PDServerRequest(object):
             # Forward the result to the next handler.
             return result
 
+        def catchConnectionDone(failure):
+            # Catch ConnectionDone errors which mean we probably received a
+            # stale connection from the cache.  We should just retry.
+            failure.trap(ConnectionDone)
+            print("Caught ConnectionDone error, retrying...")
+            return makeRequest(None)
+
         d = PDServerRequest.sem.acquire()
 
         # Make the request once we acquire the semaphore.
         d.addCallback(makeRequest)
+
+        # Try ConnectionDone errors and try (with semaphore still held).
+        d.addErrback(catchConnectionDone)
+
+        # Release the semaphore regardless of how the request goes.
+        d.addBoth(releaseSemaphore)
 
         return d
 
