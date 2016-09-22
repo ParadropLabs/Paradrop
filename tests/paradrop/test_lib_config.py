@@ -357,7 +357,9 @@ def test_get_network_config_wifi():
     from paradrop.lib.config.network import getNetworkConfigWifi
 
     # Set up enough fake data to make call.
-    update = object()
+    update = MagicMock()
+    update.old = None
+
     cfg = dict()
     cfg['type'] = "wifi"
     cfg['ssid'] = "Paradrop"
@@ -378,17 +380,6 @@ def test_get_network_config():
     Test generating network configuration for a chute update.
     """
     from paradrop.lib.config import network
-
-    # Test interfaceDefsEqual function
-    iface1 = {
-        'name': 'mywifi',
-        'netType': 'wifi',
-        'internalIntf': 'wlan0'
-    }
-    iface2 = iface1.copy()
-    assert network.interfaceDefsEqual(iface1, iface2)
-    iface2['internalIntf'] = 'wlan1'
-    assert not network.interfaceDefsEqual(iface1, iface2)
 
     # Test normal case where key is defined and encryption is implied.
     iface = dict()

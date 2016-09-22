@@ -20,6 +20,18 @@ networkPool = NetworkPool(settings.DYNAMIC_NETWORK_POOL)
 interfaceNumberPool = NumericPool()
 
 
+def getInterfaceDict(chute):
+    """
+    Return interfaces from a chute as a dict with interface names as the keys.
+    Returns an empty dict if chute is None or it had no interfaces.
+    """
+    oldInterfaces = dict()
+    if chute is not None:
+        cachedInterfaces = chute.getCache('networkInterfaces')
+        oldInterfaces = {iface['name']: iface for iface in cachedInterfaces}
+    return oldInterfaces
+
+
 def reclaimNetworkResources(chute):
     """
     Reclaim network resources for a previously running chute.
@@ -35,15 +47,6 @@ def reclaimNetworkResources(chute):
     for iface in interfaces:
         interfaceNumberPool.reserve(iface['extIntfNumber'])
         networkPool.reserve(iface['subnet'])
-
-
-def interfaceDefsEqual(iface1, iface2):
-    check = ["name", "netType", "internalIntf"]
-    for key in check:
-        # Note: it would be a bug if key is missing in either definition.
-        if iface1[key] != iface2[key]:
-            return False
-    return True
 
 
 def getWifiKeySettings(cfg, iface):
@@ -66,9 +69,18 @@ def getWifiKeySettings(cfg, iface):
 
 
 def getNetworkConfigWifi(update, name, cfg, iface):
-    # Claim a subnet for this interface from the pool.
-    subnet = networkPool.next()
-    hosts = subnet.hosts()
+    # Make a dictionary of old interfaces.  Any new interfaces that are
+    # identical to an old one do not need to be changed.
+    oldInterfaces = getInterfaceDict(update.old)
+    if name in oldInterfaces:
+        oldIface = oldInterfaces[iface['name']]
+        subnet = oldIface['subnet']
+        iface['extIntfNumber'] = oldIface['extIntfNumber']
+
+    else:
+        # Claim a subnet for this interface from the pool.
+        subnet = networkPool.next()
+        iface['extIntfNumber'] = interfaceNumberPool.next()
 
     # Generate internal (in the chute) and external (in the host)
     # addresses.
@@ -78,6 +90,7 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     # netmask: 255.255.255.0
     # external: 192.168.30.1
     # internal: 192.168.30.2
+    hosts = subnet.hosts()
     iface['subnet'] = subnet
     iface['netmask'] = str(subnet.netmask)
     iface['externalIpaddr'] = str(hosts.next())
@@ -95,7 +108,6 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     # typical strings such as "eth*" and "wlan*" but not "veth*" or
     # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
     iface['extIntfPrefix'] = "v" + iface['device'] + "."
-    iface['extIntfNumber'] = interfaceNumberPool.next()
 
     # Generate a name for the new interface in the host.
     iface['externalIntf'] = "{}{:04x}".format(
@@ -152,16 +164,12 @@ def getNetworkConfig(update):
     # of this function after partial completion, the abort function can take
     # care of what made it into the list.
     update.new.setCache('networkInterfaces', interfaces)
-
     if not hasattr(update.new, 'net'):
         return None
 
     # Make a dictionary of old interfaces.  Any new interfaces that are
     # identical to an old one do not need to be changed.
-    oldInterfaces = dict()
-    if update.old is not None:
-        cachedInterfaces = update.old.getCache('networkInterfaces')
-        oldInterfaces = {iface['name']: iface for iface in cachedInterfaces}
+    oldInterfaces = getInterfaceDict(update.old)
 
     devices = update.new.getCache('networkDevices')
     devIters = {t: itertools.cycle(devices[t]) for t in devices.keys()}
@@ -179,24 +187,21 @@ def getNetworkConfig(update):
             'internalIntf': cfg['intfName']         # Interface name in chute
         }
 
-        if iface['name'] in oldInterfaces:
-            oldIface = oldInterfaces[iface['name']]
-            if interfaceDefsEqual(iface, oldIface):
-                # If old interface is the same, then keep it and move on.
-                interfaces.append(oldIface)
-                continue
-
-        # Try to find a physical device of the requested type.
-        #
-        # Note: we try this first because it can fail, and then we will not try
-        # to allocate any resources for it.
-        try:
-            device = devIters[cfg['type']].next()
-            iface['device'] = device['name']
-        except (KeyError, StopIteration):
-            out.warn("Request for {} device cannot be fulfilled".
-                     format(cfg['type']))
-            raise Exception("Missing device(s) requested by chute")
+        oldIface = oldInterfaces.get(name, None)
+        if oldIface is None or oldIface['netType'] != iface['netType']:
+            # Try to find a physical device of the requested type.
+            #
+            # Note: we try this first because it can fail, and then we will not try
+            # to allocate any resources for it.
+            try:
+                device = devIters[cfg['type']].next()
+                iface['device'] = device['name']
+            except (KeyError, StopIteration):
+                out.warn("Request for {} device cannot be fulfilled".
+                         format(cfg['type']))
+                raise Exception("Missing device(s) requested by chute")
+        else:
+            iface['device'] = oldIface['device']
 
         if cfg['type'] == "wifi":
             getNetworkConfigWifi(update, name, cfg, iface)
@@ -214,12 +219,17 @@ def abortNetworkConfig(update):
     """
     Release resources claimed by chute network configuration.
     """
+    oldInterfaces = getInterfaceDict(update.old)
+
     # Any interfaces in the cache need to go down, so we will release the
     # interface number and subnet that were allocated to them.
     interfaces = update.new.getCache('networkInterfaces')
     for iface in interfaces:
-        interfaceNumberPool.release(iface['extIntfNumber'])
-        networkPool.release(iface['subnet'])
+        # Only release newly allocated resources.  If update.old exists,
+        # we will be restoring to its state.
+        if iface['name'] not in oldInterfaces:
+            interfaceNumberPool.release(iface['extIntfNumber'])
+            networkPool.release(iface['subnet'])
 
 
 def getOSNetworkConfig(update):
@@ -239,11 +249,7 @@ def getOSNetworkConfig(update):
 
     # Make a dictionary of old interfaces, then remove them as we go
     # through the new interfaces.  Anything remaining should be freed.
-    if update.old is not None:
-        oldInterfaces = update.old.getCache('networkInterfaces')
-        removedInterfaces = {iface['name']: iface for iface in oldInterfaces}
-    else:
-        removedInterfaces = dict()
+    removedInterfaces = getInterfaceDict(update.old)
 
     interfaces = update.new.getCache('networkInterfaces')
 
@@ -263,7 +269,7 @@ def getOSNetworkConfig(update):
         # Add to our OS Network
         osNetwork.append((config, options))
 
-        # This interface is still in use.
+        # This interface is still in use, so take it out of the remove set.
         if iface['name'] in removedInterfaces:
             del removedInterfaces[iface['name']]
 
