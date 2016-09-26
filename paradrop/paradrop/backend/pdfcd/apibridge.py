@@ -179,7 +179,13 @@ class UpdateManager(object):
                     tok=timeint(),
                     pkg=BridgePackage(),
                     func=d.callback)
-            update['_id'] = item['_id']
+
+            # Save fields that relate to external management of this chute.
+            update['external'] = {
+                'update_id': item['_id'],
+                'chute_id': item.get('chute_id', None),
+                'version_id': item.get('version_id', None)
+            }
 
             # Backend might send us garbage; be sure that we only accept the
             # config field if it is present and is a dict.
@@ -201,14 +207,17 @@ class UpdateManager(object):
         Internal: callback after an update operation has been completed
         (successfuly or otherwise) and send a notification to the server.
         """
-        request = PDServerRequest('/api/routers/{router_id}/updates/' + str(update._id))
+        update_id = update.external['update_id']
+
+        request = PDServerRequest('/api/routers/{router_id}/updates/' +
+                str(update_id))
         d = request.patch(
             {'op': 'replace', 'path': '/completed', 'value': True}
         )
 
         def serverNotified(ignored):
-            if update._id in self.updatesInProgress:
-                self.updatesInProgress.remove(update._id)
+            if update_id in self.updatesInProgress:
+                self.updatesInProgress.remove(update_id)
 
         # TODO: If this notification fails to go through, we should retry or
         # build in some other mechanism to inform the server.

@@ -89,13 +89,10 @@ class UpdateObject(object):
         if nexus.core is None:
             return
 
-        # The _id field is set for updates from pdserver but not for
+        # The external field is set for updates from pdserver but not for
         # locally-initiated (sideloaded) updates.
-        #
-        # Note that 'local_update_id', on the other hand, will be defined for
-        # all updates because it's just an integer timestamp for the updaet.
-        update_id = getattr(self, '_id', None)
-        if update_id is not None:
+        if hasattr(self, 'external'):
+            update_id = self.external['update_id']
             request = PDServerRequest('/api/routers/{router_id}/updates/' + str(update_id))
             request.patch({'op': 'replace', 'path': '/started', 'value': True})
 
@@ -115,14 +112,11 @@ class UpdateObject(object):
             'message': message
         }
 
-        # The _id field is set for updates from pdserver but not for
+        # The external field is set for updates from pdserver but not for
         # locally-initiated (sideloaded) updates.
-        #
-        # Note that 'local_update_id', on the other hand, will be defined for
-        # all updates because it's just an integer timestamp for the updaet.
-        update_id = getattr(self, '_id', None)
-
-        if update_id is not None:
+        update_id = None
+        if hasattr(self, 'external'):
+            update_id = self.external['update_id']
             request = PDServerRequest('/api/routers/{}/updates/{}/messages'
                     .format(nexus.core.info.pdid, update_id))
             d = request.post(**data)
