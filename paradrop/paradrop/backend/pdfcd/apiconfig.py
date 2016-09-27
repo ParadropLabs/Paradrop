@@ -251,6 +251,8 @@ class ConfigAPI(object):
                 apiPkg.request.write(json.dumps(result))
                 apiPkg.request.finish()
 
+            status.apiTokenVerified = False
+            status.wampConnected = False
             d = nexus.core.connect(RouterSession)
             d.addCallback(onConnected)
             d.addErrback(onFailure)
