@@ -35,3 +35,21 @@ def test_Configurer(mReload, mUpdObj, mOut):
         assert e.message == 'Super-Bang!'
     assert mUpdObj.parse.call_count == 3
     assert update.execute.call_count == 2
+
+
+def test_performUpdate():
+    storage = MagicMock()
+    reactor = MagicMock()
+    conf = configurer.PDConfigurer(storage, reactor)
+
+    callback = MagicMock()
+    update = {
+        'updateClass': 'CHUTE',
+        'updateType': 'update',
+        'name': 'test',
+        'func': callback,
+        'tok': 0
+    }
+
+    conf._performUpdate(update)
+    callback.assert_called_once()
