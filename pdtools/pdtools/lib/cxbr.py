@@ -1,5 +1,5 @@
 '''
-Wamp utility methods. 
+Wamp utility methods.
 '''
 
 import urlparse
@@ -21,7 +21,7 @@ class BaseClientFactory(websocket.WampWebSocketClientFactory, ReconnectingClient
     # factor and jitter are two variables that control the exponential backoff.
     # The default values in ReconnectingClientFactory seem reasonable.
     initialDelay = 1
-    maxDelay = 600
+    maxDelay = 60
 
     def clientConnectionFailed(self, connector, reason):
         out.info("Connection failed with reason: " + str(reason))
@@ -74,9 +74,8 @@ class BaseSession(ApplicationSession):
         transport_factory = BaseClientFactory(session_factory, url=address)
         if not reconnect:
             transport_factory.maxRetries = 0
-
+        transport_factory.setProtocolOptions(autoPingInterval=8., autoPingTimeout=4.,)
         context_factory = ClientContextFactory()
-
         websocket.connectWS(transport_factory, context_factory)
 
         if start_reactor:
@@ -117,13 +116,13 @@ class BaseSession(ApplicationSession):
     ###################################################
 
     '''
-    Note: this first set of methods have all the REAL implemnetion of caller identification: 
-    the caller's information is always passed along for every call. In the crossbar way of doing 
-    things, however, whats passed along is a session id and not our pdid. 
+    Note: this first set of methods have all the REAL implemnetion of caller identification:
+    the caller's information is always passed along for every call. In the crossbar way of doing
+    things, however, whats passed along is a session id and not our pdid.
 
-    The second set of methods is temporary in that it manually passes the 
-    current sessions' pdid. This is not secure, but will have to do for now in the 
-    absence of crossbar router changes. 
+    The second set of methods is temporary in that it manually passes the
+    current sessions' pdid. This is not secure, but will have to do for now in the
+    absence of crossbar router changes.
     '''
 
     def publish(self, topic, *args, **kwargs):
@@ -170,7 +169,7 @@ class BaseSession(ApplicationSession):
 def _prepend(pdid, topic):
     '''
     In order to make subscription and execution code cleaner, this method automatically
-    injects this classes pdid to the end of any publish or register call. 
+    injects this classes pdid to the end of any publish or register call.
 
     The topic is also converted to a unicode string.
     No consideration is given to 'valid' topics-- thats on you.
