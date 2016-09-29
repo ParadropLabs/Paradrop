@@ -115,24 +115,32 @@ class PDConfigurer:
                 time.sleep(1)
                 continue
 
-            try:
-                # Take the object and identify the update type
-                update = updateObject.parse(updateObj)
+            self._performUpdate(updateObj)
 
-                # Mark update as having been started.
-                update.started()
-                out.info('Performing update %s\n' % (update))
+    def _performUpdate(self, updateObj):
+        """
+        Perform a single update, to be called by performUpdates.
 
-                # TESTING start
-                if(settings.FC_BOUNCE_UPDATE): # pragma: no cover
-                    out.testing('Bouncing update %s, result: %s\n' % (
-                        update, settings.FC_BOUNCE_UPDATE))
-                    update.complete(success=True, message=settings.FC_BOUNCE_UPDATE)
-                    continue
-                # TESTING end
+        This is split from performUpdates for easier unit testing.
+        """
+        try:
+            # Take the object and identify the update type
+            update = updateObject.parse(updateObj)
 
-                # Based on each update type execute could be different
-                update.execute()
+            # Mark update as having been started.
+            update.started()
+            out.info('Performing update %s\n' % (update))
 
-            except Exception as e:
-                out.exception(e, True)
+            # TESTING start
+            if(settings.FC_BOUNCE_UPDATE): # pragma: no cover
+                out.testing('Bouncing update %s, result: %s\n' % (
+                    update, settings.FC_BOUNCE_UPDATE))
+                update.complete(success=True, message=settings.FC_BOUNCE_UPDATE)
+                return
+            # TESTING end
+
+            # Based on each update type execute could be different
+            update.execute()
+
+        except Exception as e:
+            out.exception(e, True)
