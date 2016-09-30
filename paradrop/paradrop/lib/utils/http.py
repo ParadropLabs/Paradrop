@@ -1,12 +1,14 @@
 import base64
 import json
+import pycurl
+import re
 import urllib
 
-from cStringIO import StringIO
+from StringIO import StringIO
 
 import twisted
-from twisted.internet import reactor
-from twisted.internet.defer import Deferred, DeferredSemaphore
+from twisted.internet import reactor, threads
+from twisted.internet.defer import Deferred, DeferredLock, DeferredSemaphore
 from twisted.internet.error import ConnectionDone
 from twisted.internet.protocol import Protocol
 from twisted.web.client import Agent, FileBodyProducer, HTTPConnectionPool, Response
@@ -101,6 +103,183 @@ class PDServerResponse(object):
         self.data = data
 
 
+class HTTPResponse(object):
+    def __init__(self, data=None):
+        self.version = None
+        self.code = None
+        self.phrase = None
+        self.headers = dict()
+        self.length = None
+        self.success = False
+        self.data = data
+
+
+class HTTPRequestDriver(object):
+    def __init__(self):
+        self.headers = {
+            "Accept": "application/json",
+            "Connection": "keep-alive",
+            "Content-Type": "application/json",
+            "User-Agent": "ParaDrop/2.5"
+        }
+
+    def request(self, method, url, body):
+        raise Exception("Not implemented")
+
+    def setHeader(self, key, value):
+        self.headers[key] = value
+
+
+class CurlRequestDriver(HTTPRequestDriver):
+    # Shared curl handle.
+    # May have problems due to issue #411.
+    # https://github.com/pycurl/pycurl/issues/411
+    curl = pycurl.Curl()
+
+    # Lock for the access to curl.
+    lock = DeferredLock()
+
+    code_pattern = re.compile("(HTTP\S*)\s+(\d+)\s+(.*)")
+    header_pattern = re.compile("(\S+): (.*)")
+
+    def __init__(self):
+        super(CurlRequestDriver, self).__init__()
+
+        # Buffer for receiving response.
+        self.buffer = StringIO()
+
+        # Fill in response object.
+        self.response = HTTPResponse()
+
+    def receive(self, ignore):
+        """
+        Receive response from curl and convert it to a response object.
+        """
+        data = self.buffer.getvalue()
+
+        response = self.response
+
+        # Try to parse the content if it's JSON.
+        contentType = response.headers.get('content-type', 'text/html')
+        if 'json' in contentType:
+            try:
+                response.data = json.loads(data)
+            except Exception as error:
+                print("FAILED TO PARSE JSON CRAP")
+                print(data)
+                response.data = data
+        else:
+            response.data = data
+
+        response.success = (response.code >= 200 and response.code < 300)
+        return response
+
+    def receiveHeaders(self, header_line):
+        header_line = header_line.strip()
+
+        match = CurlRequestDriver.code_pattern.match(header_line)
+        if match is not None:
+            self.response.version = match.group(1)
+            self.response.code = int(match.group(2))
+            self.response.phrase = match.group(3)
+            return
+
+        match = CurlRequestDriver.header_pattern.match(header_line)
+        if match is not None:
+            key = match.group(1).lower()
+            self.response.headers[key] = match.group(2)
+
+    def request(self, method, url, body=None):
+        def makeRequest(ignored):
+            curl = CurlRequestDriver.curl
+            curl.reset()
+
+            curl.setopt(pycurl.URL, url)
+            curl.setopt(pycurl.HEADERFUNCTION, self.receiveHeaders)
+            curl.setopt(pycurl.WRITEFUNCTION, self.buffer.write)
+
+            curl.setopt(pycurl.CUSTOMREQUEST, method)
+
+            if body is not None:
+                curl.setopt(pycurl.POSTFIELDS, body)
+
+            headers = []
+            for key, value in self.headers.iteritems():
+                headers.append("{}: {}".format(key, value))
+            curl.setopt(pycurl.HTTPHEADER, headers)
+
+            d = threads.deferToThread(curl.perform)
+            d.addCallback(self.receive)
+            return d
+
+        def releaseLock(result):
+            CurlRequestDriver.lock.release()
+
+            # Forward the result to the next handler.
+            return result
+
+        d = CurlRequestDriver.lock.acquire()
+
+        # Make the request once we acquire the semaphore.
+        d.addCallback(makeRequest)
+
+        # Release the semaphore regardless of how the request goes.
+        d.addBoth(releaseLock)
+        return d
+
+
+class TwistedRequestDriver(HTTPRequestDriver):
+    # Using a connection pool enables persistent connections, so we can avoid
+    # the connection setup overhead when sending multiple messages to the
+    # server.
+    pool = HTTPConnectionPool(reactor, persistent=True)
+
+    # Used to control the number of concurrent requests because
+    # HTTPConnectionPool does not do that on its own.
+    # Discussed here:
+    # http://stackoverflow.com/questions/25552432/how-to-make-pooling-http-connection-with-twisted
+    sem = DeferredSemaphore(settings.PDSERVER_MAX_CONCURRENT_REQUESTS)
+
+    def receive(self, response):
+        """
+        Receive response from twisted web client and convert it to a
+        PDServerResponse object.
+        """
+        deferred = Deferred()
+        response.deliverBody(JSONReceiver(response, deferred))
+        return deferred
+
+    def request(self, method, url, body=None):
+        def makeRequest(ignored):
+            bodyProducer = None
+            if body is not None:
+                bodyProducer = FileBodyProducer(StringIO(body))
+
+            headers = {}
+            for key, value in self.headers.iteritems():
+                headers[key] = [value]
+
+            agent = Agent(reactor, pool=TwistedRequestDriver.pool)
+            d = agent.request(method, url, Headers(headers), bodyProducer)
+            d.addCallback(self.receive)
+            return d
+
+        def releaseSemaphore(result):
+            TwistedRequestDriver.sem.release()
+
+            # Forward the result to the next handler.
+            return result
+
+        d = TwistedRequestDriver.sem.acquire()
+
+        # Make the request once we acquire the semaphore.
+        d.addCallback(makeRequest)
+
+        # Release the semaphore regardless of how the request goes.
+        d.addBoth(releaseSemaphore)
+        return d
+
+
 class PDServerRequest(object):
     """
     Make an HTTP request to pdserver.
@@ -128,20 +307,11 @@ class PDServerRequest(object):
     # requests.
     token = None
 
-    # Using a connection pool enables persistent connections, so we can avoid
-    # the connection setup overhead when sending multiple messages to the
-    # server.
-    pool = HTTPConnectionPool(reactor, persistent=True)
-
-    # Used to control the number of concurrent requests because
-    # HTTPConnectionPool does not do that on its own.
-    # Discussed here:
-    # http://stackoverflow.com/questions/25552432/how-to-make-pooling-http-connection-with-twisted
-    sem = DeferredSemaphore(settings.PDSERVER_MAX_CONCURRENT_REQUESTS)
-
-    def __init__(self, path, setAuthHeader=True):
+    def __init__(self, path, driver=CurlRequestDriver, setAuthHeader=True):
         self.path = path
+        self.driver = driver
         self.setAuthHeader = setAuthHeader
+        self.transportRetries = 0
 
         url = settings.PDSERVER_URL
         if not path.startswith('/'):
@@ -150,17 +320,6 @@ class PDServerRequest(object):
 
         # Perform string substitutions.
         self.url = url.format(router_id=nexus.core.info.pdid)
-
-        self.headers = Headers({
-            'Accept': ['application/json'],
-            'Connection': ['keep-alive'],
-            'Content-Type': ['application/json'],
-            'User-Agent': ['ParaDrop/2.5']
-        })
-
-        if setAuthHeader and PDServerRequest.token is not None:
-            auth = 'Bearer {}'.format(PDServerRequest.token)
-            self.headers.setRawHeaders('Authorization', [auth])
 
         self.body = None
 
@@ -173,7 +332,7 @@ class PDServerRequest(object):
             self.url += '?' + urlEncodeParams(query)
         d = self.request()
         d.addCallback(self.receiveResponse)
-        return self.deferred
+        return d
 
     def patch(self, *ops):
         """
@@ -186,62 +345,33 @@ class PDServerRequest(object):
         self.body = json.dumps(ops)
         d = self.request()
         d.addCallback(self.receiveResponse)
-        return self.deferred
+        return d
 
     def post(self, **data):
         self.method = 'POST'
         self.body = json.dumps(data)
         d = self.request()
         d.addCallback(self.receiveResponse)
-        return self.deferred
+        return d
 
     def put(self, **data):
         self.method = 'PUT'
         self.body = json.dumps(data)
         d = self.request()
         d.addCallback(self.receiveResponse)
-        return self.deferred
-
-    def request(self):
-        def makeRequest(ignored):
-            body = None
-            if self.body is not None:
-                body = FileBodyProducer(StringIO(self.body))
-
-            agent = Agent(reactor, pool=PDServerRequest.pool)
-            d = agent.request(self.method, self.url, self.headers, body)
-
-            # Important: return the Deferred object so that caller can wait for
-            # the result of the request.
-            return d
-
-        def releaseSemaphore(result):
-            PDServerRequest.sem.release()
-
-            # Forward the result to the next handler.
-            return result
-
-        def catchConnectionDone(failure):
-            # Catch ConnectionDone errors which mean we probably received a
-            # stale connection from the cache.  We should just retry.
-            failure.trap(ConnectionDone)
-            print("Caught ConnectionDone error, retrying...")
-            return makeRequest(None)
-
-        d = PDServerRequest.sem.acquire()
-
-        # Make the request once we acquire the semaphore.
-        d.addCallback(makeRequest)
-
-        # Try ConnectionDone errors and try (with semaphore still held).
-        d.addErrback(catchConnectionDone)
-
-        # Release the semaphore regardless of how the request goes.
-        d.addBoth(releaseSemaphore)
-
         return d
 
+    def request(self):
+        driver = self.driver()
+        if self.setAuthHeader and PDServerRequest.token is not None:
+            auth = 'Bearer {}'.format(PDServerRequest.token)
+            driver.setHeader('Authorization', auth)
+        return driver.request(self.method, self.url, self.body)
+
     def receiveResponse(self, response):
+        """
+        Intercept the response object, and if it's a 401 authenticate and retry.
+        """
         if response.code == 401 and self.setAuthHeader:
             # 401 (Unauthorized) may mean our token is no longer valid.
             # Request a new token and then retry the request.
@@ -258,35 +388,24 @@ class PDServerRequest(object):
                 if authResponse.success:
                     PDServerRequest.token = authResponse.data.get('token', None)
 
-                    # Add the new token to our headers.
-                    auth = 'Bearer {}'.format(PDServerRequest.token)
-                    self.headers.setRawHeaders('Authorization', [auth])
-
                     # Retry the original request now that we have a new token.
-                    d = self.request()
-                    d.addCallback(self.receiveRetryResponse)
+                    return self.request()
 
                 else:
                     # Our attempt to get a token failed, so give up.
-                    self.deferred.callback(PDServerResponse(response))
+                    return PDServerResponse(response)
 
             d.addCallback(cbLogin)
-
-        elif response.code >= 200 and response.code < 300:
-            # Parse the response and trigger callback when ready.
-            response.deliverBody(JSONReceiver(response, self.deferred))
+            return d
 
         else:
-            self.deferred.callback(PDServerResponse(response))
+            return response
 
-    def receiveRetryResponse(self, response):
-        if response.code >= 200 and response.code < 300:
-            # Parse the response and trigger callback when ready.
-            response.deliverBody(JSONReceiver(response, self.deferred))
-        else:
-            self.deferred.callback(PDServerResponse(response))
+
+# Initialize pycurl.  Does this do anything?
+pycurl.global_init(pycurl.GLOBAL_ALL)
 
 
 # Set the number of connections that can be kept alive in the connection pool.
 # Setting this equal to the size of the semaphore should prevent churn.
-PDServerRequest.pool.maxPersistentPerHost = settings.PDSERVER_MAX_CONCURRENT_REQUESTS
+TwistedRequestDriver.pool.maxPersistentPerHost = settings.PDSERVER_MAX_CONCURRENT_REQUESTS
