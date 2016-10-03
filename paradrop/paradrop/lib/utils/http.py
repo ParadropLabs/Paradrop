@@ -401,6 +401,13 @@ class PDServerRequest(object):
         else:
             return response
 
+    @classmethod
+    def resetToken(c):
+        """
+        Reset the auth token, to be called if the router's identity has changed.
+        """
+        c.token = None
+
 
 # Initialize pycurl.  Does this do anything?
 pycurl.global_init(pycurl.GLOBAL_ALL)

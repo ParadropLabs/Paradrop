@@ -13,6 +13,7 @@ from paradrop.lib.config import hostconfig
 from paradrop.backend.pdfcd.apibridge import updateManager
 from paradrop.lib.reporting import sendStateReport
 from paradrop.lib import status
+from paradrop.lib.utils.http import PDServerRequest
 
 from .apibridge import updateManager
 
@@ -227,6 +228,7 @@ class ConfigAPI(object):
 
         if changed:
             # the API token is used to authenticate both HTTP and WAMP
+            PDServerRequest.resetToken()
 
             def onFailure(error):
                 result = dict()
