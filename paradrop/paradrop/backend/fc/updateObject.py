@@ -112,6 +112,9 @@ class UpdateObject(object):
             'message': message
         }
 
+        def handleError(error):
+            print("Error sending message: {}".format(error.getErrorMessage()))
+
         # The external field is set for updates from pdserver but not for
         # locally-initiated (sideloaded) updates.
         update_id = None
@@ -120,6 +123,7 @@ class UpdateObject(object):
             request = PDServerRequest('/api/routers/{}/updates/{}/messages'
                     .format(nexus.core.info.pdid, update_id))
             d = request.post(**data)
+            d.addErrback(handleError)
 
         session = getattr(nexus.core, 'session', None)
         if session is not None:

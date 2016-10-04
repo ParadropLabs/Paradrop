@@ -144,9 +144,13 @@ class UpdateManager(object):
         if not _auto and self.scheduledCall.running:
             self.scheduledCall.reset()
 
+        def handleError(error):
+            print("Request for updates failed: {}".format(error.getErrorMessage()))
+
         request = PDServerRequest('/api/routers/{router_id}/updates')
         d = request.get(completed=False)
         d.addCallback(self.updatesReceived)
+        d.addErrback(handleError)
 
         # Make sure the LoopingCall is scheduled to run later.
         if not self.scheduledCall.running:
@@ -221,6 +225,9 @@ class UpdateManager(object):
 
         # TODO: If this notification fails to go through, we should retry or
         # build in some other mechanism to inform the server.
+        #
+        # Not catching errors here so we see a stack trace if there is an
+        # error.  This is an omission that will need to be dealt with.
         d.addCallback(serverNotified)
 
     def allUpdatesComplete(self, *args, **kwargs):
