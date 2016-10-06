@@ -16,3 +16,25 @@ Visit our [website](http://www.paradrop.io) to learn more!
 Since Wi-Fi routers are the central nervous system for all Internet based services in the home, the possibilities are quite endless. We have implemented many example applications, you can see the source code [here](https://github.com/ParadropLabs/Example-Apps). We encourage you to test out Paradrop by cloning our repo and checking out our [getting started](http://paradrop.readthedocs.org/en/latest/#getting-started) page.
 
 
+
+## Building the Paradrop disk image
+
+The following commands build a disk image starting from a clean installation
+of Ubuntu 14.04.
+
+First, set `DEV_MACHINE_IP=paradrop.org` in pdbuild.conf.  pdbuild.sh will
+refuse to run if this variable is not set.
+
+```
+sudo add-apt-repository ppa:snappy-dev/tools
+sudo apt-get update
+sudo apt-get install -y libcurl4-openssl-dev libffi-dev pip python-dev snappy-tools
+sudo pip install pex
+./pdbuild.sh build_prod
+cd snappy_v1
+wget https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap
+wget https://paradrop.io/storage/snaps/hostapd_2.4-1_all.snap
+./build_image.sh
+```
+
+
