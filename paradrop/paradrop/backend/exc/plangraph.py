@@ -18,6 +18,7 @@ RUNTIME_SECURITY_CHECK          = 5
 
 ###############################################################################
 # Configuration Generation
+SNAP_CHECK_VERSION              = 7
 NAME_RESV_PART                  = 8
 STRUCT_GET_SYSTEM_DEVICES       = 9
 STRUCT_GET_HOST_CONFIG          = 10
@@ -81,6 +82,7 @@ STATE_CALL_FREEZE               = 94
 STATE_CALL_CLEANUP              = 95
 STATE_FILES_START               = 96
 
+SNAP_INSTALL                    = 99
 COAP_CHANGE_PROCESSES           = 100
 
 

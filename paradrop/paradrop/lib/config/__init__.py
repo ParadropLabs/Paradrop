@@ -1,9 +1,10 @@
+import configservice
 import devices
-import network
-import wifi
 import dhcp
+import dockerconfig
 import firewall
 import hostconfig
+import network
 import osconfig
-import dockerconfig
-import configservice
+import snap
+import wifi

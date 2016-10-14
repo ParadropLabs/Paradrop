@@ -298,12 +298,31 @@ class UpdateRouter(UpdateObject):
         super(UpdateRouter, self).__init__(obj)
 
 
+class UpdateSnap(UpdateObject):
+    """
+    Updates specifically tailored to installing snaps.
+    """
+    # List of all modules that need to be called during execution planning
+    #
+    # All of the modules listed in UpdateChute perform an extensive series of
+    # steps that are largely irrelevant for host config updates.  Therefore, we
+    # use a different module here.
+    updateModuleList = [
+        exc.snap
+    ]
+
+    def __init__(self, obj):
+        updateType = obj.get('updateType', None)
+        super(UpdateSnap, self).__init__(obj)
+
+
 ###################################################################################################
 # Module functions and variables
 ###################################################################################################
 UPDATE_CLASSES = {
     "CHUTE": UpdateChute,
-    "ROUTER": UpdateRouter
+    "ROUTER": UpdateRouter,
+    "SNAP": UpdateSnap
 }
 
 
