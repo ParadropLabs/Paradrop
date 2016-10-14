@@ -5,6 +5,7 @@
 #
 
 import json
+import pkg_resources
 import time
 
 from StringIO import StringIO
@@ -20,6 +21,19 @@ from paradrop.lib import settings, status
 from paradrop.lib.utils.http import PDServerRequest
 from pdtools.lib import nexus
 from pdtools.lib.output import out
+
+
+def getPackageVersion(name):
+    """
+    Get a python package version.
+
+    Returns: a string or None
+    """
+    try:
+        pkg = pkg_resources.get_distribution(name)
+        return pkg.version
+    except:
+        return None
 
 
 class StateReport(object):
@@ -47,8 +61,12 @@ class StateReportBuilder(object):
 
         report.name = nexus.core.info.pdid
 
-        # TODO: Get paradrop and pdinstall versions.
-        # TODO: Get chute version, time created, etc.
+        # We can get the paradrop version from the installed python package.
+        report.paradropVersion = getPackageVersion('paradrop')
+
+        # TODO: Get pdinstall version - we will have to work with snappy or
+        # devise some other mechanism, since it installs as a completely
+        # separate snap.
 
         report.chutes = []
         chuteStore = chutestorage.ChuteStorage()
