@@ -85,10 +85,10 @@ def callSnappy(command, *args):
 def installSnap(snap):
     """
     Install a snap.
-    
+
     Returns True/False to indicate success/failure.
     """
-    
+
     # If we are changing from one version to another, and the data directory
     # does not already exist, then Snappy will copy data from the running
     # version to the newly installed version.  We make sure that will happen by
@@ -102,15 +102,18 @@ def installSnap(snap):
     if not callSnappy("install", snap.source):
         return False
 
-    return snap.isInstalled()
+    # We use ignoreVersion here because `snappy list` returns a random string
+    # for the version, so we cannot check against the version string in
+    # the snap file name.
+    return snap.isInstalled(ignoreVersion=True)
 
 
 def parseSnappyList(source):
     """
     Parse output of 'snappy list' to find versions of installed snaps.
 
-    Returns dictionary mapping snap name to list of versions installed, e.g.
-    {"paradrop": ["0.1.0"]}.
+    Returns dictionary mapping snap name to the version installed, e.g.
+    {"paradrop": "0.1.0"}.
     """
     snaps = dict()
 
@@ -128,10 +131,7 @@ def parseSnappyList(source):
 
             name = fields[0]
             version = fields[2]
-
-            if name not in snaps:
-                snaps[name] = list()
-            snaps[name].append(version)
+            snaps[name] = version
 
     return snaps
 
@@ -140,8 +140,8 @@ def installedSnaps():
     """
     Get versions of installed snaps.
 
-    Returns dictionary mapping snap name to list of versions installed, e.g.
-    {"paradrop": ["0.1.0"]}.
+    Returns dictionary mapping snap name to the version installed, e.g.
+    {"paradrop": "0.1.0"}.
     """
     snaps = dict()
 
@@ -164,4 +164,4 @@ def isInstalled(name, version=None):
     snaps = installedSnaps()
     if name not in snaps:
         return False
-    return (version is None or version in snaps[name])
+    return (version is None or version == snaps[name])

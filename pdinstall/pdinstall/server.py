@@ -21,7 +21,7 @@ class CommandServer(object):
         if command not in self.handlers:
             self.handlers[command] = list()
         self.handlers[command].append(handler)
-    
+
     def run(self):
         """
         Enter the main loop.
@@ -34,7 +34,7 @@ class CommandServer(object):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.bind(self.address)
         sock.listen(socket.SOMAXCONN)
- 
+
         self.running = True
         while self.running:
             conn, address = sock.accept()

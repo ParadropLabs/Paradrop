@@ -92,7 +92,7 @@ def test_parseSnappyList():
         "paradrop 2015-01-01 0.1.0"
     ]
     snaps = parseSnappyList(source)
-    assert snaps == {'paradrop': ['0.1.0']}
+    assert snaps == {'paradrop': '0.1.0'}
 
 
 def test_installedSnaps():
@@ -111,7 +111,7 @@ def test_installedSnaps():
         ]
 
         snaps = installedSnaps()
-        assert snaps == {'paradrop': ['0.1.0']}
+        assert snaps == {'paradrop': '0.1.0'}
 
         subprocess.Popen.side_effect = Exception("Boom!")
         assert_raises(Exception, installedSnaps)
@@ -126,7 +126,7 @@ def test_isInstalled():
     with patch("pdinstall.snappy.installedSnaps") as installedSnaps:
         installedSnaps.return_value = {}
         assert isInstalled("paradrop") is False
-        installedSnaps.return_value = {"paradrop": ["0.1.0"]}
+        installedSnaps.return_value = {"paradrop": "0.1.0"}
         assert isInstalled("paradrop")
         assert isInstalled("paradrop", "0.1.0")
         assert isInstalled("paradrop", "0.2.0") is False
