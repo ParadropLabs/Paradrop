@@ -18,6 +18,10 @@ PARADROP_SNAP="https://paradrop.io/storage/snaps/v${RELEASE_SNAPPY_VERSION}/para
 PDINSTALL_SNAP="https://paradrop.io/storage/snaps/v${RELEASE_SNAPPY_VERSION}/pdinstall_${RELEASE_SNAPPY_VERSION}_all.snap"
 PEX_CACHE="/var/lib/apps/paradrop/$DEV_SNAPPY_VERSION/pex/install"
 LOCALWEB_LOCATION="paradrop/localweb/."
+PARADROP_RELEASE_DATE="2016-10-10"
+PARADROP_RELEASE_IMAGE="paradrop_router.img.tgz"
+PARADROP_RELEASE_URL="https://paradrop.org/release/${PARADROP_RELEASE_DATE}/${PARADROP_RELEASE_IMAGE}"
+PARADROP_BOOT_IMAGE="paradrop_router.img"
 
 if [ "$INSTANCE" = "remote" ]; then
     ENVIRONMENT="remote"
@@ -64,23 +68,21 @@ setup() {
             sudo apt-get install qemu-kvm -y
         fi
     echo -e "${COLOR}Setting up virtualenv" && tput sgr0
-    if [ ! -f ~/venv/bin/activate ]; then
+    if [ ! -f /usr/local/bin/virtualenv ]; then
         sudo apt-get install python-setuptools python-dev build-essential libcurl4-gnutls-dev libffi-dev
         sudo easy_install pip
         sudo pip install --upgrade virtualenv
     fi
         #check for image only download if it does not already exist
-        if [ ! -f snappy-vm.img ]; then
+        if [ ! -f ${PARADROP_BOOT_IMAGE} ]; then
             echo -e "${COLOR}Downloading Snappy image." && tput sgr0
 
             if ! [ -d "./buildenv" ]; then
                 mkdir buildenv
             fi
 
-            wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz
-            unxz ubuntu-15.04-snappy-amd64-generic.img.xz
-            mv ubuntu-15.04-snappy-amd64-generic.img snappy-vm.img
-            rm -rf releases.ubuntu.com
+            wget ${PARADROP_RELEASE_URL}
+            tar xzf ${PARADROP_RELEASE_IMAGE}
         fi
     fi
     if ! type "add-apt-repository" > /dev/null; then
@@ -105,7 +107,7 @@ up() {
             exit
         fi
 
-        if [ ! -f snappy-vm.img ]; then
+        if [ ! -f ${PARADROP_BOOT_IMAGE} ]; then
             echo "Snappy image not found. Try:"
             echo -e "\t$0 setup"
             exit
@@ -130,21 +132,21 @@ up() {
             echo -e "${COLOR}/dev/kvm not found, booting with qemu" && tput sgr0
            #qemu-system-x86_64 -nographic -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
            qemu-system-x86_64 -nographic -vga none -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
-                -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
+                -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD ${PARADROP_BOOT_IMAGE} &
         else
             echo -e "${COLOR}Booting with kvm" && tput sgr0
             if [ `pidof X` ]; then
                 sudo kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
-                    -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
+                    -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD ${PARADROP_BOOT_IMAGE} &
             else
                 sudo kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9000-:9000 \
-                    -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD -nographic snappy-vm.img &
+                    -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD -nographic ${PARADROP_BOOT_IMAGE} &
             fi
         fi
 
         # mickey has trouble with the kvm forwarding numbers. Might be something already on the port
         # kvm -m 512 -netdev user,id=net0,hostfwd=tcp::8090-:80,hostfwd=tcp::8022-:22,hostfwd=tcp::9999-:14321,hostfwd=tcp::9001-:9000 \
-        #         -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD snappy-vm.img &
+        #         -netdev user,id=net1 -device e1000,netdev=net0 -device e1000,netdev=net1 $WIFI_CMD ${PARADROP_BOOT_IMAGE} &
 
         echo $! > pid.txt
     else
