@@ -41,7 +41,7 @@ STATE_BUILD_IMAGE               = 30
 
 ###############################################################################
 # Write Configuration Data
-NAME_SETUP_DIRS                 = 50
+CREATE_VOLUME_DIRS              = 50
 STRUCT_SET_SYSTEM_DEVICES       = 51
 STRUCT_SET_HOST_CONFIG          = 52
 STRUCT_SET_OS_WIRELESS          = 53

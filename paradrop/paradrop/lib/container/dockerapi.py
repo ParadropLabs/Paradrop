@@ -194,10 +194,14 @@ def _startChute(chute):
     # what router it is running on.
     environment = prepare_environment(chute)
 
+    # create_container expects a list of the internal mount points.
+    volumes = chute.getCache('volumes')
+    intVolumes = [v['bind'] for v in volumes.values()]
+
     try:
         container = c.create_container(
             image=repo, name=name, host_config=host_config,
-            environment=environment
+            environment=environment, volumes=intVolumes
         )
         c.start(container.get('Id'))
         out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
@@ -306,6 +310,8 @@ def build_host_config(chute, client=None):
     else:
         config = chute.host_config
 
+    volumes = chute.getCache('volumes')
+
     host_conf = client.create_host_config(
         #TO support
         port_bindings=config.get('port_bindings'),
@@ -314,7 +320,7 @@ def build_host_config(chute, client=None):
         #network_mode=update.host_config.get('network_mode'),
         network_mode='bridge',
         #extra_hosts=update.host_config.get('extra_hosts'),
-        #binds=config.get('binds'),
+        binds=volumes,
         #links=config.get('links'),
         restart_policy={'MaximumRetryCount': 5, 'Name': 'on-failure'},
         devices=[],
@@ -378,6 +384,8 @@ def prepare_environment(chute):
 
     env['PARADROP_CHUTE_NAME'] = chute.name
     env['PARADROP_ROUTER_ID'] = nexus.core.info.pdid
+    env['PARADROP_DATA_DIR'] = chute.getCache('internalDataDir')
+    env['PARADROP_SYSTEM_DIR'] = chute.getCache('internalSystemDir')
 
     if hasattr(chute, 'version'):
         env['PARADROP_CHUTE_VERSION'] = chute.version

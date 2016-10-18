@@ -1,3 +1,5 @@
+import os
+
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.utils import uci
 from pdtools.lib.output import out
@@ -37,11 +39,20 @@ def getVirtDHCPSettings(update):
             out.warn('DHCP server definition {}\n'.format(res))
             raise Exception("DHCP server definition missing field(s)")
 
+        # Contstruct a path for the lease file that will be visible inside the
+        # chute.
+        leasefile = os.path.join(
+            update.new.getCache('externalSystemDir'),
+            "dnsmasq-{}.leases".format(iface['name'])
+        )
+
         # NOTE: Having one dnsmasq section for each interface deviates from how
         # OpenWRT does things, where they assume a single instance of dnsmasq
         # will be handling all DHCP and DNS needs.
         config = {'type': 'dnsmasq'}
-        options = {}
+        options = {
+            'leasefile': leasefile
+        }
         uciutils.setList(options, 'interface', [iface['externalIntf']])
 
         # Optional: developer can pass in a list of DNS nameservers to use

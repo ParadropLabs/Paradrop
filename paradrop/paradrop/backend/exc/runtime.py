@@ -17,10 +17,15 @@ def generatePlans(update):
             True: abort the plan generation process
     """
     out.verbose("%r\n" % (update))
-    
+
     # Generate virt start script, stored in cache (key: 'virtPreamble')
     update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_PREAMBLE, (config.dockerconfig.getVirtPreamble, ))
-    
+
+    # Make sure volume directories exist.
+    update.plans.addPlans(plangraph.CREATE_VOLUME_DIRS,
+            (config.dockerconfig.createVolumeDirs, ),
+            (config.dockerconfig.abortCreateVolumeDirs, ))
+
     # If the user specifies DHCP then we need to generate the config and store it to disk
     update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_DHCP, (config.dhcp.getVirtDHCPSettings, ))
     update.plans.addPlans(plangraph.RUNTIME_SET_VIRT_DHCP, (config.dhcp.setVirtDHCPSettings, ))

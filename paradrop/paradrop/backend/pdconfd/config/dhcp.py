@@ -1,5 +1,7 @@
 import ipaddress
+import os
 
+from paradrop.lib.utils import pdosq
 from pdtools.lib.output import out
 
 from .base import ConfigObject, ConfigOption
@@ -29,6 +31,7 @@ class ConfigDnsmasq(ConfigObject):
 
     options = [
         ConfigOption(name="interface", type=list),
+        ConfigOption(name="leasefile", type=str),
         ConfigOption(name="noresolv", type=bool, default=False),
         ConfigOption(name="server", type=list)
     ]
@@ -45,12 +48,18 @@ class ConfigDnsmasq(ConfigObject):
         else:
             interfaces = self.interface
 
-        leaseFile = "{}/dnsmasq-{}.leases".format(
-            self.manager.writeDir, visibleName)
+        if self.leasefile is None:
+            self.leasefile = "{}/dnsmasq-{}.leases".format(
+                self.manager.writeDir, visibleName)
+        pdosq.makedirs(os.path.dirname(self.leasefile))
+
         pidFile = "{}/dnsmasq-{}.pid".format(
             self.manager.writeDir, visibleName)
+        pdosq.makedirs(os.path.dirname(pidFile))
+
         outputPath = "{}/dnsmasq-{}.conf".format(
             self.manager.writeDir, visibleName)
+        pdosq.makedirs(os.path.dirname(outputPath))
 
         with open(outputPath, "w") as outputFile:
             outputFile.write("#" * 80 + "\n")
@@ -60,7 +69,7 @@ class ConfigDnsmasq(ConfigObject):
             outputFile.write("# Section: {}\n".format(str(self)))
             outputFile.write("#" * 80 + "\n")
             outputFile.write("\n")
-            outputFile.write("dhcp-leasefile={}\n".format(leaseFile))
+            outputFile.write("dhcp-leasefile={}\n".format(self.leasefile))
 
             if self.noresolv:
                 outputFile.write("no-resolv\n")

@@ -223,6 +223,7 @@ def test_config_dhcp():
     dhcp.getVirtDHCPSettings(update)
 
     interfaces = fake_interface_list()
+    update.new.setCache("externalSystemDir", "/tmp")
     update.new.setCache("networkInterfaces", interfaces)
 
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()

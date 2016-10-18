@@ -68,6 +68,30 @@ UCI_CONFIG_DIR = "/etc/config"
 UCI_BACKUP_DIR = "/tmp"
 
 #
+# Chute data directory is used to provide persistence for chute data.
+# The developer can store files here and they will persist across chute
+# updates and restarts (but not uninstallation).
+#
+# Note: we do not want this in SNAP_APP_DATA_PATH because that path
+# contains the snap version.  We want this path to stay constant across
+# paradrop upgrades because chutes will have volumes mounted here.
+#
+# Internal is inside the chute; external is in the host.
+#
+INTERNAL_DATA_DIR = "/data"
+EXTERNAL_DATA_DIR = "/var/lib/apps/paradrop/data/{chute}"
+
+#
+# System directory is used to share system information from the host
+# down to the chute such as a list of devices connected to WiFi.  This
+# is mounted read-only inside the chute.
+#
+# Internal is inside the chute; external is in the host.
+#
+INTERNAL_SYSTEM_DIR = "/paradrop"
+EXTERNAL_SYSTEM_DIR = "/var/run/paradrop/system/{chute}"
+
+#
 # pdconfd
 #
 # PDCONFD_WRITE_DIR: Directory where automatically generated config files

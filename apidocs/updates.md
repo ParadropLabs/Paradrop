@@ -88,15 +88,20 @@ full Dockerfile in the configuration object or use "download" to specify
 a URL for the project.  The download method is supported for github
 projects and any web URL that points to tar/tar.gz file.
 
+- dataDir: (default: /data) directory inside the chute that will be used
+  to store persistent data across chute restarts and upgrades.
 - dockerfile: string containing contents of Dockerfile.
 - download: object containing "url" field and optionally "user" and
   "secret" fields for authentication.
-- host_config: object, used to request settings such as port bindings.
-- net: object, used to configure the chute's network environment,
-  particularly wireless settings.
 - environment: dictionary of environment variables to set on
   the running container, these can be used to specify configuration
   options or secrets for the application at install time.
+- host_config: object, used to request settings such as port bindings.
+- net: object, used to configure the chute's network environment,
+  particularly wireless settings.
+- systemDir: (default: /paradrop) directory inside the chute that can
+  be used to read system information such as a list of devices connected
+  to the WiFi access point.
 
 Host Configuration
 ==================
