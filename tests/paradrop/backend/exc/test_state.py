@@ -7,11 +7,16 @@ def test_state_generatePlans():
 
     update = MagicMock()
 
+    # Check assumption about how MagicMock works.
+    assert update.old is not None
+
     # Update to newer version should be ok.
     update.updateType = "update"
     update.old.version = 1
     update.old.version = 2
-    assert generatePlans(update) is None
+    result = generatePlans(update)
+    print(result)
+    assert result is None
 
     # Update to same version should return True for failure.
     update.old.version = 1
