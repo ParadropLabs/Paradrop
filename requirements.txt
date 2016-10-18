@@ -19,7 +19,7 @@ pbr==1.10.0
 psutil==4.3
 pyasn1==0.1.9
 pyasn1-modules==0.0.8
-pycparser==2.14
+pycparser==2.16
 pycurl==7.43.0
 pyOpenSSL==16.0.0
 PyYAML==3.11
