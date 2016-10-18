@@ -47,14 +47,16 @@ class ResourcePool(object):
         # There is a bug if we hit this line.
         raise Exception("No items left in pool (BUG)")
 
-    def release(self, item):
+    def release(self, item, strict=True):
         out.info("Trying to release {} from pool {}\n".format(str(item),
                  self.__class__.__name__))
         if item in self.used:
             self.used.remove(item)
             self.recentlyReleased.append(item)
-        else:
+        elif strict:
             raise Exception("Trying to release unreserved item")
+        else:
+            out.warn("BUG: Trying to release unreserved item")
 
     def reserve(self, item, strict=True):
         """

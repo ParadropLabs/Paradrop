@@ -228,8 +228,8 @@ def abortNetworkConfig(update):
         # Only release newly allocated resources.  If update.old exists,
         # we will be restoring to its state.
         if iface['name'] not in oldInterfaces:
-            interfaceNumberPool.release(iface['extIntfNumber'])
-            networkPool.release(iface['subnet'])
+            interfaceNumberPool.release(iface['extIntfNumber'], strict=False)
+            networkPool.release(iface['subnet'], strict=False)
 
 
 def getOSNetworkConfig(update):
@@ -275,10 +275,10 @@ def getOSNetworkConfig(update):
 
     for iface in removedInterfaces.values():
         # Release the external interface name.
-        interfaceNumberPool.release(iface['extIntfNumber'])
+        interfaceNumberPool.release(iface['extIntfNumber'], strict=False)
 
         # Release the subnet so another chute can use it.
-        networkPool.release(iface['subnet'])
+        networkPool.release(iface['subnet'], strict=False)
 
     update.new.setCache('osNetworkConfig', osNetwork)
 
