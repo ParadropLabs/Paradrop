@@ -46,6 +46,41 @@ def getImageName(chute):
         return "{}:latest".format(chute.name)
 
 
+def getPortList(chute):
+    """
+    Get a list of ports to expose in the format expected by create_container.
+
+    Uses the port binding dictionary from the chute host_config section.
+    The keys are expected to be integers or strings in one of the
+    following formats: "port" or "port/protocol".
+
+    Example:
+    port_bindings = {
+        "1111/udp": 1111,
+        "2222": 2222
+    }
+    getPortList returns [(1111, 'udp'), 2222]
+    """
+    if not hasattr(chute, 'host_config') or chute.host_config == None:
+        return []
+
+    config = chute.host_config
+
+    ports = []
+    for port in config.get('port_bindings', {}).keys():
+        if isinstance(port, int):
+            ports.append(port)
+            continue
+
+        parts = port.split('/')
+        if len(parts) == 1:
+            ports.append(int(parts[0]))
+        else:
+            ports.append((int(parts[0]), parts[1]))
+
+    return ports
+
+
 def writeDockerConfig():
     """
     Write options to Docker configuration.
@@ -194,6 +229,10 @@ def _startChute(chute):
     # what router it is running on.
     environment = prepare_environment(chute)
 
+    # Passing a list of internal port numbers to create_container exposes the
+    # ports in case the Dockerfile is missing EXPOSE commands.
+    intPorts = getPortList(chute)
+
     # create_container expects a list of the internal mount points.
     volumes = chute.getCache('volumes')
     intVolumes = [v['bind'] for v in volumes.values()]
@@ -201,7 +240,7 @@ def _startChute(chute):
     try:
         container = c.create_container(
             image=repo, name=name, host_config=host_config,
-            environment=environment, volumes=intVolumes
+            environment=environment, ports=intPorts, volumes=intVolumes
         )
         c.start(container.get('Id'))
         out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))

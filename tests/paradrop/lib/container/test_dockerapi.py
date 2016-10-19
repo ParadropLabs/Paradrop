@@ -18,6 +18,25 @@ def test_getImageName():
     assert result == "test:latest"
 
 
+def test_getPortList():
+    chute = MagicMock()
+
+    # Test with missing host_config.
+    chute.host_config = None
+    assert dockerapi.getPortList(chute) == []
+
+    chute.host_config = {
+        'port_bindings': {
+            "1111/udp": 1111,
+            "2222": 2222
+        }
+    }
+
+    result = dockerapi.getPortList(chute)
+    assert (1111, 'udp') in result
+    assert 2222 in result
+
+
 @patch('paradrop.lib.container.downloader.downloader')
 @patch('paradrop.lib.container.dockerapi._buildImage')
 @patch('docker.Client')
