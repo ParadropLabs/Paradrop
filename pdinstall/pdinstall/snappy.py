@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import re
 import shutil
@@ -50,7 +52,7 @@ class Snap(object):
             return isInstalled(self.name, self.version)
 
 
-def callSnappy(command, *args):
+def callSnappy(command, *args, **kwargs):
     """
     Call a snappy command.
 
@@ -58,31 +60,33 @@ def callSnappy(command, *args):
 
     Returns True/False indicating success or failure.
     """
+    progress = kwargs.get('progress', print)
+
     cmd = ["snappy", command]
     if command == "install":
         cmd.append("--allow-unauthenticated")
     cmd.extend(args)
 
-    print("Call: {}".format(" ".join(cmd)))
+    progress("Call: {}".format(" ".join(cmd)))
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                    stderr=subprocess.PIPE)
     except Exception as e:
-        print('Warning: "snappy {}" command failed: {}'.format(
+        progress('Warning: "snappy {}" command failed: {}'.format(
               command, e))
         return False
 
     for line in proc.stdout:
-        print(" . " + line.rstrip())
+        progress(" . " + line.rstrip())
     for line in proc.stderr:
-        print(" ! " + line.rstrip())
+        progress(" ! " + line.rstrip())
 
     proc.wait()
-    print("Command returned: {}".format(proc.returncode))
+    progress("Command returned: {}".format(proc.returncode))
     return proc.returncode == 0
 
 
-def installSnap(snap):
+def installSnap(snap, progress=print):
     """
     Install a snap.
 
@@ -99,7 +103,7 @@ def installSnap(snap):
         if os.path.exists(dataDir):
             shutil.rmtree(dataDir)
 
-    if not callSnappy("install", snap.source):
+    if not callSnappy("install", snap.source, progress=progress):
         return False
 
     # We use ignoreVersion here because `snappy list` returns a random string

@@ -3,6 +3,7 @@
 
 from paradrop.lib import pdinstall
 from paradrop.lib.reporting import getPackageVersion
+from paradrop.lib.utils.http import PDServerRequest
 
 
 def checkVersion(update):
@@ -28,5 +29,16 @@ def beginInstall(update):
     data = {
         'sources': update.sources
     }
+
+    # If the update came from pdserver, add extra information so that pdinstall
+    # will be able to send progress messages back to pdserver.
+    if hasattr(update, 'external'):
+        # pdinstall will be responsible for reporting when the update is
+        # complete.
+        update.delegated = True
+
+        external = PDServerRequest.getServerInfo()
+        external['update_id'] = update.external['update_id']
+        data['external'] = external
 
     pdinstall.sendCommand('install', data)

@@ -402,6 +402,20 @@ class PDServerRequest(object):
             return response
 
     @classmethod
+    def getServerInfo(c):
+        """
+        Return the information needed to send API messages to the server.
+
+        This can be used by an external program (e.g. pdinstall).
+        """
+        info = {
+            'authorization': 'Bearer {}'.format(c.token),
+            'router_id': nexus.core.info.pdid,
+            'server': settings.PDSERVER_URL
+        }
+        return info
+
+    @classmethod
     def resetToken(c):
         """
         Reset the auth token, to be called if the router's identity has changed.

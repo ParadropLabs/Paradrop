@@ -168,8 +168,26 @@ class UpdateManager(object):
 
         updates = response.data
         print("Received {} update(s) from server.".format(len(updates)))
+
+        # Remove old updates from the set of in progress updates.  These are
+        # updates that the server is no longer sending to us.
+        receivedSet = set(item['_id'] for item in updates)
+        oldUpdates = self.updatesInProgress - receivedSet
+        self.updatesInProgress -= oldUpdates
+
         for item in updates:
-            if item['_id'] in self.updatesInProgress:
+            # TODO: Handle updates with started=True very carefully.
+            #
+            # There are at least two interesting cases:
+            # 1. We started an update but crashed or rebooted without
+            # completing it.
+            # 2. We started an upgrade to paradrop, the daemon was just
+            # restarted, but pdinstall has not reported that the update is
+            # complete yet.
+            #
+            # If we skip updates with started=True, we will not retry updates
+            # in case #1.
+            if item['_id'] in self.updatesInProgress or item.get('started', False):
                 continue
             else:
                 self.updatesInProgress.add(item['_id'])
@@ -211,6 +229,11 @@ class UpdateManager(object):
         Internal: callback after an update operation has been completed
         (successfuly or otherwise) and send a notification to the server.
         """
+        # If delegated to an external program, we do not report to pdserver
+        # that the update is complete.
+        if update.delegated:
+            return
+
         update_id = update.external['update_id']
 
         request = PDServerRequest('/api/routers/{router_id}/updates/' +
@@ -219,16 +242,11 @@ class UpdateManager(object):
             {'op': 'replace', 'path': '/completed', 'value': True}
         )
 
-        def serverNotified(ignored):
-            if update_id in self.updatesInProgress:
-                self.updatesInProgress.remove(update_id)
-
         # TODO: If this notification fails to go through, we should retry or
         # build in some other mechanism to inform the server.
         #
         # Not catching errors here so we see a stack trace if there is an
         # error.  This is an omission that will need to be dealt with.
-        d.addCallback(serverNotified)
 
     def allUpdatesComplete(self, *args, **kwargs):
         print("All updates complete, sending state report to server...")

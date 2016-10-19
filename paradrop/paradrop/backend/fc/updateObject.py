@@ -63,6 +63,11 @@ class UpdateObject(object):
         # Save a timestamp from when the update object was created.
         self.createdTime = time.time()
 
+        # Set to True if this update is delegated to an external program (e.g.
+        # pdinstall).  In that case, the external program will be responsible
+        # for reporting on the completion status of the update.
+        self.delegated = False
+
     def __repr__(self):
         return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
 
