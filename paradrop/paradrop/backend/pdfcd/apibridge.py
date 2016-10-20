@@ -235,11 +235,13 @@ class UpdateManager(object):
             return
 
         update_id = update.external['update_id']
+        success = update.result.get('success', False)
 
         request = PDServerRequest('/api/routers/{router_id}/updates/' +
                 str(update_id))
         d = request.patch(
-            {'op': 'replace', 'path': '/completed', 'value': True}
+            {'op': 'replace', 'path': '/completed', 'value': True},
+            {'op': 'replace', 'path': '/success', 'value': success}
         )
 
         # TODO: If this notification fails to go through, we should retry or

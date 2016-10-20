@@ -20,12 +20,11 @@ class ProgressHandler(object):
         if authorization is not None:
             self.session.headers.update({'authorization': authorization})
 
-    def complete(self):
-        data = [{
-            'op': 'replace',
-            'path': '/completed',
-            'value': True
-        }]
+    def complete(self, success=False):
+        data = [
+            {'op': 'replace', 'path': '/completed', 'value': True},
+            {'op': 'replace', 'path': '/success', 'value': success}
+        ]
         response = self.session.patch(self.completed_url, json.dumps(data), stream=False)
 
     def write(self, message):

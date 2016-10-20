@@ -113,7 +113,7 @@ def installHandler(data):
             progress=progress)
 
     if handler is not None:
-        handler.complete()
+        handler.complete(success)
 
     return success
 
