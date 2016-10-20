@@ -31,7 +31,6 @@ from . import apiconfig
 from . import apistatus
 
 # temp
-from paradrop.backend.pdfcd.apiinternal import Base
 from paradrop.backend.pdfcd import apiinternal
 
 
@@ -297,7 +296,6 @@ def setup(args=None):
 
     # Setup API server
     api = ParadropAPIServer(reactor)
-    api.putChild('internal', Base(apiinternal, allowNone=True))
     site = Site(api, timeout=None)
 
     # Development mode

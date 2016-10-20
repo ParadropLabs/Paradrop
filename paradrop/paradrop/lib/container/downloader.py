@@ -51,10 +51,10 @@ class Downloader(object):
             self.workDir = None
 
     def download(self):
-        pass
+        raise NotImplementedError
 
     def meta(self):
-        pass
+        raise NotImplementedError
 
     def fetch(self):
         """

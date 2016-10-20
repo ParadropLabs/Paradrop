@@ -20,3 +20,52 @@ def test_getInterfaceDict():
     ifaces = network.getInterfaceDict(chute)
     assert 'eth0' in ifaces
     assert 'eth1' in ifaces
+
+
+def test_getNetworkConfigWifi():
+    update = MagicMock()
+    cfg = MagicMock()
+    iface = {
+        'device': 'verylongdevice'
+    }
+
+    # Exception: Interface name is too long
+    assert_raises(Exception, network.getNetworkConfigWifi, update, "test", cfg, iface)
+
+
+def test_getNetworkConfig():
+    update = MagicMock()
+    update.old = None
+
+    update.new.net = {
+        'wifi': {
+            'dhcp': {}
+        }
+    }
+
+    # Exception: Interafce definition missing field(s)
+    assert_raises(Exception, network.getNetworkConfig, update)
+
+    update.new.net = {
+        'wifi': {
+            'intfName': 'wlan0',
+            'type': 'other', # use 'other' to skip wifi logic
+            'dhcp': {}
+        }
+    }
+
+    # Exception: Missing device(s) requested by chute
+    assert_raises(Exception, network.getNetworkConfig, update)
+
+    update.new.getCache.return_value = {'other': [{'name': 'wlan0'}]}
+    network.getNetworkConfig(update)
+
+    # Should have called setCache with a list containing one interface.
+    args, kwargs = update.new.setCache.call_args
+    key, value = args
+    assert key == 'networkInterfaces'
+    assert isinstance(value, list) and len(value) == 1
+
+    # Should have passed through the dhcp section.
+    iface = value[0]
+    assert 'dhcp' in iface
