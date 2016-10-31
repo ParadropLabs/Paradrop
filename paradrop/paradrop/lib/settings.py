@@ -92,6 +92,15 @@ INTERNAL_SYSTEM_DIR = "/paradrop"
 EXTERNAL_SYSTEM_DIR = "/var/run/paradrop/system/{chute}"
 
 #
+# Username and password to access the private registry.
+#
+# TODO: The router should receive credentials from pdserver or use something
+# unique like its API key.
+#
+REGISTRY_USERNAME = "routers"
+REGISTRY_PASSWORD = "zai7geigh0ujahQu"
+
+#
 # pdconfd
 #
 # PDCONFD_WRITE_DIR: Directory where automatically generated config files

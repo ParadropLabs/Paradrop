@@ -39,7 +39,9 @@ suppress_re = re.compile("^(Downloading|Extracting|[a-z0-9]+|\[=*>?\s*\].*)$")
 
 
 def getImageName(chute):
-    if hasattr(chute, 'version'):
+    if hasattr(chute, 'external_image'):
+        return chute.external_image
+    elif hasattr(chute, 'version'):
         return "{}:{}".format(chute.name, chute.version)
     else:
         # Compatibility with old chutes missing version numbers.
@@ -124,6 +126,18 @@ def buildImage(update):
 
     repo = getImageName(update.new)
 
+    if hasattr(update.new, 'external_image'):
+        # If the pull fails, we will fall through and attempt a local build.
+        # Be aware, in that case, the image will be tagged as if it came from
+        # the registry (e.g. registry.exis.io/image) but will have a different
+        # image id from the published version.  The build should be effectively
+        # the same, though.
+        pulled = _pullImage(update, client)
+        if pulled:
+            return None
+        else:
+            update.progress("Pull failed, attempting a local build.")
+
     if hasattr(update, 'dockerfile'):
         buildSuccess = _buildImage(update, client, rm=True, tag=repo,
                 fileobj=update.dockerfile)
@@ -166,6 +180,46 @@ def _buildImage(update, client, **buildArgs):
                     update.progress(msg)
 
     return buildSuccess
+
+
+def _pullImage(update, client):
+    """
+    Pull the image from a registry.
+
+    Returns True on success, False on failure.
+    """
+    auth_config = {
+        'username': settings.REGISTRY_USERNAME,
+        'password': settings.REGISTRY_PASSWORD
+    }
+
+    update.progress("Pulling image: {}".format(update.new.external_image))
+
+    layers = 0
+    complete = 0
+
+    output = client.pull(update.new.external_image, auth_config=auth_config, stream=True)
+    for line in output:
+        data = json.loads(line)
+
+        # Suppress lines that have progressDetail set.  Those are the ones with
+        # the moving progress bar.
+        if data.get('progressDetail', {}) == {}:
+            if 'status' not in data or 'id' not in data:
+                continue
+
+            update.progress("{}: {}".format(data['status'], data['id']))
+
+            # Count the number of layers that need to be pulled and the number
+            # completed.
+            status = data['status'].strip().lower()
+            if status == 'pulling fs layer':
+                layers += 1
+            elif status == 'pull complete':
+                complete += 1
+
+    update.progress("Finished pulling {} / {} layers".format(complete, layers))
+    return (complete > 0 and complete == layers)
 
 
 def removeNewImage(update):

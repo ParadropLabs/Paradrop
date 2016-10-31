@@ -7,7 +7,12 @@ def test_getImageName():
     chute = MagicMock()
     chute.name = "test"
     chute.version = 1
+    chute.external_image = "registry.exis.io/test:2"
 
+    result = dockerapi.getImageName(chute)
+    assert result == chute.external_image
+
+    del chute.external_image
     result = dockerapi.getImageName(chute)
     assert result == "test:1"
 
@@ -38,13 +43,15 @@ def test_getPortList():
 
 
 @patch('paradrop.lib.container.downloader.downloader')
+@patch('paradrop.lib.container.dockerapi._pullImage')
 @patch('paradrop.lib.container.dockerapi._buildImage')
 @patch('docker.Client')
-def test_buildImage(Client, _buildImage, downloader):
+def test_buildImage(Client, _buildImage, _pullImage, downloader):
     client = MagicMock()
     Client.return_value = client
 
     _buildImage.return_value = True
+    _pullImage.return_value = False
 
     downloader.return_value = MagicMock()
 

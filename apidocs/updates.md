@@ -97,6 +97,8 @@ projects and any web URL that points to tar/tar.gz file.
   the running container, these can be used to specify configuration
   options or secrets for the application at install time.
 - host_config: object, used to request settings such as port bindings.
+- external_image: string, name of Docker image.  If this field is set, the
+  router will attempt to pull the image.
 - net: object, used to configure the chute's network environment,
   particularly wireless settings.
 - systemDir: (default: /paradrop) directory inside the chute that can
