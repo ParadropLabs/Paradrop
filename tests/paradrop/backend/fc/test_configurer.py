@@ -30,7 +30,7 @@ def test_Configurer(mReload, mUpdObj, mOut):
     mOut.exception.side_effect = [Exception('Super-Bang!')]
     mReload.return_value = ['ch1', None, 'ch2', 'ch3']
     try:
-        c.performUpdates()
+        c.performUpdates(checkDocker=False)
     except Exception as e:
         assert e.message == 'Super-Bang!'
     assert mUpdObj.parse.call_count == 3

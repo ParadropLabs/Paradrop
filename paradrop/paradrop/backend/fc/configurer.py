@@ -10,6 +10,7 @@ from pdtools.lib.output import out
 from pdtools.lib.pdutils import timeint, str2json
 
 from paradrop.lib import settings
+from paradrop.lib.procmon import dockerMonitor
 from paradrop.lib.utils.restart import reloadChutes
 
 from . import updateObject
@@ -83,7 +84,7 @@ class PDConfigurer:
         return dict(updateClass='ROUTER', updateType='inithostconfig',
                 name='__PARADROP__', tok=timeint(), func=updateFinished)
 
-    def performUpdates(self):
+    def performUpdates(self, checkDocker=True):
         """This is the main working function of the PDConfigurer class.
             It should be executed as a separate thread, it does the following:
                 checks for any updates to perform
@@ -94,6 +95,12 @@ class PDConfigurer:
                     if more exist it calls itself again more quickly
                     else it puts itself to sleep for a little while
         """
+        if checkDocker:
+            ready = dockerMonitor.ensureReady()
+            if not ready:
+                out.warning("Docker does not appear to be running.  "
+                            "Most functionality with containers will be broken.")
+
         # add any chutes that should already be running to the front of the
         # update queue before processing any updates
         startQueue = reloadChutes()
