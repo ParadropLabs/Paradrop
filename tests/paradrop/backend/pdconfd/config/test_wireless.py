@@ -93,6 +93,8 @@ def test_HostapdConfGenerator_get11nOptions():
     wifiDevice.htmode = "HT40+"
     wifiDevice.short_gi_20 = True
     wifiDevice.short_gi_40 = True
+    wifiDevice.tx_stbc = 1
+    wifiDevice.rx_stbc = 2
     wifiDevice.dsss_cck_40 = True
     wifiDevice.require_mode = "n"
 
@@ -103,7 +105,7 @@ def test_HostapdConfGenerator_get11nOptions():
 
     options = generator.get11nOptions()
     assert ("ieee80211n", 1) in options
-    assert ("ht_capab", "[HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40]") in options
+    assert ("ht_capab", "[HT40+][SHORT-GI-20][SHORT-GI-40][TX-STBC][RX-STBC12][DSSS_CCK-40]") in options
     assert ("require_ht", 1) in options
 
     # Enabling 11ac (VHT80) and using channel 40 should configure HT40- mode
@@ -112,7 +114,7 @@ def test_HostapdConfGenerator_get11nOptions():
     wifiDevice.channel = 40
 
     options = generator.get11nOptions()
-    assert ("ht_capab", "[HT40-][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40]") in options
+    assert ("ht_capab", "[HT40-][SHORT-GI-20][SHORT-GI-40][TX-STBC][RX-STBC12][DSSS_CCK-40]") in options
 
     # Enabling 11ac (VHT80) and using channel 36 should configure HT40+ mode
     # for 11n clients.
@@ -120,7 +122,7 @@ def test_HostapdConfGenerator_get11nOptions():
     wifiDevice.channel = 36
 
     options = generator.get11nOptions()
-    assert ("ht_capab", "[HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40]") in options
+    assert ("ht_capab", "[HT40+][SHORT-GI-20][SHORT-GI-40][TX-STBC][RX-STBC12][DSSS_CCK-40]") in options
 
 
 def test_HostapdConfGenerator_get11acOptions():
@@ -129,6 +131,8 @@ def test_HostapdConfGenerator_get11acOptions():
     wifiDevice.htmode = "VHT40"
     wifiDevice.short_gi_80 = True
     wifiDevice.short_gi_160 = True
+    wifiDevice.tx_stbc = 1
+    wifiDevice.rx_stbc = 2
     wifiDevice.require_mode = "ac"
     wifiDevice.channel = 36
 
@@ -140,7 +144,7 @@ def test_HostapdConfGenerator_get11acOptions():
     options = generator.get11acOptions()
     print(options)
     assert ("ieee80211ac", 1) in options
-    assert ("vht_capab", "[SHORT-GI-80][SHORT-GI-160]") in options
+    assert ("vht_capab", "[SHORT-GI-80][SHORT-GI-160][TX-STBC-2BY1][RX-STBC-12]") in options
     assert ("vht_oper_chwidth", 0) in options
     assert ("vht_oper_centr_freq_seg0_idx", 38) in options
 

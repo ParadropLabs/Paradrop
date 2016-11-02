@@ -126,11 +126,15 @@ class ConfigWifiDevice(ConfigObject):
         # 802.11n Capabilities
         ConfigOption(name="short_gi_20", type=bool),
         ConfigOption(name="short_gi_40", type=bool),
+        ConfigOption(name="tx_stbc", type=int),
+        ConfigOption(name="rx_stbc", type=int),
         ConfigOption(name="dsss_cck_40", type=bool),
 
         # 802.11ac Capabilities
         ConfigOption(name="short_gi_80", type=bool),
-        ConfigOption(name="short_gi_160", type=bool)
+        ConfigOption(name="short_gi_160", type=bool),
+        ConfigOption(name="tx_stbc_2by1", type=bool),
+        ConfigOption(name="rx_stbc", type=int)
     ]
 
 
@@ -409,6 +413,14 @@ class HostapdConfGenerator(object):
             ht_capab += "[SHORT-GI-20]"
         if self.wifiDevice.short_gi_40:
             ht_capab += "[SHORT-GI-40]"
+        if self.wifiDevice.tx_stbc:
+            ht_capab += "[TX-STBC]"
+        if self.wifiDevice.rx_stbc == 1:
+            ht_capab += "[RX-STBC1]"
+        elif self.wifiDevice.rx_stbc == 2:
+            ht_capab += "[RX-STBC12]"
+        elif self.wifiDevice.rx_stbc >= 3:
+            ht_capab += "[RX-STBC123]"
         if self.wifiDevice.dsss_cck_40:
             ht_capab += "[DSSS_CCK-40]"
 
@@ -448,6 +460,16 @@ class HostapdConfGenerator(object):
             vht_capab += "[SHORT-GI-80]"
         if self.wifiDevice.short_gi_160:
             vht_capab += "[SHORT-GI-160]"
+        if self.wifiDevice.tx_stbc_2by1:
+            vht_capab += "[TX-STBC-2BY1]"
+        if self.wifiDevice.rx_stbc == 1:
+            vht_capab += "[RX-STBC-1]"
+        elif self.wifiDevice.rx_stbc == 2:
+            vht_capab += "[RX-STBC-12]"
+        elif self.wifiDevice.rx_stbc == 3:
+            vht_capab += "[RX-STBC-123]"
+        elif self.wifiDevice.rx_stbc >= 4:
+            vht_capab += "[RX-STBC-1234]"
         if len(vht_capab) > 0:
             options.append(("vht_capab", vht_capab))
 

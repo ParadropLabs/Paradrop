@@ -169,7 +169,9 @@ Example
             "interface": "wlan1",
             "hwmode": "11a",
             "htmode": "HT40+",
-            "short_gi_40": true
+            "short_gi_40": true,
+            "tx_stbc": 1,
+            "rx_stbc": 1
         }
     ],
     "wifi-interfaces": [
