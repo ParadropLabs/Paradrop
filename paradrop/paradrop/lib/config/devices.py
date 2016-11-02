@@ -220,8 +220,10 @@ def setSystemDevices(update):
             dhcp = hostConfig['lan']['dhcp']
 
             config = {'type': 'dnsmasq'}
-            options = {'interface': 'lan'}
-
+            options = {
+                'interface': 'lan',
+                'domain': 'home.paradrop.org'
+            }
             dhcpSections.append((config, options))
 
             config = {'type': 'dhcp', 'name': 'lan'}
@@ -231,7 +233,13 @@ def setSystemDevices(update):
                 'limit': dhcp['limit'],
                 'leasetime': dhcp['leasetime']
             }
+            dhcpSections.append((config, options))
 
+            config = {'type': 'domain'}
+            options = {
+                'name': 'home.paradrop.org',
+                'ip': hostConfig['lan']['ipaddr']
+            }
             dhcpSections.append((config, options))
 
     if 'wifi' in hostConfig:

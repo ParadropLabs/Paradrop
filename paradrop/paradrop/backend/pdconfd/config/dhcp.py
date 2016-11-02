@@ -8,6 +8,12 @@ from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand
 
 
+def get_all_of_type(allConfigs, typename):
+    for key in allConfigs.keys():
+        if key[0] == typename:
+            yield allConfigs[key]
+
+
 def get_all_dhcp_interfaces(allConfigs):
     for key in allConfigs.keys():
         if key[0] == "dhcp":
@@ -26,10 +32,20 @@ class ConfigDhcp(ConfigObject):
     ]
 
 
+class ConfigDomain(ConfigObject):
+    typename = "domain"
+
+    options = [
+        ConfigOption(name="name", type=str),
+        ConfigOption(name="ip", type=str)
+    ]
+
+
 class ConfigDnsmasq(ConfigObject):
     typename = "dnsmasq"
 
     options = [
+        ConfigOption(name="domain", type=str),
         ConfigOption(name="interface", type=list),
         ConfigOption(name="leasefile", type=str),
         ConfigOption(name="noresolv", type=bool, default=False),
@@ -70,6 +86,9 @@ class ConfigDnsmasq(ConfigObject):
             outputFile.write("#" * 80 + "\n")
             outputFile.write("\n")
             outputFile.write("dhcp-leasefile={}\n".format(self.leasefile))
+
+            if self.domain:
+                outputFile.write("domain={}\n".format(self.domain))
 
             if self.noresolv:
                 outputFile.write("no-resolv\n")
@@ -114,6 +133,10 @@ class ConfigDnsmasq(ConfigObject):
                 if dhcp.dhcp_option:
                     for option in dhcp.dhcp_option:
                         outputFile.write("dhcp-option={}\n".format(option))
+
+            outputFile.write("\n")
+            for domain in get_all_of_type(allConfigs, "domain"):
+                outputFile.write("address=/{}/{}\n".format(domain.name, domain.ip))
 
         cmd = ["/apps/bin/dnsmasq", "--conf-file={}".format(outputPath),
                "--pid-file={}".format(pidFile)]

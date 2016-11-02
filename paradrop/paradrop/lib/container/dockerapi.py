@@ -15,6 +15,7 @@ import re
 import subprocess
 
 from paradrop.lib import settings
+from paradrop.lib.errors import ChuteNotFound, ChuteNotRunning
 from paradrop.lib.container.downloader import downloader
 from pdtools.lib import nexus
 
@@ -486,3 +487,19 @@ def prepare_environment(chute):
         env['PARADROP_CHUTE_VERSION'] = chute.version
 
     return env
+
+
+def getChuteIP(name):
+    """
+    Look up a container by name and return its IP address.
+    """
+    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    try:
+        info = client.inspect_container(name)
+    except docker.errors.NotFound:
+        raise ChuteNotFound("The chute could not be found.")
+
+    if not info['State']['Running']:
+        raise ChuteNotRunning("The chute is not running.")
+
+    return info['NetworkSettings']['IPAddress']
