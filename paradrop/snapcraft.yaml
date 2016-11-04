@@ -2,8 +2,7 @@ name: paradrop-daemon
 version: '0.3.0'
 summary: The ParaDrop daemon running at the extreme edge
 description: |
-  The ParaDrop deamon manages resources in the Wi-Fi routers and provides
-  a virtualized environment for chutes.
+  The ParaDrop deamon manages resources in the Wi-Fi routers and provides a virtualized environment for chutes.
   It also expose local environment information for chutes.
 
 grade: devel
@@ -11,9 +10,20 @@ confinement: devmode
 
 apps:
   paradrop:
-    command: ./bin/paradrop
+    command: runpd.sh
+    daemon: simple
+    plugs:
+      - network
+      - docker
 
 parts:
+  glue:
+    plugin: dump
+    source: wrapper/
+    organize:
+      runpd.sh: bin/runpd.sh
+      env.sh: bin/env.sh
+
   paradrop:
     plugin: python
     python-version: python2
@@ -22,7 +32,6 @@ parts:
       - python-dev
     stage-packages:
       - libcurl4-openssl-dev
-      - docker.io
     after:
       - pdtools
 
@@ -30,3 +39,12 @@ parts:
     plugin: python
     python-version: python2
     source: pdtools
+
+  pipework:
+    plugin: dump
+    source: https://github.com/jpetazzo/pipework
+    source-type: git
+    organize:
+      pipework: usr/bin/pipework
+    snap:
+      - usr/bin/pipework
