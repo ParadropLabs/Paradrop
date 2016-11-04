@@ -3,8 +3,11 @@ from setuptools import setup, find_packages
 setup(
     name="paradrop",
     version="0.3.0",
-    author="Paradrop Labs",
-    description="Paradrop wireless virtualization",
+    author="ParaDrop Labs",
+    description="ParaDrop wireless virtualization",
+    license="GPL",
+    url="http://paradrop.org",
+    packages=find_packages(),
     install_requires=['docker-py',
                       'ipaddress',
                       'txdbus',
@@ -12,16 +15,14 @@ setup(
                       'pyyaml',
                       'pycurl',
                       'psutil',
-#                      'pdtools>=0.3.00',
                       'txrestapi',
                       'mock'],
-    packages=find_packages(),
 
     entry_points={
         'console_scripts': [
-            'paradrop=paradrop:main',
-            'pdconfd=paradrop:run_pdconfd'
-        ],
+            'paradrop = paradrop:main',
+            'pdconfd = paradrop:run_pdconfd'
+        ]
     },
 
     include_package_data = True

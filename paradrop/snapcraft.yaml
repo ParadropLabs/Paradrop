@@ -27,18 +27,11 @@ parts:
   paradrop:
     plugin: python
     python-version: python2
-    source: daemon
+    source: src
     build-packages:
       - python-dev
     stage-packages:
       - libcurl4-openssl-dev
-    after:
-      - pdtools
-
-  pdtools:
-    plugin: python
-    python-version: python2
-    source: pdtools
 
   pipework:
     plugin: dump
