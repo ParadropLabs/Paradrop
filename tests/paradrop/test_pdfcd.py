@@ -167,8 +167,6 @@ def test_server_setup(mockRun, mockListenTCP):
     manager.waitSystemUp = make_dummy("[]")
     ConfigService.configManager = manager
 
-    server.setup()
-
     args = Mock(development=True, unittest=False)
     server.setup(args)
 

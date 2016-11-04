@@ -98,7 +98,7 @@ class PDConfigurer:
         if checkDocker:
             ready = dockerMonitor.ensureReady()
             if not ready:
-                out.warning("Docker does not appear to be running.  "
+                out.warn("Docker does not appear to be running.  "
                             "Most functionality with containers will be broken.")
 
         # add any chutes that should already be running to the front of the

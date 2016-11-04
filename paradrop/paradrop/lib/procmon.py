@@ -15,6 +15,13 @@ import psutil
 
 
 class ProcessMonitor(object):
+    # Specify allowed corrective actions, which we can change when running
+    # locally to disable rebooting, for example.
+    #
+    # TODO: Implement a more general module for checking system health and
+    # applying corrective action.
+    allowedActions = set(["restart", "reboot"])
+
     def __init__(self, service, cmdstring=None, pidfile=None, action="restart"):
         """
         service: service name (used to restart it).
@@ -83,8 +90,13 @@ class ProcessMonitor(object):
             cmd = ["snappy", "service", self.service, "restart"]
         else:
             cmd = ["shutdown", "-r", "now"]
-        print("Running \"{}\" to fix {}".format(" ".join(cmd), self.service))
-        return subprocess.call(cmd)
+
+        if self.action in ProcessMonitor.allowedActions:
+            print("Running \"{}\" to fix {}".format(" ".join(cmd), self.service))
+            return subprocess.call(cmd)
+        else:
+            print("Warning: would run \"{}\" to fix {}, but not allowed.".format(
+                " ".join(cmd), self.service))
 
     def ensureReady(self, delay=5, tries=3):
         """
