@@ -19,6 +19,7 @@ from paradrop.base.lib.pdutils import timeflt, str2json, json2str
 from paradrop.lib.api import pdapi
 from paradrop.lib import settings
 from paradrop.lib.container import dockerapi
+from paradrop.lib.procmon import ProcessMonitor
 from paradrop.backend import fc
 
 
@@ -296,6 +297,11 @@ def setup(args=None):
     # Setup API server
     api = ParadropAPIServer(reactor)
     site = Site(api, timeout=None)
+
+    if args.local:
+        # Disable all corrective actions when in local mode.
+        # No one wants his dev machine to reboot suddenly.
+        ProcessMonitor.allowedActions = set()
 
     # Development mode
     if(args and args.development):
