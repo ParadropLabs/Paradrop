@@ -4,7 +4,8 @@ from twisted.internet import reactor, defer
 from txdbus import client, error
 
 from .main import ConfigService, service_name, service_path
-from pdtools.lib.output import out
+
+from paradrop.base.lib.output import out
 
 
 @defer.inlineCallbacks

@@ -14,8 +14,8 @@ import itertools
 import os
 import re
 
+from paradrop.base.lib.output import out
 from paradrop.lib.utils import pdos, uci
-from pdtools.lib.output import out
 from paradrop.lib import settings
 from paradrop.lib.config import uciutils
 

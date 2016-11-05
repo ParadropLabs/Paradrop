@@ -1,12 +1,12 @@
 import ipaddress
 import itertools
 
+from paradrop.base.lib.output import out
+from paradrop.base.lib import pdutils
 from paradrop.lib import settings
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.config.pool import NetworkPool, NumericPool
 from paradrop.lib.utils import addresses, uci
-from pdtools.lib.output import out
-from pdtools.lib import pdutils
 
 
 MAX_INTERFACE_NAME_LEN = 15

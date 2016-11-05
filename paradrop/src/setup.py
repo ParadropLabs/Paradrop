@@ -8,15 +8,24 @@ setup(
     license="GPL",
     url="http://paradrop.org",
     packages=find_packages(),
-    install_requires=['docker-py',
-                      'ipaddress',
-                      'txdbus',
-                      'wget',
-                      'pyyaml',
-                      'pycurl',
-                      'psutil',
-                      'txrestapi',
-                      'mock'],
+    install_requires=[
+        'autobahn>=0.15.0',
+        'bcrypt>=2.0.0',
+        'colorama>=0.3.3',
+        'requests>=2.7.0',
+        'smokesignal>=0.7.0',
+        'service_identity>=16.0.0',
+        'attrs',
+        'enum34',
+        'docker-py',
+        'ipaddress',
+        'txdbus',
+        'wget',
+        'pyyaml',
+        'pycurl',
+        'psutil',
+        'txrestapi'
+    ],
 
     entry_points={
         'console_scripts': [

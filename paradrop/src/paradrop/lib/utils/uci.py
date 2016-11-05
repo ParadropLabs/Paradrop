@@ -5,9 +5,9 @@
 
 import traceback, os
 
+from paradrop.base.lib.output import out
 from paradrop.lib import settings
 from paradrop.lib.utils import pdos, pdosq
-from pdtools.lib.output import out
 
 
 def getSystemConfigDir():

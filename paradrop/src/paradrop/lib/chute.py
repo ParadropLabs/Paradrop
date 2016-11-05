@@ -3,7 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from pdtools.lib.output import out
+from paradrop.base.lib.output import out
 
 STATE_INVALID = "invalid"
 STATE_DISABLED = "disabled"

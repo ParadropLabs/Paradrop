@@ -26,7 +26,7 @@ from enum import Enum
 from twisted.python.logfile import DailyLogFile
 from twisted.python import log
 
-from pdtools.lib import pdutils
+from paradrop.base.lib import pdutils
 
 
 # colorama package does colors but doesn't do style, so keeping this for now

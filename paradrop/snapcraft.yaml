@@ -32,6 +32,7 @@ parts:
       - python-dev
     stage-packages:
       - libcurl4-openssl-dev
+      - python-openssl
 
   pipework:
     plugin: dump

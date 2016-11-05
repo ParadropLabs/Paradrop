@@ -8,8 +8,8 @@ from autobahn.wamp import auth
 
 from paradrop.lib import pdinstall, status
 from paradrop.lib.config import hostconfig
-from pdtools.lib.output import out
-from pdtools.lib import names, nexus, cxbr
+from paradrop.base.lib.output import out
+from paradrop.base.lib import names, nexus, cxbr
 
 from . import apibridge
 

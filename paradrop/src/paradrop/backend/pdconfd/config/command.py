@@ -4,7 +4,7 @@ import signal
 import subprocess
 import time
 
-from pdtools.lib.output import out
+from paradrop.base.lib.output import out
 
 
 def kill(pid, kill_signal=4, timeout=8):

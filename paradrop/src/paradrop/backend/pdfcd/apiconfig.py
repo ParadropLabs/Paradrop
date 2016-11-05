@@ -1,14 +1,12 @@
 import json
 from twisted.internet import reactor
 
-from pdtools.lib import nexus
-from pdtools.lib.output import out
-from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
-
+from paradrop.base.lib import nexus
+from paradrop.base.lib.output import out
+from paradrop.base.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.backend.pdfcd.apiinternal import RouterSession
 from paradrop.lib.api.pdrest import APIDecorator
 from paradrop.lib.api import pdapi
-
 from paradrop.lib.config import hostconfig
 from paradrop.backend.pdfcd.apibridge import updateManager
 from paradrop.lib.reporting import sendStateReport

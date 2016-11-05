@@ -6,7 +6,7 @@ See docstring for NexusBase class for information on settings.
 
 SETTINGS QUICK REFERENCE:
     # assuming the following import
-    from pdtools.lib import nexus
+    from paradrop.base.lib import nexus
 
     nexus.core.path.root
     nexus.core.path.log
@@ -35,7 +35,7 @@ import smokesignal
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from pdtools.lib import output, cxbr
+from paradrop.base.lib import output, cxbr
 
 # Global access. Assign this wherever you instantiate the Nexus object:
 #       nexus.core = MyNexusSubclass()
@@ -66,11 +66,11 @@ class NexusBase(object):
     shown as a comment to the right of each declaration.
 
     To dump all values:
-        from pdtools.lib import nexus
+        from paradrop.base.lib import nexus
         print nexus.core
 
     To dump a subset of values:
-        from pdtools.lib import nexus
+        from paradrop.base.lib import nexus
         print nexus.core.net
         print nexus.core.path
 
@@ -98,7 +98,7 @@ class NexusBase(object):
             (magic omitted)
 
         Finally access the resulting values:
-            from pdtools.lib import nexus
+            from paradrop.base.lib import nexus
             print nexus.core.net.port
             = > '3456'
 

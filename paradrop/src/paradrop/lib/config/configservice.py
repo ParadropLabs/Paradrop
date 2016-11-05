@@ -8,7 +8,7 @@ import json
 
 from paradrop.backend.pdconfd import client
 from paradrop.lib.utils import uci
-from pdtools.lib.output import out
+from paradrop.base.lib.output import out
 
 
 def reloadAll(update):

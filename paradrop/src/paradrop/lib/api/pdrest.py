@@ -10,8 +10,8 @@ from twisted.web.resource import NoResource
 from zope.interface.advice import addClassAdvisor
 from twisted.web.server import NOT_DONE_YET
 
-from pdtools.lib.output import out
-from pdtools.lib.pdutils import str2json, explode
+from paradrop.base.lib.output import out
+from paradrop.base.lib.pdutils import str2json, explode
 from paradrop.lib.api import pdapi
 from paradrop.lib import settings
 

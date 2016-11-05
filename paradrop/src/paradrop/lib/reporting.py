@@ -13,14 +13,12 @@ from StringIO import StringIO
 from twisted.internet import reactor
 from twisted.web.http_headers import Headers
 
-# Sources of system state:
+from paradrop.base.lib import nexus
+from paradrop.base.lib.output import out
 from paradrop.backend.fc import chutestorage
 from paradrop.lib.config import devices, hostconfig
 from paradrop.lib import settings, status
-
 from paradrop.lib.utils.http import PDServerRequest
-from pdtools.lib import nexus
-from pdtools.lib.output import out
 
 
 def getPackageVersion(name):

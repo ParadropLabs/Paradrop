@@ -12,8 +12,7 @@ from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet.ssl import ClientContextFactory
 
-
-from pdtools.lib.output import out
+from paradrop.base.lib.output import out
 
 
 # pylint: disable=inconsistent-mro
@@ -99,7 +98,7 @@ class BaseSession(ApplicationSession):
 
         # Update global session reference.  It's hacky, but we do the import
         # here to solve the circular import problem.  TODO Refactor.
-        from pdtools.lib import nexus
+        from paradrop.base.lib import nexus
         nexus.core.session = self
 
         # Reset exponential backoff timer after a successful connection.

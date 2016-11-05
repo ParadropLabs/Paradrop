@@ -5,8 +5,8 @@
 
 import pickle
 
-from pdtools.lib.output import out
-from pdtools.lib import pdutils
+from paradrop.base.lib.output import out
+from paradrop.base.lib import pdutils
 from paradrop.lib.utils import pdos
 
 from twisted.internet.task import LoopingCall

@@ -8,13 +8,11 @@ import json
 import copy
 import base64
 
-from pdtools.lib.output import out
-from pdtools.lib import pdutils
+from paradrop.base.lib.output import out
+from paradrop.base.lib import pdutils
 from paradrop.lib.utils import pdos
 from paradrop.lib import settings
-
 from paradrop.lib.utils.storage import PDStorage
-
 from paradrop.lib.chute import Chute
 
 

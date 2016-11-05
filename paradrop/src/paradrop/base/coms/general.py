@@ -17,9 +17,9 @@ import re
 from twisted.internet import defer
 from autobahn.wamp import exception
 
-from pdtools.coms.client import RpcClient
-from pdtools.lib.output import out
-from pdtools.lib import nexus
+from paradrop.base.coms.client import RpcClient
+from paradrop.base.lib.output import out
+from paradrop.base.lib import nexus
 
 
 ###############################################################################

@@ -116,7 +116,7 @@ def jsonPretty(j):
 These two methods are outrageously slow.
 
 Example with 50k records in var 'logs':
-    from pdtools.lib import pdutils
+    from paradrop.base.lib import pdutils
     import json
 
     with pdutils.Timer() as t:

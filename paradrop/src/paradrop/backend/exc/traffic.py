@@ -3,9 +3,9 @@
 # Authors: The Paradrop Team
 ###################################################################
 
+from paradrop.base.lib.output import out
 from paradrop.backend.exc import plangraph
 from paradrop.lib import config
-from pdtools.lib.output import out
 
 def generatePlans(update):
     """

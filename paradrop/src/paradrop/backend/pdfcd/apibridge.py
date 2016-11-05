@@ -13,8 +13,8 @@ from twisted.web.http_headers import Headers
 from paradrop.lib import settings
 from paradrop.lib.reporting import sendStateReport
 from paradrop.lib.utils.http import PDServerRequest
-from pdtools.lib import nexus
-from pdtools.lib.pdutils import timeint
+from paradrop.base.lib import nexus
+from paradrop.base.lib.pdutils import timeint
 
 
 # Interval (in seconds) for polling the server for updates.  This is a fallback

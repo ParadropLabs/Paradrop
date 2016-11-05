@@ -15,7 +15,7 @@ from twisted.web.client import Agent, FileBodyProducer, HTTPConnectionPool, Resp
 from twisted.web.http_headers import Headers
 
 from paradrop.lib import settings
-from pdtools.lib import nexus
+from paradrop.base.lib import nexus
 
 
 class JSONReceiver(Protocol):

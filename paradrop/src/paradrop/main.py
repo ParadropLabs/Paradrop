@@ -10,7 +10,7 @@ import signal
 from twisted.internet import reactor, defer
 from autobahn.twisted.wamp import ApplicationRunner
 
-from pdtools.lib import output, nexus, names, cxbr
+from paradrop.base.lib import output, nexus, names, cxbr
 from paradrop.lib import settings
 from paradrop.backend.pdfcd import apiinternal
 

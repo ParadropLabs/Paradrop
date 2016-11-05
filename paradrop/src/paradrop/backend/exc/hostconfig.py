@@ -9,9 +9,8 @@ separate from the modules that generate plans for chute operations because we
 only need to do a subset of the operations.
 """
 
-from pdtools.lib.output import out
+from paradrop.base.lib.output import out
 from paradrop.backend.exc import plangraph
-
 from paradrop.lib import config
 
 def generatePlans(update):

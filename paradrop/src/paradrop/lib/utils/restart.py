@@ -10,9 +10,9 @@ Checks with pdconfd to make sure it was able to properly bring up all interfaces
 starting chutes.
 '''
 
-from pdtools.lib.output import out
+from paradrop.base.lib.output import out
+from paradrop.base.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.backend.fc import chutestorage
-from pdtools.lib.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.backend.pdconfd.client import waitSystemUp
 from paradrop.lib import chute, settings
 from paradrop.lib.config.network import reclaimNetworkResources

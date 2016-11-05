@@ -7,17 +7,17 @@
 Functions associated with deploying and cleaning up docker containers.
 """
 
-from pdtools.lib.output import out
 import docker
 import json
 import os
 import re
 import subprocess
 
+from paradrop.base.lib.output import out
+from paradrop.base.lib import nexus
 from paradrop.lib import settings
 from paradrop.lib.errors import ChuteNotFound, ChuteNotRunning
 from paradrop.lib.container.downloader import downloader
-from pdtools.lib import nexus
 
 
 DOCKER_CONF = """

@@ -1,9 +1,9 @@
 import os
 
+from paradrop.base.lib.output import out
+from paradrop.base.lib import pdutils
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.utils import uci
-from pdtools.lib.output import out
-from pdtools.lib import pdutils
 
 
 # Should dnsmasq be used to cache DNS lookup results or should clients send

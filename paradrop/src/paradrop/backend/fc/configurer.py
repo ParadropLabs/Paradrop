@@ -6,9 +6,8 @@
 import time
 import threading
 
-from pdtools.lib.output import out
-from pdtools.lib.pdutils import timeint, str2json
-
+from paradrop.base.lib.output import out
+from paradrop.base.lib.pdutils import timeint, str2json
 from paradrop.lib import settings
 from paradrop.lib.procmon import dockerMonitor
 from paradrop.lib.utils.restart import reloadChutes
