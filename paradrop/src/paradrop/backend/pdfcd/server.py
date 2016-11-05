@@ -298,10 +298,11 @@ def setup(args=None):
     api = ParadropAPIServer(reactor)
     site = Site(api, timeout=None)
 
-    if args.local:
+    # TODO: disable rebooting or restarting for now
+    #if args.local:
         # Disable all corrective actions when in local mode.
         # No one wants his dev machine to reboot suddenly.
-        ProcessMonitor.allowedActions = set()
+    ProcessMonitor.allowedActions = set()
 
     # Development mode
     if(args and args.development):
