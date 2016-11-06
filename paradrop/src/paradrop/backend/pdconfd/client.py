@@ -1,18 +1,17 @@
 import threading
-
 from twisted.internet import reactor, defer
 from txdbus import client, error
 
-from .main import ConfigService, service_name, service_path
-
 from paradrop.base.lib.output import out
+
+from .main import ConfigService, bus_name, service_path
 
 
 @defer.inlineCallbacks
 def callDeferredMethod(method, *args):
     try:
         conn = yield client.connect(reactor, busAddress="system")
-        robj = yield conn.getRemoteObject(service_name, service_path)
+        robj = yield conn.getRemoteObject(bus_name, service_path)
         result = yield robj.callRemote(method, *args)
         defer.returnValue(result)
     except error.DBusException as e:

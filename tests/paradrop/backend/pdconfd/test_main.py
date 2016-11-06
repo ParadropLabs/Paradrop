@@ -10,7 +10,7 @@ def test_ConfigService():
     manager = MagicMock()
 
     ConfigService.configManager = manager
-    service = ConfigService()
+    service = ConfigService('/test')
 
     service.dbus_Reload("test")
     assert manager.loadConfig.called_once_with("test")

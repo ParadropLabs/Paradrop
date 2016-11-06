@@ -1,6 +1,6 @@
 """
-This module listens for D-Bus messages and triggers reloading of configuration
-files.  This module is the service side of the implementation.  If you want to
+This module listens for D-Bus messages and triggers reloading of configuration files.
+This module is the service side of the implementation.  If you want to
 issue reload commands to the service, see the client.py file instead.
 
 Operation:
@@ -14,6 +14,7 @@ Operation:
 Reference:
 http://excid3.com/blog/an-actually-decent-python-dbus-tutorial/
 """
+
 import atexit
 import sys
 
@@ -24,8 +25,9 @@ from paradrop.lib import settings
 
 from .config.manager import ConfigManager
 
-service_name = "com.paradrop.config"
-service_path = "/"
+bus_name = "org.paradrop"
+service_name = "org.paradrop.config"
+service_path = "/pdconfig"
 
 
 class ConfigService(objects.DBusObject):
@@ -40,8 +42,8 @@ class ConfigService(objects.DBusObject):
 
     configManager = None
 
-    def __init__(self):
-        super(ConfigService, self).__init__(service_path)
+    def __init__(self, objectPath):
+        objects.DBusObject.__init__(self, objectPath)
 
     def dbus_Reload(self, name):
         return ConfigService.configManager.loadConfig(name)
@@ -61,7 +63,7 @@ class ConfigService(objects.DBusObject):
 
 @defer.inlineCallbacks
 def listen():
-    service = ConfigService()
+    service = ConfigService(service_path)
 
     # Things get messy if pdconfd is restarted with running chutes.  Then it
     # will try to reconfigure the system.  One easy solution is to unload the
@@ -75,7 +77,7 @@ def listen():
     try:
         conn = yield client.connect(reactor, busAddress="system")
         conn.exportObject(service)
-        yield conn.requestBusName(service_name)
+        yield conn.requestBusName(bus_name)
     except error.DBusException as e:
         print("Failed to export DBus object: {}".format(e))
 
