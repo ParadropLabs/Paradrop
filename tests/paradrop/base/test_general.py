@@ -1,3 +1,3 @@
 
 def testPdToolsImportable():
-    import pdtools
+    import paradrop.base
