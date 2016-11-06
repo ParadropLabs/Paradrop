@@ -1,0 +1,3 @@
+
+def testPdToolsImportable():
+    import pdtools
