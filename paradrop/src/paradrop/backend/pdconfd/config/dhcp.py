@@ -138,7 +138,7 @@ class ConfigDnsmasq(ConfigObject):
             for domain in get_all_of_type(allConfigs, "domain"):
                 outputFile.write("address=/{}/{}\n".format(domain.name, domain.ip))
 
-        cmd = ["/apps/bin/dnsmasq", "--conf-file={}".format(outputPath),
+        cmd = ["dnsmasq", "--conf-file={}".format(outputPath),
                "--pid-file={}".format(pidFile)]
         commands.append((self.PRIO_START_DAEMON, Command(cmd, self)))
 

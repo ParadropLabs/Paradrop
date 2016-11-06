@@ -230,7 +230,7 @@ class ConfigWifiIface(ConfigObject):
         self.pidFile = "{}/hostapd-{}.pid".format(
             self.manager.writeDir, self.internalName)
 
-        cmd = ["/apps/bin/hostapd", "-P", self.pidFile, "-B", confFile]
+        cmd = ["hostapd", "-P", self.pidFile, "-B", confFile]
         commands.append((self.PRIO_START_DAEMON, Command(cmd, self)))
 
         return commands
@@ -279,7 +279,7 @@ class ConfigWifiIface(ConfigObject):
             new.pidFile = "{}/hostapd-{}.pid".format(
                 new.manager.writeDir, self.internalName)
 
-            cmd = ["/apps/bin/hostapd", "-P", new.pidFile, "-B", confFile]
+            cmd = ["hostapd", "-P", new.pidFile, "-B", confFile]
             commands.append((self.PRIO_START_DAEMON, Command(cmd, new)))
 
         return commands

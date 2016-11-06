@@ -42,3 +42,40 @@ parts:
       pipework: usr/bin/pipework
     snap:
       - usr/bin/pipework
+
+  dnsmasq:
+    plugin: make
+    source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
+    source-type: git
+    source-branch: dnsmasq/2.75
+    build-packages:
+      - build-essential
+    make-parameters:
+      - PREFIX=/
+    organize:
+      sbin/dnsmasq: bin/dnsmasq
+    filesets:
+      binaries:
+        - bin/dnsmasq
+    snap:
+      - $binaries
+  hostapd:
+    plugin: make
+    source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
+    source-type: git
+    source-branch: hostapd/2.5
+    build-packages:
+      - build-essential
+      - pkg-config
+      - libnl-3-dev
+      - libnl-genl-3-dev
+      - libnl-route-3-dev
+      - libssl-dev
+    make-parameters:
+      - BINDIR=/bin
+    filesets:
+      binaries:
+        - bin/hostapd
+        - bin/hostapd_cli
+    snap:
+      - $binaries
