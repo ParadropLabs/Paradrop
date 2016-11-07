@@ -13,6 +13,7 @@ setup(
                       'pycurl',
                       'psutil',
                       'pdtools>=0.2.00',
+                      'setuptools>=28.8.0',
                       'txrestapi',
                       'mock'],
     packages=find_packages(),
