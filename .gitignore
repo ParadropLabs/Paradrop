@@ -78,9 +78,6 @@ docs/_build
 docs/_static
 docs/_templates
 
-snap/bin/pd
-snap/bin/dnsmasq
-snap/bin/pipework
 *.img
 *.swp
 *.pyc
@@ -92,5 +89,6 @@ pid.txt
 log.txt
 third-party/
 
-snappy_v1/paradrop/bin/runpd
-snappy_v1/paradrop/bin/env.sh
+# snapcraft
+paradrop/prime
+paradrop/stage

@@ -1,16 +1,15 @@
 from mock import MagicMock
 
 
-def test_ConfigService():
+def test_ConfigServiceDbus():
     """
     Test the ConfigService class
     """
-    from paradrop.backend.pdconfd.main import ConfigService
+    from paradrop.backend.pdconfd.configservice_dbus import ConfigServiceDbus
 
     manager = MagicMock()
 
-    ConfigService.configManager = manager
-    service = ConfigService('/test')
+    service = ConfigServiceDbus(manager)
 
     service.dbus_Reload("test")
     assert manager.loadConfig.called_once_with("test")

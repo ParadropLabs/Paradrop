@@ -34,3 +34,4 @@ txrestapi==0.2
 websocket-client==0.37.0
 wsgiref==0.1.2
 zope.interface==4.2.0
+txmsgpackrpc==1.1

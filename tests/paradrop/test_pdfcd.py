@@ -161,11 +161,9 @@ def test_server_setup(mockRun, mockListenTCP):
     Test pdfcd server setup function
     """
     from paradrop.backend.pdfcd import server
-    from paradrop.backend.pdconfd.main import ConfigService
 
     manager = MagicMock()
     manager.waitSystemUp = make_dummy("[]")
-    ConfigService.configManager = manager
 
     args = Mock(development=True, unittest=False)
     server.setup(args)

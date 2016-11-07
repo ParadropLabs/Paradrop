@@ -24,7 +24,8 @@ setup(
         'pyyaml',
         'pycurl',
         'psutil',
-        'txrestapi'
+        'txrestapi',
+        'txmsgpackrpc>=1.1'
     ],
 
     entry_points={

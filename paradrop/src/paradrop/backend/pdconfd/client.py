@@ -1,23 +1,11 @@
 import threading
 from twisted.internet import reactor, defer
-from txdbus import client, error
 
 from paradrop.base.lib.output import out
 
-from .main import ConfigService, bus_name, service_path
-
-
-@defer.inlineCallbacks
-def callDeferredMethod(method, *args):
-    try:
-        conn = yield client.connect(reactor, busAddress="system")
-        robj = yield conn.getRemoteObject(bus_name, service_path)
-        result = yield robj.callRemote(method, *args)
-        defer.returnValue(result)
-    except error.DBusException as e:
-        out.err("D-Bus error: {}".format(e))
-        pass
-
+from .main import configManager
+from .client_dbus import callDeferredMethodDbus
+from .client_rpc import callDeferredMethodRpc
 
 class Blocking(object):
 
@@ -25,8 +13,6 @@ class Blocking(object):
     Uses threading.Event to implement blocking on a twisted deferred object.
 
     The wait method will wait for its completion and return its result.
-
-    Dear Lance. I hope you stub your toe.
     """
 
     def __init__(self, deferred):
@@ -47,7 +33,7 @@ class Blocking(object):
         return self.result
 
 
-def reloadAll(dbus=False):
+def reloadAll(adapter=''):
     """
     Reload all files from the system configuration directory.
 
@@ -56,15 +42,17 @@ def reloadAll(dbus=False):
     a 'success' field.  For critical errors such as failure to connect to the
     D-Bus service, it will return None.
     """
-    if dbus:
-        d = callDeferredMethod("ReloadAll")
+    if adapter == 'dbus':
+        d = callDeferredMethodDbus("ReloadAll")
         blocking = Blocking(d)
         return blocking.wait()
+    elif adapter == 'rpc':
+        pass
     else:
-        return ConfigService.configManager.loadConfig()
+        return configManager.loadConfig()
 
 
-def reload(path, dbus=False):
+def reload(path, adapter=''):
     """
     Reload file(s) specified by path.
 
@@ -73,15 +61,19 @@ def reload(path, dbus=False):
     a 'success' field.  For critical errors such as failure to connect to the
     D-Bus service, it will return None.
     """
-    if dbus:
-        d = callDeferredMethod("Reload", path)
+    if adapter == 'dbus':
+        d = callDeferredMethodDbus("Reload", path)
+        blocking = Blocking(d)
+        return blocking.wait()
+    elif adapter == 'rpc':
+        d = callDeferredMethodRpc("Reload", path)
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        return ConfigService.configManager.loadConfig(path)
+        return configManager.loadConfig(path)
 
 
-def waitSystemUp(dbus=False):
+def waitSystemUp(adapter=''):
     """
     Wait for the configuration daemon to finish its first load.
 
@@ -90,9 +82,13 @@ def waitSystemUp(dbus=False):
     a 'success' field.  For critical errors such as failure to connect to the
     D-Bus service, it will return None.
     """
-    if dbus:
-        d = callDeferredMethod("WaitSystemUp")
+    if adapter == 'dbus':
+        d = callDeferredMethodDbus('WaitSystemUp')
+        blocking = Blocking(d)
+        return blocking.wait()
+    elif adapter == 'rpc':
+        d = callDeferredMethodRpc('WaitSystemUp')
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        return ConfigService.configManager.waitSystemUp()
+        return configManager.waitSystemUp()
