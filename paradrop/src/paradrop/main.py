@@ -87,7 +87,7 @@ def main():
         from paradrop.backend import pdconfd
 
         # Start the configuration daemon
-        pdconfd.main.run_pdconfd()
+        pdconfd.main.run_pdconfd(dbus=False)
 
     else:
         from paradrop.backend import pdconfd

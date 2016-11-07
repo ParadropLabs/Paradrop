@@ -17,6 +17,19 @@ def test_client(mClient, mDefer, mOut):
     mDefer.returnValue.assert_called_once_with('testing')
     mOut.err.assert_called_once_with("D-Bus error: {}" .format(e))
 
+@patch('paradrop.backend.pdconfd.client_rpc.out')
+@patch('paradrop.backend.pdconfd.client_rpc.defer')
+@patch('paradrop.backend.pdconfd.client_rpc.client')
+def test_client(mClient, mDefer, mOut):
+    e = Exception('rpc error')
+    conn = MagicMock()
+    mClient.connect_UNIX.return_value = conn
+    conn.createRequest.return_value = 'testing'
+    mDefer.returnValue.side_effect = e
+    client.callDeferredMethodRpc('test', *{})
+    mDefer.returnValue.assert_called_once_with('testing')
+    mOut.err.assert_called_once_with("Unix sockets error: {}" .format(e))
+
 @patch('paradrop.backend.pdconfd.client.threading')
 def test_Blocking(mThread):
     deffered = MagicMock()

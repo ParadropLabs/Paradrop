@@ -11,5 +11,5 @@ def callDeferredMethodRpc(method, *args):
         conn = yield client.connect_UNIX(socket_path, connectTimeout=5, waitTimeout=5)
         result = yield conn.createRequest(method, *args)
         defer.returnValue(result)
-    except e:
+    except Exception as e:
         out.err("Unix sockets error: {}".format(e))

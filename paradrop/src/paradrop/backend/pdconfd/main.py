@@ -53,7 +53,6 @@ def run_thread(execute=True, dbus=True):
     configManager = ConfigManager(settings.PDCONFD_WRITE_DIR, execute)
     reactor.callFromThread(listen, configManager, dbus)
 
-
 def run_pdconfd(execute=True, dbus=True):
     """
     Start pdconfd daemon.
