@@ -3,7 +3,7 @@ from twisted.internet import reactor, defer
 
 from paradrop.base.output import out
 
-from .main import configManager
+from . import main
 from .client_dbus import callDeferredMethodDbus
 from .client_rpc import callDeferredMethodRpc
 
@@ -51,7 +51,7 @@ def reloadAll(adapter=''):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        return configManager.loadConfig()
+        return main.configManager.loadConfig()
 
 
 def reload(path, adapter=''):
@@ -72,7 +72,7 @@ def reload(path, adapter=''):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        return configManager.loadConfig(path)
+        return main.configManager.loadConfig(path)
 
 
 def waitSystemUp(adapter=''):
@@ -93,4 +93,4 @@ def waitSystemUp(adapter=''):
         blocking = Blocking(d)
         return blocking.wait()
     else:
-        return configManager.waitSystemUp()
+        return main.configManager.waitSystemUp()
