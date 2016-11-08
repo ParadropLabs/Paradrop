@@ -26,8 +26,8 @@ class ProcessMonitor(object):
         """
         service: service name (used to restart it).
         cmdstring: string to look for in running command name (e.g. "docker")
-        pidfile: None or path to look for pid file(s).  Bash-style globbing is
-        supported, e.g. "/var/lib/apps/docker/*/run/docker.pid".
+        pidfile: None or path to look for pid file(s).
+        Bash-style globbing is supported, e.g. "/var/snap/docker/*/run/docker.pid".
         action: "restart" the service or "reboot" the machine
         """
         self.service = service
@@ -41,7 +41,7 @@ class ProcessMonitor(object):
         if pidfile is not None:
             self.pidfile = pidfile
         else:
-            self.pidfile = "/var/lib/apps/{service}/*/run/{service}.pid".format(
+            self.pidfile = "/var/snap/{service}/*/run/{service}.pid".format(
                     service=service)
 
     def check(self):
