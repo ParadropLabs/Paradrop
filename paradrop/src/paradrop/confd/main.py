@@ -37,12 +37,14 @@ def listen(configManager, dbus):
         except error.DBusException as e:
             out.warn("Failed to export DBus object: {}".format(e))
     else:
-        service = ConfigServiceRpc(configManager)
+        # Disable the code for now because we are not using it
+        pass
+#        service = ConfigServiceRpc(configManager)
 
-        try:
-            reactor.listenUNIX(socket_path, service)
-        except Exception as e:
-            out.warn("Failed to listen on socket {}, {}".format(socket_path, e))
+#        try:
+#            reactor.listenUNIX(socket_path, service)
+#        except Exception as e:
+#            out.warn("Failed to listen on socket {}, {}".format(socket_path, e))
 
 def run_thread(execute=True, dbus=True):
     """
