@@ -49,13 +49,12 @@ def main():
                    action='append', type=str, default=[])
     p.add_argument('--config', help='Run as the configuration daemon',
                    action='store_true')
-    p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test, local]',
+    p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test]',
                    action='store', type=str, default='production')
     p.add_argument('--no-exec', help='Skip execution of configuration commands',
                    action='store_false', dest='execute')
 
     # Things to replace
-    p.add_argument('--local', '-l', help='Run on local machine', action='store_true')
     p.add_argument('--development', help='Enable the development environment variables',
                    action='store_true')
 
@@ -65,15 +64,6 @@ def main():
 
     args = p.parse_args()
     # print args
-
-    # Temp- this should go to nexus (the settings portion of it, at least)
-    # Change the confd directories so we can run locally
-    if args.local:
-        settings.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
-        settings.UCI_CONFIG_DIR = "/tmp/config.d"
-        settings.UCI_BACKUP_DIR = "/tmp/config-backup.d"
-        settings.HOST_CONFIG_PATH = "/tmp/hostconfig.yaml"
-        settings.HOST_DATA_PARTITION = "/"
 
     # Check for settings to overwrite (MOVE TO NEXUS)
     settings.updateSettings(args.settings)

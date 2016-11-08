@@ -45,7 +45,7 @@ DBAPI_FAILURE_THRESH = float("inf")
 #
 FC_BOUNCE_UPDATE = None
 
-FC_CHUTESTORAGE_SAVE_PATH = "chutes"
+FC_CHUTESTORAGE_SAVE_PATH = os.environ['SNAP_DATA'] + "chutes"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
 RESERVED_CHUTE = "__PARADROP__"
 
@@ -57,15 +57,15 @@ PORTAL_SERVER_PORT = 80
 #
 # Host configuration file
 #
-HOST_CONFIG_PATH = "/etc/paradrop_host_config"
+HOST_CONFIG_PATH = os.environ['SNAP_DATA'] + "hostconfig.yaml"
 
 HOST_DATA_PARTITION = "/writable"
 
 #
 # UCI configuration files
 #
-UCI_CONFIG_DIR = "/etc/config"
-UCI_BACKUP_DIR = "/tmp"
+UCI_CONFIG_DIR = os.environ['SNAP_DATA'] + "/config.d"
+UCI_BACKUP_DIR = os.environ['SNAP_DATA'] + "config-backup.d"
 
 #
 # Chute data directory is used to provide persistence for chute data.
@@ -79,8 +79,7 @@ UCI_BACKUP_DIR = "/tmp"
 # Internal is inside the chute; external is in the host.
 #
 INTERNAL_DATA_DIR = "/data"
-EXTERNAL_DATA_DIR = "/var/lib/apps/paradrop/data/{chute}"
-
+EXTERNAL_DATA_DIR = os.environ['SNAP_COMMON'] + "/{chute}"
 #
 # System directory is used to share system information from the host
 # down to the chute such as a list of devices connected to WiFi.  This
@@ -175,14 +174,6 @@ def updateSettings(slist=[]):
     from types import ModuleType
     # Get a handle to our settings defined above
     mod = sys.modules[__name__]
-
-    # Adjust default paths if we are running under Snappy
-    dataPath = os.environ.get("SNAP_APP_DATA_PATH", None)
-    if dataPath is not None:
-        mod.FC_CHUTESTORAGE_SAVE_PATH = os.path.join(dataPath, "chutes")
-        mod.UCI_CONFIG_DIR = os.path.join(dataPath, "config.d")
-        mod.UCI_BACKUP_DIR = os.path.join(dataPath, "config-backup.d")
-        mod.HOST_CONFIG_PATH = os.path.join(dataPath, "hostconfig.yaml")
 
     # First overwrite settings they may have provided with the arg list
     for kv in slist:
