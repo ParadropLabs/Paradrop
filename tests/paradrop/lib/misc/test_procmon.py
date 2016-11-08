@@ -35,6 +35,8 @@ def test_ProcessMonitor(psutil, glob, os, mock_open):
 
 @patch("paradrop.lib.misc.procmon.subprocess")
 def test_ProcessMonitor_restart(subprocess):
+    ProcessMonitor.allowedActions = set(["restart", "reboot"])
     mon = ProcessMonitor("test", action="reboot")
+    print mon.allowedActions
     mon.restart()
     assert subprocess.call.called
