@@ -1,7 +1,7 @@
 import ipaddress
 import itertools
 
-from paradrop.base.lib.output import out
+from paradrop.base.output import out
 
 
 class ResourcePool(object):

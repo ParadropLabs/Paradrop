@@ -1,9 +1,9 @@
 import ipaddress
 import itertools
 
-from paradrop.base.lib.output import out
-from paradrop.base.lib import pdutils
-from paradrop.lib import settings
+from paradrop.base.output import out
+from paradrop.base import pdutils
+from paradrop.lib.misc import settings
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.config.pool import NetworkPool, NumericPool
 from paradrop.lib.utils import addresses, uci
@@ -11,14 +11,11 @@ from paradrop.lib.utils import addresses, uci
 
 MAX_INTERFACE_NAME_LEN = 15
 
-
 # Pool of addresses available for chutes that request dynamic addressing.
 networkPool = NetworkPool(settings.DYNAMIC_NETWORK_POOL)
 
-
 # Pool of numbers for virtual interfaces.
 interfaceNumberPool = NumericPool()
-
 
 def getInterfaceDict(chute):
     """

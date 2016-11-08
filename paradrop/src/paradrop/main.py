@@ -10,9 +10,9 @@ import signal
 from twisted.internet import reactor, defer
 from autobahn.twisted.wamp import ApplicationRunner
 
-from paradrop.base.lib import output, nexus, names, cxbr
-from paradrop.lib import settings
-from paradrop.backend.pdfcd import apiinternal
+from paradrop.base import output, nexus, names, cxbr
+from paradrop.lib.misc import settings
+from paradrop.backend import apiinternal
 
 
 class Nexus(nexus.NexusBase):
@@ -84,17 +84,17 @@ def main():
     nexus.core = Nexus(args.mode, settings=args.settings)
 
     if args.config:
-        from paradrop.backend import pdconfd
+        from paradrop import confd
 
         # Start the configuration daemon
-        pdconfd.main.run_pdconfd(dbus=False)
+        confd.main.run_pdconfd(dbus=False)
 
     else:
-        from paradrop.backend import pdconfd
-        from paradrop.backend import pdfcd
-        from paradrop.lib.reporting import sendStateReport
-        from paradrop.backend.pdfcd.apibridge import updateManager
-        from paradrop.lib.portal import startPortal
+        from paradrop import confd
+        from paradrop import backend
+        from paradrop.lib.misc.reporting import sendStateReport
+        from paradrop.backend.apibridge import updateManager
+        from paradrop.lib.misc.portal import startPortal
 
         pdid = nexus.core.info.pdid
         apitoken = nexus.core.getKey('apitoken')
@@ -109,13 +109,13 @@ def main():
             updateManager.startUpdate()
 
         # Start the configuration service as a thread
-        pdconfd.main.run_thread(execute=args.execute)
+        confd.main.run_thread(execute=args.execute)
 
         # Start the web server for the Paradrop portal
         startPortal()
 
         # Now setup the RESTful API server for Paradrop
-        pdfcd.server.setup(args)
+        backend.server.setup(args)
 
 
 if __name__ == "__main__":

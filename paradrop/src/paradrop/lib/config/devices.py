@@ -14,10 +14,11 @@ import itertools
 import os
 import re
 
-from paradrop.base.lib.output import out
+from paradrop.base.output import out
 from paradrop.lib.utils import pdos, uci
-from paradrop.lib import settings
+from paradrop.lib.misc import settings
 from paradrop.lib.config import uciutils
+
 
 SYS_DIR = "/sys/class/net"
 EXCLUDE_IFACES = set(["lo"])

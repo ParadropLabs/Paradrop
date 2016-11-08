@@ -9,14 +9,14 @@ import shutil
 from distutils import dir_util
 
 # We have to import this for the decorator
-from paradrop.base.lib.output import out
+from paradrop.base.output import out
+
 
 # protect the original open function
 __open = open
 
 # Since we overwrite everything else, do the same to basename
 basename = lambda x: os.path.basename(x)
-
 
 def getMountCmd():
     return "mount"

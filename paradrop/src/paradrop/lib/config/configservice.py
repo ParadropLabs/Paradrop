@@ -4,11 +4,12 @@
         to change the host OS config. This would include things like changing
         the networking, DHCP server settings, wifi, etc..
 """
+
 import json
 
-from paradrop.backend.pdconfd import client
+from paradrop.confd import client
 from paradrop.lib.utils import uci
-from paradrop.base.lib.output import out
+from paradrop.base.output import out
 
 
 def reloadAll(update):

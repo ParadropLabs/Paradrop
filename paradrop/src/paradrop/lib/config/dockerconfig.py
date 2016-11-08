@@ -1,9 +1,3 @@
-from io import BytesIO
-
-from paradrop.base.lib.output import out
-from paradrop.lib import settings
-from paradrop.lib.utils import pdos, pdosq
-
 """
     dockerconfig module:
         This module contains all of the knowledge of how to take internal pdfcd
@@ -11,6 +5,12 @@ from paradrop.lib.utils import pdos, pdosq
         what docker needs to function properly, whether that be in the form of dockerfiles
         or the HostConfig JSON object known at init time of the chute.
 """
+
+from io import BytesIO
+
+from paradrop.base.output import out
+from paradrop.lib.misc import settings
+from paradrop.lib.utils import pdos, pdosq
 
 
 def getVirtPreamble(update):
