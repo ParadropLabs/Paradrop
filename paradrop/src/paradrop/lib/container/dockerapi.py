@@ -92,26 +92,19 @@ def writeDockerConfig():
     Mainly, we want to tell Docker not to start containers automatically on
     system boot.
     """
-    # First we have to find the configuration file.  On Snappy, it should be in
-    # "/var/lib/apps/docker/{version}/etc/docker.conf", but version could
-    # change.
-    path = "/var/lib/apps/docker"
-    if not os.path.exists(path):
-        out.warn('No directory "{}" found'.format(path))
-        return False
+    # First we have to find the configuration file.
+    # On ubuntu 16.04 with docker snap, it should be in
+    # "/var/snap/docker/{version}/etc/docker/", but version could change.
+    path = "/var/snap/docker/current/etc/docker/docker.conf"
 
     written = False
-    for d in os.listdir(path):
-        finalPath = os.path.join(path, d, "etc/docker.conf")
-        if not os.path.exists(finalPath):
-            continue
-
+    if os.path.exists(path):
         try:
-            with open(finalPath, "w") as output:
+            with open(path, "w") as output:
                 output.write(DOCKER_CONF)
             written = True
         except Exception as e:
-            out.warn('Error writing to {}: {}'.format(finalPath, str(e)))
+            out.warn('Error writing to {}: {}'.format(path, str(e)))
 
     if not written:
         out.warn('Could not write docker configuration.')
@@ -455,7 +448,7 @@ def setup_net_interfaces(chute):
         if settings.DOCKER_BIN_DIR not in env['PATH']:
             env['PATH'] += ":" + settings.DOCKER_BIN_DIR
 
-        cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i',
+        cmd = ['pipework', externalIntf, '-i',
                internalIntf, chute.name,  IP]
         out.info("Calling: {}\n".format(" ".join(cmd)))
         try:
