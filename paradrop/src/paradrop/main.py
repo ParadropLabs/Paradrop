@@ -91,7 +91,7 @@ def main():
 
     else:
         from paradrop import confd
-        from paradrop import backend
+        from paradrop.backend import server
         from paradrop.lib.misc.reporting import sendStateReport
         from paradrop.backend.apibridge import updateManager
         from paradrop.lib.misc.portal import startPortal
@@ -109,13 +109,13 @@ def main():
             updateManager.startUpdate()
 
         # Start the configuration service as a thread
-        confd.main.run_thread(execute=args.execute)
+        confd.main.run_thread(execute=args.execute, dbus=False)
 
         # Start the web server for the Paradrop portal
         startPortal()
 
         # Now setup the RESTful API server for Paradrop
-        backend.server.setup(args)
+        server.setup(args)
 
 
 if __name__ == "__main__":

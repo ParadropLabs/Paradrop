@@ -11,7 +11,7 @@ from paradrop.lib.misc import settings
 
 from .manager import ConfigManager
 from .configservice_dbus import ConfigServiceDbus
-from .configservice_rpc import ConfigServiceRpc
+from .configservice_rpc import ConfigServiceRpc, socket_path
 
 
 configManager = None
@@ -40,9 +40,9 @@ def listen(configManager, dbus):
         service = ConfigServiceRpc(configManager)
 
         try:
-            reactor.listenUNIX(ConfigServiceRpc.socket_path, service)
-        except e:
-            out.warn("Failed to listen on socket {}, {}".format(ConfigServiceRpc.socket_path, e))
+            reactor.listenUNIX(socket_path, service)
+        except Exception as e:
+            out.warn("Failed to listen on socket {}, {}".format(socket_path, e))
 
 def run_thread(execute=True, dbus=True):
     """
