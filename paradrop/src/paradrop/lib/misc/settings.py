@@ -45,7 +45,7 @@ DBAPI_FAILURE_THRESH = float("inf")
 #
 FC_BOUNCE_UPDATE = None
 
-FC_CHUTESTORAGE_SAVE_PATH = os.environ['SNAP_DATA'] + "chutes"
+FC_CHUTESTORAGE_SAVE_PATH = os.environ['SNAP_DATA'] + "/chutes"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
 RESERVED_CHUTE = "__PARADROP__"
 
@@ -57,7 +57,7 @@ PORTAL_SERVER_PORT = 80
 #
 # Host configuration file
 #
-HOST_CONFIG_PATH = os.environ['SNAP_DATA'] + "hostconfig.yaml"
+HOST_CONFIG_PATH = os.environ['SNAP_DATA'] + "/hostconfig.yaml"
 
 HOST_DATA_PARTITION = "/writable"
 
@@ -65,7 +65,7 @@ HOST_DATA_PARTITION = "/writable"
 # UCI configuration files
 #
 UCI_CONFIG_DIR = os.environ['SNAP_DATA'] + "/config.d"
-UCI_BACKUP_DIR = os.environ['SNAP_DATA'] + "config-backup.d"
+UCI_BACKUP_DIR = os.environ['SNAP_DATA'] + "/config-backup.d"
 
 #
 # Chute data directory is used to provide persistence for chute data.
