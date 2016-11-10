@@ -81,3 +81,40 @@ def getDeviceReservations():
                     iface.get('mode', None))
 
     return reservations
+
+
+def getInterfaceReservations():
+    reservations = set()
+
+    hostConfig = prepareHostConfig()
+    wifiInterfaces = hostConfig.get('wifi-interfaces', [])
+    for iface in wifiInterfaces:
+        if 'ifname' not in iface:
+            continue
+
+        ifname = iface['ifname']
+        reservations.add(ifname)
+
+    for chute in ChuteStorage.chuteList.values():
+        for iface in chute.getCache('networkInterfaces'):
+            if 'externalIntf' not in iface:
+                continue
+
+            ifname = iface['externalIntf']
+            reservations.add(ifname)
+
+    return reservations
+
+
+def getSubnetReservations():
+    reservations = set()
+
+    for chute in ChuteStorage.chuteList.values():
+        for iface in chute.getCache('networkInterfaces'):
+            if 'subnet' not in iface:
+                continue
+
+            subnet = iface['subnet']
+            reservations.add(subnet)
+
+    return reservations
