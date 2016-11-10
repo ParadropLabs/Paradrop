@@ -24,6 +24,10 @@ parts:
       runpd.sh: bin/runpd.sh
       env.sh: bin/env.sh
 
+  localweb:
+    plugin: dump
+    source: localweb/
+
   paradrop:
     plugin: python
     python-version: python2
@@ -59,6 +63,7 @@ parts:
         - bin/dnsmasq
     snap:
       - $binaries
+
   hostapd:
     plugin: make
     source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
