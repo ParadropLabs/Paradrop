@@ -55,8 +55,8 @@ def test_Blocking(mThread):
 
 @patch('paradrop.confd.client.callDeferredMethodDbus')
 @patch('paradrop.confd.client.Blocking')
-@patch('paradrop.confd.client.configManager')
-def test_reloadAll(mConfigManager, mBlocking, mDeffered):
+@patch('paradrop.confd.client.main')
+def test_reloadAll(main, mBlocking, mDeffered):
     mDeffered.return_value = 'test'
     mBlocking.return_value = MagicMock()
     mBlocking.return_value.wait.return_value = 'wait test'
@@ -64,13 +64,13 @@ def test_reloadAll(mConfigManager, mBlocking, mDeffered):
     mDeffered.assert_called_once_with('ReloadAll')
     mBlocking.assert_called_once_with('test')
 
-    mConfigManager.loadConfig.return_value = "new test"
+    main.configManager.loadConfig.return_value = "new test"
     assert client.reloadAll() == 'new test'
 
 @patch('paradrop.confd.client.callDeferredMethodDbus')
 @patch('paradrop.confd.client.Blocking')
-@patch('paradrop.confd.client.configManager')
-def test_reload(mConfigManager, mBlocking, mDeffered):
+@patch('paradrop.confd.client.main')
+def test_reload(main, mBlocking, mDeffered):
     path = "path!"
     mDeffered.return_value = 'test'
     mBlocking.return_value = MagicMock()
@@ -79,14 +79,14 @@ def test_reload(mConfigManager, mBlocking, mDeffered):
     mDeffered.assert_called_once_with('Reload', path)
     mBlocking.assert_called_once_with('test')
 
-    mConfigManager.loadConfig.return_value = "new test"
+    main.configManager.loadConfig.return_value = "new test"
     assert client.reload(path) == 'new test'
-    mConfigManager.loadConfig.assert_called_once_with(path)
+    main.configManager.loadConfig.assert_called_once_with(path)
 
 @patch('paradrop.confd.client.callDeferredMethodDbus')
 @patch('paradrop.confd.client.Blocking')
-@patch('paradrop.confd.client.configManager')
-def test_waitSystemUp(mConfigManager, mBlocking, mDeffered):
+@patch('paradrop.confd.client.main')
+def test_waitSystemUp(main, mBlocking, mDeffered):
     mDeffered.return_value = 'test'
     mBlocking.return_value = MagicMock()
     mBlocking.return_value.wait.return_value = 'wait test'
@@ -94,5 +94,5 @@ def test_waitSystemUp(mConfigManager, mBlocking, mDeffered):
     mDeffered.assert_called_once_with('WaitSystemUp')
     mBlocking.assert_called_once_with('test')
 
-    mConfigManager.waitSystemUp.return_value = "new test"
+    main.configManager.waitSystemUp.return_value = "new test"
     assert client.waitSystemUp() == 'new test'

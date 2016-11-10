@@ -45,7 +45,7 @@ DBAPI_FAILURE_THRESH = float("inf")
 #
 FC_BOUNCE_UPDATE = None
 
-FC_CHUTESTORAGE_SAVE_PATH = os.environ['SNAP_DATA'] + "/chutes"
+FC_CHUTESTORAGE_SAVE_PATH = "~/.paradrop/chutes"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
 RESERVED_CHUTE = "__PARADROP__"
 
@@ -57,15 +57,15 @@ PORTAL_SERVER_PORT = 80
 #
 # Host configuration file
 #
-HOST_CONFIG_PATH = os.environ['SNAP_DATA'] + "/hostconfig.yaml"
+HOST_CONFIG_PATH = "~/.paradrop/hostconfig.yaml"
 
 HOST_DATA_PARTITION = "/writable"
 
 #
 # UCI configuration files
 #
-UCI_CONFIG_DIR = os.environ['SNAP_DATA'] + "/config.d"
-UCI_BACKUP_DIR = os.environ['SNAP_DATA'] + "/config-backup.d"
+UCI_CONFIG_DIR = "~/.paradrop/config.d"
+UCI_BACKUP_DIR = "~/.paradrop/config-backup.d"
 
 #
 # Chute data directory is used to provide persistence for chute data.
@@ -79,7 +79,7 @@ UCI_BACKUP_DIR = os.environ['SNAP_DATA'] + "/config-backup.d"
 # Internal is inside the chute; external is in the host.
 #
 INTERNAL_DATA_DIR = "/data"
-EXTERNAL_DATA_DIR = os.environ['SNAP_COMMON'] + "/{chute}"
+EXTERNAL_DATA_DIR = "~/.paradrop/{chute}"
 #
 # System directory is used to share system information from the host
 # down to the chute such as a list of devices connected to WiFi.  This
@@ -174,6 +174,19 @@ def updateSettings(slist=[]):
     from types import ModuleType
     # Get a handle to our settings defined above
     mod = sys.modules[__name__]
+
+    # Adjust default paths if we are running under ubuntu snappy
+    snapDataPath = os.environ.get("SNAP_DATA", None)
+    snapCommonPath = os.environ.get("SNAP_COMMON", None)
+
+    if snapDataPath is not None:
+        mod.FC_CHUTESTORAGE_SAVE_PATH = os.path.join(snapDataPath, "chutes")
+        mod.UCI_CONFIG_DIR = os.path.join(snapDataPath, "config.d")
+        mod.UCI_BACKUP_DIR = os.path.join(snapDataPath, "config-backup.d")
+        mod.HOST_CONFIG_PATH = os.path.join(snapDataPath, "hostconfig.yaml")
+
+    if snapCommonPath is not None:
+        mod.EXTERNAL_DATA_DIR = os.path.join(snapCommonPath,"{chute}")
 
     # First overwrite settings they may have provided with the arg list
     for kv in slist:

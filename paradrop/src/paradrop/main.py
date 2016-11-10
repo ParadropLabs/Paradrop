@@ -58,7 +58,6 @@ def main():
     p.add_argument('--development', help='Enable the development environment variables',
                    action='store_true')
 
-    # No longer used
     p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
     p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
 
@@ -84,7 +83,6 @@ def main():
         from paradrop.backend import server
         from paradrop.lib.misc.reporting import sendStateReport
         from paradrop.backend.apibridge import updateManager
-        from paradrop.lib.misc.portal import startPortal
 
         pdid = nexus.core.info.pdid
         apitoken = nexus.core.getKey('apitoken')
@@ -101,8 +99,9 @@ def main():
         # Start the configuration service as a thread
         confd.main.run_thread(execute=args.execute, dbus=False)
 
-        # Start the web server for the Paradrop portal
-        startPortal()
+        if args.unittest is None:
+            from paradrop.lib.misc.portal import startPortal
+            startPortal()
 
         # Now setup the RESTful API server for Paradrop
         server.setup(args)
