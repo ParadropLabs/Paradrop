@@ -12,6 +12,9 @@ from pdtools.lib.output import out
 from pdtools.lib import pdutils
 
 
+# TODO: Instead of being a constant, look at device capabilities.
+MAX_AP_INTERFACES = 8
+
 MAX_INTERFACE_NAME_LEN = 15
 
 
@@ -158,6 +161,9 @@ def fulfillDeviceRequest(cfg, devices):
 
     reservations = getDeviceReservations()
 
+    bestDevice = None
+    bestScore = -1
+
     for device in devlist:
         dname = device['name']
 
@@ -169,13 +175,35 @@ def fulfillDeviceRequest(cfg, devices):
             # Remove virtual interfaces attached to this device.
             flushWirelessInterfaces(device['phy'])
 
+            # Choose the first one that matches.
+            bestDevice = device
+            break
+
         # AP mode interfaces can share a device, but not with monitor mode.
         elif dtype == "wifi" and mode == "ap":
             if reservations[dname].count(mode="monitor") > 0:
                 continue
 
-        out.info("Assign device {} for requested type {}".format(dname, dtype))
-        return device
+            apcount = reservations[dname].count(mode="ap")
+
+            # Avoid exceeding the max. number of AP interfaces.
+            if apcount >= MAX_AP_INTERFACES:
+                continue
+
+            # Otherwise, prefer interfaces that have at least one AP already.
+            # This preference leaves interfaces available for other purposes
+            # (e.g. monitor mode).
+            if apcount > bestScore:
+                bestDevice = device
+                bestScore = apcount
+
+        else:
+            # Handle other cases...
+            bestDevice = device
+
+    if bestDevice is not None:
+        out.info("Assign device {} for requested type {}".format(bestDevice['name'], dtype))
+        return bestDevice
 
     raise Exception("Could not satisfy requirement for device of type {}.".format(dtype))
 
