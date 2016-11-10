@@ -464,7 +464,7 @@ def test_config_wireless_ap():
     commands = manager.previousCommands
     for cmd in commands:
         print(cmd)
-    assert len(commands) == 12
+    assert len(commands) == 15
 
     # Check for command to add ap mode interface.
     assert in_commands("add wlan0 type __ap", commands)

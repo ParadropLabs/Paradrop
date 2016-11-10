@@ -20,8 +20,7 @@ from txrestapi.methods import GET, POST, PUT, ALL
 from paradrop.lib import settings
 from paradrop.lib.container import dockerapi
 from paradrop.lib.procmon import ProcessMonitor
-
-from paradrop.backend import fc
+from paradrop.backend.fc import configurer
 
 
 # Import local refs to pdfcd utilities
@@ -69,7 +68,7 @@ class ParadropAPIServer(APIResource):
         self.clientFailures = {}
 
         # Establish the configurer which is the launch point for all chute related endeavors
-        self.configurer = fc.configurer.PDConfigurer(None, lclreactor)
+        self.configurer = configurer.PDConfigurer(None, lclreactor)
 
         # Pass the configurer off to the API bridge so that WAMP calls can use it.
         apibridge.APIBridge.setConfigurer(self.configurer)

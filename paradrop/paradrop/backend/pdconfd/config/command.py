@@ -76,7 +76,7 @@ class CommandList(list):
 
 
 class Command(object):
-    def __init__(self, command, parent=None):
+    def __init__(self, command, parent=None, ignoreFailure=False):
         """
         Construct command object.
 
@@ -86,6 +86,7 @@ class Command(object):
         parent: parent object (should be ConfigObject subclass)
         """
         self.parent = parent
+        self.ignoreFailure = ignoreFailure
 
         if type(command) == list:
             self.command = [str(v) for v in command]
@@ -128,13 +129,13 @@ class Command(object):
         if self.parent is not None:
             self.parent.executed.append(self)
 
-        return (self.result == 0)
+        return (self.ignoreFailure or self.result == 0)
 
     def success(self):
         """
         Returns True if the command was successfully executed.
         """
-        return (self.result == 0)
+        return (self.ignoreFailure or self.result == 0)
 
 
 class KillCommand(Command):

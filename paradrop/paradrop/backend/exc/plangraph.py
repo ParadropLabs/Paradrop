@@ -38,6 +38,7 @@ DHCP_GET_VIRT_RULES             = 22
 ###############################################################################
 # Build Docker Image
 STATE_BUILD_IMAGE               = 30
+STATE_CALL_STOP                 = 40
 
 ###############################################################################
 # Write Configuration Data
@@ -75,7 +76,6 @@ STATE_MAKE_EXEC                 = 90
 
 ###############################################################################
 # Manipulate Chute Container
-STATE_CALL_STOP                 = 91
 STATE_CALL_UNFREEZE             = 92
 STATE_CALL_START                = 93
 STATE_CALL_FREEZE               = 94

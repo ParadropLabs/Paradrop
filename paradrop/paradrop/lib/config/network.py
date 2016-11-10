@@ -1,9 +1,12 @@
+import collections
 import ipaddress
 import itertools
 
 from paradrop.lib import settings
 from paradrop.lib.config import configservice, uciutils
+from paradrop.lib.config.devices import flushWirelessInterfaces
 from paradrop.lib.config.pool import NetworkPool, NumericPool
+from paradrop.lib.resources import getDeviceReservations
 from paradrop.lib.utils import addresses, uci
 from pdtools.lib.output import out
 from pdtools.lib import pdutils
@@ -109,6 +112,10 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
     iface['extIntfPrefix'] = "v" + iface['device'] + "."
 
+    # AP mode is the default, but we are adding support for monitor and sta
+    # mode.
+    iface['mode'] = cfg.get("mode", "ap")
+
     # Generate a name for the new interface in the host.
     iface['externalIntf'] = "{}{:04x}".format(
         iface['extIntfPrefix'], iface['extIntfNumber'])
@@ -118,7 +125,7 @@ def getNetworkConfigWifi(update, name, cfg, iface):
         raise Exception("Interface name is too long")
 
     # Add extra fields for WiFi devices.
-    if cfg['type'] == "wifi":
+    if cfg['type'] == "wifi" and iface['mode'] == 'ap':
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['ssid'])
         if res:
@@ -135,6 +142,42 @@ def getNetworkConfigWifi(update, name, cfg, iface):
         if 'dhcp' not in cfg:
             out.warn("No dhcp block found for interface {}; "
                      "will not run a DHCP server".format(name))
+
+
+def fulfillDeviceRequest(cfg, devices):
+    """
+    Find a physical device that matches the requested device type.
+
+    Raises an exception if one cannot be found.
+    """
+    dtype = cfg['type']
+    mode = cfg.get('mode', 'ap')
+
+    # Get list of devices by requested type.
+    devlist = devices.get(dtype, [])
+
+    reservations = getDeviceReservations()
+
+    for device in devlist:
+        dname = device['name']
+
+        # Monitor mode interfaces require exclusive access to the device.
+        if dtype == "wifi" and mode == "monitor":
+            if reservations[dname].count() > 0:
+                continue
+
+            # Remove virtual interfaces attached to this device.
+            flushWirelessInterfaces(device['phy'])
+
+        # AP mode interfaces can share a device, but not with monitor mode.
+        elif dtype == "wifi" and mode == "ap":
+            if reservations[dname].count(mode="monitor") > 0:
+                continue
+
+        out.info("Assign device {} for requested type {}".format(dname, dtype))
+        return device
+
+    raise Exception("Could not satisfy requirement for device of type {}.".format(dtype))
 
 
 def getNetworkConfig(update):
@@ -172,7 +215,6 @@ def getNetworkConfig(update):
     oldInterfaces = getInterfaceDict(update.old)
 
     devices = update.new.getCache('networkDevices')
-    devIters = {t: itertools.cycle(devices[t]) for t in devices.keys()}
 
     for name, cfg in update.new.net.iteritems():
         # Check for required fields.
@@ -193,13 +235,8 @@ def getNetworkConfig(update):
             #
             # Note: we try this first because it can fail, and then we will not try
             # to allocate any resources for it.
-            try:
-                device = devIters[cfg['type']].next()
-                iface['device'] = device['name']
-            except (KeyError, StopIteration):
-                out.warn("Request for {} device cannot be fulfilled".
-                         format(cfg['type']))
-                raise Exception("Missing device(s) requested by chute")
+            device = fulfillDeviceRequest(cfg, devices)
+            iface['device'] = device['name']
         else:
             iface['device'] = oldIface['device']
 
@@ -256,15 +293,23 @@ def getOSNetworkConfig(update):
     osNetwork = list()
 
     for iface in interfaces:
-        # A basic set of things must exist for all interfaces
         config = {'type': 'interface', 'name': iface['externalIntf']}
 
-        options = {
-            'proto': 'static',
-            'ipaddr': iface['externalIpaddr'],
-            'netmask': iface['netmask'],
-            'ifname': iface['externalIntf']
-        }
+        if iface['netType'] == "wifi" and iface.get('mode', 'ap') == "monitor":
+            # Monitor mode is a special case - do not configure an IP address
+            # for it.
+            options = {
+                'proto': 'none',
+                'ifname': iface['externalIntf']
+            }
+
+        else:
+            options = {
+                'proto': 'static',
+                'ipaddr': iface['externalIpaddr'],
+                'netmask': iface['netmask'],
+                'ifname': iface['externalIntf']
+            }
 
         # Add to our OS Network
         osNetwork.append((config, options))

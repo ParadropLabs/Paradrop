@@ -122,6 +122,9 @@ class ConfigWifiDevice(ConfigObject):
 
     options = [
         ConfigOption(name="type", required=True),
+        ConfigOption(name="phy", type=str),
+        ConfigOption(name="macaddr", type=str),
+        ConfigOption(name="ifname", type=str),
         ConfigOption(name="channel", type=int, required=True),
         ConfigOption(name="hwmode"),
         ConfigOption(name="txpower", type=int),
@@ -206,7 +209,7 @@ class ConfigWifiIface(ConfigObject):
             # This case is when the configuration specified the ifname option.
             self.isVirtual = False
 
-            cmd = ["iw", "dev", wifiDevice.name, "set", "type", iw_type]
+            cmd = ["iw", "dev", self.ifname, "set", "type", iw_type]
             commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         elif interface.config_ifname == wifiDevice.name:
@@ -215,7 +218,7 @@ class ConfigWifiIface(ConfigObject):
             self._ifname = interface.config_ifname
             self.isVirtual = False
 
-            cmd = ["iw", "dev", wifiDevice.name, "set", "type", iw_type]
+            cmd = ["iw", "dev", interface.config_ifname, "set", "type", iw_type]
             commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         elif self.ifname is None:
@@ -226,8 +229,12 @@ class ConfigWifiIface(ConfigObject):
             self._ifname = interface.config_ifname
 
         if self.isVirtual:
+            # Try removing interface first in case it already exists.
+            cmd = ["iw", "dev", self._ifname, "del"]
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
+
             # Command to create the virtual interface.
-            cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
+            cmd = ["iw", "phy", wifiDevice.name, "interface", "add",
                    self._ifname, "type", iw_type]
             commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 

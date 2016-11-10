@@ -101,7 +101,7 @@ def generateHostConfig(devices):
 
     for wifiDev in devices['wifi']:
         newWifi = {
-            'interface': wifiDev['name'],
+            'phy': wifiDev['name'],
             'channel': channels.next()
         }
 

@@ -162,11 +162,11 @@ Example
     "wifi": [
         {
             "channel": 1,
-            "interface": "wlan0"
+            "phy": "phy0"
         },
         {
             "channel": 36,
-            "interface": "wlan1",
+            "phy": "phy1",
             "hwmode": "11a",
             "htmode": "HT40+",
             "short_gi_40": true,
@@ -176,14 +176,14 @@ Example
     ],
     "wifi-interfaces": [
         {
-            "device": "wlan0",
+            "device": "phy0",
             "ssid": "paradrop",
             "mode": "ap",
             "network": "lan",
             "ifname": "wlan0"
         },
         {
-            "device": "wlan1",
+            "device": "phy1",
             "ssid": "paradrop-5G",
             "mode": "ap",
             "network": "lan",
