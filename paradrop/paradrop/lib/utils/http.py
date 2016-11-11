@@ -380,7 +380,8 @@ class PDServerRequest(object):
             # returns a 401 code, meaning the id/password is invalid, it should
             # not go down this code path again (prevented by check against
             # self.setAuthHeader above).
-            authRequest = PDServerRequest('/auth/router', setAuthHeader=False)
+            authRequest = PDServerRequest('/auth/router', driver=self.driver,
+                    setAuthHeader=False)
             d = authRequest.post(id=nexus.core.info.pdid,
                     password=nexus.core.getKey('apitoken'))
 
