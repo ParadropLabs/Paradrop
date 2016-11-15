@@ -99,7 +99,7 @@ def main():
         # Start the configuration service as a thread
         confd.main.run_thread(execute=args.execute, dbus=False)
 
-        if args.unittest is None:
+        if not args.unittest:
             from paradrop.lib.misc.portal import startPortal
             startPortal()
 
