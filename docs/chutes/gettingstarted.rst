@@ -1,52 +1,40 @@
-
 Getting Started
-====================================
+===============
 
 This will quickly take you through the process of bringing up a Hello World chute in a virtual machine on your computer.
 
-*NOTE*: As of release 0.1, pdbuild is built around using Ubuntu. We will eliminate this requirement soon, work arounds can be found at :ref:`no_ubuntu`.
+*NOTE*: These instructions assume you are running Ubuntu.  The steps to launch a virtual machine may be different for other environments.
 
 Environment setup
--------------------
+-----------------
 
-.. TODO: remove need to say install pypubsub once fixed.
+These steps wil download our router image and launch it a virtual machine.
 
 0. Prerequisites:
+   * Packages: qemu-kvm
+1. Download the latest image (paradrop_router.img.tgz) from `here <https://paradrop.org/release/2016-11-08/`_.  The image already has Paradrop installed, so you do not need to download the snap files.
+2. Extract the image ``tar xf paradrop_router.img.tgz``.
+3. Launch the VM ``kvm -m 1024 -netdev user,id=net0,hostfwd=tcp::8080-:80,hostfwd=tcp::14321-:14321 -device virtio-net-pci,netdev=net0 -drive file=paradrop_router.img,format=raw``.
 
-   * Packages: Python 2.7, python-pip, python-dev, libffi-dev, libssl-dev
-   * We recommend to try the tutorial on virtual environment ``pip install virtualenv; cd my_project_folder; virtualenv venv; source venv/bin/activate``
-   * PyPI: pex
-   * When you install build tools you may have to run:``pip install pypubsub --allow-external pypubsub``
+Activating your Router
+----------------------
 
-1. Install our `build tools <https://pypi.python.org/pypi/pdtools>`_ (``pip install pdtools``).
-2. Clone our `instance tools <https://github.com/ParadropLabs/Paradrop>`_.
-3. Setup instance tools ``./pdbuild.sh setup``
-4. Boot local testing VM ``./pdbuild.sh up``
-5. Install instance dependencies ``./pdbuild.sh install_deps``
-6. Build the tools to go into testing VM ``./pdbuild.sh build``
-7. Push tools into VM ``./pdbuild.sh install`` (NOTE: sometimes this fails, please check :doc:`/issues`)
-8. Check the installation ``./pdbuild.sh check``
+Follow these steps the first time you start a new physical or virtual Paradrop router.  Activation associates the router with your account on `paradrop.org <https://paradrop.org>`_ so that you can install chutes.
 
+0. You will need an account on `paradrop.org <https://paradrop.org>`_.
+1. From the Routers tab, click Create Router.  Give your router a unique name and an optional description to help you remember it and submit.
+2. On the router page, note the "Router ID" and "Password" fields.  You will need to copy this information to the router so that it can connect.
+3. Open the `router portal <http://localhost:8080>`_.  Click the Login button and enter the information from the paradrop.org router page. If the activation was successful, you should see the following messages::
+   This router is provisioned.
+   The HTTP connection is ready.
+   The WAMP connection is ready.
+You may need to refresh the page before the messages appear.  *Important*: Although the Login button remains on the page, you only need to complete this step one time for a router.
 
-Installing chutes
------------------------
+Installing Chutes
+-----------------
 
-First you must register an account from our CLI: ``paradrop register``.
-This will setup a private key on your computer which allows you to access our platform. (Cautious: the password must be longer than 8 characters. Use '-v' parameter to check the error message if the command is stuck)
-
-* Clone the Paradrop `example apps <https://github.com/ParadropLabs/Example-Apps>`_.
-
-Install **hello-world** chute::
-
-    cd <apps-repo>/hello-world
-    paradrop chute install localhost 9999 ./config.yaml
-    
-    Result:
-    ...
-    Chute hello-world create success
-
-As a simple use case, **hello-world** starts an nginx server in the chute. To access this, visit ``localhost:9000`` in any web browser, you should see::
-
-    Hello World from Paradrop!
-
-Running ``paradrop chute stop localhost 9999 hello-world`` will stop the chute, if you refresh the webpage, you should no longer see the Hello World message.
+0. You will need an account on `paradrop.org <https://paradrop.org>`_ and an activated router.
+1. Go to the Chute Store tab on paradrop.org.  There you will find some public chutes such as the hello-world chute.  You can also create your own chutes here.
+2. Click on the hello-world chute,  click Install, click your router's name to select it, and finally, click Install.
+3. That will take you to the router page again where you can click the update item to monitor its progress.  When the installation is complete, an entry will appear under the Chutes list.
+4. The hello-world chute starts a webserver on `http://localhost:8000`.  Once the installation is complete, test it in a web browser.

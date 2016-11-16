@@ -33,7 +33,7 @@ The Paradrop workflow
 
 There are two components to the Paradrop platform:
 
-* The `build tools <https://pypi.python.org/pypi/pdtools>`_ - our CLI that enables registration, login, and control.
+* The `build tools <https://pypi.python.org/pypi/pdtools>`_ - our CLI that enables registration, login, and control.  With version 0.2 and up, Paradrop routers can be managed through our `cloud management <https://paradrop.org>`_ service.
 * The `instance tools <https://github.com/ParadropLabs/Paradrop>`_ - our configuration daemons and tools to launch apps on hardware.
 
 .. image:: images/dev_tools_map.png
@@ -63,7 +63,4 @@ If you are interested in working on the instance side of paradrop (our github co
 What if I don't have Ubuntu?
 ====================================
 
-We will soon switch our development system to Vagrant, which will allow support across all major operating systems.
-We will also update the docs with notes on how to download precompiled versions of our Paradrop instance tools once they have been fully tested.
-
-
+With version 0.2 and up, all of Paradrop's capabilities can be managed through our web-based service at `paradrop.org <https://paradrop.org>`.
