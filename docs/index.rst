@@ -63,4 +63,4 @@ If you are interested in working on the instance side of paradrop (our github co
 What if I don't have Ubuntu?
 ====================================
 
-With version 0.2 and up, all of Paradrop's capabilities can be managed through our web-based service at `paradrop.org <https://paradrop.org>`.
+With version 0.2 and up, all of Paradrop's capabilities can be managed through our web-based service at `paradrop.org <https://paradrop.org>`_.
