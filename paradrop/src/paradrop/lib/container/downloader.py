@@ -35,6 +35,7 @@ class Downloader(object):
         self.secret = secret
         self.repo_owner = repo_owner
         self.repo_name = repo_name
+        self.checkout = None
 
         self.commitHash = None
         self.commitMessage = None
@@ -96,6 +97,18 @@ class Downloader(object):
 
 
 class GithubDownloader(Downloader):
+    def __init__(self, url, checkout="master", **kwargs):
+        """
+        checkout: branch, tag, or commit hash to checkout (default: "master").
+        """
+        super(GithubDownloader, self).__init__(url, **kwargs)
+
+        if checkout:
+            self.checkout = checkout
+        else:
+            # Interpret None or empty string as the default, "master".
+            self.checkout = "master"
+
     def _create_curl_conn(self, url):
         """
         Create a cURL connection object with useful default settings.
@@ -118,11 +131,11 @@ class GithubDownloader(Downloader):
         return conn
 
     def download(self):
-        url = "https://github.com/{}/{}/tarball/master".format(
-                self.repo_owner, self.repo_name)
+        url = "https://github.com/{}/{}/tarball/{}".format(
+                self.repo_owner, self.repo_name, self.checkout)
         conn = self._create_curl_conn(url)
 
-        self.tarFile = os.path.join(self.workDir, "master.tar.gz")
+        self.tarFile = os.path.join(self.workDir, "source.tar.gz")
         with open(self.tarFile, "w") as output:
             conn.setopt(pycurl.WRITEFUNCTION, output.write)
             conn.perform()
@@ -144,8 +157,15 @@ class GithubDownloader(Downloader):
         if self.commitMessage is not None:
             result['CommitMessage'] = self.commitMessage
 
+        # If set, self.commitHash may be more specific than self.checkout (e.g.
+        # commit hash vs. branch name).  It is better to use the most specific
+        # one to query for meta data.
+        checkout = self.commitHash
+        if checkout is None:
+            checkout = self.checkout
+
         url = "https://api.github.com/repos/{owner}/{repo}/commits/{sha}".format(
-                owner=self.repo_owner, repo=self.repo_name, sha=self.commitHash)
+                owner=self.repo_owner, repo=self.repo_name, sha=checkout)
         conn = self._create_curl_conn(url)
 
         response = cStringIO.StringIO()
@@ -226,8 +246,8 @@ def downloader(url, user=None, secret=None, **kwargs):
             user = match.group(2)
         repo_owner = match.group(2)
         repo_name = match.group(3)
-        return GithubDownloader(url, user, secret, repo_owner=repo_owner,
-                repo_name=repo_name, **kwargs)
+        return GithubDownloader(url, user=user, secret=secret,
+                repo_owner=repo_owner, repo_name=repo_name, **kwargs)
 
     else:
         return WebDownloader(url, user=user, secret=secret, **kwargs)
