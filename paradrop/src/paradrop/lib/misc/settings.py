@@ -115,6 +115,11 @@ DYNAMIC_NETWORK_POOL = "192.168.128.0/17"
 # Directory containing "docker" binary.
 DOCKER_BIN_DIR = "/apps/bin"
 
+# Reject by default chute updates that would install an older version.  This
+# has been set to False to fulfill the requirement that users be able to
+# downgrade chutes.
+REJECT_DOWNGRADE = False
+
 ###############################################################################
 # Helper functions
 ###############################################################################

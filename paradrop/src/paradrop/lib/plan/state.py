@@ -63,7 +63,7 @@ def generatePlans(update):
             if update.new.version == update.old.version:
                 update.failure = "Version {} already exists on this device.".format(update.new.version)
                 return True
-            elif update.new.version < update.old.version:
+            elif (update.new.version < update.old.version) and settings.REJECT_DOWNGRADE:
                 update.failure = "A newer version ({}) already exists on this device.".format(update.old.version)
                 return True
             else:
