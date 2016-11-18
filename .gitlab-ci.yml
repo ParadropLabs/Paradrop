@@ -6,10 +6,9 @@ test:
   - nosetests --with-coverage --cover-package=paradrop
 
 build:
-  image: ubuntu:16.04
+  when: on_success
+  image: paradrop/builder:1
   script:
-  - apt-get update -qq
-  - apt-get install -y -qq libffi-dev snapcraft
   - cd paradrop && snapcraft
   artifacts:
     paths:
