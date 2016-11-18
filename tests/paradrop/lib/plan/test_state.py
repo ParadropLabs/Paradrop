@@ -18,7 +18,7 @@ def test_state_generatePlans():
     update.new.version = 1
     assert generatePlans(update) is True
 
-    # Update to older version should return True for failure.
+    # Update to older version is allowed by default (allow downgrades).
     update.old.version = 2
     update.new.version = 1
-    assert generatePlans(update) is True
+    assert generatePlans(update) is None
