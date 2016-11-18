@@ -4,3 +4,13 @@ test:
   script:
   - pip install -r requirements.txt
   - nosetests --with-coverage --cover-package=paradrop
+
+build:
+  image: ubuntu:16.04
+  script:
+  - apt-get update -qq
+  - apt-get install -y -qq libffi-dev snapcraft
+  - cd paradrop && snapcraft
+  artifacts:
+    paths:
+    - "paradrop/*.snap"
