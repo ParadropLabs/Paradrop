@@ -6,6 +6,7 @@ import firewall
 import hostconfig
 import network
 import osconfig
+import resource
 import snap
 import state
 import wifi

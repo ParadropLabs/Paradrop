@@ -38,6 +38,9 @@ class Chute(object):
     def __str__(self):
         return "Chute:{}".format(self.name)
 
+    def isRunning(self):
+        return self.state == STATE_RUNNING
+
     def isValid(self):
         """Return True only if the Chute object we have has all the proper things defined to be in a valid state."""
         if(not self.name or len(self.name) == 0):

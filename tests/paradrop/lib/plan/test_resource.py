@@ -10,4 +10,3 @@ def test_generatePlans(mockOutput):
     #Test that we get a out.header call
     update = MagicMock()
     resource.generatePlans(update)
-    mockOutput.header.assert_called_once_with("%r\n" % (update))

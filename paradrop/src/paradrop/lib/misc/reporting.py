@@ -16,7 +16,7 @@ from twisted.web.http_headers import Headers
 from paradrop.base import nexus
 from paradrop.base.output import out
 from paradrop.lib.chute import chutestorage
-from paradrop.lib.config import devices, hostconfig
+from paradrop.lib.config import devices, hostconfig, resource
 from paradrop.lib.utils.http import PDServerRequest
 from . import settings, status
 
@@ -68,14 +68,19 @@ class StateReportBuilder(object):
 
         report.chutes = []
         chuteStore = chutestorage.ChuteStorage()
-        for chute in chuteStore.getChuteList():
+        chutes = chuteStore.getChuteList()
+        allocation = resource.computeResourceAllocation(chutes)
+
+        for chute in chutes:
             report.chutes.append({
                 'name': chute.name,
                 'state': chute.state,
                 'warning': chute.warning,
                 'version': getattr(chute, 'version', None),
+                'allocation': allocation.get(chute.name, None),
                 'environment': getattr(chute, 'environment', None),
-                'external': getattr(chute, 'external', None)
+                'external': getattr(chute, 'external', None),
+                'resources': getattr(chute, 'resources', None)
             })
 
         report.devices = devices.listSystemDevices()

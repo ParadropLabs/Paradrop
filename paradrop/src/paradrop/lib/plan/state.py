@@ -90,9 +90,4 @@ def generatePlans(update):
             (state.saveChute,),
             (state.revertChute,))
 
-    # Apply resource constraints (CPU, memory)
-    # This must be done after the chute has been saved to chute storage.
-    update.plans.addPlans(plangraph.RESOURCE_APPLY_CONSTRAINTS,
-            (dockerapi.applyResourceConstraints,))
-
     return None
