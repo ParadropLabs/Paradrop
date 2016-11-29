@@ -47,6 +47,9 @@ Examples
         },
         "environment": {
             "CUSTOM_VARIABLE": 42
+        },
+        "resources": {
+            "cpu_fraction": 0.25
         }
     }
 }
@@ -104,6 +107,7 @@ projects and any web URL that points to tar/tar.gz file.
 - systemDir: (default: /paradrop) directory inside the chute that can
   be used to read system information such as a list of devices connected
   to the WiFi access point.
+- resources: dictionary of options for reserving compute resources.
 
 Host Configuration
 ==================

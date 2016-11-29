@@ -16,7 +16,8 @@ import subprocess
 from paradrop.base.output import out
 from paradrop.base.exceptions import ChuteNotFound, ChuteNotRunning
 from paradrop.base import nexus
-from paradrop.lib.misc import settings
+from paradrop.lib.chute import chutestorage
+from paradrop.lib.misc import resopt, settings
 
 from .downloader import downloader
 
@@ -497,3 +498,39 @@ def getChuteIP(name):
         raise ChuteNotRunning("The chute is not running.")
 
     return info['NetworkSettings']['IPAddress']
+
+
+def applyResourceConstraints(update):
+    chuteStore = chutestorage.ChuteStorage()
+    chutes = chuteStore.getChuteList()
+
+    chute_names = []
+    chute_cpu_fractions = []
+    for chute in chutes:
+        if chute.state != 'running':
+            continue
+        resources = getattr(chute, 'resources', {})
+        cpu_fraction = resources.get('cpu_fraction', None)
+
+        chute_names.append(chute.name)
+        chute_cpu_fractions.append(cpu_fraction)
+
+    # Use the optimizer to allocate cpu fractions and fill in unspecified
+    # (None) values.  The result is a vector that sums to one.
+    new_cpu_fractions = resopt.allocate(chute_cpu_fractions, total=1.0)
+
+    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+
+    n = len(chute_names)
+    for i in range(n):
+        # Convert the fraction to an integer.  We multiply by 1024*n so that
+        # they all center around 1024, which is what Docker assigns to
+        # containers by default.
+        share = int(round(new_cpu_fractions[i] * 1024 * n))
+
+        # Keep it above 2.  Docker treats 0 and 1 as special values.
+        share = max(share, 2)
+
+        out.info("Update chute {} set cpu_shares={}\n".format(chute_names[i], share))
+        client.update_container(container=chute_names[i], cpu_shares=share)
+

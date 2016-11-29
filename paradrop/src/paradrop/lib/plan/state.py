@@ -7,6 +7,7 @@ from paradrop.base.output import out
 from paradrop.base.pdutils import jsonPretty
 from paradrop.lib.misc import settings
 from paradrop.lib.chute import chute
+from paradrop.lib.config import state
 from paradrop.lib.container import dockerapi
 
 from . import plangraph
@@ -83,5 +84,15 @@ def generatePlans(update):
                     update.failure = update.name + " already stopped."
                     return True
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (dockerapi.stopChute,))
+
+    # Save the chute to the chutestorage.
+    update.plans.addPlans(plangraph.STATE_SAVE_CHUTE,
+            (state.saveChute,),
+            (state.revertChute,))
+
+    # Apply resource constraints (CPU, memory)
+    # This must be done after the chute has been saved to chute storage.
+    update.plans.addPlans(plangraph.RESOURCE_APPLY_CONSTRAINTS,
+            (dockerapi.applyResourceConstraints,))
 
     return None

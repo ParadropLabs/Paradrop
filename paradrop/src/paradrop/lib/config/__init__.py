@@ -7,4 +7,5 @@ import hostconfig
 import network
 import osconfig
 import snap
+import state
 import wifi

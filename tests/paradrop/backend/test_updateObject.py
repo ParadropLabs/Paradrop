@@ -18,6 +18,5 @@ def test_updateObject(mExc, mOut, mStore):
     mExc.executionplan.generatePlans.assert_called_once_with(update)
     mExc.executionplan.aggregatePlans.assert_called_once_with(update)
     mExc.executionplan.executePlans.assert_called_once_with(update)
-    store.saveChute.assert_called_once_with(update.new)
     assert mOut.usage.call_count == 1
     func.assert_called_once_with(update)

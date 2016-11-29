@@ -22,8 +22,6 @@ def test_update_object(executePlans, abortPlans):
     assert "Update" in repr(update)
     assert "Update" in str(update)
 
-    update.saveState()
-
     update.func = Mock()
     update.complete(success=True)
 
@@ -67,17 +65,6 @@ def test_update_chute(getChute):
 
     update = UpdateChute(obj)
     assert update.new.special == update.old.special
-
-    update.chuteStor = Mock()
-    update.chuteStor.deleteChute = Mock()
-    update.chuteStor.saveChute = Mock()
-
-    update.saveState()
-    assert update.chuteStor.saveChute.called
-
-    update.updateType = "delete"
-    update.saveState()
-    assert update.chuteStor.deleteChute.called
 
 
 def test_update_object_parse():

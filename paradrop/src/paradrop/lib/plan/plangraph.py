@@ -6,6 +6,11 @@
 
 ###############################################################################
 # PRIORITYFLAGS: Define the priority numbers as constants here
+#
+# These priority numbers control the order of execution for the stages of an
+# update.  Many of them are unused and can be repurposed.  Feel free to insert
+# new steps as needed.  However, be very careful changing the order of existing
+# steps, as many of them require a particular ordering.
 ###############################################################################
 
 ###############################################################################
@@ -58,29 +63,30 @@ RUNTIME_RELOAD_CONFIG           = 63
 
 ###############################################################################
 # Operations On Configuration Changes
-STATE_CALL_CFG                  = 77
-FILES_COPY_FROM_OS              = 78
-FILES_FETCH                     = 79
-STATE_FILES_STOP                = 80
-FILES_COPY_USER                 = 81
-FILES_COPY_TO_MNT               = 82
-STARTUP_CALL_EARLY_START        = 83
-STATE_SAVE_CFG                  = 84
-STRUCT_RELOAD_NETWORK           = 85
-STRUCT_RELOAD_WIFI              = 86
-TRAFFIC_RELOAD_FIREWALL         = 87
-RESOURCE_RELOAD_QOS             = 88
-DHCP_RELOAD                     = 89
-STATE_MAKE_EXEC                 = 90
+STATE_CALL_CFG                  = 70
+FILES_COPY_FROM_OS              = 71
+FILES_FETCH                     = 72
+STATE_FILES_STOP                = 75
+FILES_COPY_USER                 = 76
+FILES_COPY_TO_MNT               = 77
+STARTUP_CALL_EARLY_START        = 78
+STRUCT_RELOAD_NETWORK           = 79
+STRUCT_RELOAD_WIFI              = 80
+TRAFFIC_RELOAD_FIREWALL         = 81
+DHCP_RELOAD                     = 82
+STATE_MAKE_EXEC                 = 83
 
 ###############################################################################
 # Manipulate Chute Container
-STATE_CALL_STOP                 = 91
-STATE_CALL_UNFREEZE             = 92
-STATE_CALL_START                = 93
-STATE_CALL_FREEZE               = 94
-STATE_CALL_CLEANUP              = 95
-STATE_FILES_START               = 96
+STATE_CALL_STOP                 = 85
+STATE_CALL_UNFREEZE             = 86
+STATE_CALL_START                = 87
+STATE_CALL_FREEZE               = 88
+STATE_CALL_CLEANUP              = 89
+STATE_FILES_START               = 90
+
+STATE_SAVE_CHUTE                = 95
+RESOURCE_APPLY_CONSTRAINTS      = 96
 
 SNAP_INSTALL                    = 99
 COAP_CHANGE_PROCESSES           = 100

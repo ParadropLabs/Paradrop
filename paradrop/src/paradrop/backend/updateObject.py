@@ -73,12 +73,6 @@ class UpdateObject(object):
     def __str__(self):
         return "<Update({}) :: {}>".format(self.updateClass, self.name)
 
-    def saveState(self):
-        """
-            Function should be overwritten for each UpdateObject subtype
-        """
-        pass
-
     def started(self):
         """
         This function should be called when the updated object is dequeued and
@@ -213,9 +207,6 @@ class UpdateObject(object):
             self.complete(success=False, message=self.failure)
             return
 
-        # Now save the new state if we are all ok
-        self.saveState()
-
         # Respond to the API server to let them know the result
         self.complete(success=True, message='Chute {} {} success'.format(
             self.name, self.updateType))
@@ -272,16 +263,6 @@ class UpdateChute(UpdateObject):
             self.old.version = 0
         if not hasattr(self.new, 'version'):
             self.new.version = 0
-
-    def saveState(self):
-        """
-            For chutes specifically we need to change the chuteStor object to reflect
-            the new state of the system after a chute update. Perform that update here.
-        """
-        if(self.updateType == "delete"):
-            self.chuteStor.deleteChute(self.new)
-        else:
-            self.chuteStor.saveChute(self.new)
 
 
 class UpdateRouter(UpdateObject):
