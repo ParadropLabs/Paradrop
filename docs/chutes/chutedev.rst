@@ -11,6 +11,9 @@ Contents:
    :maxdepth: 2
 
    gettingstarted
+   development
+
+.. These sections are out of date.
    tutorials
    configuration
    installation
