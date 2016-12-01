@@ -12,7 +12,7 @@ COLOR='\033[01;33m'
 # Detect version from the "version=" line in setup.py.
 DEV_SNAPPY_VERSION=$(grep version paradrop/setup.py | awk -F'"' '{print $2}')
 
-RELEASE_SNAPPY_VERSION="0.1.0"
+RELEASE_SNAPPY_VERSION="0.2.1"
 DNSMASQ_SNAP="https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap"
 HOSTAPD_SNAP="https://paradrop.io/storage/snaps/hostapd_2.4-1_all.snap"
 PEX_CACHE="/var/lib/apps/paradrop/${DEV_SNAPPY_VERSION}/pex/install"
