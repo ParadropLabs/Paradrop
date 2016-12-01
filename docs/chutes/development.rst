@@ -49,12 +49,12 @@ for a light-weight web server.
 **ADD chute/index.html index.html**
 
 The ADD instruction copies a file or directory from the source repository
-to chute filesystem.  This is useful for installing scripts, binaries,
-assets, or other files required by the chute.  The <source> path should be
-inside the respository, and the <destination> path should be an absolute
-path or a path inside the chute's working directory.  Here we install
-the index.html file from our source repository to the search directory
-used by nginx.
+to the chute filesystem.  This is useful for installing scripts or
+other files required by the chute and are part of the source repository.
+The <source> path should be inside the respository, and the <destination>
+path should be an absolute path or a path inside the chute's working
+directory.  Here we install the index.html file from our source repository
+to the search directory used by nginx.
 
 Other useful commands for building chutes are RUN and CMD.  For a
 complete reference, please visit the official `Dockerfile reference
@@ -71,7 +71,7 @@ demonstrates some of the other useful instructions. ::
 
 Here we use a RUN instruction to install nginx and a CMD instruction
 to set nginx as the command to run inside the chute container.  Using
-*ubuntu:14.04* as the base image gives access to any packages that can
+"ubuntu:14.04" as the base image gives access to any packages that can
 be installed through apt-get.
 
 Persistent Data
@@ -92,20 +92,22 @@ with a WiFi access point will find a file in this directory that lists
 wireless clients.  In future versions there will also be information
 about Bluetooth and other wireless devices.
 
-**dnsmasq-wifi.leases**
-    This file lists client devices that have connected to the WiFi AP
-    and received a DHCP lease.  This is a plain text file with one line
-    for each device containing the following space-separated fields.
+dnsmasq-wifi.leases
+"""""""""""""""""""
 
-    1. DHCP lease expiration time (seconds since Unix epoch).
-    2. MAC address.
-    3. IP address.
-    4. Host name, if known.
-    5. Client ID, if known; the format of this field varies between devices.
+This file lists client devices that have connected to the WiFi AP
+and received a DHCP lease.  This is a plain text file with one line
+for each device containing the following space-separated fields.
 
-    The following example shows two devices connected to the chute's WiFi
-    network. ::
+1. DHCP lease expiration time (seconds since Unix epoch).
+2. MAC address.
+3. IP address.
+4. Host name, if known.
+5. Client ID, if known; the format of this field varies between devices.
 
-        1480650200 00:11:22:33:44:55 192.168.128.130 android-ffeeddccbbaa9988 *
-        1480640500 00:22:44:66:88:aa 192.168.128.170 someones-iPod 01:00:22:44:66:88:aa
+The following example shows two devices connected to the chute's WiFi
+network. ::
+
+    1480650200 00:11:22:33:44:55 192.168.128.130 android-ffeeddccbbaa9988 *
+    1480640500 00:22:44:66:88:aa 192.168.128.170 someones-iPod 01:00:22:44:66:88:aa
 

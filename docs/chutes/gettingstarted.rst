@@ -10,12 +10,19 @@ Environment setup
 
 These steps wil download our router image and launch it a virtual machine.
 
-1. Install required packages `sudo apt-get install qemu-kvm`.
-2. Download the latest image (paradrop_router.img.tgz) from `our releases <https://paradrop.org/release/2016-11-08/>`_.
-3. Extract the image ``tar xf paradrop_router.img.tgz``.
-4. Launch the VM. ::
+1. Install required packages::
 
-    kvm -m 1024 -netdev user,id=net0,hostfwd=tcp::8000-:8000,hostfwd=tcp::8022-:22,hostfwd=tcp::8080-:80,hostfwd=tcp::14321-:14321 \
+    sudo apt-get install qemu-kvm
+
+2. Download the latest image (paradrop_router.img.tgz) from `our releases <https://paradrop.org/release/2016-11-08/>`_.
+3. Extract the image::
+
+    tar xf paradrop_router.img.tgz
+
+4. Launch the VM::
+
+    kvm -m 1024 \
+    -netdev user,id=net0,hostfwd=tcp::8000-:8000,hostfwd=tcp::8022-:22,hostfwd=tcp::8080-:80,hostfwd=tcp::14321-:14321 \
     -device virtio-net-pci,netdev=net0 -drive file=paradrop_router.img,format=raw
 
 
@@ -27,7 +34,7 @@ Follow these steps the first time you start a new physical or virtual Paradrop r
 1. Make an account on `paradrop.org <https://paradrop.org>`_ if you do not have one.
 2. From the Routers tab, click Create Router.  Give your router a unique name and an optional description to help you remember it and click Submit.
 3. On the router page, find the "Router ID" and "Password" fields.  You will need to copy this information to the router so that it can connect.
-4. Open the router portal at `http://localhost:8080 <http://localhost:8080>`_.  Click the Login button and enter the information from the paradrop.org router page.  You may need to refresh the page before the messages appear.  *Important*: Although the Login button remains on the page, you only need to complete this step one time for a router.  If the activation was successful, you should see the following messages::
+4. Open the router portal at `http://localhost:8080 <http://localhost:8080>`_.  Click the Login button and enter the information from the paradrop.org router page.  You may need to refresh the page before the messages appear.  **Important**: Although the Login button remains on the page, you only need to complete this step one time for a router.  If the activation was successful, you should see the following messages::
 
     This router is provisioned.
     The HTTP connection is ready.
