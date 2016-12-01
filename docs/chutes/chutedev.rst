@@ -12,6 +12,7 @@ Contents:
 
    gettingstarted
    development
+   deployment
 
 .. These sections are out of date.
    tutorials

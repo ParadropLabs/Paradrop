@@ -73,3 +73,39 @@ Here we use a RUN instruction to install nginx and a CMD instruction
 to set nginx as the command to run inside the chute container.  Using
 *ubuntu:14.04* as the base image gives access to any packages that can
 be installed through apt-get.
+
+Persistent Data
+-----------------------
+
+Each running chute has a persistent data storage that is not visible
+to other chutes.  By default the persistent data directory is named
+"/data" inside the chute's filesystem.  Files stored in this directory
+will remain when upgrading or downgrading the chute and are only removed
+when uninstalling the chute.
+
+System Information
+-----------------------
+
+The Paradrop instance tools share system information with chutes through
+a read-only directory named "/paradrop".  Chutes that are configured
+with a WiFi access point will find a file in this directory that lists
+wireless clients.  In future versions there will also be information
+about Bluetooth and other wireless devices.
+
+**dnsmasq-wifi.leases**
+    This file lists client devices that have connected to the WiFi AP
+    and received a DHCP lease.  This is a plain text file with one line
+    for each device containing the following space-separated fields.
+
+    1. DHCP lease expiration time (seconds since Unix epoch).
+    2. MAC address.
+    3. IP address.
+    4. Host name, if known.
+    5. Client ID, if known; the format of this field varies between devices.
+
+    The following example shows two devices connected to the chute's WiFi
+    network. ::
+
+        1480650200 00:11:22:33:44:55 192.168.128.130 android-ffeeddccbbaa9988 *
+        1480640500 00:22:44:66:88:aa 192.168.128.170 someones-iPod 01:00:22:44:66:88:aa
+

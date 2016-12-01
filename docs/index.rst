@@ -55,7 +55,7 @@ Where to go from here?
 ====================================
 
 We have advanced app examples found under :doc:`chutes/chutedev`.
-If you are interested in working on the instance side of paradrop (our github code) than check out: :doc:`pd/paradropdev`. 
+If you are interested in working on the instance side of paradrop (our github code) than check out: :doc:`pd/paradropdev`.
 
 
 .. _no_ubuntu:
