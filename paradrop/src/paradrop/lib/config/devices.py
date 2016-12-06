@@ -183,6 +183,7 @@ def setSystemDevices(update):
     networkSections = list()
     firewallSections = list()
     wirelessSections = list()
+    qosSections = list()
 
     if 'wan' in hostConfig:
         config = {"type": "interface", "name": "wan"}
@@ -203,6 +204,13 @@ def setSystemDevices(update):
             "network": "wan"
         }
         firewallSections.append((config, options))
+
+        config = {"type": "interface", "name": "wan"}
+        options = {
+            "enabled": 0
+        }
+        qosSections.append((config, options))
+
 
     if 'lan' in hostConfig:
         config = {"type": "interface", "name": "lan"}
@@ -243,6 +251,12 @@ def setSystemDevices(update):
             }
             dhcpSections.append((config, options))
 
+        config = {"type": "interface", "name": "lan"}
+        options = {
+            "enabled": 0
+        }
+        qosSections.append((config, options))
+
     if 'wifi' in hostConfig:
         for dev in hostConfig['wifi']:
             config = {"type": "wifi-device", "name": dev['interface']}
@@ -270,3 +284,5 @@ def setSystemDevices(update):
               uci.getSystemPath("firewall"))
     setConfig(settings.RESERVED_CHUTE, wirelessSections,
               uci.getSystemPath("wireless"))
+    setConfig(settings.RESERVED_CHUTE, qosSections,
+              uci.getSystemPath("qos"))

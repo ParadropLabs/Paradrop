@@ -5,6 +5,9 @@ from .command import Command
 class ConfigInterface(ConfigObject):
     typename = "interface"
 
+    # Don't let qos:interface override this class.
+    maskable = False
+
     options = [
         ConfigOption(name="proto", required=True),
         ConfigOption(name="ifname", type=list, required=True),

@@ -28,7 +28,7 @@ class ConfigRedirect(ConfigObject):
         """
         commands = list()
 
-        src_zone = self.lookup(allConfigs, "zone", self.src)
+        src_zone = self.lookup(allConfigs, "firewall", "zone", self.src)
 
         # Special cases:
         # None->skip protocol and port arguments,
@@ -142,7 +142,7 @@ class ConfigZone(ConfigObject):
         if self.network is not None:
             for networkName in self.network:
                 # Look up the interface - may fail.
-                interface = self.lookup(allConfigs, "interface", networkName)
+                interface = self.lookup(allConfigs, "network", "interface", networkName)
                 yield interface
 
     def __commands_iptables(self, allConfigs, action, prio):

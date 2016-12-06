@@ -484,6 +484,19 @@ def prepare_environment(chute):
     return env
 
 
+def getChuteContainerID(name):
+    """
+    Look up a container by name and return its ID.
+    """
+    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    try:
+        info = client.inspect_container(name)
+    except docker.errors.NotFound:
+        raise ChuteNotFound("The chute could not be found.")
+
+    return info['Id']
+
+
 def getChuteIP(name):
     """
     Look up a container by name and return its IP address.
@@ -507,6 +520,23 @@ def _setResourceAllocation(allocation):
             chute, resources['cpu_shares']))
         client.update_container(container=chute,
                 cpu_shares=resources['cpu_shares'])
+
+        # Using class id 1:1 for prioritized, 1:3 for best effort.
+        # Prioritization is implemented in confd/qos.py.  Class-ID is
+        # represented in hexadecimal.
+        # Reference: https://www.kernel.org/doc/Documentation/cgroup-v1/net_cls.txt
+        if resources.get('prioritize_traffic', False):
+            classid = "0x10001"
+        else:
+            classid = "0x10003"
+
+        try:
+            container_id = getChuteContainerID(chute)
+            fname = "/sys/fs/cgroup/net_cls/docker/{}/net_cls.classid".format(container_id)
+            with open(fname, "w") as output:
+                output.write(classid)
+        except Exception as error:
+            out.warn("Error setting traffic class: {}\n".format(error))
 
 
 def setResourceAllocation(update):

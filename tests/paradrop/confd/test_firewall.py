@@ -14,7 +14,7 @@ def test_ConfigRedirect_commands_dnat():
     wanZone.interfaces.return_value = [eth0]
 
     allConfigs = {
-        ("zone", "wan"): wanZone
+        ("firewall", "zone", "wan"): wanZone
     }
 
     config = ConfigRedirect()

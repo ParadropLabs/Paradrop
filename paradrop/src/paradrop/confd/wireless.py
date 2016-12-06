@@ -178,10 +178,10 @@ class ConfigWifiIface(ConfigObject):
                 self.mode, str(self)))
 
         # Look up the wifi-device section.
-        wifiDevice = self.lookup(allConfigs, "wifi-device", self.device)
+        wifiDevice = self.lookup(allConfigs, "wireless", "wifi-device", self.device)
 
         # Look up the interface section.
-        interface = self.lookup(allConfigs, "interface", self.network)
+        interface = self.lookup(allConfigs, "network", "interface", self.network)
 
         self.isVirtual = True
 
@@ -269,10 +269,10 @@ class ConfigWifiIface(ConfigObject):
 
         if new.mode == "ap":
             # Look up the wifi-device section.
-            wifiDevice = new.lookup(allConfigs, "wifi-device", new.device)
+            wifiDevice = new.lookup(allConfigs, "wireless", "wifi-device", new.device)
 
             # Look up the interface section.
-            interface = new.lookup(allConfigs, "interface", new.network)
+            interface = new.lookup(allConfigs, "network", "interface", new.network)
 
             confFile = new.makeHostapdConf(wifiDevice, interface)
 

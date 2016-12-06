@@ -8,18 +8,6 @@ from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand
 
 
-def get_all_of_type(allConfigs, typename):
-    for key in allConfigs.keys():
-        if key[0] == typename:
-            yield allConfigs[key]
-
-
-def get_all_dhcp_interfaces(allConfigs):
-    for key in allConfigs.keys():
-        if key[0] == "dhcp":
-            yield allConfigs[key].interface
-
-
 class ConfigDhcp(ConfigObject):
     typename = "dhcp"
 
@@ -60,7 +48,9 @@ class ConfigDnsmasq(ConfigObject):
         visibleName = self.internalName
 
         if self.interface is None:
-            interfaces = get_all_dhcp_interfaces(allConfigs)
+            interfaces = []
+            for section in self.findByType(allConfigs, "dhcp", "dhcp"):
+                interfaces.append(section.interface)
         else:
             interfaces = self.interface
 
@@ -107,7 +97,7 @@ class ConfigDnsmasq(ConfigObject):
             outputFile.write("bind-interfaces\n")
 
             for intfName in interfaces:
-                interface = self.lookup(allConfigs, "interface", intfName)
+                interface = self.lookup(allConfigs, "network", "interface", intfName)
                 outputFile.write("\n")
                 outputFile.write("# Options for section interface {}\n".
                                  format(interface.name))
@@ -117,7 +107,7 @@ class ConfigDnsmasq(ConfigObject):
                 network = ipaddress.IPv4Network(u"{}/{}".format(
                     interface.ipaddr, interface.netmask), strict=False)
 
-                dhcp = self.lookup(allConfigs, "dhcp", intfName)
+                dhcp = self.lookup(allConfigs, "dhcp", "dhcp", intfName)
 
                 # TODO: Error checking!
                 firstAddress = network.network_address + dhcp.start
@@ -135,7 +125,7 @@ class ConfigDnsmasq(ConfigObject):
                         outputFile.write("dhcp-option={}\n".format(option))
 
             outputFile.write("\n")
-            for domain in get_all_of_type(allConfigs, "domain"):
+            for domain in self.findByType(allConfigs, "dhcp", "domain"):
                 outputFile.write("address=/{}/{}\n".format(domain.name, domain.ip))
 
         cmd = ["dnsmasq", "--conf-file={}".format(outputPath),

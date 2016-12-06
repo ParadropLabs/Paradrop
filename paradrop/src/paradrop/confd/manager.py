@@ -14,16 +14,25 @@ from paradrop.lib.utils.uci import UCIConfig, getSystemConfigDir
 from . import dhcp
 from . import firewall
 from . import network
+from . import qos
 from . import wireless
 
 from .base import ConfigObject
 from .command import CommandList
 
 
-# Map of type names to the classes that handle them.
+# Map of type names to the classes that handle them.  We now prefer the
+# extended type name, e.g. "network:interface", because there can be
+# conflicting types, e.g. "qos:interface".
 configTypeMap = dict()
 for cls in ConfigObject.__subclasses__():
-    configTypeMap[cls.typename] = cls
+    extended = "{}:{}".format(cls.getModule(), cls.typename)
+    configTypeMap[extended] = cls
+
+    existing = configTypeMap.get(cls.typename, None)
+    if existing is None or existing.maskable:
+        configTypeMap[cls.typename] = cls
+
 
 # WRITE_DIR = settings.PDCONFD_WRITE_DIR
 """ Directory for daemon configuration files, PID files, etc. """
@@ -283,6 +292,9 @@ class ConfigManager(object):
         for fn in files:
             out.info("Reading file {}\n".format(fn))
 
+            # Extract just the filename (e.g. wireless, network, qos).
+            basename = os.path.basename(fn)
+
             uci = UCIConfig(fn)
             config = uci.readConfig()
 
@@ -298,9 +310,16 @@ class ConfigManager(object):
                 # Get section comment string (optional, but Paradop uses it).
                 comment = section.get('comment', None)
 
-                try:
+                # Try looking up by extended type first.  It turns out, both
+                # "network" and "qos" configuration files should support
+                # sections with typename "interface".  We can disambiguate
+                # them by calling the latter one "qos:interface".
+                ext_type = "{}:{}".format(basename, section['type'])
+                if ext_type in configTypeMap:
+                    cls = configTypeMap[ext_type]
+                elif section['type'] in configTypeMap:
                     cls = configTypeMap[section['type']]
-                except:
+                else:
                     out.warn("Unsupported section type {} in {}\n".format(
                         section['type'], fn))
                     continue

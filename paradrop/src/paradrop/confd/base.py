@@ -7,10 +7,19 @@ class ConfigObject(object):
     typename = None
     options = []
 
+    # Use to resolve conflicts in with old-style section naming.  maskable=True
+    # means a section can be replaced when we are gathering the list of
+    # ConfigObject subclasses.  We set maskable=False on network:interface so
+    # that it receives precedence over qos:interface and old code continues to
+    # work.
+    maskable = True
+
     # Priorities to ensure proper interleaving of commands.
     # Revert commands should use negated value.
     PRIO_CREATE_IFACE = 20
-    PRIO_CONFIG_IFACE = 40
+    PRIO_CONFIG_IFACE = 30
+    PRIO_CREATE_QDISC = 40
+    PRIO_CONFIG_QDISC = 45
     PRIO_START_DAEMON = 60
 
     def __init__(self, name=None):
@@ -120,11 +129,11 @@ class ConfigObject(object):
 
     def getTypeAndName(self):
         """
-        Return tuple (section type, section name).
+        Return tuple (section module, section type, section name).
         """
-        return (self.typename, self.internalName)
+        return (self.getModule(), self.typename, self.internalName)
 
-    def lookup(self, allConfigs, sectionType, sectionName, addDependent=True):
+    def lookup(self, allConfigs, sectionModule, sectionType, sectionName, addDependent=True):
         """
         Look up a section by type and name.
 
@@ -133,11 +142,19 @@ class ConfigObject(object):
 
         Will raise an exception if the section is not found.
         """
-        config = allConfigs[(sectionType, sectionName)]
+        config = allConfigs[(sectionModule, sectionType, sectionName)]
         if addDependent:
             self.parents.add(config)
             config.dependents.add(self)
         return config
+
+    def findByType(self, allConfigs, module, typename):
+        """
+        Look up sections by type (generator).
+        """
+        for key in allConfigs.keys():
+            if key[0] == module and key[1] == typename:
+                yield allConfigs[key]
 
     def optionsMatch(self, other):
         """
@@ -283,6 +300,14 @@ class ConfigObject(object):
         obj.setup()
 
         return obj
+
+    @classmethod
+    def getModule(cls):
+        """
+        Get the module name (e.g. "dhcp", "wireless") for a ConfigObject class.
+        """
+        parts = cls.__module__.split(".")
+        return parts[-1]
 
     @staticmethod
     def _assignPriority(config, assigned):

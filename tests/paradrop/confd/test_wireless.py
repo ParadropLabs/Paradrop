@@ -11,8 +11,8 @@ def test_ConfigWifiIface_apply():
     interface = MagicMock()
 
     allConfigs = {
-        ("wifi-device", "wlan0"): wifiDevice,
-        ("interface", "lan"): interface
+        ("wireless", "wifi-device", "wlan0"): wifiDevice,
+        ("network", "interface", "lan"): interface
     }
 
     config = ConfigWifiIface()

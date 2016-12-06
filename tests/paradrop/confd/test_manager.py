@@ -80,7 +80,7 @@ def test_change_channel():
     source = os.path.join(CONFIG_DIR, "change_channel_1")
     shutil.copyfile(source, confFile)
     manager.loadConfig(search=confFile, execute=False)
-    
+
     for cmd in manager.previousCommands:
         print(cmd)
 
