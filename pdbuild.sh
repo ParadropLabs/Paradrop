@@ -169,6 +169,7 @@ printhelp() {
 
     echo "Usage:"
     echo -e "  build\t\t build and package dependencies, install paradrop locally"
+    echo -e "  build_prod\t build and package dependencies for production"
     # echo -e "  clean\n\t remove virtual environment, clean packages"
     echo -e "  run\t\t run paradrop locally"
     echo -e "  install \t compile snap and install on snappy ${ENVIRONMENT} machine."
