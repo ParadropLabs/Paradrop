@@ -22,6 +22,9 @@ def generatePlans(update):
     # interface, wireless devices).  These steps do not need to be reverted on
     # abort.
     #
+    # checkSystemDevices may reboot the machine if expected devices are
+    # missing.
+    #
     # abortNetworkConfig is added as an abort command here so that it runs when
     # config.network.getNetworkConfig or just about anything else fails.
     #
@@ -30,6 +33,8 @@ def generatePlans(update):
     update.plans.addPlans(plangraph.STRUCT_GET_SYSTEM_DEVICES,
                           (config.devices.getSystemDevices, ),
                           (config.network.abortNetworkConfig, ))
+    update.plans.addPlans(plangraph.CHECK_SYSTEM_DEVICES,
+                          (config.devices.checkSystemDevices, ))
     update.plans.addPlans(plangraph.STRUCT_SET_SYSTEM_DEVICES,
                           (config.devices.setSystemDevices, ),
                           (config.configservice.reloadAll, ))

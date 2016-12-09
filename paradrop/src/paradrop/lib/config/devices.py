@@ -13,9 +13,10 @@ so they only need to be added when missing.
 import itertools
 import os
 import re
+import subprocess
 
 from paradrop.base.output import out
-from paradrop.lib.utils import pdos, uci
+from paradrop.lib.utils import datastruct, pdos, uci
 from paradrop.lib.misc import settings
 from paradrop.lib.config import uciutils
 
@@ -167,6 +168,28 @@ def getSystemDevices(update):
     """
     devices = detectSystemDevices()
     update.new.setCache('networkDevices', devices)
+
+
+def checkSystemDevices(update):
+    """
+    Check whether expected devices are present.
+
+    This may reboot the machine if devices are missing and the host config is
+    set to do that.
+    """
+    devices = update.new.getCache('networkDevices')
+    hostConfig = update.new.getCache('hostConfig')
+
+    if len(devices['wifi']) == 0:
+        # No WiFi devices - check what we should do.
+        action = datastruct.getValue(hostConfig, "system.onMissingWiFi")
+        if action == "reboot":
+            out.warn("No WiFi devices were detected, system will be rebooted.")
+            cmd = ["shutdown", "-r", "now"]
+            subprocess.call(cmd)
+
+        elif action == "warn":
+            out.warn("No WiFi devices were detected.")
 
 
 def setSystemDevices(update):

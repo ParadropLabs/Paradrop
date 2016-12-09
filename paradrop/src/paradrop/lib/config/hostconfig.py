@@ -84,6 +84,9 @@ def generateHostConfig(devices):
         }
     }
     config['wifi'] = list()
+    config['system'] = {
+        'onMissingWiFi': None
+    }
 
     # Cycle through the channel list to assign different channels to
     # WiFi interfaces.
@@ -106,6 +109,11 @@ def generateHostConfig(devices):
         }
 
         config['wifi'].append(newWifi)
+
+    # If we detect WiFi devices now, configure the system to warn if they are
+    # missing later.  Production systems should be configured with "reboot".
+    if len(config['wifi']) > 0:
+        config['system']['onMissingWiFi'] = "warn"
 
     return config
 

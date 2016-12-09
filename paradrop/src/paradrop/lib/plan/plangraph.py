@@ -43,6 +43,10 @@ DHCP_GET_VIRT_RULES             = 22
 STATE_BUILD_IMAGE               = 30
 
 ###############################################################################
+# System Validation
+CHECK_SYSTEM_DEVICES            = 40
+
+###############################################################################
 # Write Configuration Data
 CREATE_VOLUME_DIRS              = 50
 STRUCT_SET_SYSTEM_DEVICES       = 51

@@ -193,7 +193,10 @@ Example
             "network": "lan",
             "ifname": "wlan1"
         }
-    ]
+    ],
+    "system": {
+        "onMissingWiFi": "reboot"
+    }
 }
 ```
 
