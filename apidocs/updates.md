@@ -145,6 +145,19 @@ Example
 
 ```json
 {
+    "firewall": {
+        "defaults": {
+            "input": "DROP",
+            "output": "ACCEPT",
+            "forward": "ACCEPT"
+        },
+        "rules": [{
+            "src": "wan",
+            "target": "ACCEPT",
+            "proto": "tcp",
+            "dest_port": 22
+        }]
+    },
     "lan": {
         "dhcp": {
             "leasetime": "12h",
@@ -157,11 +170,31 @@ Example
         ],
         "ipaddr": "192.168.1.1",
         "netmask": "255.255.255.0",
-        "proto": "static"
+        "proto": "static",
+        "firewall": {
+            "defaults": {
+                "input": "ACCEPT",
+                "output": "ACCEPT",
+                "forward": "DROP"
+            },
+            "forwarding": [{
+                "src": "lan",
+                "dest": "wan"
+            }]
+        }
     },
     "wan": {
         "interface": "eth0",
-        "proto": "dhcp"
+        "proto": "dhcp",
+        "firewall": {
+            "defaults": {
+                "masq": true,
+                "conntrack": true,
+                "input": "DROP",
+                "output": "ACCEPT",
+                "forward": "ACCEPT"
+            }
+        }
     },
     "wifi": [
         {

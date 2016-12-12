@@ -294,7 +294,7 @@ def test_config_firewall_zone():
     manager = ConfigManager(WRITE_DIR)
     manager.loadConfig(search=CONFIG_FILE, execute=False)
     commands = manager.previousCommands
-    assert len(commands) == 2
+    assert len(commands) >= 2
 
     # Should generate a masquerade rule.
     assert in_commands("MASQUERADE", commands)
@@ -302,7 +302,7 @@ def test_config_firewall_zone():
     manager.unload(execute=False)
     commands = manager.previousCommands
 
-    assert len(commands) == 2
+    assert len(commands) >= 2
 
 
 def test_config_firewall_redirect():
@@ -313,7 +313,7 @@ def test_config_firewall_redirect():
     manager = ConfigManager(WRITE_DIR)
     manager.loadConfig(search=CONFIG_FILE, execute=False)
     commands = manager.previousCommands
-    assert len(commands) == 5
+    assert len(commands) >= 5
 
     # Should generate a DNAT rule.
     assert in_commands("DNAT", commands)
@@ -323,7 +323,7 @@ def test_config_firewall_redirect():
 
     manager.unload(execute=False)
     commands = manager.previousCommands
-    assert len(commands) == 5
+    assert len(commands) >= 5
 
 
 def test_config_manager():

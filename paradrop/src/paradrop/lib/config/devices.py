@@ -208,6 +208,31 @@ def setSystemDevices(update):
     wirelessSections = list()
     qosSections = list()
 
+    # This section defines the default input, output, and forward policies for
+    # the firewall.
+    config = {"type": "defaults"}
+    options = datastruct.getValue(hostConfig, "firewall.defaults", {})
+    firewallSections.append((config, options))
+
+    def zoneFirewallSettings(name):
+        # Create zone entry with defaults (input, output, forward policies and
+        # other configuration).
+        #
+        # Make a copy of the object from hostconfig because we modify it.
+        config = {"type": "zone"}
+        options = datastruct.getValue(hostConfig,
+                name+".firewall.defaults", {}).copy()
+        options['name'] = name
+        uciutils.setList(options, 'network', [name])
+        firewallSections.append((config, options))
+
+        # Add forwarding entries (rules that allow traffic to move from one
+        # zone to another).
+        rules = datastruct.getValue(hostConfig, name+".firewall.forwarding", [])
+        for rule in rules:
+            config = {"type": "forwarding"}
+            firewallSections.append((config, rule))
+
     if 'wan' in hostConfig:
         config = {"type": "interface", "name": "wan"}
 
@@ -217,23 +242,13 @@ def setSystemDevices(update):
 
         networkSections.append((config, options))
 
-        config = {"type": "zone"}
-        options = {
-            "name": "wan",
-            "masq": "1",
-            "input": "ACCEPT",
-            "forward": "REJECT",
-            "output": "ACCEPT",
-            "network": "wan"
-        }
-        firewallSections.append((config, options))
+        zoneFirewallSettings("wan")
 
         config = {"type": "interface", "name": "wan"}
         options = {
             "enabled": 0
         }
         qosSections.append((config, options))
-
 
     if 'lan' in hostConfig:
         config = {"type": "interface", "name": "lan"}
@@ -274,6 +289,8 @@ def setSystemDevices(update):
             }
             dhcpSections.append((config, options))
 
+        zoneFirewallSettings("lan")
+
         config = {"type": "interface", "name": "lan"}
         options = {
             "enabled": 0
@@ -298,6 +315,12 @@ def setSystemDevices(update):
         for iface in hostConfig['wifi-interfaces']:
             config = {"type": "wifi-iface"}
             wirelessSections.append((config, iface))
+
+    # Add additional firewall rules.
+    rules = datastruct.getValue(hostConfig, "firewall.rules", [])
+    for rule in rules:
+        config = {"type": "rule"}
+        firewallSections.append((config, rule))
 
     setConfig(settings.RESERVED_CHUTE, dhcpSections,
               uci.getSystemPath("dhcp"))
