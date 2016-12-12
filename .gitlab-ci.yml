@@ -4,3 +4,12 @@ test:
   script:
   - pip install -r requirements.txt
   - nosetests --with-coverage --cover-package=paradrop
+
+build:
+  when: on_success
+  image: paradrop/builder:1
+  script:
+  - cd paradrop && snapcraft
+  artifacts:
+    paths:
+    - "paradrop/*.snap"

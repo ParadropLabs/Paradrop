@@ -108,7 +108,7 @@ def test_removeImage_worker(Client):
     dockerapi._removeImage(chute)
 
 
-@patch('pdtools.lib.nexus.core')
+@patch('paradrop.base.nexus.core')
 def test_prepare_environment(core):
     chute = MagicMock()
     chute.name = "test"

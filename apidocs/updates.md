@@ -47,6 +47,9 @@ Examples
         },
         "environment": {
             "CUSTOM_VARIABLE": 42
+        },
+        "resources": {
+            "cpu_fraction": 0.25
         }
     }
 }
@@ -104,6 +107,7 @@ projects and any web URL that points to tar/tar.gz file.
 - systemDir: (default: /paradrop) directory inside the chute that can
   be used to read system information such as a list of devices connected
   to the WiFi access point.
+- resources: dictionary of options for reserving compute resources.
 
 Configuring an Access Point
 ---------------------------
@@ -203,6 +207,19 @@ Example
 
 ```json
 {
+    "firewall": {
+        "defaults": {
+            "input": "DROP",
+            "output": "ACCEPT",
+            "forward": "ACCEPT"
+        },
+        "rules": [{
+            "src": "wan",
+            "target": "ACCEPT",
+            "proto": "tcp",
+            "dest_port": 22
+        }]
+    },
     "lan": {
         "dhcp": {
             "leasetime": "12h",
@@ -215,11 +232,31 @@ Example
         ],
         "ipaddr": "192.168.1.1",
         "netmask": "255.255.255.0",
-        "proto": "static"
+        "proto": "static",
+        "firewall": {
+            "defaults": {
+                "input": "ACCEPT",
+                "output": "ACCEPT",
+                "forward": "DROP"
+            },
+            "forwarding": [{
+                "src": "lan",
+                "dest": "wan"
+            }]
+        }
     },
     "wan": {
         "interface": "eth0",
-        "proto": "dhcp"
+        "proto": "dhcp",
+        "firewall": {
+            "defaults": {
+                "masq": true,
+                "conntrack": true,
+                "input": "DROP",
+                "output": "ACCEPT",
+                "forward": "ACCEPT"
+            }
+        }
     },
     "wifi": [
         {
@@ -251,7 +288,10 @@ Example
             "network": "lan",
             "ifname": "wlan1"
         }
-    ]
+    ],
+    "system": {
+        "onMissingWiFi": "reboot"
+    }
 }
 ```
 
