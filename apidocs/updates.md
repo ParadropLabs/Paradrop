@@ -109,6 +109,68 @@ projects and any web URL that points to tar/tar.gz file.
   to the WiFi access point.
 - resources: dictionary of options for reserving compute resources.
 
+Configuring an Access Point
+---------------------------
+
+Chutes can add one or more access points to the "net" section of their
+configuration.  These sections are named.  In the example below, the
+section is named "wifi".
+
+```json
+"net": {
+    "wifi": {
+        "type": "wifi",
+        "intfName": "wlan0",
+        "ssid": "Paradrop-f214",
+        "dhcp": {
+          "lease": "12h",
+          "start": 100,
+          "limit": 100
+        },
+        "key": "password"
+    }
+}
+```
+
+- type: must be "wifi".
+- intfName: is the name of the interface that will appear inside the
+chute.
+- ssid: is the broadcasted ESSID.  It must be 1-32 characters in length
+(inclusive).
+- dhcp: specifies parameters for the DHCP service.  If this section is
+omitted, the host will not run a DHCP server for this access point.
+- key: password for the network.  It must be 8-64 characters in length
+(inclusive).
+
+Configuring a Monitor Interface
+-------------------------------
+
+Chutes can request a WiFi monitor interface.  Monitor interfaces enable
+a chute to record all WiFi activity detected by the device including
+beacons and managament frames.  The radiotap header includes additional
+information such as signal strength.
+
+While a single WiFi device can host multiple chutes' access points,
+a chute requesting a monitor interfaces must be able to obtain exclusive
+access to the physical device or the request cannot be fulfilled.
+In practice, this limits the number of chutes that can be running
+with monitor interfaces to one or two.
+
+```json
+"net": {
+    "mon": {
+        "type": "wifi",
+        "intfName": "wlan0",
+        "mode": "monitor"
+    }
+}
+```
+
+- type: must be "wifi".
+- intfName: is the name of the interface that will appear inside the
+chute.
+- mode: must be "monitor".
+
 Host Configuration
 ==================
 
@@ -145,6 +207,19 @@ Example
 
 ```json
 {
+    "firewall": {
+        "defaults": {
+            "input": "DROP",
+            "output": "ACCEPT",
+            "forward": "ACCEPT"
+        },
+        "rules": [{
+            "src": "wan",
+            "target": "ACCEPT",
+            "proto": "tcp",
+            "dest_port": 22
+        }]
+    },
     "lan": {
         "dhcp": {
             "leasetime": "12h",
@@ -157,20 +232,40 @@ Example
         ],
         "ipaddr": "192.168.1.1",
         "netmask": "255.255.255.0",
-        "proto": "static"
+        "proto": "static",
+        "firewall": {
+            "defaults": {
+                "input": "ACCEPT",
+                "output": "ACCEPT",
+                "forward": "DROP"
+            },
+            "forwarding": [{
+                "src": "lan",
+                "dest": "wan"
+            }]
+        }
     },
     "wan": {
         "interface": "eth0",
-        "proto": "dhcp"
+        "proto": "dhcp",
+        "firewall": {
+            "defaults": {
+                "masq": true,
+                "conntrack": true,
+                "input": "DROP",
+                "output": "ACCEPT",
+                "forward": "ACCEPT"
+            }
+        }
     },
     "wifi": [
         {
             "channel": 1,
-            "interface": "wlan0"
+            "phy": "phy0"
         },
         {
             "channel": 36,
-            "interface": "wlan1",
+            "phy": "phy1",
             "hwmode": "11a",
             "htmode": "HT40+",
             "short_gi_40": true,
@@ -180,14 +275,14 @@ Example
     ],
     "wifi-interfaces": [
         {
-            "device": "wlan0",
+            "device": "phy0",
             "ssid": "paradrop",
             "mode": "ap",
             "network": "lan",
             "ifname": "wlan0"
         },
         {
-            "device": "wlan1",
+            "device": "phy1",
             "ssid": "paradrop-5G",
             "mode": "ap",
             "network": "lan",

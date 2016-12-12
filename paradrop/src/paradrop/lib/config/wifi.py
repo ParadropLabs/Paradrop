@@ -24,9 +24,12 @@ def getOSWirelessConfig(update):
         options = {
             'device': iface['device'],
             'network': iface['externalIntf'],
-            'mode': 'ap',
-            'ssid': iface['ssid']
+            'mode': iface.get('mode', 'ap')
         }
+
+        # Required for AP and client mode but not monitor mode.
+        if 'ssid' in iface:
+            options['ssid'] = iface['ssid']
 
         # Optional encryption settings
         if 'encryption' in iface:

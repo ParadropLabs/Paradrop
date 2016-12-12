@@ -33,8 +33,10 @@ This is a known issue for the Paradrop team, if you get this please email us at 
 Issue 3: ``pdbuild.sh up`` fails
 """""""""""""""""""""""""""""""""""
 
-This is very common and will happen if you delete your VM and setup a fresh one, the solution is simple
-and is stated in the error message::
+This is very common and will happen if you delete your VM and setup a
+fresh one, which will have a different key.  The solution is simple and
+is stated in the error message.  Follow the instructions to remove the
+key from your known_hosts file. ::
 
     Failed to setup keys: failed to setup keys: issues while running ssh command:
     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -48,25 +50,23 @@ and is stated in the error message::
     Please contact your system administrator.
 
 
+Issues with the hardware or operating system
+--------------------------------------------
 
-Issues using paradrop command (pdtools)
-------------------------------------------
+Issue 1: Docker fails to start after a reboot
+"""""""""""""""""""""""""""""""""""""""""""""
 
-These issues are related to the *Build Tools* found on PyPI.
+This can happen if the 'docker.pid' file was not properly cleaned up,
+which causes the docker daemon to conclude that it is already running.
 
-Issue 1: All ``paradrop`` commands fail
-""""""""""""""""""""""""""""""""""""""""
-pdtools uses ``enum34`` rather than the ``enum`` package from PyPI, make sure you have the right one::
+To fix this, remove the pid file on the router and reboot. ::
 
-    Traceback (most recent call last):
-      File "/usr/local/bin/paradrop", line 7, in <module>
-        from pdtools.main import main
-      File "/usr/local/lib/python2.7/dist-packages/pdtools/__init__.py", line 1, in <module>
-        from . import main
-      File "/usr/local/lib/python2.7/dist-packages/pdtools/main.py", line 29, in <module>
-        from pdtools.lib import output, riffle, names
-      File "/usr/local/lib/python2.7/dist-packages/pdtools/lib/names.py", line 61, in <module>
-        NameTypes.user: re.compile(r'^pd\.%s$' % n),
-    AttributeError: 'Enum' object has no attribute 'user'
+    sudo rm /var/lib/apps/docker/1.11.2/run/docker.pid
+    sudo reboot
 
+Issue 2: WiFi devices are not detected after a reboot
+"""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+Occasionally, when routers start up the WiFi devices are not detected
+properly.  When this happens the command ``iw dev`` will display nothing
+instead of the expected devices.  This is usually remedied by rebooting.

@@ -72,6 +72,13 @@ def generateHostConfig(devices):
     """
     config = dict()
 
+    config['firewall'] = {
+        'defaults': {
+            'input': 'ACCEPT',
+            'output': 'ACCEPT',
+            'forward': 'ACCEPT'
+        }
+    }
     config['lan'] = {
         'interfaces': list(),
         'proto': 'static',
@@ -81,6 +88,15 @@ def generateHostConfig(devices):
             'start': 100,
             'limit': 100,
             'leasetime': '12h'
+        },
+        'firewall': {
+            'defaults': {
+                'conntrack': '1',
+                'input': 'ACCEPT',
+                'output': 'ACCEPT',
+                'forward': 'ACCEPT'
+            },
+            'forwarding': []
         }
     }
     config['wifi'] = list()
@@ -96,15 +112,30 @@ def generateHostConfig(devices):
         wanDev = devices['wan'][0]
         config['wan'] = {
             'interface': wanDev['name'],
-            'proto': 'dhcp'
+            'proto': 'dhcp',
+            'firewall': {
+                'defaults': {
+                    'conntrack': '1',
+                    'masq': '1',
+                    'input': 'ACCEPT',
+                    'output': 'ACCEPT',
+                    'forward': 'ACCEPT'
+                }
+            }
         }
+
+        # Add a rule that forwards LAN traffic to WAN.
+        config['lan']['firewall']['forwarding'].append({
+            'src': 'lan',
+            'dest': 'wan'
+        })
 
     for lanDev in devices['lan']:
         config['lan']['interfaces'].append(lanDev['name'])
 
     for wifiDev in devices['wifi']:
         newWifi = {
-            'interface': wifiDev['name'],
+            'phy': wifiDev['name'],
             'channel': channels.next()
         }
 

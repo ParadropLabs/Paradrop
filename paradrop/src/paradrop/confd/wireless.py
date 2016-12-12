@@ -21,6 +21,15 @@ HOSTAPD_HWMODE = {
 }
 
 
+# Map wifi-iface mode values to the type string we pass when running iw
+# commands.
+IW_IFACE_TYPE = {
+    'ap': '__ap',
+    'monitor': 'monitor',
+    'sta': 'managed'
+}
+
+
 HT40_LOWER_CHANNELS = set([36, 44, 52, 60, 100, 108, 116, 124, 132, 140, 149, 157])
 HT40_UPPER_CHANNELS = set([40, 48, 56, 64, 104, 112, 120, 128, 136, 144, 153, 161])
 
@@ -113,6 +122,9 @@ class ConfigWifiDevice(ConfigObject):
 
     options = [
         ConfigOption(name="type", required=True),
+        ConfigOption(name="phy", type=str),
+        ConfigOption(name="macaddr", type=str),
+        ConfigOption(name="ifname", type=str),
         ConfigOption(name="channel", type=int, required=True),
         ConfigOption(name="hwmode"),
         ConfigOption(name="txpower", type=int),
@@ -144,10 +156,10 @@ class ConfigWifiIface(ConfigObject):
     options = [
         ConfigOption(name="device", required=True),
         ConfigOption(name="mode", required=True),
-        ConfigOption(name="ssid", required=True),
+        ConfigOption(name="ssid", default="Paradrop"),
         ConfigOption(name="hidden", type=bool, default=False),
         ConfigOption(name="wmm", type=bool, default=True),
-        ConfigOption(name="network", required=True),
+        ConfigOption(name="network", default="lan"),
         ConfigOption(name="encryption"),
         ConfigOption(name="key"),
         ConfigOption(name="maxassoc", type=int),
@@ -161,7 +173,7 @@ class ConfigWifiIface(ConfigObject):
     def apply(self, allConfigs):
         commands = list()
 
-        if self.mode == "ap":
+        if self.mode == "ap" or self.mode == "monitor":
             pass
         elif self.mode == "sta":
             # TODO: Implement "sta" mode.
@@ -189,12 +201,15 @@ class ConfigWifiIface(ConfigObject):
         # should really be read-only.  Changing it breaks our equality checks.
         self._ifname = self.ifname
 
+        # Type to pass to iw command, e.g. '__ap'.
+        iw_type = IW_IFACE_TYPE[self.mode]
+
         if self.ifname == wifiDevice.name:
             # This interface is using the physical device directly (eg. wlan0).
             # This case is when the configuration specified the ifname option.
             self.isVirtual = False
 
-            cmd = ["iw", "dev", wifiDevice.name, "set", "type", "__ap"]
+            cmd = ["iw", "dev", self.ifname, "set", "type", iw_type]
             commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         elif interface.config_ifname == wifiDevice.name:
@@ -203,7 +218,7 @@ class ConfigWifiIface(ConfigObject):
             self._ifname = interface.config_ifname
             self.isVirtual = False
 
-            cmd = ["iw", "dev", wifiDevice.name, "set", "type", "__ap"]
+            cmd = ["iw", "dev", interface.config_ifname, "set", "type", iw_type]
             commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         elif self.ifname is None:
@@ -214,9 +229,13 @@ class ConfigWifiIface(ConfigObject):
             self._ifname = interface.config_ifname
 
         if self.isVirtual:
+            # Try removing interface first in case it already exists.
+            cmd = ["iw", "dev", self._ifname, "del"]
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
+
             # Command to create the virtual interface.
-            cmd = ["iw", "dev", wifiDevice.name, "interface", "add",
-                   self._ifname, "type", "__ap"]
+            cmd = ["iw", "phy", wifiDevice.name, "interface", "add",
+                   self._ifname, "type", iw_type]
             commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
             # Assign a random MAC address to avoid conflict with other
@@ -225,13 +244,14 @@ class ConfigWifiIface(ConfigObject):
                     "address", self.getRandomMAC()]
             commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
-        confFile = self.makeHostapdConf(wifiDevice, interface)
+        if self.mode == "ap":
+            confFile = self.makeHostapdConf(wifiDevice, interface)
 
-        self.pidFile = "{}/hostapd-{}.pid".format(
-            self.manager.writeDir, self.internalName)
+            self.pidFile = "{}/hostapd-{}.pid".format(
+                self.manager.writeDir, self.internalName)
 
-        cmd = ["hostapd", "-P", self.pidFile, "-B", confFile]
-        commands.append((self.PRIO_START_DAEMON, Command(cmd, self)))
+            cmd = ["hostapd", "-P", self.pidFile, "-B", confFile]
+            commands.append((self.PRIO_START_DAEMON, Command(cmd, self)))
 
         return commands
 
@@ -247,8 +267,9 @@ class ConfigWifiIface(ConfigObject):
     def revert(self, allConfigs):
         commands = list()
 
-        commands.append((-self.PRIO_START_DAEMON,
-            KillCommand(self.pidFile, self)))
+        if self.mode == "ap":
+            commands.append((-self.PRIO_START_DAEMON,
+                KillCommand(self.pidFile, self)))
 
         # Delete our virtual interface.
         if self.isVirtual:

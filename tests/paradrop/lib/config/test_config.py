@@ -371,13 +371,13 @@ def test_get_network_config_wifi():
     cfg['ssid'] = "Paradrop"
     iface = dict()
     iface['device'] = "wlan0"
+    iface['internalIntf'] = "wlan0"
 
     getNetworkConfigWifi(update, "mywifi", cfg, iface)
 
     # Check that all of the keys made it into the output.
     keys = ["subnet", "ssid", "ipaddrWithPrefix", "externalIntf",
-            "externalIpaddr", "netmask", "extIntfNumber", "internalIpaddr",
-            "device", "extIntfPrefix"]
+            "externalIpaddr", "netmask", "internalIpaddr", "device"]
     assert all(k in iface for k in keys)
 
 

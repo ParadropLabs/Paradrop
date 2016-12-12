@@ -13,12 +13,12 @@ def test_generateHostConfig():
     devices = dict()
     devices['wan'] = [{'name': 'eth0'}]
     devices['lan'] = [{'name': 'eth1'}]
-    devices['wifi'] = [{'name': 'wlan0'}]
+    devices['wifi'] = [{'name': 'phy0'}]
 
     config = generateHostConfig(devices)
     assert config['wan']['interface'] == "eth0"
     assert config['lan']['interfaces'] == ["eth1"]
-    assert config['wifi'][0]['interface'] == "wlan0"
+    assert config['wifi'][0]['phy'] == "phy0"
 
 
 @patch("paradrop.lib.config.devices.detectSystemDevices")

@@ -1,20 +1,25 @@
+import collections
 import ipaddress
 import itertools
 
 from paradrop.base.output import out
 from paradrop.base import pdutils, settings
 from paradrop.lib.config import configservice, uciutils
-from paradrop.lib.config.pool import NetworkPool, NumericPool
+from paradrop.lib.config.devices import flushWirelessInterfaces
 from paradrop.lib.utils import addresses, uci
+from paradrop.lib.misc import resources
 
+# TODO: Instead of being a constant, look at device capabilities.
+MAX_AP_INTERFACES = 8
 
 MAX_INTERFACE_NAME_LEN = 15
 
-# Pool of addresses available for chutes that request dynamic addressing.
-networkPool = NetworkPool(settings.DYNAMIC_NETWORK_POOL)
+# We use a 4-digit hex string, which gives us this maximum.
+MAX_INTERFACE_NUMBERS = 65536
 
-# Pool of numbers for virtual interfaces.
-interfaceNumberPool = NumericPool()
+# Size of subnets to assign to chutes.
+SUBNET_SIZE = 24
+
 
 def getInterfaceDict(chute):
     """
@@ -37,12 +42,7 @@ def reclaimNetworkResources(chute):
     addresses and interface names as taken so that new chutes will not use the
     same values.
     """
-    interfaces = chute.getCache('networkInterfaces')
-    if interfaces is None:
-        return
-    for iface in interfaces:
-        interfaceNumberPool.reserve(iface['extIntfNumber'])
-        networkPool.reserve(iface['subnet'])
+    pass
 
 
 def getWifiKeySettings(cfg, iface):
@@ -64,6 +64,48 @@ def getWifiKeySettings(cfg, iface):
             raise Exception("No key field defined for WiFi encryption")
 
 
+def chooseSubnet(update, iface):
+    network = ipaddress.ip_network(unicode(settings.DYNAMIC_NETWORK_POOL), strict=False)
+    if SUBNET_SIZE < network.prefixlen:
+        raise Exception("Invalid subnetSize {} for network {}".format(
+            SUBNET_SIZE, network))
+
+    reservations = resources.getSubnetReservations()
+
+    subnets = network.subnets(new_prefix=SUBNET_SIZE)
+    for subnet in subnets:
+        if subnet not in reservations:
+            return subnet
+
+    raise Exception("Could not find an available subnet")
+
+
+def chooseExternalIntf(update, iface):
+    # Generate initial portion (prefix) of interface name.
+    #
+    # NOTE: We add a "v" in front of the interface name to avoid triggering
+    # the udev persistent net naming rules, which are hard-coded to certain
+    # typical strings such as "eth*" and "wlan*" but not "veth*" or
+    # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
+    prefix = "v" + iface['device'] + "."
+
+    # This name should be unique on the system, so the hash is very unlikely to
+    # collide with anything.  It still can collide, but this will be our first
+    # choice for an interface number.
+    name = "{}:{}".format(update.new.name, iface['internalIntf'])
+    base = hash(name)
+
+    reservations = resources.getInterfaceReservations()
+
+    for i in range(MAX_INTERFACE_NUMBERS):
+        number = (base + i) % MAX_INTERFACE_NUMBERS
+        intf = "{}{:04x}".format(prefix, number)
+        if intf not in reservations:
+            return intf
+
+    raise Exception("Could not find an available interface name")
+
+
 def getNetworkConfigWifi(update, name, cfg, iface):
     # Make a dictionary of old interfaces.  Any new interfaces that are
     # identical to an old one do not need to be changed.
@@ -71,12 +113,17 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     if name in oldInterfaces:
         oldIface = oldInterfaces[iface['name']]
         subnet = oldIface['subnet']
-        iface['extIntfNumber'] = oldIface['extIntfNumber']
+        iface['externalIntf'] = oldIface['externalIntf']
 
     else:
         # Claim a subnet for this interface from the pool.
-        subnet = networkPool.next()
-        iface['extIntfNumber'] = interfaceNumberPool.next()
+        subnet = chooseSubnet(update, iface)
+
+        # Generate a name for the new interface in the host.
+        iface['externalIntf'] = chooseExternalIntf(update, iface)
+        if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
+            out.warn("Interface name ({}) is too long\n".format(iface['externalIntf']))
+            raise Exception("Interface name is too long")
 
     # Generate internal (in the chute) and external (in the host)
     # addresses.
@@ -97,24 +144,12 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     iface['ipaddrWithPrefix'] = "{}/{}".format(
             iface['internalIpaddr'], subnet.prefixlen)
 
-    # Generate initial portion (prefix) of interface name.
-    #
-    # NOTE: We add a "v" in front of the interface name to avoid triggering
-    # the udev persistent net naming rules, which are hard-coded to certain
-    # typical strings such as "eth*" and "wlan*" but not "veth*" or
-    # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
-    iface['extIntfPrefix'] = "v" + iface['device'] + "."
-
-    # Generate a name for the new interface in the host.
-    iface['externalIntf'] = "{}{:04x}".format(
-        iface['extIntfPrefix'], iface['extIntfNumber'])
-    if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
-        out.warn("Interface name ({}) is too long\n".
-                 format(iface['externalIntf']))
-        raise Exception("Interface name is too long")
+    # AP mode is the default, but we are adding support for monitor and sta
+    # mode.
+    iface['mode'] = cfg.get("mode", "ap")
 
     # Add extra fields for WiFi devices.
-    if cfg['type'] == "wifi":
+    if cfg['type'] == "wifi" and iface['mode'] == 'ap':
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['ssid'])
         if res:
@@ -131,6 +166,67 @@ def getNetworkConfigWifi(update, name, cfg, iface):
         if 'dhcp' not in cfg:
             out.warn("No dhcp block found for interface {}; "
                      "will not run a DHCP server".format(name))
+
+
+def fulfillDeviceRequest(cfg, devices):
+    """
+    Find a physical device that matches the requested device type.
+
+    Raises an exception if one cannot be found.
+    """
+    dtype = cfg['type']
+    mode = cfg.get('mode', 'ap')
+
+    # Get list of devices by requested type.
+    devlist = devices.get(dtype, [])
+
+    reservations = resources.getDeviceReservations()
+
+    bestDevice = None
+    bestScore = -1
+
+    for device in devlist:
+        dname = device['name']
+
+        # Monitor mode interfaces require exclusive access to the device.
+        if dtype == "wifi" and mode == "monitor":
+            if reservations[dname].count() > 0:
+                continue
+
+            # Remove virtual interfaces attached to this device.
+            flushWirelessInterfaces(device['phy'])
+
+            # Choose the first one that matches.
+            bestDevice = device
+            break
+
+        # AP mode interfaces can share a device, but not with monitor mode.
+        elif dtype == "wifi" and mode == "ap":
+            if reservations[dname].count(mode="monitor") > 0:
+                continue
+
+            apcount = reservations[dname].count(mode="ap")
+
+            # Avoid exceeding the max. number of AP interfaces.
+            if apcount >= MAX_AP_INTERFACES:
+                continue
+
+            # Otherwise, prefer interfaces that have at least one AP already.
+            # This preference leaves interfaces available for other purposes
+            # (e.g. monitor mode).
+            if apcount > bestScore:
+                bestDevice = device
+                bestScore = apcount
+
+        else:
+            # Handle other cases...
+            bestDevice = device
+
+    if bestDevice is not None:
+        out.info("Assign device {} for requested type {}".format(bestDevice['name'], dtype))
+        return bestDevice
+
+    raise Exception("Could not satisfy requirement for device of type {}.".format(dtype))
 
 
 def getNetworkConfig(update):
@@ -168,7 +264,6 @@ def getNetworkConfig(update):
     oldInterfaces = getInterfaceDict(update.old)
 
     devices = update.new.getCache('networkDevices')
-    devIters = {t: itertools.cycle(devices[t]) for t in devices.keys()}
 
     for name, cfg in update.new.net.iteritems():
         # Check for required fields.
@@ -189,13 +284,8 @@ def getNetworkConfig(update):
             #
             # Note: we try this first because it can fail, and then we will not try
             # to allocate any resources for it.
-            try:
-                device = devIters[cfg['type']].next()
-                iface['device'] = device['name']
-            except (KeyError, StopIteration):
-                out.warn("Request for {} device cannot be fulfilled".
-                         format(cfg['type']))
-                raise Exception("Missing device(s) requested by chute")
+            device = fulfillDeviceRequest(cfg, devices)
+            iface['device'] = device['name']
         else:
             iface['device'] = oldIface['device']
 
@@ -215,17 +305,7 @@ def abortNetworkConfig(update):
     """
     Release resources claimed by chute network configuration.
     """
-    oldInterfaces = getInterfaceDict(update.old)
-
-    # Any interfaces in the cache need to go down, so we will release the
-    # interface number and subnet that were allocated to them.
-    interfaces = update.new.getCache('networkInterfaces')
-    for iface in interfaces:
-        # Only release newly allocated resources.  If update.old exists,
-        # we will be restoring to its state.
-        if iface['name'] not in oldInterfaces:
-            interfaceNumberPool.release(iface['extIntfNumber'], strict=False)
-            networkPool.release(iface['subnet'], strict=False)
+    pass
 
 
 def getOSNetworkConfig(update):
@@ -252,15 +332,23 @@ def getOSNetworkConfig(update):
     osNetwork = list()
 
     for iface in interfaces:
-        # A basic set of things must exist for all interfaces
         config = {'type': 'interface', 'name': iface['externalIntf']}
 
-        options = {
-            'proto': 'static',
-            'ipaddr': iface['externalIpaddr'],
-            'netmask': iface['netmask'],
-            'ifname': iface['externalIntf']
-        }
+        if iface['netType'] == "wifi" and iface.get('mode', 'ap') == "monitor":
+            # Monitor mode is a special case - do not configure an IP address
+            # for it.
+            options = {
+                'proto': 'none',
+                'ifname': iface['externalIntf']
+            }
+
+        else:
+            options = {
+                'proto': 'static',
+                'ipaddr': iface['externalIpaddr'],
+                'netmask': iface['netmask'],
+                'ifname': iface['externalIntf']
+            }
 
         # Add to our OS Network
         osNetwork.append((config, options))
@@ -268,13 +356,6 @@ def getOSNetworkConfig(update):
         # This interface is still in use, so take it out of the remove set.
         if iface['name'] in removedInterfaces:
             del removedInterfaces[iface['name']]
-
-    for iface in removedInterfaces.values():
-        # Release the external interface name.
-        interfaceNumberPool.release(iface['extIntfNumber'], strict=False)
-
-        # Release the subnet so another chute can use it.
-        networkPool.release(iface['subnet'], strict=False)
 
     update.new.setCache('osNetworkConfig', osNetwork)
 

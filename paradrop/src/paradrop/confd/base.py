@@ -18,6 +18,9 @@ class ConfigObject(object):
     # Revert commands should use negated value.
     PRIO_CREATE_IFACE = 20
     PRIO_CONFIG_IFACE = 30
+    PRIO_IPTABLES_TOP = 35
+    PRIO_IPTABLES_ZONE = 36
+    PRIO_IPTABLES_RULE = 37
     PRIO_CREATE_QDISC = 40
     PRIO_CONFIG_QDISC = 45
     PRIO_START_DAEMON = 60

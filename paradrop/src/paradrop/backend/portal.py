@@ -7,7 +7,7 @@
 #
 
 import os
-#from pkg_resources import resource_filename
+from pkg_resources import resource_filename
 
 from twisted.internet import reactor
 from twisted.web.proxy import ReverseProxyResource
@@ -40,7 +40,10 @@ class ParadropPortal(Resource):
         if portal_dir:
             path = portal_dir
         else:
-            path = os.environ['SNAP'] + '/www'
+            if 'SNAP' in os.environ:
+                path = os.environ['SNAP'] + '/www'
+            else:
+                path = resource_filename('paradrop', 'static')
         self.static = File(path)
 
     def getChild(self, path, request):

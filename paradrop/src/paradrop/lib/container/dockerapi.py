@@ -12,11 +12,15 @@ import json
 import os
 import re
 import subprocess
+import time
 
 from paradrop.base.output import out
 from paradrop.base.exceptions import ChuteNotFound, ChuteNotRunning
 from paradrop.base import nexus, settings
 from paradrop.lib.chute import chutestorage
+from paradrop.lib.config.devices import getWirelessPhyName
+from paradrop.lib.misc import resopt
+from paradrop.lib.utils import pdosq
 
 from .downloader import downloader
 
@@ -423,6 +427,28 @@ def build_host_config(chute, client=None):
     return host_conf
 
 
+def call_retry(cmd, env, delay=3, tries=3):
+    while tries >= 0:
+        tries -= 1
+
+        out.info("Calling: {}\n".format(" ".join(cmd)))
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, env=env)
+            for line in proc.stdout:
+                out.info("{}: {}\n".format(cmd[0], line.strip()))
+            for line in proc.stderr:
+                out.warn("{}: {}\n".format(cmd[0], line.strip()))
+            return
+        except OSError as e:
+            out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
+            if tries <= 0:
+                out.exception(e, True)
+                raise e
+
+        time.sleep(delay)
+
+
 def setup_net_interfaces(chute):
     """
     Link interfaces in the host to the internal interface in the docker container using pipework.
@@ -447,6 +473,32 @@ def setup_net_interfaces(chute):
         env = {"PATH": os.environ.get("PATH", "")}
         if settings.DOCKER_BIN_DIR not in env['PATH']:
             env['PATH'] += ":" + settings.DOCKER_BIN_DIR
+
+        mode = iface.get('mode', 'ap')
+        if mode == 'ap':
+            cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i',
+                   internalIntf, chute.name,  IP]
+            call_retry(cmd, env, tries=1)
+
+        elif mode == 'monitor':
+            # pipework does not support transferring a monitor mode interface,
+            # so we need to take care of it ourselves.
+            phyname = getWirelessPhyName(externalIntf)
+            pid = getChutePID(chute.name)
+
+            cmd = ['iw', 'phy', phyname, 'set', 'netns', str(pid)]
+            call_retry(cmd, env, tries=1)
+
+            # Set up netns directory and link so that 'ip netns' command works.
+            pdosq.makedirs('/var/run/netns')
+            cmd = ['ln', '-s', '/proc/{}/ns/net'.format(pid),
+                    '/var/run/netns/{}'.format(pid)]
+            call_retry(cmd, env, tries=1)
+
+            # Rename the interface inside the container.
+            cmd = ['ip', 'netns', 'exec', str(pid), 'ip', 'link', 'set',
+                    'dev', externalIntf, 'up', 'name', internalIntf]
+            call_retry(cmd, env, tries=1)
 
         cmd = ['pipework', externalIntf, '-i',
                internalIntf, chute.name,  IP]
@@ -510,6 +562,22 @@ def getChuteIP(name):
         raise ChuteNotRunning("The chute is not running.")
 
     return info['NetworkSettings']['IPAddress']
+
+
+def getChutePID(name):
+    """
+    Look up a container by name and return its PID.
+    """
+    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    try:
+        info = client.inspect_container(name)
+    except docker.errors.NotFound:
+        raise ChuteNotFound("The chute could not be found.")
+
+    if not info['State']['Running']:
+        raise ChuteNotRunning("The chute is not running.")
+
+    return info['State']['Pid']
 
 
 def _setResourceAllocation(allocation):

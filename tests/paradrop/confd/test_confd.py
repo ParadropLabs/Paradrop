@@ -294,7 +294,7 @@ def test_config_firewall_zone():
     manager = ConfigManager(WRITE_DIR)
     manager.loadConfig(search=CONFIG_FILE, execute=False)
     commands = manager.previousCommands
-    assert len(commands) == 2
+    assert len(commands) >= 2
 
     # Should generate a masquerade rule.
     assert in_commands("MASQUERADE", commands)
@@ -302,7 +302,7 @@ def test_config_firewall_zone():
     manager.unload(execute=False)
     commands = manager.previousCommands
 
-    assert len(commands) == 2
+    assert len(commands) >= 2
 
 
 def test_config_firewall_redirect():
@@ -313,7 +313,7 @@ def test_config_firewall_redirect():
     manager = ConfigManager(WRITE_DIR)
     manager.loadConfig(search=CONFIG_FILE, execute=False)
     commands = manager.previousCommands
-    assert len(commands) == 5
+    assert len(commands) >= 5
 
     # Should generate a DNAT rule.
     assert in_commands("DNAT", commands)
@@ -323,7 +323,7 @@ def test_config_firewall_redirect():
 
     manager.unload(execute=False)
     commands = manager.previousCommands
-    assert len(commands) == 5
+    assert len(commands) >= 5
 
 
 def test_config_manager():
@@ -466,7 +466,7 @@ def test_config_wireless_ap():
     commands = manager.previousCommands
     for cmd in commands:
         print(cmd)
-    assert len(commands) == 12
+    assert len(commands) == 15
 
     # Check for command to add ap mode interface.
     assert in_commands("add wlan0 type __ap", commands)

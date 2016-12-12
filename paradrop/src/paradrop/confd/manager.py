@@ -91,6 +91,11 @@ class ConfigManager(object):
         # If ==0, we can probably disable.
         self.forwardingCount = 0
 
+        # Track whether we have loaded the conntrack kernel module.  We need to
+        # make sure the module is loaded before adding iptables rules related
+        # to connection state.
+        self.conntrackLoaded = False
+
         # Allow threads to wait for first load to complete.  This will be set
         # after the first load completes and will remain set thereafter.
         self.systemUp = threading.Event()
