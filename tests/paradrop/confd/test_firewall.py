@@ -69,6 +69,70 @@ def test_ConfigRedirect_commands_dnat():
     assert "--dport 8000" in cmd
     assert "--jump REDIRECT --to-port 9000" in cmd
 
+
+def test_ConfigDefaults():
+    config = firewall.ConfigDefaults()
+
+    allConfigs = {}
+
+    commands = config.apply(allConfigs)
+    print(commands)
+    assert len(commands) == 23
+
+    commands = config.revert(allConfigs)
+    assert len(commands) == 23
+
+
+def test_ConfigZone():
+    wanInterface = MagicMock()
+    wanInterface.config_ifname = "eth0"
+
+    allConfigs = {
+        ("network", "interface", "wan"): wanInterface
+    }
+
+    config = firewall.ConfigZone()
+    config.name = "wan"
+    config.network = ["wan"]
+    config.conntrack = True
+    config.masq = True
+
+    config.manager = MagicMock()
+    config.manager.forwardingCount = 0
+    config.manager.conntrackLoaded = False
+
+    commands = config.apply(allConfigs)
+    assert len(commands) == 17
+
+    commands = config.revert(allConfigs)
+    assert len(commands) == 16
+
+
+def test_ConfigForwarding():
+    lanInterface = MagicMock()
+
+    wanZone = MagicMock()
+
+    lanZone = MagicMock()
+    lanZone.network = ["lan"]
+
+    allConfigs = {
+        ("firewall", "zone", "wan"): wanZone,
+        ("firewall", "zone", "lan"): lanZone,
+        ("network", "interface", "lan"): lanInterface
+    }
+
+    config = firewall.ConfigForwarding()
+    config.src = "lan"
+    config.dest = "wan"
+
+    commands = config.apply(allConfigs)
+    assert len(commands) == 1
+
+    commands = config.revert(allConfigs)
+    assert len(commands) == 1
+
+
 def test_ConfigRules():
     eth0 = MagicMock()
     eth0.config_ifname = "eth0"
