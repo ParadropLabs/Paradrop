@@ -332,7 +332,9 @@ def test_config_manager():
     """
     from paradrop.confd.base import ConfigObject
     from paradrop.confd.manager import findConfigFiles
+    from paradrop.base import settings
 
+    settings.loadSettings(mode="unittest")
     files = findConfigFiles()
     assert isinstance(files, list)
 

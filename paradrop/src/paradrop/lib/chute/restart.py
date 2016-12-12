@@ -14,9 +14,9 @@ import time
 
 from paradrop.base.output import out
 from paradrop.base.pdutils import json2str, str2json, timeint, urlDecodeMe
+from paradrop.base import settings
 from paradrop.lib.chute import chute, chutestorage
 from paradrop.confd.client import waitSystemUp
-from paradrop.lib.misc import settings
 from paradrop.lib.config.network import reclaimNetworkResources
 
 

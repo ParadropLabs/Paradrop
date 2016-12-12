@@ -2,8 +2,7 @@ import ipaddress
 import itertools
 
 from paradrop.base.output import out
-from paradrop.base import pdutils
-from paradrop.lib.misc import settings
+from paradrop.base import pdutils, settings
 from paradrop.lib.config import configservice, uciutils
 from paradrop.lib.config.pool import NetworkPool, NumericPool
 from paradrop.lib.utils import addresses, uci

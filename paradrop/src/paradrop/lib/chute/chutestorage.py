@@ -9,9 +9,8 @@ import copy
 import base64
 
 from paradrop.base.output import out
-from paradrop.base import pdutils
+from paradrop.base import pdutils, settings
 from paradrop.lib.utils import pdos
-from paradrop.lib.misc import settings
 from paradrop.lib.utils.storage import PDStorage
 
 from .chute import Chute
@@ -31,7 +30,7 @@ class ChuteStorage(PDStorage):
 
     def __init__(self, filename=None, reactor=None):
         if(not filename):
-            filename = settings.FC_CHUTESTORAGE_SAVE_PATH
+            filename = settings.FC_CHUTESTORAGE_DIR
         PDStorage.__init__(self, filename, reactor, settings.FC_CHUTESTORAGE_SAVE_TIMER)
 
         # Has it been loaded?
@@ -82,7 +81,7 @@ class ChuteStorage(PDStorage):
 
     def clearChuteStorage(self):
         ChuteStorage.chuteList = {}
-        pdos.remove(settings.FC_CHUTESTORAGE_SAVE_PATH)
+        pdos.remove(settings.FC_CHUTESTORAGE_DIR)
 
     #
     # Functions we override to implement PDStorage Properly

@@ -2,7 +2,7 @@ import json
 import psutil
 
 from paradrop.base.output import out
-from paradrop.lib.misc import settings
+from paradrop.base import settings
 
 from .pdrest import APIDecorator
 from . import pdapi

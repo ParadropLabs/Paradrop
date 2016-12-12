@@ -16,8 +16,8 @@ import re
 import subprocess
 
 from paradrop.base.output import out
+from paradrop.base import settings
 from paradrop.lib.utils import datastruct, pdos, uci
-from paradrop.lib.misc import settings
 from paradrop.lib.config import uciutils
 
 

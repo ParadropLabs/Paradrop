@@ -5,7 +5,7 @@
 
 from paradrop.base.output import out
 from paradrop.base.pdutils import jsonPretty
-from paradrop.lib.misc import settings
+from paradrop.base import settings
 from paradrop.lib.chute import chute
 from paradrop.lib.config import state
 from paradrop.lib.container import dockerapi

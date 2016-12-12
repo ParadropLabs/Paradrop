@@ -7,7 +7,7 @@ issue reload commands to the service, see the client.py file instead.
 
 from twisted.internet import reactor, defer
 from paradrop.base.output import out
-from paradrop.lib.misc import settings
+from paradrop.base import settings
 
 from .manager import ConfigManager
 from .configservice_dbus import ConfigServiceDbus

@@ -17,8 +17,8 @@ from twisted.web.static import File
 
 from paradrop.base.output import out
 from paradrop.base.exceptions import ParadropException
+from paradrop.base import settings
 from paradrop.lib.container import dockerapi
-from . import settings
 
 
 class ChuteErrorPage(Resource):
@@ -35,10 +35,12 @@ class ChuteErrorPage(Resource):
 class ParadropPortal(Resource):
     isLeaf = False
 
-    def __init__(self):
+    def __init__(self, portal_dir=None):
         Resource.__init__(self)
-        #path = resource_filename('paradrop', 'static')
-        path = os.environ['SNAP'] + '/www'
+        if portal_dir:
+            path = portal_dir
+        else:
+            path = os.environ['SNAP'] + '/www'
         self.static = File(path)
 
     def getChild(self, path, request):
@@ -67,7 +69,7 @@ class ParadropPortal(Resource):
             return self.static.getChild(path, request)
 
 
-def startPortal():
-    router = ParadropPortal()
+def startPortal(portal_dir):
+    router = ParadropPortal(portal_dir)
     factory = Site(router)
     reactor.listenTCP(settings.PORTAL_SERVER_PORT, factory)

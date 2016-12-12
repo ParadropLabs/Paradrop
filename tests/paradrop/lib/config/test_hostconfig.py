@@ -40,7 +40,7 @@ def test_prepareHostConfig(settings, detectSystemDevices):
     source.write("{test: value}")
     source.flush()
 
-    settings.HOST_CONFIG_PATH = source.name
+    settings.HOST_CONFIG_FILE = source.name
 
     config = prepareHostConfig()
     assert config['test'] == 'value'

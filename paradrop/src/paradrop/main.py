@@ -6,23 +6,18 @@ Does not implement any behavior itself.
 import argparse
 import signal
 
-#import smokesignal
 from twisted.internet import reactor, defer
 from autobahn.twisted.wamp import ApplicationRunner
 
-from paradrop.base import output, nexus, names, cxbr
-from paradrop.lib.misc import settings
+from paradrop.base import output, nexus, cxbr, settings
 from paradrop.backend import apiinternal
 
 
 class Nexus(nexus.NexusBase):
 
-    def __init__(self, mode, settings=[]):
-        # get a Mode.production, Mode.test, etc from the passed string
-        mode = eval('nexus.Mode.%s' % mode)
-
+    def __init__(self):
         # Want to change logging functionality? See optional args on the base class and pass them here
-        super(Nexus, self).__init__(nexus.Type.router, mode, settings=settings, stealStdio=True, printToConsole=True)
+        super(Nexus, self).__init__(stealStdio=True, printToConsole=True)
 
     def onStart(self):
         super(Nexus, self).onStart()
@@ -44,33 +39,27 @@ class Nexus(nexus.NexusBase):
 
 
 def main():
-    p = argparse.ArgumentParser(description='Paradrop API server running on client')
-    p.add_argument('-s', '--settings', help='Overwrite settings, format is "KEY:VALUE"',
-                   action='append', type=str, default=[])
+    p = argparse.ArgumentParser(description='Paradrop daemon running on client')
     p.add_argument('--config', help='Run as the configuration daemon',
                    action='store_true')
-    p.add_argument('--mode', '-m', help='Set the mode to one of [development, production, test]',
+    p.add_argument('--mode', '-m', help='Set the mode to one of [production, local, unittest]',
                    action='store', type=str, default='production')
+    p.add_argument('--portal', '-p', help='Set the folder of files for local portal',
+                   action='store', type=str)
     p.add_argument('--no-exec', help='Skip execution of configuration commands',
                    action='store_false', dest='execute')
 
-    # Things to replace
-    p.add_argument('--development', help='Enable the development environment variables',
-                   action='store_true')
-
-    p.add_argument('--unittest', help="Run the server in unittest mode", action='store_true')
     p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
 
     args = p.parse_args()
     # print args
 
-    # Check for settings to overwrite (MOVE TO NEXUS)
-    settings.updateSettings(args.settings)
+    settings.loadSettings(args.mode, [])
 
     # Globally assign the nexus object so anyone else can access it.
     # Sorry, programming gods. If it makes you feel better this class
     # replaces about half a dozen singletons
-    nexus.core = Nexus(args.mode, settings=args.settings)
+    nexus.core = Nexus()
 
     if args.config:
         from paradrop import confd
@@ -89,7 +78,7 @@ def main():
         isProvisioned = (pdid is not None \
             and apitoken is not None)
 
-        if (isProvisioned):
+        if isProvisioned:
             # Set up communication with pdserver.
             # 1. Create a report of the current system state and send that.
             # 2. Poll for a list of updates that should be applied.
@@ -99,9 +88,12 @@ def main():
         # Start the configuration service as a thread
         confd.main.run_thread(execute=args.execute, dbus=False)
 
-        if not args.unittest:
-            from paradrop.lib.misc.portal import startPortal
-            startPortal()
+        if args.mode != "unittest":
+            from paradrop.backend.portal import startPortal
+            if args.portal:
+                startPortal(args.portal)
+            else:
+                startPortal()
 
         # Now setup the RESTful API server for Paradrop
         server.setup(args)

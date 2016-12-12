@@ -9,7 +9,7 @@ from autobahn.wamp import auth
 from paradrop.lib.misc import pdinstall, status
 from paradrop.lib.config import hostconfig
 from paradrop.base.output import out
-from paradrop.base import names, nexus, cxbr
+from paradrop.base import nexus, cxbr
 
 from . import apibridge
 

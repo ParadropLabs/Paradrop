@@ -12,10 +12,9 @@ from txrestapi.resource import APIResource
 from txrestapi.methods import GET, POST, PUT, ALL
 
 from paradrop.base.output import out
-from paradrop.base import names
 from paradrop.base.pdutils import timeflt, str2json, json2str
+from paradrop.base import settings
 
-from paradrop.lib.misc import settings
 from paradrop.lib.container import dockerapi
 from paradrop.lib.misc.procmon import ProcessMonitor
 
@@ -298,13 +297,7 @@ def setup(args=None):
         # No one wants his dev machine to reboot suddenly.
     ProcessMonitor.allowedActions = set()
 
-    # Development mode
-    if(args and args.development):
-        thePort = settings.PDFCD_PORT + 10000
-        out.info('Using DEVELOPMENT variables')
-        # Disable sending the error traceback to the client
-        site.displayTracebacks = True
-    elif(args and args.unittest):
+    if(args and args.mode == "unittest"):
         thePort = settings.PDFCD_PORT + 20000
         out.info('Running under unittest mode')
         site.displayTracebacks = True

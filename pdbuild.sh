@@ -59,11 +59,14 @@ docs() {
 clean() {
     echo "Cleaning build directories"
     (cd paradrop; snapcraft clean)
+    find . -name "*.pyc" | xargs rm
 }
 
 run() {
     echo -e "${COLOR}Starting Paradrop" && tput sgr0
-    echo "TODO..."
+    source buildenv/env/bin/activate
+    pip install -e ./paradrop/src
+    PORTAL_SERVER_PORT=8080 paradrop -m local -p $PWD/paradrop/localweb/www
 }
 
 #Show help if no args passed

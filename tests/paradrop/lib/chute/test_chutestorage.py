@@ -2,7 +2,7 @@ from mock import patch, MagicMock
 
 from paradrop.lib.chute import chutestorage
 from paradrop.lib.chute.chute import Chute
-from paradrop.lib.misc import settings 
+from paradrop.base import settings 
 
 
 @patch('paradrop.lib.chute.chutestorage.pdos')
@@ -54,7 +54,7 @@ def test_chutestorage(mSave, mPdos):
     assert not mPdos.remove.called
     assert s.getChuteList != []
     s.clearChuteStorage()
-    mPdos.remove.assert_called_once_with(settings.FC_CHUTESTORAGE_SAVE_PATH)
+    mPdos.remove.assert_called_once_with(settings.FC_CHUTESTORAGE_DIR)
     assert s.getChuteList() == []
 
     

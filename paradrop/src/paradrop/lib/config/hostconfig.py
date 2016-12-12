@@ -19,7 +19,7 @@ import re
 import yaml
 
 from paradrop.base.output import out
-from paradrop.lib.misc import settings
+from paradrop.base import settings
 from paradrop.lib.config import devices as config_devices
 
 
@@ -38,7 +38,7 @@ def save(config, path=None):
     May raise exception if unable to write the configuration file.
     """
     if path is None:
-        path = settings.HOST_CONFIG_PATH
+        path = settings.HOST_CONFIG_FILE
 
     with open(path, 'w') as output:
         output.write(yaml.safe_dump(config, default_flow_style=False))
@@ -54,7 +54,7 @@ def load(path=None):
     Returns a host config object on success or None on failure.
     """
     if path is None:
-        path = settings.HOST_CONFIG_PATH
+        path = settings.HOST_CONFIG_FILE
 
     try:
         with open(path, 'r') as source:

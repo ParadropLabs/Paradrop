@@ -9,7 +9,7 @@
 from io import BytesIO
 
 from paradrop.base.output import out
-from paradrop.lib.misc import settings
+from paradrop.base import settings
 from paradrop.lib.utils import pdos, pdosq
 
 

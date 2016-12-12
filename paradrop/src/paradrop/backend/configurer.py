@@ -8,7 +8,7 @@ import threading
 
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
-from paradrop.lib.misc import settings
+from paradrop.base import settings
 from paradrop.lib.misc.procmon import dockerMonitor
 from paradrop.lib.chute.restart import reloadChutes
 

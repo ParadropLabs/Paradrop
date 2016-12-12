@@ -8,12 +8,11 @@ way to interpret the results through a set of basic actionable functions.
 '''
 import time
 
-from paradrop.base import nexus
+from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.lib import plan
 from paradrop.lib.chute import chutestorage
 from paradrop.lib.chute import chute
-from paradrop.lib.misc import settings
 from paradrop.lib.utils.http import PDServerRequest
 
 

@@ -7,7 +7,7 @@ from mock import MagicMock, Mock, patch
 
 from pdmock import MockChute, MockUpdate
 
-from paradrop.lib.misc import settings
+from paradrop.base import settings
 from paradrop.lib.utils import pdos
 
 
@@ -186,6 +186,7 @@ def test_config_devices():
     update.new.setCache('hostConfig', hostConfig)
 
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
+    settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
 
     # Calling before getSystemDevices should do nothing.
     devices.setSystemDevices(update)
@@ -207,7 +208,7 @@ def test_config_devices():
     devices.setSystemDevices(update)
 
     pdos.remove(settings.UCI_CONFIG_DIR)
-
+    pdos.remove(settings.UCI_BACKUP_DIR)
 
 def test_config_dhcp():
     """
@@ -227,6 +228,7 @@ def test_config_dhcp():
     update.new.setCache("networkInterfaces", interfaces)
 
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
+    settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
 
     # Test code path with caching enabled
     dhcp.DNSMASQ_CACHE_ENABLED = True
@@ -239,6 +241,7 @@ def test_config_dhcp():
     dhcp.setVirtDHCPSettings(update)
 
     pdos.remove(settings.UCI_CONFIG_DIR)
+    pdos.remove(settings.UCI_BACKUP_DIR)
 
     # Test with missing "lease" field.
     interfaces.append({
@@ -307,8 +310,10 @@ def test_config_firewall():
 
     # Need to make a writable location for our config files.
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
+    settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
     firewall.setOSFirewallRules(update)
     pdos.remove(settings.UCI_CONFIG_DIR)
+    pdos.remove(settings.UCI_BACKUP_DIR)
  
     # Try a bad rule that has both from/to outside the chute.
     update.new.firewall = fake_rules_list()
@@ -430,6 +435,7 @@ def test_get_network_config():
 
     # Need to make a writable location for our config files.
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
+    settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
 
     # Try the normal sequence of steps for installing a new chute.
     network.getNetworkConfig(update)
@@ -481,7 +487,7 @@ def test_get_network_config():
 
     # Clean up our config dir
     pdos.remove(settings.UCI_CONFIG_DIR)
-
+    pdos.remove(settings.UCI_BACKUP_DIR)
 
 def test_revert_config():
     """
@@ -491,6 +497,7 @@ def test_revert_config():
 
     # Need to make a writable location for our config files.
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
+    settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
 
     update = MockUpdate()
     update.old = None
@@ -498,6 +505,9 @@ def test_revert_config():
 
     osconfig.revertConfig(update, "network")
 
+    # Clean up our config dir
+    pdos.remove(settings.UCI_CONFIG_DIR)
+    pdos.remove(settings.UCI_BACKUP_DIR)
 
 def test_uciutils():
     """
@@ -541,11 +551,13 @@ def test_config_wifi():
 
     # Need to make a writable location for our config files.
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
+    settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
 
     wifi.setOSWirelessConfig(update)
 
     # Clean up our config dir
     pdos.remove(settings.UCI_CONFIG_DIR)
+    pdos.remove(settings.UCI_BACKUP_DIR)
 
 
 def test_pool():

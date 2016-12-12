@@ -15,9 +15,8 @@ import subprocess
 
 from paradrop.base.output import out
 from paradrop.base.exceptions import ChuteNotFound, ChuteNotRunning
-from paradrop.base import nexus
+from paradrop.base import nexus, settings
 from paradrop.lib.chute import chutestorage
-from paradrop.lib.misc import resopt, settings
 
 from .downloader import downloader
 

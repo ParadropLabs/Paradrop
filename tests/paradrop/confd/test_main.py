@@ -13,7 +13,7 @@ def test_paradrop_main(setup, run_thread, run_pdconfd):
     """
     from paradrop.main import main
 
-    sys.argv = ["pd", "--unittest"]
+    sys.argv = ["pd", "-m", "unittest"]
     main()
     assert run_thread.called
     assert setup.called
@@ -28,6 +28,6 @@ def test_paradrop_main_config(setup, run_thread, run_pdconfd):
     """
     from paradrop.main import main
 
-    sys.argv = ["pd", "--config", "--unittest"]
+    sys.argv = ["pd", "--config", "-munittest"]
     main()
     assert run_pdconfd.called

@@ -33,20 +33,14 @@ def test_parse_value():
     assert result == "out.txt"
 
 
-def test_update_settings():
+def test_load_settings():
     """
     Test updateSettings function
     """
-    from paradrop.lib.misc import settings
+    from paradrop.base import settings
 
     with patch.dict(os.environ, {'PDFCD_PORT': '-1'}):
-        settings.updateSettings(["PD_TEST_VAR:stuff"])
+        settings.loadSettings("unittest", ["PD_TEST_VAR:stuff"])
 
         assert settings.PD_TEST_VAR == "stuff"
         assert settings.PDFCD_PORT == -1
-
-    with patch.dict(os.environ, {'SNAP_DATA': '/tmp/test'}):
-        settings.updateSettings()
-
-        assert settings.FC_CHUTESTORAGE_SAVE_PATH.startswith("/tmp/test")
-        assert settings.UCI_CONFIG_DIR.startswith("/tmp/test")
