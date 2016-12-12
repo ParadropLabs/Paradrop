@@ -14,6 +14,7 @@ apps:
     daemon: simple
     plugs:
       - network
+      - network-control
       - docker
 
 parts:
