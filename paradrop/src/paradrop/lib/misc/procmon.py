@@ -39,10 +39,11 @@ class ProcessMonitor(object):
             self.cmdstring = service
 
         if pidfile is not None:
-            self.pidfile = pidfile
+            self.pidfiles = [ pidfile ]
         else:
-            self.pidfile = "/var/snap/{service}/*/run/{service}.pid".format(
-                    service=service)
+            self.pidfiles = [
+                "/var/snap/{service}/*/run/{service}.pid".format(service=service),
+                "/var/run/{service}.pid".format(service=service)]
 
     def check(self):
         """
@@ -70,15 +71,16 @@ class ProcessMonitor(object):
                 pass
 
         # Search for pid file(s) and check consistency.
-        for path in glob.iglob(self.pidfile):
-            with open(path, 'r') as source:
-                pid = source.read().strip()
+        for pidfile in self.pidfiles:
+            for path in glob.iglob(pidfile):
+                with open(path, 'r') as source:
+                    pid = source.read().strip()
 
-            if pid in detected_pids:
-                consistent_pids.add(pid)
-            else:
-                # Delete the stale pid file.
-                os.remove(path)
+                if pid in detected_pids:
+                    consistent_pids.add(pid)
+                else:
+                    # Delete the stale pid file.
+                    os.remove(path)
 
         return len(consistent_pids) > 0
 
