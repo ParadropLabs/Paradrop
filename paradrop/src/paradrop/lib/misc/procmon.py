@@ -42,8 +42,7 @@ class ProcessMonitor(object):
             self.pidfiles = [ pidfile ]
         else:
             self.pidfiles = [
-                "/var/snap/{service}/*/run/{service}.pid".format(service=service),
-                "/var/run/{service}.pid".format(service=service)]
+                "/var/snap/{service}/current/run/{service}.pid".format(service=service)]
 
     def check(self):
         """
