@@ -10,10 +10,9 @@ from twisted.internet import reactor, task
 from twisted.internet.defer import Deferred, DeferredList
 from twisted.web.http_headers import Headers
 
-from paradrop.lib.misc import settings
 from paradrop.lib.misc.reporting import sendStateReport
 from paradrop.lib.utils.http import PDServerRequest
-from paradrop.base import nexus
+from paradrop.base import nexus, settings
 from paradrop.base.pdutils import timeint
 
 

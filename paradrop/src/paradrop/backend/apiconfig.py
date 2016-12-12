@@ -1,7 +1,7 @@
 import json
 from twisted.internet import reactor
 
-from paradrop.base import nexus
+from paradrop.base import nexus, status
 from paradrop.base.output import out
 from paradrop.base.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.backend.apiinternal import RouterSession
@@ -10,7 +10,6 @@ from paradrop.backend.apibridge import updateManager
 from paradrop.backend import pdapi
 from paradrop.lib.config import hostconfig
 from paradrop.lib.misc.reporting import sendStateReport
-from paradrop.lib.misc import status
 from paradrop.lib.utils.http import PDServerRequest
 
 from .apibridge import updateManager

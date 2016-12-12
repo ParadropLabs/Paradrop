@@ -59,7 +59,7 @@ docs() {
 clean() {
     echo "Cleaning build directories"
     (cd paradrop; snapcraft clean)
-    find . -name "*.pyc" | xargs rm
+    find . -name "*.pyc" | xargs rm -f
 }
 
 run() {

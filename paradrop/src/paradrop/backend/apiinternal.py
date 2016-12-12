@@ -6,10 +6,10 @@ from twisted.internet import utils
 from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 from autobahn.wamp import auth
 
-from paradrop.lib.misc import pdinstall, status
+from paradrop.lib.misc import pdinstall
 from paradrop.lib.config import hostconfig
 from paradrop.base.output import out
-from paradrop.base import nexus, cxbr
+from paradrop.base import nexus, cxbr, status
 
 from . import apibridge
 

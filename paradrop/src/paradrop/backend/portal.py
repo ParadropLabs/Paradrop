@@ -69,7 +69,7 @@ class ParadropPortal(Resource):
             return self.static.getChild(path, request)
 
 
-def startPortal(portal_dir):
+def startPortal(portal_dir=None):
     router = ParadropPortal(portal_dir)
     factory = Site(router)
     reactor.listenTCP(settings.PORTAL_SERVER_PORT, factory)

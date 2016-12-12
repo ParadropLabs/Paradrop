@@ -207,7 +207,7 @@ def test_state():
     """
     from paradrop.lib.plan import state
     from paradrop.lib.chute import chute
-    from paradrop.lib.misc import settings
+    from paradrop.base import settings
 
     # Set this to exercise debug mode code
     settings.DEBUG_MODE = True
