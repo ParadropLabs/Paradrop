@@ -112,7 +112,6 @@ EXTERNAL_SYSTEM_DIR = "/var/run/paradrop/system/{chute}/"
 REGISTRY_USERNAME = "routers"
 REGISTRY_PASSWORD = "zai7geigh0ujahQu"
 
-#
 # Reject by default chute updates that would install an older version.  This
 # has been set to False to fulfill the requirement that users be able to
 # downgrade chutes.

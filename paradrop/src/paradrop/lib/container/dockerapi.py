@@ -10,6 +10,7 @@ Functions associated with deploying and cleaning up docker containers.
 import docker
 import json
 import os
+import random
 import re
 import subprocess
 import time
@@ -451,13 +452,34 @@ def call_retry(cmd, env, delay=3, tries=3):
 
 def setup_net_interfaces(chute):
     """
-    Link interfaces in the host to the internal interface in the docker container using pipework.
+    Link interfaces in the host to the internal interfaces in the Docker
+    container.
+
+    The commands are based on the pipework script
+    (https://github.com/jpetazzo/pipework).
 
     :param chute: The chute object containing information about the chute.
     :type update: obj
     :returns: None
     """
     interfaces = chute.getCache('networkInterfaces')
+
+    # Construct environment for subprocess calls.
+    env = {
+        "PATH": os.environ.get("PATH", "/bin")
+    }
+    if settings.DOCKER_BIN_DIR not in env['PATH']:
+        env['PATH'] += ":" + settings.DOCKER_BIN_DIR
+
+    # We need the chute's PID in order to work with Linux namespaces.
+    pid = getChutePID(chute.name)
+
+    # Set up netns directory and link so that 'ip netns' command works.
+    pdosq.makedirs('/var/run/netns')
+    cmd = ['ln', '-s', '/proc/{}/ns/net'.format(pid),
+            '/var/run/netns/{}'.format(pid)]
+    call_retry(cmd, env, tries=1)
+
     for iface in interfaces:
         if iface.get('netType') == 'wifi':
             IP = iface.get('ipaddrWithPrefix')
@@ -466,54 +488,72 @@ def setup_net_interfaces(chute):
         else: # pragma: no cover
             continue
 
-        # Construct environment for pipework call.  It only seems to require
-        # the PATH variable to include the directory containing the docker
-        # client.  On Snappy this was not happening by default, which is why
-        # this code is here.
-        env = {"PATH": os.environ.get("PATH", "")}
-        if settings.DOCKER_BIN_DIR not in env['PATH']:
-            env['PATH'] += ":" + settings.DOCKER_BIN_DIR
-
         mode = iface.get('mode', 'ap')
+
         if mode == 'ap':
-            cmd = ['/apps/paradrop/current/bin/pipework', externalIntf, '-i',
+#
+# Custom calls for setting up the chute interface.  I disabled these because
+# the "ip netns" commands are failing.  This probably has something to do
+# with snappy confinement.
+#
+#            # Generate a temporary interface name.  It just needs to be unique.
+#            # We will rename to the internalIntf name as soon as the interface
+#            # is inside the chute.
+#            tmpIntf = "tmp{:x}".format(random.getrandbits(32))
+#
+#            # TODO copy MTU from original interface?
+#            cmd = ['ip', 'link', 'add', 'link', externalIntf, 'dev', tmpIntf,
+#                    'type', 'macvlan', 'mode', 'bridge']
+#            call_retry(cmd, env, tries=1)
+#
+#            # Bring the interface up.
+#            cmd = ['ip', 'link', 'set', tmpIntf, 'up']
+#            call_retry(cmd, env, tries=1)
+#
+#            # Give the new interface to the chute.
+#            cmd = ['ip', 'link', 'set', tmpIntf, 'netns', str(pid)]
+#            call_retry(cmd, env, tries=1)
+#
+#            # Rename the interface according to what the chute wants.
+#            cmd = ['sudo', 'ip', 'netns', 'exec', str(pid), 'ip', 'link', 'set',
+#                    tmpIntf, 'name', internalIntf]
+#            call_retry(cmd, env, tries=1)
+#
+#            # Set the IP address.
+#            cmd = ['sudo', 'ip', 'netns', 'exec', str(pid), 'ip', 'addr', 'add', IP,
+#                    'dev', internalIntf]
+#            call_retry(cmd, env, tries=1)
+#
+#            # Bring the interface up again.
+#            cmd = ['sudo', 'ip', 'netns', 'exec', str(pid), 'ip', 'link', 'set',
+#                    internalIntf, 'up']
+#            call_retry(cmd, env, tries=1)
+
+            cmd = ['pipework', externalIntf, '-i',
                    internalIntf, chute.name,  IP]
-            call_retry(cmd, env, tries=1)
+            out.info("Calling: {}\n".format(" ".join(cmd)))
+            try:
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, env=env)
+                for line in proc.stdout:
+                    out.info("pipework: {}\n".format(line.strip()))
+                for line in proc.stderr:
+                    out.warn("pipework: {}\n".format(line.strip()))
+            except OSError as e:
+                out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
+                out.exception(e, True)
+                raise e
 
         elif mode == 'monitor':
-            # pipework does not support transferring a monitor mode interface,
-            # so we need to take care of it ourselves.
             phyname = getWirelessPhyName(externalIntf)
-            pid = getChutePID(chute.name)
 
             cmd = ['iw', 'phy', phyname, 'set', 'netns', str(pid)]
-            call_retry(cmd, env, tries=1)
-
-            # Set up netns directory and link so that 'ip netns' command works.
-            pdosq.makedirs('/var/run/netns')
-            cmd = ['ln', '-s', '/proc/{}/ns/net'.format(pid),
-                    '/var/run/netns/{}'.format(pid)]
             call_retry(cmd, env, tries=1)
 
             # Rename the interface inside the container.
             cmd = ['ip', 'netns', 'exec', str(pid), 'ip', 'link', 'set',
                     'dev', externalIntf, 'up', 'name', internalIntf]
             call_retry(cmd, env, tries=1)
-
-        cmd = ['pipework', externalIntf, '-i',
-               internalIntf, chute.name,  IP]
-        out.info("Calling: {}\n".format(" ".join(cmd)))
-        try:
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, env=env)
-            for line in proc.stdout:
-                out.info("pipework: {}\n".format(line.strip()))
-            for line in proc.stderr:
-                out.warn("pipework: {}\n".format(line.strip()))
-        except OSError as e:
-            out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
-            out.exception(e, True)
-            raise e
 
 
 def prepare_environment(chute):

@@ -134,33 +134,6 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, prepare_
     client.start.side_effect = Exception('start exception')
     assert_raises(Exception, dockerapi.startChute, update)
 
-@patch('paradrop.lib.container.dockerapi.os')
-@patch('paradrop.lib.container.dockerapi.subprocess')
-@patch('paradrop.lib.container.dockerapi.out')
-def test_setup_net_interfaces(mockOutput, mockSubproc, mockOS):
-    """
-    Test that the setup_net_interfaces function does it's job.
-    """
-    #Test successful setup
-    chute = MagicMock()
-    chute.name = 'testing'
-    chute.getCache.return_value = [{'netType': 'wifi', 'ipaddrWithPrefix': '0.0.0.0/24', 'internalIntf': 'Inside', 'externalIntf': 'Outside'}, {'netType': 'lan'}]
-    mockOS.environ.get.return_value  = ""
-    proc = MagicMock()
-    mockSubproc.Popen.return_value = proc
-    mockSubproc.PIPE = 'piping'
-    proc.stdout = ['test1', 'test2']
-    proc.stderr = ['error']
-    dockerapi.setup_net_interfaces(chute)
-    mockSubproc.Popen.assert_called()
-
-    #Test subprocess throwing an exception
-    mockSubproc.Popen.side_effect = OSError('BAD!')
-    try:
-        dockerapi.setup_net_interfaces(chute)
-    except OSError as e:
-        assert e.message == 'BAD!'
-
 @patch('__builtin__.open')
 @patch('paradrop.lib.container.dockerapi.os')
 @patch('paradrop.lib.container.dockerapi.out')
