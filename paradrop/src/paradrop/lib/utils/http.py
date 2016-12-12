@@ -312,7 +312,7 @@ class PDServerRequest(object):
         self.setAuthHeader = setAuthHeader
         self.transportRetries = 0
 
-        url = settings.PDSERVER_URL
+        url = nexus.core.info.pdserver
         if not path.startswith('/'):
             url += '/'
         url += path
@@ -410,7 +410,7 @@ class PDServerRequest(object):
         info = {
             'authorization': 'Bearer {}'.format(c.token),
             'router_id': nexus.core.info.pdid,
-            'server': settings.PDSERVER_URL
+            'server': nexus.core.info.pdserver
         }
         return info
 

@@ -40,9 +40,9 @@ CONFIG_FILE = HOME_DIR + 'config'
 #
 # pdserver
 #
-PDSERVER_HTTP="https://paradrop.org"
+PDSERVER = "https://paradrop.org"
 PDSERVER_MAX_CONCURRENT_REQUESTS = 2
-WAMP_ROUTER="ws://paradrop.io:9080/ws"
+WAMP_ROUTER = "ws://paradrop.org:9086/ws"
 
 #
 # pdfcd

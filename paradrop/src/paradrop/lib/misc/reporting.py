@@ -13,12 +13,11 @@ from StringIO import StringIO
 from twisted.internet import reactor
 from twisted.web.http_headers import Headers
 
-from paradrop.base import nexus, settings
+from paradrop.base import nexus, settings, status
 from paradrop.base.output import out
 from paradrop.lib.chute import chutestorage
 from paradrop.lib.config import devices, hostconfig, resource
 from paradrop.lib.utils.http import PDServerRequest
-
 
 def getPackageVersion(name):
     """

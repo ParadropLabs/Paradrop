@@ -90,13 +90,13 @@ class NexusBase(object):
         if (self.session is not None):
             yield self.session.leave()
 
-        output.out.info('Connecting to node at URI: %s' % str(self.net.host))
+        output.out.info('Connecting to wamp router at URI: %s' % str(self.info.wamp_router))
 
         # Setting self.session here only works for the first connection but
-        # becomes stale if the connection fails and we reconnect.  In that case
-        # a new session object is automatically created.  For this reason, we
-        # also update this session reference in BaseSession.onJoin.
-        self.session = yield sessionClass.start(self.net.host, self.info.pdid, debug=debug)
+        # becomes stale if the connection fails and we reconnect.
+        # In that case a new session object is automatically created.
+        # For this reason, we also update this session reference in BaseSession.onJoin.
+        self.session = yield sessionClass.start(self.info.wamp_router, self.info.pdid, debug=debug)
         returnValue(self.session)
 
     def onConnect(self):
@@ -141,10 +141,10 @@ class NexusBase(object):
 
         return self.info.pdid is not None
 
-    def provision(self, pdid, keys):
-        ''' Temporary method, things dont work like this anymore '''
-
+    def provision(self, pdid, pdserver=settings.PDSERVER, wamp_router=settings.WAMP_ROUTER):
         self.info.pdid = pdid
+        self.info.pserver = pdserver
+        self.info.wamp_router = wamp_router
 
     #########################################################
     # Keys
@@ -223,6 +223,7 @@ class AttrWrapper(object):
         if self.__dict__['onChange'] is not None:
             self.__dict__['onChange'](k, v)
 
+
 def resolveInfo(nexus, path):
     '''
     Given a path to the config file, load its contents and assign it to the
@@ -245,12 +246,16 @@ def resolveInfo(nexus, path):
 
     nexus.info.pdid = contents['pdid']
     nexus.info.version = contents['version']
+    nexus.info.pdserver = contents['pdserver']
+    nexus.info.wamp_router = contents['wamp_router']
 
 
 def createDefaultInfo(path):
     default = {
         'version': 1,
-        'pdid': None
+        'pdid': None,
+        'pdserver': settings.PDSERVER,
+        'wamp_router': settings.WAMP_ROUTER
     }
 
     writeYaml(default, path)
@@ -270,7 +275,7 @@ def validateInfo(contents):
         returns:
             True if valid, else false
     '''
-    INFO_REQUIRES = ['version', 'pdid']
+    INFO_REQUIRES = ['version', 'pdid', 'pdserver', 'wamp_router']
 
     for k in INFO_REQUIRES:
         if k not in contents:
