@@ -56,7 +56,7 @@ PDCONFD_ENABLED = True
 #
 # fc
 #
-FC_CHUTESTORAGE_DIR = HOME_DIR + "chutes/"
+FC_CHUTESTORAGE_FILE = HOME_DIR + "chutes"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
 FC_BOUNCE_UPDATE = None
 RESERVED_CHUTE = "__PARADROP__"
@@ -183,7 +183,7 @@ def loadSettings(mode="local", slist=[]):
 
     if mode == "local":
         mod.HOME_DIR = os.path.join(os.path.expanduser("~"), ".paradrop/")
-        mod.FC_CHUTESTORAGE_DIR = os.path.join(mod.HOME_DIR, "chutes/")
+        mod.FC_CHUTESTORAGE_FILE = os.path.join(mod.HOME_DIR, "chutes")
         mod.EXTERNAL_DATA_DIR = os.path.join(mod.HOME_DIR, "{chute}/")
         mod.LOG_DIR = os.path.join(mod.HOME_DIR, "logs/")
         mod.KEY_DIR = os.path.join(mod.HOME_DIR, "keys/")
@@ -198,7 +198,7 @@ def loadSettings(mode="local", slist=[]):
 
     elif mode == "unittest":
         mod.HOME_DIR = "/tmp/.paradrop-test/"
-        mod.FC_CHUTESTORAGE_DIR = os.path.join(mod.HOME_DIR, "chutes/")
+        mod.FC_CHUTESTORAGE_FILE = os.path.join(mod.HOME_DIR, "chutes")
         mod.EXTERNAL_DATA_DIR = os.path.join(mod.HOME_DIR, "{chute}/")
         mod.LOG_DIR = os.path.join(mod.HOME_DIR, "logs/")
         mod.KEY_DIR = os.path.join(mod.HOME_DIR, "keys/")
@@ -209,7 +209,7 @@ def loadSettings(mode="local", slist=[]):
         mod.HOST_CONFIG_FILE = os.path.join(mod.HOME_DIR, "hostconfig.yaml")
 
     elif snapCommonPath is not None:
-        mod.FC_CHUTESTORAGE_DIR = os.path.join(snapCommonPath, "chutes/")
+        mod.FC_CHUTESTORAGE_FILE = os.path.join(snapCommonPath, "chutes")
         mod.EXTERNAL_DATA_DIR = os.path.join(snapCommonPath, "{chute}/")
         mod.LOG_DIR = os.path.join(snapCommonPath, "logs/")
         mod.KEY_DIR = os.path.join(snapCommonPath, "keys/")
@@ -222,7 +222,7 @@ def loadSettings(mode="local", slist=[]):
 
         mod.DOCKER_BIN_DIR = "/snap/bin"
 
-    for x in [mod.FC_CHUTESTORAGE_DIR, mod.LOG_DIR, mod.KEY_DIR, mod.MISC_DIR]:
+    for x in [mod.LOG_DIR, mod.KEY_DIR, mod.MISC_DIR]:
         if not os.path.exists(x):
             os.makedirs(x)
 

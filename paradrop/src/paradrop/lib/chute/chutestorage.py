@@ -30,7 +30,7 @@ class ChuteStorage(PDStorage):
 
     def __init__(self, filename=None, reactor=None):
         if(not filename):
-            filename = settings.FC_CHUTESTORAGE_DIR
+            filename = settings.FC_CHUTESTORAGE_FILE
         PDStorage.__init__(self, filename, reactor, settings.FC_CHUTESTORAGE_SAVE_TIMER)
 
         # Has it been loaded?
@@ -81,7 +81,7 @@ class ChuteStorage(PDStorage):
 
     def clearChuteStorage(self):
         ChuteStorage.chuteList = {}
-        pdos.remove(settings.FC_CHUTESTORAGE_DIR)
+        pdos.remove(settings.FC_CHUTESTORAGE_FILE)
 
     #
     # Functions we override to implement PDStorage Properly

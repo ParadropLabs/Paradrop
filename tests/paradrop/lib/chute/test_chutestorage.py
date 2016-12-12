@@ -54,7 +54,7 @@ def test_chutestorage(mSave, mPdos):
     assert not mPdos.remove.called
     assert s.getChuteList != []
     s.clearChuteStorage()
-    mPdos.remove.assert_called_once_with(settings.FC_CHUTESTORAGE_DIR)
+    mPdos.remove.assert_called_once_with(settings.FC_CHUTESTORAGE_FILE)
     assert s.getChuteList() == []
 
     
