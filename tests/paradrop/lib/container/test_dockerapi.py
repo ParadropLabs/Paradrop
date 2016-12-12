@@ -122,3 +122,30 @@ def test_prepare_environment(core):
     assert env['PARADROP_CHUTE_VERSION'] == chute.version
     assert env['PARADROP_ROUTER_ID'] == core.info.pdid
     assert env['CUSTOM_VARIABLE'] == 42
+
+@patch('paradrop.lib.container.dockerapi.subprocess')
+@patch('paradrop.lib.container.dockerapi.pdosq')
+@patch('paradrop.lib.container.dockerapi.getChutePID')
+@patch('paradrop.lib.container.dockerapi.call_retry')
+def test_setup_net_interfaces(call_retry, getChutePID, pdosq, subprocess):
+    chute = MagicMock()
+    chute.name = 'test'
+    chute.getCache.return_value = [{
+        'netType': 'wifi',
+        'ipaddrWithPrefix': '0.0.0.0/24',
+        'internalIntf': 'Inside',
+        'externalIntf': 'Outside'
+    }, {
+        'netType': 'wifi',
+        'mode': 'monitor',
+        'internalIntf': 'Inside',
+        'externalIntf': 'Outside'
+    }, {
+        'netType': 'lan'
+    }]
+
+    dockerapi.setup_net_interfaces(chute)
+
+    assert pdosq.makedirs.called
+    assert getChutePID.called
+    assert call_retry.called
