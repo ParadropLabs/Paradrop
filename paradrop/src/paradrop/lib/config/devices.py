@@ -420,11 +420,26 @@ def setSystemDevices(update):
 
     if 'wifi' in hostConfig:
         for dev in hostConfig['wifi']:
-            config = {"type": "wifi-device", "name": dev['interface']}
+            if 'phy' in dev:
+                name = dev['phy']
+            elif 'ifname' in dev:
+                name = getWirelessPhyName(dev['ifname'])
+            elif 'interface' in dev:
+                # deprecated
+                out.warn("Use of 'interface' field in 'wifi' section is deprecated.")
+                name = getWirelessPhyName(dev['interface'])
+            else:
+                raise Exception("Missing phy/ifname field in hostconfig.")
+
+            config = {
+                "type": "wifi-device",
+                "name": name
+            }
 
             # We want to copy over all fields except interface.
             options = dev.copy()
-            del options['interface']
+            if 'interface' in options:
+                del options['interface']
 
             # If type is missing, then add it because it is a required field.
             if 'type' not in options:
