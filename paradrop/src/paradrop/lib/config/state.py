@@ -17,3 +17,8 @@ def revertChute(update):
         chuteStore.saveChute(update.old)
     else:
         chuteStore.deleteChute(update.new)
+
+
+def removeAllChutes(update):
+    chuteStore = chutestorage.ChuteStorage()
+    chuteStore.clearChuteStorage()

@@ -275,7 +275,8 @@ class UpdateRouter(UpdateObject):
     # steps that are largely irrelevant for host config updates.  Therefore, we
     # use a different module here.
     updateModuleList = [
-        plan.hostconfig
+        plan.hostconfig,
+        plan.router
     ]
 
     def __init__(self, obj):

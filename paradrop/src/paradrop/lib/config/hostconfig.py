@@ -202,6 +202,12 @@ def getHostConfig(update):
     if update.updateType == 'sethostconfig':
         config = update.hostconfig
 
+    # For factoryreset, try to load the default configuration or automatically
+    # generate a new one if the file is not found.
+    elif update.updateType == 'factoryreset':
+        config = prepareHostConfig(devices,
+                hostConfigPath=settings.DEFAULT_HOST_CONFIG_PATH)
+
     update.new.setCache('hostConfig', config)
 
 

@@ -654,3 +654,19 @@ def setResourceAllocation(update):
 def revertResourceAllocation(update):
     allocation = update.new.getCache('oldResourceAllocation')
     _setResourceAllocation(allocation)
+
+
+def removeAllContainers(update):
+    """
+    Remove all containers on the system.  This should only be used as part of a
+    factory reset mechanism.
+
+    :returns: None
+    """
+    client = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
+
+    for container in client.containers(all=True):
+        try:
+            client.remove_container(container=container['Id'], force=True)
+        except Exception as e:
+            update.progress(str(e))

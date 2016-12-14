@@ -58,6 +58,7 @@ PORTAL_SERVER_PORT = 80
 # Host configuration file
 #
 HOST_CONFIG_PATH = "~/.paradrop/hostconfig.yaml"
+DEFAULT_HOST_CONFIG_PATH = "~/.paradrop/hostconfig.default.yaml"
 
 HOST_DATA_PARTITION = "/writable"
 
@@ -189,6 +190,7 @@ def updateSettings(slist=[]):
         mod.UCI_CONFIG_DIR = os.path.join(snapDataPath, "config.d")
         mod.UCI_BACKUP_DIR = os.path.join(snapDataPath, "config-backup.d")
         mod.HOST_CONFIG_PATH = os.path.join(snapDataPath, "hostconfig.yaml")
+        mod.DEFAULT_HOST_CONFIG_PATH = os.path.join(snapDataPath, "hostconfig.default.yaml")
 
     if snapCommonPath is not None:
         mod.EXTERNAL_DATA_DIR = os.path.join(snapCommonPath,"{chute}")
