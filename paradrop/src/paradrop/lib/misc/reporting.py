@@ -21,6 +21,17 @@ from paradrop.lib.utils.http import PDServerRequest
 from . import settings, status
 
 
+def getOSVersion():
+    """
+    Return a string identifying the host OS.
+    """
+    try:
+        with open('/proc/version_signature', 'r') as source:
+            return source.read().strip()
+    except:
+        return None
+
+
 def getPackageVersion(name):
     """
     Get a python package version.
@@ -41,6 +52,7 @@ class StateReport(object):
         self.timestamp = time.time()
 
         self.name = None
+        self.osVersion = None
         self.paradropVersion = None
         self.pdinstallVersion = None
         self.chutes = []
@@ -58,6 +70,8 @@ class StateReportBuilder(object):
         report = StateReport()
 
         report.name = nexus.core.info.pdid
+
+        report.osVersion = getOSVersion()
 
         # We can get the paradrop version from the installed python package.
         report.paradropVersion = getPackageVersion('paradrop')
