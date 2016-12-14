@@ -14,7 +14,11 @@ apps:
     daemon: simple
     plugs:
       - network
+      - network-bind
       - network-control
+      - hardware-observe
+      - system-observe
+      - firewall-control
       - docker
 
 parts:
