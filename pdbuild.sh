@@ -23,7 +23,7 @@ printhelp() {
 setup() {
     echo -e "${COLOR}Setting up virtualenv" && tput sgr0
     if [ ! -f /usr/local/bin/virtualenv ]; then
-        sudo apt-get install python-setuptools python-dev build-essential libcurl4-gnutls-dev libffi-dev
+        sudo apt-get install python-setuptools python-dev build-essential libcurl4-gnutls-dev libghc-gnutls-dev libffi-dev
         sudo easy_install pip
         sudo pip install --upgrade virtualenv
     fi
@@ -37,6 +37,7 @@ setup() {
     echo -e "${COLOR}Snappy development tools installed" && tput sgr0
 
     virtualenv buildenv/env
+    source buildenv/env/bin/activate
     pip install -r requirements.txt
 }
 
@@ -66,7 +67,7 @@ run() {
     echo -e "${COLOR}Starting Paradrop" && tput sgr0
     source buildenv/env/bin/activate
     pip install -e ./paradrop/src
-    PORTAL_SERVER_PORT=8080 paradrop -m local -p $PWD/paradrop/localweb/www
+    PORTAL_SERVER_PORT=8080 sudo paradrop -m local -p $PWD/paradrop/localweb/www
 }
 
 #Show help if no args passed
