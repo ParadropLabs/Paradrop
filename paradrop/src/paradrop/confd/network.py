@@ -10,8 +10,9 @@ class ConfigInterface(ConfigObject):
 
     options = [
         ConfigOption(name="proto", required=True),
-        ConfigOption(name="ifname", type=list, required=True),
+        ConfigOption(name="ifname", type=list, default=[]),
         ConfigOption(name="type"),
+        ConfigOption(name="bridge_empty", type=bool, default=False),
         ConfigOption(name="enabled", type=bool, default=True),
 
         # Options for "static" protocol:
@@ -27,6 +28,8 @@ class ConfigInterface(ConfigObject):
         if self.type == "bridge":
             self.config_ifname = "br-{}".format(self.name)
         else:
+            if len(self.ifname) == 0:
+                raise Exception("missing ifname in interface {}".format(self.name))
             self.config_ifname = self.ifname[0]
 
     def addToBridge(self, ifname):
@@ -64,9 +67,12 @@ class ConfigInterface(ConfigObject):
         commands = list()
 
         if self.type == "bridge":
-            cmd = ["ip", "link", "add", "name", self.config_ifname, "type",
-                   "bridge"]
-            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
+            # Create bridge interface if there is at least one physical
+            # interface or bridge_empty is set to true.
+            if len(self.ifname) > 0 or self.bridge_empty:
+                cmd = ["ip", "link", "add", "name", self.config_ifname, "type",
+                       "bridge"]
+                commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
             # Add all of the interfaces to the bridge.
             for ifname in self.ifname:
@@ -112,8 +118,9 @@ class ConfigInterface(ConfigObject):
             for ifname in self.ifname:
                 commands.extend(self.removeFromBridge(ifname))
 
-            cmd = ["ip", "link", "delete", self.config_ifname]
-            commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
+            if len(self.ifname) > 0 or self.bridge_empty:
+                cmd = ["ip", "link", "delete", self.config_ifname]
+                commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         return commands
 
@@ -143,6 +150,13 @@ class ConfigInterface(ConfigObject):
         if self.type == "bridge":
             old_ifnames = set(self.ifname)
             new_ifnames = set(new.ifname)
+
+            # The bridge may not exist if this is the first physical interface
+            # and bridge_empty is False.
+            if len(self.ifname) == 0 and not self.bridge_empty:
+                cmd = ["ip", "link", "add", "name", self.config_ifname, "type",
+                        "bridge"]
+                commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
             # Add interfaces that were not in the old bridge.
             for ifname in (new_ifnames - old_ifnames):
@@ -174,5 +188,11 @@ class ConfigInterface(ConfigObject):
             # Remove interfaces that are not in the new bridge.
             for ifname in (old_ifnames - new_ifnames):
                 commands.extend(self.removeFromBridge(ifname))
+
+            # The bridge should not exist if this is the first physical interface
+            # and bridge_empty is False.
+            if len(self.ifname) == 0 and not self.bridge_empty:
+                cmd = ["ip", "link", "delete", self.config_ifname]
+                commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         return commands
