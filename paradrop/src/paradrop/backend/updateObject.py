@@ -1,4 +1,3 @@
-
 '''
 updateObject module.
 
@@ -11,8 +10,7 @@ import time
 from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.lib import plan
-from paradrop.lib.chute import chutestorage
-from paradrop.lib.chute import chute
+from paradrop.lib.chute import chute, chutestorage
 from paradrop.lib.utils.http import PDServerRequest
 
 

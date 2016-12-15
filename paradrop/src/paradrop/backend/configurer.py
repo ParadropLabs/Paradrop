@@ -105,10 +105,10 @@ class PDConfigurer:
         startQueue = reloadChutes()
         self.updateLock.acquire()
         # insert the data into the front of our update queue so that all old
-        # chutes restart befor new ones are processed
+        # chutes restart before new ones are processed
         for updateObj in startQueue:
             self.updateQueue.insert(0, updateObj)
-        # Finally, insert an update the initializes the hostconfig.
+        # Finally, insert an update that initializes the hostconfig.
         # This should happen before everything else.
         self.updateQueue.insert(0, self.makeHostconfigUpdate())
         self.updateLock.release()
