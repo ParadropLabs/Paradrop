@@ -182,24 +182,26 @@ class ConfigAPI(object):
         Get the provision status of this router.
 
         Returns a JSON object containing the following fields:
-        pdid - (string or null) the router identity
+        routerId - (string or null) the router identity
         has_apitoken - (boolean) whether the router has an API token
         is_provisioned - (boolean) whether the router has been provisioned
         """
         result = dict()
 
-        result['pdid'] = nexus.core.info.pdid
+        result['routerId'] = nexus.core.info.pdid
+        result['pdserver'] = nexus.core.info.pdserver
+        result['wampRouter'] = nexus.core.info.wampRouter
 
         apitoken = nexus.core.getKey('apitoken')
-        result['provisioned'] = (result['pdid'] and \
+        result['provisioned'] = (result['routerId'] and \
                                  apitoken is not None)
-        result['http_connected'] = status.apiTokenVerified
-        result['wamp_connected'] = status.wampConnected
+        result['httpConnected'] = status.apiTokenVerified
+        result['wampConnected'] = status.wampConnected
 
         apiPkg.request.setHeader('Content-Type', 'application/json')
         apiPkg.setSuccess(json.dumps(result, separators=(',',':')))
 
-    @APIDecorator(requiredArgs=["pdid", "apitoken"])
+    @APIDecorator(requiredArgs=["routerId", "apitoken"], optionalArgs=['pdserver', 'wampRouter'])
     def POST_provision(self, apiPkg):
         """
         Provision the router.
@@ -207,17 +209,24 @@ class ConfigAPI(object):
         Provisioning assigns a name and keys used to connect to pdserver.
 
         Arguments:
-            pdid: a string such as pd.lance.halo06
+            routerId: a string such as pd.lance.halo06
             apitoken: a string, token used to interact with pdserver
         """
-        pdid = apiPkg.inputArgs.get('pdid')
+        routerId = apiPkg.inputArgs.get('routerId')
         apitoken = apiPkg.inputArgs.get('apitoken')
+        pdserver = apiPkg.inputArgs.get('pdserver')
+        wampRouter = apiPkg.inputArgs.get('wampRouter')
 
         apiPkg.request.setHeader('Content-Type', 'text/plain')
 
         changed = False
-        if pdid != nexus.core.info.pdid:
-            nexus.core.provision(pdid, None)
+        if routerId != nexus.core.info.pdid \
+            or pdserver != nexus.core.info.pdserver \
+            or wampRouter != nexus.core.info.wampRouter:
+            if pdserver and wampRouter:
+                nexus.core.provision(routerId, pdserver, wampRouter)
+            else:
+                nexus.core.provision(routerId)
             changed = True
         if apitoken != nexus.core.getKey('apitoken'):
             nexus.core.saveKey(apitoken, 'apitoken')
@@ -230,8 +239,8 @@ class ConfigAPI(object):
             def onFailure(error):
                 result = dict()
                 result['provisioned'] = True
-                result['http_connected'] = status.apiTokenVerified
-                result['wamp_connected'] = status.wampConnected
+                result['httpConnected'] = status.apiTokenVerified
+                result['wampConnected'] = status.wampConnected
                 apiPkg.request.write(json.dumps(result))
                 apiPkg.request.finish()
 
@@ -245,8 +254,8 @@ class ConfigAPI(object):
 
                 result = dict()
                 result['provisioned'] = True
-                result['http_connected'] = status.apiTokenVerified
-                result['wamp_connected'] = status.wampConnected
+                result['httpConnected'] = status.apiTokenVerified
+                result['wampConnected'] = status.wampConnected
                 apiPkg.request.write(json.dumps(result))
                 apiPkg.request.finish()
 
@@ -265,7 +274,7 @@ class ConfigAPI(object):
             apiPkg.setNotDoneYet()
 
         else:
-            apiPkg.setFailure(pdapi.ERR_BADPARAM, "Router is already provisioned as {}: %s\n".format(pdid))
+            apiPkg.setFailure(pdapi.ERR_BADPARAM, "Router is already provisioned as {}: %s\n".format(routerId))
 
     @APIDecorator()
     def POST_startUpdate(self, apiPkg):

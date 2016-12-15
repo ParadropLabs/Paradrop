@@ -90,13 +90,13 @@ class NexusBase(object):
         if (self.session is not None):
             yield self.session.leave()
 
-        output.out.info('Connecting to wamp router at URI: %s' % str(self.info.wamp_router))
+        output.out.info('Connecting to wamp router at URI: %s' % str(self.info.wampRouter))
 
         # Setting self.session here only works for the first connection but
         # becomes stale if the connection fails and we reconnect.
         # In that case a new session object is automatically created.
         # For this reason, we also update this session reference in BaseSession.onJoin.
-        self.session = yield sessionClass.start(self.info.wamp_router, self.info.pdid, debug=debug)
+        self.session = yield sessionClass.start(self.info.wampRouter, self.info.pdid, debug=debug)
         returnValue(self.session)
 
     def onConnect(self):
@@ -141,10 +141,10 @@ class NexusBase(object):
 
         return self.info.pdid is not None
 
-    def provision(self, pdid, pdserver=settings.PDSERVER, wamp_router=settings.WAMP_ROUTER):
+    def provision(self, pdid, pdserver=settings.PDSERVER, wampRouter=settings.WAMP_ROUTER):
         self.info.pdid = pdid
-        self.info.pserver = pdserver
-        self.info.wamp_router = wamp_router
+        self.info.pdserver = pdserver
+        self.info.wampRouter = wampRouter
 
     #########################################################
     # Keys
@@ -247,7 +247,7 @@ def resolveInfo(nexus, path):
     nexus.info.pdid = contents['pdid']
     nexus.info.version = contents['version']
     nexus.info.pdserver = contents['pdserver']
-    nexus.info.wamp_router = contents['wamp_router']
+    nexus.info.wampRouter = contents['wampRouter']
 
 
 def createDefaultInfo(path):
@@ -255,7 +255,7 @@ def createDefaultInfo(path):
         'version': 1,
         'pdid': None,
         'pdserver': settings.PDSERVER,
-        'wamp_router': settings.WAMP_ROUTER
+        'wampRouter': settings.WAMP_ROUTER
     }
 
     writeYaml(default, path)
@@ -275,7 +275,7 @@ def validateInfo(contents):
         returns:
             True if valid, else false
     '''
-    INFO_REQUIRES = ['version', 'pdid', 'pdserver', 'wamp_router']
+    INFO_REQUIRES = ['version', 'pdid', 'pdserver', 'wampRouter']
 
     for k in INFO_REQUIRES:
         if k not in contents:
