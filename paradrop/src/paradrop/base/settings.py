@@ -197,7 +197,6 @@ def loadSettings(mode="local", slist=[]):
 
         mod.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
         mod.HOST_DATA_PARTITION = mod.HOME_DIR
-        mod.PORTAL_SERVER_PORT = 8080
 
     elif mode == "unittest":
         mod.HOME_DIR = "/tmp/.paradrop-test/"

@@ -34,13 +34,13 @@ def testConfigLoadingEmpty():
 
 
 def testConfigLoadingExisting():
-    contents = dict(pdid='pd.damouse.aardvark', version=1, pdserver='http://paradrop.org', wamp_router='ws://paradrop.org:9080/ws')
+    contents = dict(pdid='pd.damouse.aardvark', version=1, pdserver='http://paradrop.org', wampRouter='ws://paradrop.org:9080/ws')
     nexus.writeYaml(contents, settings.CONFIG_FILE)
 
     nex = TestingNexus()
     assert nex.info.pdid == 'pd.damouse.aardvark'
     assert nex.info.pdserver == 'http://paradrop.org'
-    assert nex.info.wamp_router == 'ws://paradrop.org:9080/ws'
+    assert nex.info.wampRouter == 'ws://paradrop.org:9080/ws'
     pdos.remove(settings.CONFIG_FILE)
 
 
