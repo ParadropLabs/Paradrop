@@ -77,6 +77,7 @@ PORTAL_SERVER_PORT = 80
 # hostconfig
 #
 HOST_CONFIG_FILE = "/etc/paradrop/paradrop_host_config.yaml"
+DEFAULT_HOST_CONFIG_FILE = "~/.paradrop/hostconfig.default.yaml"
 HOST_DATA_PARTITION = "/"
 
 #
@@ -192,9 +193,11 @@ def loadSettings(mode="local", slist=[]):
         mod.UCI_CONFIG_DIR = "/tmp/config.d"
         mod.UCI_BACKUP_DIR = "/tmp/config-backup.d"
         mod.HOST_CONFIG_FILE = "/tmp/hostconfig.yaml"
+        mod.DEFAULT_HOST_CONFIG_FILE = "/tmp/hostconfig.default.yaml"
 
         mod.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
         mod.HOST_DATA_PARTITION = mod.HOME_DIR
+        mod.PORTAL_SERVER_PORT = 8080
 
     elif mode == "unittest":
         mod.HOME_DIR = "/tmp/.paradrop-test/"
@@ -207,6 +210,7 @@ def loadSettings(mode="local", slist=[]):
         mod.UCI_CONFIG_DIR = os.path.join(mod.HOME_DIR, "config.d")
         mod.UCI_BACKUP_DIR = os.path.join(mod.HOME_DIR, "config-backup.d")
         mod.HOST_CONFIG_FILE = os.path.join(mod.HOME_DIR, "hostconfig.yaml")
+        mod.DEFAULT_HOST_CONFIG_FILE = os.path.join(mod.HOME_DIR, "hostconfig.default.yaml")
 
     elif snapCommonPath is not None:
         mod.FC_CHUTESTORAGE_FILE = os.path.join(snapCommonPath, "chutes")
@@ -218,6 +222,7 @@ def loadSettings(mode="local", slist=[]):
         mod.UCI_CONFIG_DIR = os.path.join(snapCommonPath, "config.d")
         mod.UCI_BACKUP_DIR = os.path.join(snapCommonPath, "config-backup.d")
         mod.HOST_CONFIG_FILE = os.path.join(snapCommonPath, "hostconfig.yaml")
+        mod.DEFAULT_HOST_CONFIG_FILE = os.path.join(snapCommonPath, "hostconfig.default.yaml")
         mod.HOST_DATA_PARTITION = "/writable"
 
         mod.DOCKER_BIN_DIR = "/snap/bin"

@@ -29,6 +29,7 @@ class ConfigAPI(object):
         self.rest.register('GET', '^/v1/provision', self.GET_provision)
         self.rest.register('POST', '^/v1/provision', self.POST_provision)
         self.rest.register('POST', '^/v1/startUpdate', self.POST_startUpdate)
+        self.rest.register('POST', '^/v1/factoryReset', self.POST_factoryReset)
 
     """
     Hostconfig example:
@@ -289,3 +290,25 @@ class ConfigAPI(object):
 
         apiPkg.request.setHeader('Content-Type', 'text/plain')
         apiPkg.setSuccess("OK")
+
+    @APIDecorator()
+    def POST_factoryReset(self, apiPkg):
+        """
+           Description:
+           Arguments:
+               POST request:
+           Returns:
+               On success: SUCCESS object
+               On failure: FAILURE object
+        """
+
+        out.info('Initiating factory reset...')
+
+        update = dict(updateClass='ROUTER', updateType='factoryreset',
+                name='PARADROP', tok=timeint(), pkg=apiPkg,
+                func=self.rest.complete)
+        self.rest.configurer.updateList(**update)
+
+        # Tell our system we aren't done yet (the configurer will deal with
+        # closing the connection)
+        apiPkg.setNotDoneYet()

@@ -376,6 +376,7 @@ def setSystemDevices(update):
 
         options = dict()
         options['type'] = "bridge"
+        options['bridge_empty'] = "1"
 
         options['proto'] = 'static'
         options['ipaddr'] = hostConfig['lan']['ipaddr']
