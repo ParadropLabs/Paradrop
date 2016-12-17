@@ -22,14 +22,7 @@ from paradrop.base.output import out
 from paradrop.base import settings
 from paradrop.lib.config import devices as config_devices
 
-
-SYS_DIR = "/sys/class/net"
-EXCLUDE_IFACES = set(["lo"])
 CHANNELS = [1, 6, 11]
-
-# Strings that identify a virtual interface.
-VIF_MARKERS = [".", "veth"]
-
 
 def save(config, path=None):
     """

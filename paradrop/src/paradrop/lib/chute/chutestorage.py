@@ -70,6 +70,7 @@ class ChuteStorage(PDStorage):
         # check if there is a version of the chute already
         oldch = ChuteStorage.chuteList.get(ch.name, None)
         if(oldch != None):
+            # TODO: what's the purpose of newch?
             newch = copy.deepcopy(oldch)
             # we should merge these chutes so we don't lose any data
             oldch.__dict__.update(ch.__dict__)

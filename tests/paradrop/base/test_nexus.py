@@ -15,7 +15,7 @@ def setup():
 
 
 def teardown():
-    pdos.remove(settings.HOME_DIR)
+    pdos.remove(settings.CONFIG_HOME_DIR)
 
 
 ###############################################################################

@@ -23,7 +23,6 @@ from paradrop.lib.config import uciutils
 IEEE80211_DIR = "/sys/class/ieee80211"
 SYS_DIR = "/sys/class/net"
 EXCLUDE_IFACES = set(["lo"])
-CHANNELS = [1, 6, 11]
 
 # Strings that identify a virtual interface.
 VIF_MARKERS = [".", "veth"]

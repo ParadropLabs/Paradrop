@@ -27,15 +27,15 @@ import sys
 DEBUG_MODE = False
 # VERBOSE = False
 
-HOME_DIR = '/opt/paradrop/'
+CONFIG_HOME_DIR = '/etc/paradrop/'
 
 #
 # paths to store daemon related information
 #
-LOG_DIR = HOME_DIR + 'logs/'
-KEY_DIR = HOME_DIR + 'keys/'
-MISC_DIR = HOME_DIR + 'misc/'
-CONFIG_FILE = HOME_DIR + 'config'
+LOG_DIR = CONFIG_HOME_DIR + 'logs/'
+KEY_DIR = CONFIG_HOME_DIR + 'keys/'
+MISC_DIR = CONFIG_HOME_DIR + 'misc/'
+CONFIG_FILE = CONFIG_HOME_DIR + 'config'
 
 #
 # pdserver
@@ -56,7 +56,7 @@ PDCONFD_ENABLED = True
 #
 # fc
 #
-FC_CHUTESTORAGE_FILE = HOME_DIR + "chutes"
+FC_CHUTESTORAGE_FILE = CONFIG_HOME_DIR + "chutes"
 FC_CHUTESTORAGE_SAVE_TIMER = 60
 FC_BOUNCE_UPDATE = None
 RESERVED_CHUTE = "__PARADROP__"
@@ -65,8 +65,8 @@ DYNAMIC_NETWORK_POOL = "192.168.128.0/17"
 #
 # uci
 #
-UCI_CONFIG_DIR = "/etc/paradrop/config/"
-UCI_BACKUP_DIR = "/etc/paradrop/config-backup.d/"
+UCI_CONFIG_DIR = CONFIG_HOME_DIR +  "uci/config/"
+UCI_BACKUP_DIR = CONFIG_HOME_DIR + "uci/config-backup.d/"
 
 #
 # local portal
@@ -77,7 +77,7 @@ PORTAL_SERVER_PORT = 80
 # hostconfig
 #
 HOST_CONFIG_FILE = "/etc/paradrop/paradrop_host_config.yaml"
-DEFAULT_HOST_CONFIG_FILE = "~/.paradrop/hostconfig.default.yaml"
+DEFAULT_HOST_CONFIG_FILE = "/etc/paradrop/hostconfig.default.yaml"
 HOST_DATA_PARTITION = "/"
 
 #
@@ -103,6 +103,7 @@ EXTERNAL_DATA_DIR = "~/.paradrop/{chute}/"
 #
 INTERNAL_SYSTEM_DIR = "/paradrop/"
 EXTERNAL_SYSTEM_DIR = "/var/run/paradrop/system/{chute}/"
+# TODO: for local mode?
 
 #
 # Username and password to access the private registry.
@@ -163,6 +164,24 @@ def parseValue(key):
     # Otherwise, its just a string:
     return key
 
+def updatePaths(configHomeDir):
+    from types import ModuleType
+    # Get a handle to our settings defined above
+    mod = sys.modules[__name__]
+
+    mod.CONFIG_HOME_DIR = configHomeDir
+    mod.FC_CHUTESTORAGE_FILE = os.path.join(mod.CONFIG_HOME_DIR, "chutes")
+    mod.EXTERNAL_DATA_DIR = os.path.join(mod.CONFIG_HOME_DIR, "{chute}/")
+    mod.LOG_DIR = os.path.join(mod.CONFIG_HOME_DIR, "logs/")
+    mod.KEY_DIR = os.path.join(mod.CONFIG_HOME_DIR, "keys/")
+    mod.MISC_DIR = os.path.join(mod.CONFIG_HOME_DIR, "misc/")
+    mod.CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "config")
+    mod.UCI_CONFIG_DIR = os.path.join(mod.CONFIG_HOME_DIR, "uci/config.d/")
+    mod.UCI_BACKUP_DIR = os.path.join(mod.CONFIG_HOME_DIR, "uci/config-backup.d/")
+    mod.HOST_CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "hostconfig.yaml")
+    mod.DEFAULT_HOST_CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "hostconfig.default.yaml")
+
+
 def loadSettings(mode="local", slist=[]):
     """
     Take a list of key:value pairs, and replace any setting defined.
@@ -183,47 +202,15 @@ def loadSettings(mode="local", slist=[]):
     snapCommonPath = os.environ.get("SNAP_COMMON", None)
 
     if mode == "local":
-        mod.HOME_DIR = os.path.join(os.path.expanduser("~"), ".paradrop/")
-        mod.FC_CHUTESTORAGE_FILE = os.path.join(mod.HOME_DIR, "chutes")
-        mod.EXTERNAL_DATA_DIR = os.path.join(mod.HOME_DIR, "{chute}/")
-        mod.LOG_DIR = os.path.join(mod.HOME_DIR, "logs/")
-        mod.KEY_DIR = os.path.join(mod.HOME_DIR, "keys/")
-        mod.MISC_DIR = os.path.join(mod.HOME_DIR, "misc/")
-        mod.CONFIG_FILE = os.path.join(mod.HOME_DIR, "config")
-        mod.UCI_CONFIG_DIR = "/tmp/config.d"
-        mod.UCI_BACKUP_DIR = "/tmp/config-backup.d"
-        mod.HOST_CONFIG_FILE = "/tmp/hostconfig.yaml"
-        mod.DEFAULT_HOST_CONFIG_FILE = "/tmp/hostconfig.default.yaml"
-
+        updatePaths(os.path.join(os.path.expanduser("~"), ".paradrop/"))
         mod.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
-        mod.HOST_DATA_PARTITION = mod.HOME_DIR
-
+        mod.HOST_DATA_PARTITION = mod.CONFIG_HOME_DIR
     elif mode == "unittest":
-        mod.HOME_DIR = "/tmp/.paradrop-test/"
-        mod.FC_CHUTESTORAGE_FILE = os.path.join(mod.HOME_DIR, "chutes")
-        mod.EXTERNAL_DATA_DIR = os.path.join(mod.HOME_DIR, "{chute}/")
-        mod.LOG_DIR = os.path.join(mod.HOME_DIR, "logs/")
-        mod.KEY_DIR = os.path.join(mod.HOME_DIR, "keys/")
-        mod.MISC_DIR = os.path.join(mod.HOME_DIR, "misc/")
-        mod.CONFIG_FILE = os.path.join(mod.HOME_DIR, "config")
-        mod.UCI_CONFIG_DIR = os.path.join(mod.HOME_DIR, "config.d")
-        mod.UCI_BACKUP_DIR = os.path.join(mod.HOME_DIR, "config-backup.d")
-        mod.HOST_CONFIG_FILE = os.path.join(mod.HOME_DIR, "hostconfig.yaml")
-        mod.DEFAULT_HOST_CONFIG_FILE = os.path.join(mod.HOME_DIR, "hostconfig.default.yaml")
-
+        updatePaths("/tmp/.paradrop-test")
+        mod.HOST_DATA_PARTITION = mod.CONFIG_HOME_DIR
     elif snapCommonPath is not None:
-        mod.FC_CHUTESTORAGE_FILE = os.path.join(snapCommonPath, "chutes")
-        mod.EXTERNAL_DATA_DIR = os.path.join(snapCommonPath, "{chute}/")
-        mod.LOG_DIR = os.path.join(snapCommonPath, "logs/")
-        mod.KEY_DIR = os.path.join(snapCommonPath, "keys/")
-        mod.MISC_DIR = os.path.join(snapCommonPath, "misc/")
-        mod.CONFIG_FILE = os.path.join(snapCommonPath, "config")
-        mod.UCI_CONFIG_DIR = os.path.join(snapCommonPath, "config.d")
-        mod.UCI_BACKUP_DIR = os.path.join(snapCommonPath, "config-backup.d")
-        mod.HOST_CONFIG_FILE = os.path.join(snapCommonPath, "hostconfig.yaml")
-        mod.DEFAULT_HOST_CONFIG_FILE = os.path.join(snapCommonPath, "hostconfig.default.yaml")
+        updatePaths(snapCommonPath)
         mod.HOST_DATA_PARTITION = "/writable"
-
         mod.DOCKER_BIN_DIR = "/snap/bin"
 
     for x in [mod.LOG_DIR, mod.KEY_DIR, mod.MISC_DIR]:

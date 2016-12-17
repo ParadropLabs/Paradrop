@@ -257,8 +257,8 @@ def test_uci():
 
     # Test functions for finding path to UCI files
     settings.loadSettings(mode="unittest")
-    assert uci.getSystemConfigDir() == "/tmp/.paradrop-test/config.d"
-    assert uci.getSystemPath("network") == "/tmp/.paradrop-test/config.d/network"
+    assert uci.getSystemConfigDir() == "/tmp/.paradrop-test/uci/config.d/"
+    assert uci.getSystemPath("network") == "/tmp/.paradrop-test/uci/config.d/network"
 
     # Test stringify function
     assert uci.stringify("a") == "a"

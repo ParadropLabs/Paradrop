@@ -4,7 +4,6 @@
 ###################################################################
 
 '''
-lib.utils.restart
 Contains the functions required to restart chutes properly on power cycle of device.
 Checks with pdconfd to make sure it was able to properly bring up all interfaces before
 starting chutes.

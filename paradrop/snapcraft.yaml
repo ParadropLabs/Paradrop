@@ -27,7 +27,6 @@ parts:
     source: wrapper/
     organize:
       runpd.sh: bin/runpd.sh
-      env.sh: bin/env.sh
 
   localweb:
     plugin: dump
