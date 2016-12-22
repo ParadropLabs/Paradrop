@@ -20,6 +20,5 @@ def generatePlans(update):
     if update.updateType == "factoryreset":
         update.plans.addPlans(plangraph.STATE_CALL_STOP,
                               (dockerapi.removeAllContainers, ))
-
         update.plans.addPlans(plangraph.STATE_SAVE_CHUTE,
-                              (state.saveChute, ))
+                              (state.removeAllChutes, ))
