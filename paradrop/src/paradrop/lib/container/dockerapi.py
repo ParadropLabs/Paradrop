@@ -21,7 +21,7 @@ from paradrop.base import nexus, settings
 from paradrop.lib.chute import chutestorage
 from paradrop.lib.config.devices import getWirelessPhyName
 from paradrop.lib.misc import resopt
-from paradrop.lib.utils import pdosq
+from paradrop.lib.utils import pdos, pdosq
 
 from .downloader import downloader
 
@@ -440,7 +440,7 @@ def call_retry(cmd, env, delay=3, tries=3):
                 out.info("{}: {}\n".format(cmd[0], line.strip()))
             for line in proc.stderr:
                 out.warn("{}: {}\n".format(cmd[0], line.strip()))
-            return
+            return proc.returncode
         except OSError as e:
             out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
             if tries <= 0:
@@ -474,12 +474,6 @@ def setup_net_interfaces(chute):
     # We need the chute's PID in order to work with Linux namespaces.
     pid = getChutePID(chute.name)
 
-    # Set up netns directory and link so that 'ip netns' command works.
-    pdosq.makedirs('/var/run/netns')
-    cmd = ['ln', '-s', '/proc/{}/ns/net'.format(pid),
-            '/var/run/netns/{}'.format(pid)]
-    call_retry(cmd, env, tries=1)
-
     for iface in interfaces:
         if iface.get('netType') == 'wifi':
             IP = iface.get('ipaddrWithPrefix')
@@ -491,58 +485,35 @@ def setup_net_interfaces(chute):
         mode = iface.get('mode', 'ap')
 
         if mode == 'ap':
-#
-# Custom calls for setting up the chute interface.  I disabled these because
-# the "ip netns" commands are failing.  This probably has something to do
-# with snappy confinement.
-#
-#            # Generate a temporary interface name.  It just needs to be unique.
-#            # We will rename to the internalIntf name as soon as the interface
-#            # is inside the chute.
-#            tmpIntf = "tmp{:x}".format(random.getrandbits(32))
-#
-#            # TODO copy MTU from original interface?
-#            cmd = ['ip', 'link', 'add', 'link', externalIntf, 'dev', tmpIntf,
-#                    'type', 'macvlan', 'mode', 'bridge']
-#            call_retry(cmd, env, tries=1)
-#
-#            # Bring the interface up.
-#            cmd = ['ip', 'link', 'set', tmpIntf, 'up']
-#            call_retry(cmd, env, tries=1)
-#
-#            # Give the new interface to the chute.
-#            cmd = ['ip', 'link', 'set', tmpIntf, 'netns', str(pid)]
-#            call_retry(cmd, env, tries=1)
-#
-#            # Rename the interface according to what the chute wants.
-#            cmd = ['sudo', 'ip', 'netns', 'exec', str(pid), 'ip', 'link', 'set',
-#                    tmpIntf, 'name', internalIntf]
-#            call_retry(cmd, env, tries=1)
-#
-#            # Set the IP address.
-#            cmd = ['sudo', 'ip', 'netns', 'exec', str(pid), 'ip', 'addr', 'add', IP,
-#                    'dev', internalIntf]
-#            call_retry(cmd, env, tries=1)
-#
-#            # Bring the interface up again.
-#            cmd = ['sudo', 'ip', 'netns', 'exec', str(pid), 'ip', 'link', 'set',
-#                    internalIntf, 'up']
-#            call_retry(cmd, env, tries=1)
+            # Generate a temporary interface name.  It just needs to be unique.
+            # We will rename to the internalIntf name as soon as the interface
+            # is inside the chute.
+            tmpIntf = "tmp{:x}".format(random.getrandbits(32))
 
-            cmd = ['pipework', externalIntf, '-i',
-                   internalIntf, chute.name,  IP]
-            out.info("Calling: {}\n".format(" ".join(cmd)))
-            try:
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, env=env)
-                for line in proc.stdout:
-                    out.info("pipework: {}\n".format(line.strip()))
-                for line in proc.stderr:
-                    out.warn("pipework: {}\n".format(line.strip()))
-            except OSError as e:
-                out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
-                out.exception(e, True)
-                raise e
+            # TODO copy MTU from original interface?
+            cmd = ['ip', 'link', 'add', 'link', externalIntf, 'dev', tmpIntf,
+                    'type', 'macvlan', 'mode', 'bridge']
+            call_retry(cmd, env, tries=1)
+
+            # Bring the interface up.
+            cmd = ['ip', 'link', 'set', tmpIntf, 'up']
+            call_retry(cmd, env, tries=1)
+
+            # Give the new interface to the chute.
+            cmd = ['ip', 'link', 'set', tmpIntf, 'netns', str(pid)]
+            call_retry(cmd, env, tries=1)
+
+            # Rename the interface according to what the chute wants.
+            cmd = ['ip', 'link', 'set', tmpIntf, 'name', internalIntf]
+            call_in_netns(chute, env, cmd)
+
+            # Set the IP address.
+            cmd = ['ip', 'addr', 'add', IP, 'dev', internalIntf]
+            call_in_netns(chute, env, cmd)
+
+            # Bring the interface up again.
+            cmd = ['ip', 'link', 'set', internalIntf, 'up']
+            call_in_netns(chute, env, cmd)
 
         elif mode == 'monitor':
             phyname = getWirelessPhyName(externalIntf)
@@ -551,9 +522,46 @@ def setup_net_interfaces(chute):
             call_retry(cmd, env, tries=1)
 
             # Rename the interface inside the container.
-            cmd = ['ip', 'netns', 'exec', str(pid), 'ip', 'link', 'set',
-                    'dev', externalIntf, 'up', 'name', internalIntf]
-            call_retry(cmd, env, tries=1)
+            cmd = ['ip', 'link', 'set', 'dev', externalIntf, 'up', 'name',
+                    internalIntf]
+            call_in_netns(chute, env, cmd)
+
+
+def call_in_netns(chute, env, command):
+    """
+    Call command within a chute's namespace.
+
+    command: should be a list of strings.
+    """
+    # We need the chute's PID in order to work with Linux namespaces.
+    pid = getChutePID(chute.name)
+
+    # Set up netns directory and link so that 'ip netns' command works.
+    pdosq.makedirs('/var/run/netns')
+    netns_link = '/var/run/netns/{}'.format(pid)
+    cmd = ['ln', '-s', '/proc/{}/ns/net'.format(pid), netns_link]
+    call_retry(cmd, env, tries=1)
+
+    # Try first with `ip netns exec`.  This is preferred because it works using
+    # commands in the host.  We cannot be sure the `docker exec` version will
+    # work with all chute images.
+    cmd = ['ip', 'netns', 'exec', str(pid)] + command
+    try:
+        code = call_retry(cmd, env, tries=1)
+    except:
+        code = -1
+    finally:
+        # Clean up the link.
+        pdos.remove(netns_link)
+
+    # We fall back to `docker exec` which relies on the container image having
+    # an `ip` command available to configure interfaces from within.
+    if code != 0:
+        out.warn("ip netns exec command failed, resorting to docker exec\n")
+
+        client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+        status = client.exec_create(chute.name, command)
+        client.exec_start(status['Id'])
 
 
 def prepare_environment(chute):
