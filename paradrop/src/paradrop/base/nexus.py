@@ -68,7 +68,7 @@ class NexusBase(object):
 
     def onStart(self):
         pdid = self.info.pdid if self.provisioned() else 'UNPROVISIONED'
-        output.out.usage('%s coming up' % (self.info.pdid))
+        output.out.usage('%s coming up' % (pdid))
 
         # Start trying to connect to cxbr fabric
 

@@ -3,7 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-import traceback, os
+import os
 
 from paradrop.base.output import out
 from paradrop.base import settings
@@ -98,7 +98,6 @@ def chuteConfigsMatch(chutePre, chutePost):
     # If any objects remain at the end 
     # loop through all old configs, check if they each have a match in the new configs
     for c1 in chutePre:
-        
         for c2 in chutePost:
             if (singleConfigMatches(c1, c2)):
                 break
@@ -434,8 +433,6 @@ class UCIConfig:
         
         lines = []
         try:
-            
-
             fd = pdos.open(self.filepath, 'r')
 
             while(True):

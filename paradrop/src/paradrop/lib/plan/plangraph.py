@@ -140,7 +140,8 @@ class PlanMap:
                 @priority   : The priority number (1 is done first, 99 done last - see PRIORITYFLAGS section at top of this file)
                 @todoPlan   : A tuple of (function, (args)), this is the function that completes the actual task requested
                               the args can either be a single variable, a tuple of variables, or None.
-                @abortPlan  : A tuple of (function, (args)) or None. This is what should be called if a plan somewhere in the chain
+                @abortPlan  : A tuple of (function, (args)) or a list of tuple or None.
+                              This is what should be called if a plan somewhere in the chain
                               fails and we need to undo the work we did here - this function is only called if a higher priority
                               function fails (ie we were called, then something later on fails that would cause us to undo everything
                               we did to setup/change the Chute).

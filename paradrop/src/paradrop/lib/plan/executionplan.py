@@ -81,8 +81,8 @@ def executePlans(update):
             #
             # Call the function from the execution plan
             #
-            # args may be empty, but we don't want to pass in a tuple if we don't need to
-            # so this below explodes the args so if @args is (), then what is passed is @update
+            # args may be empty, but we don't want to pass in a tuple if we don't need to.
+            # This below explodes the args so if @args is (), then what is passed is @update
             skipme = func(*((update, ) + args))
 
         except Exception as e:

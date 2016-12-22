@@ -17,7 +17,7 @@ setup(
         'service_identity>=16.0.0',
         'attrs',
         'enum34',
-        'docker-py',
+        'docker-py==1.10.6',
         'ipaddress',
         'txdbus',
         'wget',

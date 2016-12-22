@@ -59,10 +59,10 @@ def findConfigFiles(search=None):
         files.append(search)
     elif os.path.isdir(search):
         for fn in os.listdir(search):
-            path = "{}/{}".format(search, fn)
+            path = os.path.join(search, fn)
             files.append(path)
     else:
-        path = "{}/{}".format(getSystemConfigDir(), search)
+        path = os.path.join(getSystemConfigDir(), search)
         if os.path.isfile(path):
             files.append(path)
 
