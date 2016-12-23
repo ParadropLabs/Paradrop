@@ -43,15 +43,6 @@ parts:
       - libcurl4-openssl-dev
       - python-openssl
 
-  pipework:
-    plugin: dump
-    source: https://github.com/jpetazzo/pipework
-    source-type: git
-    organize:
-      pipework: usr/bin/pipework
-    snap:
-      - usr/bin/pipework
-
   dnsmasq:
     plugin: make
     source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap

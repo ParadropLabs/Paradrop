@@ -73,20 +73,15 @@ def main():
         from paradrop.lib.misc.reporting import sendStateReport
         from paradrop.backend.apibridge import updateManager
 
-        pdid = nexus.core.info.pdid
-        apitoken = nexus.core.getKey('apitoken')
-        isProvisioned = (pdid is not None \
-            and apitoken is not None)
+        # Start the configuration service as a thread
+        confd.main.run_thread(execute=args.execute, dbus=False)
 
-        if isProvisioned:
+        if nexus.core.provisioned():
             # Set up communication with pdserver.
             # 1. Create a report of the current system state and send that.
             # 2. Poll for a list of updates that should be applied.
             sendStateReport()
             updateManager.startUpdate()
-
-        # Start the configuration service as a thread
-        confd.main.run_thread(execute=args.execute, dbus=False)
 
         if args.mode != "unittest":
             from paradrop.backend.portal import startPortal
