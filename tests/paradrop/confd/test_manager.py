@@ -8,23 +8,25 @@ from mock import patch
 CONFIG_DIR = "tests/paradrop/confd/config.d"
 
 @patch("paradrop.confd.manager.getSystemConfigDir")
-@patch("paradrop.confd.manager.os")
-def test_findConfigFiles(os, getSystemConfigDir):
+@patch("paradrop.confd.manager.os.path.isfile")
+@patch("paradrop.confd.manager.os.path.isdir")
+@patch("paradrop.confd.manager.os.listdir")
+def test_findConfigFiles(listdir, isdir, isfile, getSystemConfigDir):
     """
     Test the findConfigFiles function
     """
     from paradrop.confd.manager import findConfigFiles
 
-    os.path.isfile.return_value = True
+    isfile.return_value = True
     result = findConfigFiles(search="foo")
     for fn in result:
         print(fn)
     assert result == ["foo"]
 
     print("---")
-    os.path.isfile.return_value = False
-    os.path.isdir.return_value = True
-    os.listdir.return_value = ["foo", "bar"]
+    isfile.return_value = False
+    isdir.return_value = True
+    listdir.return_value = ["foo", "bar"]
     result = findConfigFiles(search="dir")
     for fn in result:
         print(fn)
@@ -32,8 +34,8 @@ def test_findConfigFiles(os, getSystemConfigDir):
 
     print("---")
     getSystemConfigDir.return_value = "/etc/config"
-    os.path.isfile.side_effect = [False, True]
-    os.path.isdir.return_value = False
+    isfile.side_effect = [False, True]
+    isdir.return_value = False
     result = findConfigFiles(search="foo")
     for fn in result:
         print(fn)
@@ -41,10 +43,10 @@ def test_findConfigFiles(os, getSystemConfigDir):
 
     print("---")
     getSystemConfigDir.return_value = "/etc/config"
-    os.path.isfile.side_effect = None
-    os.path.isfile.return_value = False
-    os.path.isdir.return_value = True
-    os.listdir.return_value = ["foo"]
+    isfile.side_effect = None
+    isfile.return_value = False
+    isdir.return_value = True
+    listdir.return_value = ["foo"]
     result = findConfigFiles()
     for fn in result:
         print(fn)
