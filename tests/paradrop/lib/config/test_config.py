@@ -301,7 +301,7 @@ def test_config_firewall():
     update.new.setCache("networkInterfaces", interfaces)
     firewall.getOSFirewallRules(update)
     result = update.new.getCache("osFirewallRules")
-    assert len(result) == 4
+    assert len(result) >= 4
 
     update.new.firewall = fake_rules_list()
     firewall.getDeveloperFirewallRules(update)

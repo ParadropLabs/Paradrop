@@ -58,6 +58,29 @@ def getOSFirewallRules(update):
             }
             rules.append((config, options))
 
+        # If we are running a DHCP server for the chute, we should allow DHCP
+        # and DNS requests to the host.
+        if 'dhcp' in iface:
+            # Allow DNS requests.
+            config = {'type': 'rule'}
+            options = {
+                'src': iface['externalIntf'],
+                'proto': 'udp',
+                'dest_port': 53,
+                'target': 'ACCEPT'
+            }
+            rules.append((config, options))
+
+            # Allow DHCP requests.
+            config = {'type': 'rule'}
+            options = {
+                'src': iface['externalIntf'],
+                'proto': 'udp',
+                'dest_port': 67,
+                'target': 'ACCEPT'
+            }
+            rules.append((config, options))
+
     update.new.setCache('osFirewallRules', rules)
 
 
