@@ -28,6 +28,7 @@ DEBUG_MODE = False
 # VERBOSE = False
 
 CONFIG_HOME_DIR = '/etc/paradrop/'
+RUNTIME_HOME_DIR = '/var/run/paradrop/'
 
 #
 # paths to store daemon related information
@@ -50,7 +51,7 @@ WAMP_ROUTER = "ws://paradrop.org:9086/ws"
 PDFCD_PORT = 14321
 PDFCD_HEADER_VALUE = "*"
 DBAPI_FAILURE_THRESH = float("inf")
-PDCONFD_WRITE_DIR = "/var/run/pdconfd/"
+PDCONFD_WRITE_DIR = RUNTIME_HOME_DIR + 'pdconfd/'
 PDCONFD_ENABLED = True
 
 #
@@ -65,8 +66,8 @@ DYNAMIC_NETWORK_POOL = "192.168.128.0/17"
 #
 # uci
 #
-UCI_CONFIG_DIR = CONFIG_HOME_DIR +  "uci/config/"
-UCI_BACKUP_DIR = CONFIG_HOME_DIR + "uci/config-backup.d/"
+UCI_CONFIG_DIR = RUNTIME_HOME_DIR +  "uci/config/"
+UCI_BACKUP_DIR = RUNTIME_HOME_DIR + "uci/config-backup.d/"
 
 #
 # local portal
@@ -164,22 +165,25 @@ def parseValue(key):
     # Otherwise, its just a string:
     return key
 
-def updatePaths(configHomeDir):
+
+def updatePaths(configHomeDir, runtimeHomeDir="/var/run/paradrop"):
     from types import ModuleType
     # Get a handle to our settings defined above
     mod = sys.modules[__name__]
 
     mod.CONFIG_HOME_DIR = configHomeDir
+    mod.RUNTIME_HOME_DIR = runtimeHomeDir
     mod.FC_CHUTESTORAGE_FILE = os.path.join(mod.CONFIG_HOME_DIR, "chutes")
     mod.EXTERNAL_DATA_DIR = os.path.join(mod.CONFIG_HOME_DIR, "{chute}/")
     mod.LOG_DIR = os.path.join(mod.CONFIG_HOME_DIR, "logs/")
     mod.KEY_DIR = os.path.join(mod.CONFIG_HOME_DIR, "keys/")
     mod.MISC_DIR = os.path.join(mod.CONFIG_HOME_DIR, "misc/")
     mod.CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "config")
-    mod.UCI_CONFIG_DIR = os.path.join(mod.CONFIG_HOME_DIR, "uci/config.d/")
-    mod.UCI_BACKUP_DIR = os.path.join(mod.CONFIG_HOME_DIR, "uci/config-backup.d/")
     mod.HOST_CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "hostconfig.yaml")
     mod.DEFAULT_HOST_CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "hostconfig.default.yaml")
+    mod.UCI_CONFIG_DIR = os.path.join(mod.RUNTIME_HOME_DIR, "uci/config.d/")
+    mod.UCI_BACKUP_DIR = os.path.join(mod.RUNTIME_HOME_DIR, "uci/config-backup.d/")
+    mod.PDCONFD_WRITE_DIR = os.path.join(mod.RUNTIME_HOME_DIR, 'pdconfd')
 
 
 def loadSettings(mode="local", slist=[]):
@@ -202,11 +206,11 @@ def loadSettings(mode="local", slist=[]):
     snapCommonPath = os.environ.get("SNAP_COMMON", None)
 
     if mode == "local":
-        updatePaths(os.path.join(os.path.expanduser("~"), ".paradrop/"))
-        mod.PDCONFD_WRITE_DIR = "/tmp/pdconfd"
+        updatePaths(os.path.join(os.path.expanduser("~"), ".paradrop/"),
+                                 "/tmp/.paradrop/")
         mod.HOST_DATA_PARTITION = mod.CONFIG_HOME_DIR
     elif mode == "unittest":
-        updatePaths("/tmp/.paradrop-test")
+        updatePaths("/tmp/.paradrop-test/", "/tmp/.paradrop-test/")
         mod.HOST_DATA_PARTITION = mod.CONFIG_HOME_DIR
     elif snapCommonPath is not None:
         updatePaths(snapCommonPath)
