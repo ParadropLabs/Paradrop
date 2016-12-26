@@ -6,6 +6,7 @@ It allows us to easily abstract away different update types and provide a unifor
 way to interpret the results through a set of basic actionable functions.
 '''
 import time
+from twisted.internet import reactor
 
 from paradrop.base import nexus, settings
 from paradrop.base.output import out
@@ -15,7 +16,7 @@ from paradrop.lib.utils.http import PDServerRequest
 
 
 # Fields that should be present in updates but not chute objects.
-UPDATE_SPECIFIC_ARGS = ["pkg", "func"]
+UPDATE_SPECIFIC_ARGS = []
 
 
 class UpdateObject(object):
@@ -160,8 +161,11 @@ class UpdateObject(object):
         if 'message' in kwargs:
             self.progress(kwargs['message'])
 
-        # Call the function we were provided
-        self.func(self)
+        if hasattr(self, 'deferred'):
+            def callback(deferred, result):
+                deferred.callback(result)
+
+            reactor.callFromThread(callback, self.deferred, self.result)
 
     def execute(self):
         """
