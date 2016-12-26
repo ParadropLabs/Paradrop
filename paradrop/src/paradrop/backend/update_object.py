@@ -1,6 +1,4 @@
 '''
-updateObject module.
-
 This holds onto the UpdateObject class.
 It allows us to easily abstract away different update types and provide a uniform
 way to interpret the results through a set of basic actionable functions.
