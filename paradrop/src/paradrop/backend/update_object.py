@@ -160,10 +160,7 @@ class UpdateObject(object):
             self.progress(kwargs['message'])
 
         if hasattr(self, 'deferred'):
-            def callback(deferred, result):
-                deferred.callback(result)
-
-            reactor.callFromThread(callback, self.deferred, self.result)
+            reactor.callFromThread(self.deferred.callback, self.result)
 
     def execute(self):
         """
