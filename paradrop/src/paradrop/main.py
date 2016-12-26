@@ -7,7 +7,8 @@ import argparse
 from twisted.internet import reactor
 
 from paradrop.base import output, nexus, settings
-from paradrop.backend import apiinternal, configurer
+from paradrop.backend import apiinternal
+from paradrop.backend.update_manager import UpdateManager
 from paradrop.backend.http_server import HttpServer, setup_http_server 
 from paradrop import confd
 from paradrop.lib.misc.procmon import ProcessMonitor
@@ -73,7 +74,7 @@ def main():
 
     ProcessMonitor.allowedActions = set()
 
-    update_manager = configurer.PDConfigurer(reactor)
+    update_manager = UpdateManager(reactor)
     http_server = HttpServer(update_manager, args.portal)
     setup_http_server(http_server, '0.0.0.0', settings.PORTAL_SERVER_PORT)
 

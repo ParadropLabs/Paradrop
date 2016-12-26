@@ -13,10 +13,10 @@ from paradrop.base import settings
 from paradrop.lib.misc.procmon import dockerMonitor
 from paradrop.lib.chute.restart import reloadChutes
 
-from . import updateObject
+from . import update_object
 
 
-class PDConfigurer:
+class UpdateManager:
 
     """
         ParaDropConfigurer class.
@@ -136,7 +136,7 @@ class PDConfigurer:
         """
         try:
             # Take the object and identify the update type
-            update = updateObject.parse(updateObj)
+            update = update_object.parse(updateObj)
 
             # Mark update as having been started.
             update.started()
