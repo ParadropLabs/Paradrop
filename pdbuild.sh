@@ -20,6 +20,14 @@ printhelp() {
     exit
 }
 
+activate_virtual_env() {
+    . buildenv/env/bin/activate
+}
+
+deactivate_virtual_env() {
+    deactivate
+}
+
 setup() {
     echo -e "${COLOR}Setting up virtualenv" && tput sgr0
     if [ ! -f /usr/local/bin/virtualenv ]; then
@@ -37,8 +45,9 @@ setup() {
     echo -e "${COLOR}Snappy development tools installed" && tput sgr0
 
     virtualenv buildenv/env
-    source buildenv/env/bin/activate
+    activate_virtual_env
     pip install -r requirements.txt
+    deactivate_virtual_env
 }
 
 build() {
@@ -46,15 +55,17 @@ build() {
 }
 
 test() {
-    source buildenv/env/bin/activate
+    virtualenv buildenv/env
     nosetests
+    deactivate_virtual_env
 }
 
 docs() {
-    source buildenv/env/bin/activate
+    activate_virtual_env
     rm docs/requirements.txt
     pip install -e ./paradrop/src
     pip freeze | grep -v 'paradrop' > docs/requirements.txt
+    deactivate_virtual_env
 }
 
 clean() {
@@ -65,9 +76,10 @@ clean() {
 
 run() {
     echo -e "${COLOR}Starting Paradrop" && tput sgr0
-    source buildenv/env/bin/activate
+    activate_virtual_env
     pip install -e ./paradrop/src
-    PORTAL_SERVER_PORT=8080 sudo paradrop -m local -p $PWD/paradrop/localweb/www
+    sudo buildenv/env/bin/paradrop -m local -p $PWD/paradrop/localweb/www
+    deactivate_virtual_env
 }
 
 #Show help if no args passed
