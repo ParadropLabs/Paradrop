@@ -34,10 +34,6 @@ for cls in ConfigObject.__subclasses__():
         configTypeMap[cls.typename] = cls
 
 
-# WRITE_DIR = settings.PDCONFD_WRITE_DIR
-""" Directory for daemon configuration files, PID files, etc. """
-
-
 def findConfigFiles(search=None):
     """
     Look for and return a list of configuration files.

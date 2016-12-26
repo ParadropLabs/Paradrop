@@ -4,14 +4,13 @@ Does not implement any behavior itself.
 '''
 
 import argparse
-import signal
+from twisted.internet import reactor
 
-from twisted.internet import reactor, defer
-from autobahn.twisted.wamp import ApplicationRunner
-
-from paradrop.base import output, nexus, cxbr, settings
-from paradrop.backend import apiinternal
-
+from paradrop.base import output, nexus, settings
+from paradrop.backend import apiinternal, configurer
+from paradrop.backend.http_server import HttpServer, setup_http_server 
+from paradrop import confd
+from paradrop.lib.misc.procmon import ProcessMonitor
 
 class Nexus(nexus.NexusBase):
 
@@ -40,8 +39,6 @@ class Nexus(nexus.NexusBase):
 
 def main():
     p = argparse.ArgumentParser(description='Paradrop daemon running on client')
-    p.add_argument('--config', help='Run as the configuration daemon',
-                   action='store_true')
     p.add_argument('--mode', '-m', help='Set the mode to one of [production, local, unittest]',
                    action='store', type=str, default='production')
     p.add_argument('--portal', '-p', help='Set the folder of files for local portal',
@@ -61,38 +58,26 @@ def main():
     # replaces about half a dozen singletons
     nexus.core = Nexus()
 
-    if args.config:
-        from paradrop import confd
+    from paradrop.lib.misc.reporting import sendStateReport
+    from paradrop.backend.apibridge import updateManager
 
-        # Start the configuration daemon
-        confd.main.run_pdconfd(dbus=False)
+    # Start the configuration service as a thread
+    confd.main.run_thread(execute=args.execute)
 
-    else:
-        from paradrop import confd
-        from paradrop.backend import server
-        from paradrop.lib.misc.reporting import sendStateReport
-        from paradrop.backend.apibridge import updateManager
+    if nexus.core.provisioned():
+        # Set up communication with pdserver.
+        # 1. Create a report of the current system state and send that.
+        # 2. Poll for a list of updates that should be applied.
+        sendStateReport()
+        updateManager.startUpdate()
 
-        # Start the configuration service as a thread
-        confd.main.run_thread(execute=args.execute, dbus=False)
+    ProcessMonitor.allowedActions = set()
 
-        if nexus.core.provisioned():
-            # Set up communication with pdserver.
-            # 1. Create a report of the current system state and send that.
-            # 2. Poll for a list of updates that should be applied.
-            sendStateReport()
-            updateManager.startUpdate()
+    update_manager = configurer.PDConfigurer(reactor)
+    http_server = HttpServer(update_manager, args.portal)
+    setup_http_server(http_server, '0.0.0.0', settings.PORTAL_SERVER_PORT)
 
-        if args.mode != "unittest":
-            from paradrop.backend.portal import startPortal
-            if args.portal:
-                startPortal(args.portal)
-            else:
-                startPortal()
-
-        # Now setup the RESTful API server for Paradrop
-        server.setup(args)
-
+    reactor.run()
 
 if __name__ == "__main__":
     main()

@@ -5,6 +5,7 @@
 
 import time
 import threading
+from twisted.internet import defer
 
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
@@ -27,22 +28,21 @@ class PDConfigurer:
             All others are held in a queue until the last update is complete.
     """
 
-    def __init__(self, storage, lclReactor):
-        self.storage = storage
-        self.reactor = lclReactor
+    def __init__(self, reactor):
+        self.reactor = reactor
 
         self.updateLock = threading.Lock()
         self.updateQueue = []
 
         ###########################################################################################
         # Launch the first update call, NOTE that you have to use callInThread!!
-        # This happens because the performUpdates should run in its own thread,
+        # This happens because the perform_updates should run in its own thread,
         # it makes blocking calls and such... so if we *don't* use callInThread
         # then this function WILL BLOCK THE MAIN EVENT LOOP (ie. you cannot send any data)
         ###########################################################################################
-        self.reactor.callInThread(self.performUpdates)
+        self.reactor.callInThread(self._perform_updates)
 
-    def getNextUpdate(self):
+    def _get_next_update(self):
         """MUTEX: updateLock
             Returns the size of the local update queue.
         """
@@ -55,7 +55,7 @@ class PDConfigurer:
         self.updateLock.release()
         return a
 
-    def clearUpdateList(self):
+    def clear_update_list(self):
         """MUTEX: updateLock
             Clears all updates from list (new array).
         """
@@ -63,27 +63,32 @@ class PDConfigurer:
         self.updateQueue = []
         self.updateLock.release()
 
-    def updateList(self, **updateObj):
+    def add_update(self, **updateObj):
         """MUTEX: updateLock
             Take the list of Chutes and push the list into a queue object, this object will then call
             the real update function in another thread so the function that called us is not blocked.
 
-            We take a callable responseFunction to call, when we are done with this update we should call it."""
+            We take a callable responseFunction to call, when we are done with this update we should call it.
+        """
+        d = defer.Deferred()
+        updateObj['deferred'] = d
+
         self.updateLock.acquire()
-        # Push the data into our update queue
         self.updateQueue.append(updateObj)
         self.updateLock.release()
 
-    def makeHostconfigUpdate(self):
+        return d
+
+    def _make_hostconfig_update(self):
         """
         Makes an update object for initializing hostconfig.
         """
-        def updateFinished(update):
-            pass
-        return dict(updateClass='ROUTER', updateType='inithostconfig',
-                name='__PARADROP__', tok=timeint(), func=updateFinished)
+        return dict(updateClass='ROUTER',
+                    updateType='inithostconfig',
+                    name='__PARADROP__',
+                    tok=timeint())
 
-    def performUpdates(self, checkDocker=True):
+    def _perform_updates(self, checkDocker=True):
         """This is the main working function of the PDConfigurer class.
             It should be executed as a separate thread, it does the following:
                 checks for any updates to perform
@@ -110,24 +115,24 @@ class PDConfigurer:
             self.updateQueue.insert(0, updateObj)
         # Finally, insert an update that initializes the hostconfig.
         # This should happen before everything else.
-        self.updateQueue.insert(0, self.makeHostconfigUpdate())
+        self.updateQueue.insert(0, self._make_hostconfig_update())
         self.updateLock.release()
 
         # Always perform this work
         while(self.reactor.running):
             # Check for new updates
-            updateObj = self.getNextUpdate()
+            updateObj = self._get_next_update()
             if(updateObj is None):
                 time.sleep(1)
                 continue
 
-            self._performUpdate(updateObj)
+            self._perform_update(updateObj)
 
-    def _performUpdate(self, updateObj):
+    def _perform_update(self, updateObj):
         """
-        Perform a single update, to be called by performUpdates.
+        Perform a single update, to be called by perform_updates.
 
-        This is split from performUpdates for easier unit testing.
+        This is split from perform_updates for easier unit testing.
         """
         try:
             # Take the object and identify the update type
@@ -138,6 +143,7 @@ class PDConfigurer:
             out.info('Performing update %s\n' % (update))
 
             # TESTING start
+            # TODO: still need this?
             if(settings.FC_BOUNCE_UPDATE): # pragma: no cover
                 out.testing('Bouncing update %s, result: %s\n' % (
                     update, settings.FC_BOUNCE_UPDATE))
