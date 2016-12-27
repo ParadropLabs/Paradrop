@@ -1,9 +1,17 @@
 import json
 from klein import Klein
+from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 
+from paradrop.base import nexus, status
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.lib.config import hostconfig
+from paradrop.lib.misc.reporting import sendStateReport
+from paradrop.lib.utils.http import PDServerRequest
+
+from apiinternal import RouterSession
+from apibridge import updateManager
+from . import cors
 
 class ConfigApi(object):
     """
@@ -114,6 +122,7 @@ class ConfigApi(object):
     @routes.route('/hostconfig', methods=['PUT'])
     @inlineCallbacks
     def update_hostconfig(self, request):
+        cors.enable_cors(request)
         body = str2json(request.content.read())
         config = body['config']
         if config:
@@ -131,6 +140,7 @@ class ConfigApi(object):
 
     @routes.route('/hostconfig')
     def get_hostconfig(self, request):
+        cors.enable_cors(request)
         config = hostconfig.prepareHostConfig()
         request.setHeader('Content-Type', 'application/json')
         return json.dumps(config, separators=(',',':'))
@@ -138,17 +148,74 @@ class ConfigApi(object):
 
     @routes.route('/pdid')
     def get_pdid(self, request):
-        pass
+        cors.enable_cors(request)
+        pdid = nexus.core.info.pdid
+        if pdid is None:
+            pdid = ""
+        request.setHeader('Content-Type', 'application/json')
+        return json.dumps({'pdid': pdid})
 
 
     @routes.route('/provision', methods=['POST'])
     def provision(self, request):
-        pass
+        cors.enable_cors(request)
+        body = str2json(request.content.read())
+        routerId = body['routerId']
+        apitoken = body['apitoken']
+        pdserver = body['pdserver']
+        wampRouter = body['wampRouter']
+
+        changed = False
+        if routerId != nexus.core.info.pdid \
+            or pdserver != nexus.core.info.pdserver \
+            or wampRouter != nexus.core.info.wampRouter:
+            if pdserver and wampRouter:
+                nexus.core.provision(routerId, pdserver, wampRouter)
+            else:
+                nexus.core.provision(routerId)
+            changed = True
+
+        if apitoken != nexus.core.getKey('apitoken'):
+            nexus.core.saveKey(apitoken, 'apitoken')
+            changed = True
+
+        if changed:
+            PDServerRequest.resetToken()
+            status.apiTokenVerified = False
+            status.wampConnected = False
+
+            def sessionCallback(session):
+                sendStateReport()
+                updateManager.startUpdate()
+
+            def sendResponse(result):
+                result = dict()
+                result['provisioned'] = True
+                result['httpConnected'] = status.apiTokenVerified
+                result['wampConnected'] = status.wampConnected
+                request.setHeader('Content-Type', 'application/json')
+                return json.dumps(result)
+
+            d = nexus.core.connect(RouterSession)
+            d.addCallback(sessionCallback)
+            d.addTimeout(6, reactor).addBoth(sendResponse)
 
 
     @routes.route('/provision')
     def get_provision(self, request):
-        pass
+        cors.enable_cors(request)
+        result = dict()
+        result['routerId'] = nexus.core.info.pdid
+        result['pdserver'] = nexus.core.info.pdserver
+        result['wampRouter'] = nexus.core.info.wampRouter
+        apitoken = nexus.core.getKey('apitoken')
+        result['provisioned'] = (result['routerId'] is not None and \
+                                 apitoken is not None)
+        result['httpConnected'] = status.apiTokenVerified
+        result['wampConnected'] = status.wampConnected
+
+        request.setHeader('Content-Type', 'application/json')
+        return json.dumps(result)
 
 
     @routes.route('/startUpdate', methods=['POST'])

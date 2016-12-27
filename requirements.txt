@@ -27,7 +27,7 @@ service-identity==16.0.0
 setuptools==28.8.0
 six==1.10.0
 smokesignal==0.7.0
-Twisted==16.3.0
+Twisted==16.5.0
 txaio==2.5.1
 txdbus==1.0.13
 txrestapi==0.2

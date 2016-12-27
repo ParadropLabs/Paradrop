@@ -5,6 +5,7 @@ way to interpret the results through a set of basic actionable functions.
 '''
 import time
 from twisted.internet import reactor
+from twisted.python.failure import Failure
 
 from paradrop.base import nexus, settings
 from paradrop.base.output import out
@@ -146,6 +147,11 @@ class UpdateObject(object):
         # Set our results
         self.result = kwargs
 
+        d = None
+        if hasattr(self, 'deferred'):
+            d = self.deferred
+            self.deferred = None
+
         try:
             message = "Completed {} operation on chute {}: {}".format(
                 self.updateType, self.new.name,
@@ -155,12 +161,14 @@ class UpdateObject(object):
                       endTime=self.endTime, **kwargs)
         except Exception as e:
             out.exception(e, True)
+            if d:
+                reactor.callFromThread(d.errback, Failure(e))
 
         if 'message' in kwargs:
             self.progress(kwargs['message'])
 
-        if hasattr(self, 'deferred'):
-            reactor.callFromThread(self.deferred.callback, self.result)
+        if d:
+            reactor.callFromThread(d.callback, self.result)
 
     def execute(self):
         """
