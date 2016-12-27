@@ -4,6 +4,12 @@ from nose.tools import assert_raises
 from paradrop.lib.container.downloader import Downloader
 
 
+def test_github_re():
+    from paradrop.lib.container.downloader import github_re
+    assert github_re.match("https://github.com/user/pro.jec-t") is not None
+    assert github_re.match("https://github.com/user/pro.jec-t.git") is not None
+
+
 def test_Downloader():
     downloader = Downloader("http://example.com")
 
