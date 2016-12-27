@@ -220,9 +220,21 @@ class ConfigApi(object):
 
     @routes.route('/startUpdate', methods=['POST'])
     def start_update(self, request):
-        pass
+        cors.enable_cors(request)
+        updateManager.startUpdate()
+        request.setHeader('Content-Type', 'application/json')
+        return json.dumps({'success': True})
 
 
     @routes.route('/factoryReset', methods=['POST'])
+    @inlineCallbacks
     def factory_reset(self, request):
-        pass
+        cors.enable_cors(request)
+        out.info('Initiating factory reset...')
+
+        update = dict(updateClass='ROUTER',
+                      updateType='factoryreset',
+                      name='PARADROP',
+                      tok=timeint())
+        result = yield self.update_manager.add_update(**update)
+        returnValue(json.dumps(result))
