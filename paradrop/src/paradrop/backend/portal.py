@@ -52,10 +52,10 @@ class ParadropPortal(Resource):
         parts = host.split(':')
         name = parts[0]
 
-        if name == 'home.paradrop.org':
+        if name == settings.LOCAL_DOMAIN:
             return self.static.getChild(path, request)
 
-        elif name.endswith('.home.paradrop.org'):
+        elif name.endswith('.' + settings.LOCAL_DOMAIN):
             parts = name.split('.')
             chute = parts[0]
             try:

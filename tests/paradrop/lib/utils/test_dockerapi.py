@@ -25,7 +25,8 @@ def fake_update():
     return update
 
 
-def test_build_host_config():
+@patch('paradrop.lib.container.dockerapi.getBridgeGateway')
+def test_build_host_config(getBridgeGateway):
     """
     Test that the build_host_config function does it's job.
     """

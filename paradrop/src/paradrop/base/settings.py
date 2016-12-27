@@ -75,6 +75,12 @@ UCI_BACKUP_DIR = RUNTIME_HOME_DIR + "uci/config-backup.d/"
 PORTAL_SERVER_PORT = 80
 
 #
+# Local domain - this domain and subdomains will be resolved to the router so
+# that chutes and their users can access it by name.
+#
+LOCAL_DOMAIN = "home.paradrop.org"
+
+#
 # hostconfig
 #
 HOST_CONFIG_FILE = "/etc/paradrop/paradrop_host_config.yaml"

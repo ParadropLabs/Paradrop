@@ -390,7 +390,7 @@ def setSystemDevices(update):
             config = {'type': 'dnsmasq'}
             options = {
                 'interface': 'lan',
-                'domain': 'home.paradrop.org'
+                'domain': settings.LOCAL_DOMAIN
             }
             dhcpSections.append((config, options))
 
@@ -405,7 +405,7 @@ def setSystemDevices(update):
 
             config = {'type': 'domain'}
             options = {
-                'name': 'home.paradrop.org',
+                'name': settings.LOCAL_DOMAIN,
                 'ip': hostConfig['lan']['ipaddr']
             }
             dhcpSections.append((config, options))

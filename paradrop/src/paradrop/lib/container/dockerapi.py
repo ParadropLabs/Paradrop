@@ -403,23 +403,24 @@ def build_host_config(chute, client=None):
     else:
         config = chute.host_config
 
+    extra_hosts = {
+        settings.LOCAL_DOMAIN: getBridgeGateway()
+    }
     volumes = chute.getCache('volumes')
 
     host_conf = client.create_host_config(
         #TO support
         port_bindings=config.get('port_bindings'),
         dns=config.get('dns'),
-        #not supported/managed by us
-        #network_mode=update.host_config.get('network_mode'),
         network_mode='bridge',
-        #extra_hosts=update.host_config.get('extra_hosts'),
+        extra_hosts=extra_hosts,
         binds=volumes,
         #links=config.get('links'),
         restart_policy={'MaximumRetryCount': 5, 'Name': 'on-failure'},
-        devices=[],
+        devices=config.get('devices', []),
         lxc_conf={},
         publish_all_ports=False,
-        privileged=False,
+        privileged=config.get('privileged', False),
         dns_search=[],
         volumes_from=None,
         cap_add=['NET_ADMIN'],
@@ -594,6 +595,25 @@ def getChuteContainerID(name):
         raise ChuteNotFound("The chute could not be found.")
 
     return info['Id']
+
+
+def getBridgeGateway():
+    """
+    Look up the gateway IP address for the docker bridge network.
+
+    This is the docker0 IP address; it is the IP address of the host from the
+    chute's perspective.
+    """
+    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    info = client.inspect_network("bridge")
+    for config in info['IPAM']['Config']:
+        if 'Gateway' in config:
+            return config['Gateway']
+
+    # Fall back to a default if we could not find it.  This address will work
+    # in most places unless Docker changes to use a different address.
+    out.warn('Could not find bridge gateway, using default')
+    return '172.17.0.1'
 
 
 def getChuteIP(name):
