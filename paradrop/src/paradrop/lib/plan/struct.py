@@ -4,7 +4,7 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.lib import config
+from paradrop.lib.config import devices, network, hostconfig, osconfig, wifi
 
 from . import plangraph
 
@@ -26,36 +26,36 @@ def generatePlans(update):
     # abortNetworkConfig is added as an abort command here so that it runs when
     # config.network.getNetworkConfig or just about anything else fails.
     update.plans.addPlans(plangraph.STRUCT_GET_SYSTEM_DEVICES,
-                          (config.devices.getSystemDevices, ),
-                          (config.network.abortNetworkConfig, ))
+                          (devices.getSystemDevices, ),
+                          (network.abortNetworkConfig, ))
 
     update.plans.addPlans(plangraph.STRUCT_GET_HOST_CONFIG,
-                          (config.hostconfig.getHostConfig, ))
+                          (hostconfig.getHostConfig, ))
     update.plans.addPlans(plangraph.STRUCT_SET_HOST_CONFIG,
-                          (config.hostconfig.setHostConfig, ),
-                          (config.hostconfig.revertHostConfig, ))
+                          (hostconfig.setHostConfig, ),
+                          (hostconfig.revertHostConfig, ))
 
     # Save current network configuration into chute cache (key: 'networkInterfaces')
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK,
-                          (config.network.getNetworkConfig, ))
+                          (network.getNetworkConfig, ))
 
     # Setup changes to push into OS config files (key: 'osNetworkConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_OS_NETWORK, (config.network.getOSNetworkConfig, ))
+    update.plans.addPlans(plangraph.STRUCT_GET_OS_NETWORK, (network.getOSNetworkConfig, ))
 
     # Setup changes to push into OS config files (key: 'osWirelessConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_OS_WIRELESS, (config.wifi.getOSWirelessConfig, ))
+    update.plans.addPlans(plangraph.STRUCT_GET_OS_WIRELESS, (wifi.getOSWirelessConfig, ))
 
     # Setup changes into virt configuration file (key: 'virtNetworkConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_VIRT_NETWORK, (config.network.getVirtNetworkConfig, ))
+    update.plans.addPlans(plangraph.STRUCT_GET_VIRT_NETWORK, (network.getVirtNetworkConfig, ))
 
     # Changes for networking
-    todoPlan = (config.network.setOSNetworkConfig, )
-    abtPlan = (config.osconfig.revertConfig, 'network')
+    todoPlan = (network.setOSNetworkConfig, )
+    abtPlan = (osconfig.revertConfig, 'network')
     update.plans.addPlans(plangraph.STRUCT_SET_OS_NETWORK, todoPlan, abtPlan)
 
     # Changes for wifi
-    todoPlan = (config.wifi.setOSWirelessConfig, )
-    abtPlan = (config.osconfig.revertConfig, 'wireless')
+    todoPlan = (wifi.setOSWirelessConfig, )
+    abtPlan = (osconfig.revertConfig, 'wireless')
     update.plans.addPlans(plangraph.STRUCT_SET_OS_WIRELESS, todoPlan, abtPlan)
 
     return None

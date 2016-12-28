@@ -3,14 +3,13 @@ from klein import Klein
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from paradrop.base import nexus, status
+from paradrop.base import nexus
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.lib.config import hostconfig
 from paradrop.lib.misc.reporting import sendStateReport
 from paradrop.lib.utils.http import PDServerRequest
 
-from apiinternal import RouterSession
-from apibridge import updateManager
+from .wamp_session import WampSession
 from . import cors
 
 class ConfigApi(object):
@@ -116,13 +115,14 @@ class ConfigApi(object):
 
     routes = Klein()
 
-    def __init__(self, update_manager):
+    def __init__(self, update_manager, update_fetcher):
         self.update_manager = update_manager
+        self.update_fetcher = update_fetcher
 
     @routes.route('/hostconfig', methods=['PUT'])
     @inlineCallbacks
     def update_hostconfig(self, request):
-        cors.enable_cors(request)
+        cors.config_cors(request)
         body = str2json(request.content.read())
         config = body['config']
         if config:
@@ -135,12 +135,12 @@ class ConfigApi(object):
             request.setHeader('Content-Type', 'application/json')
             returnValue(json.dumps(result))
         else:
-            returnValue(None)
+            returnValue(json.dumps({'success': False,
+                                    'message': 'No config field in the input parameter'}))
 
 
     @routes.route('/hostconfig')
     def get_hostconfig(self, request):
-        cors.enable_cors(request)
         config = hostconfig.prepareHostConfig()
         request.setHeader('Content-Type', 'application/json')
         return json.dumps(config, separators=(',',':'))
@@ -148,7 +148,6 @@ class ConfigApi(object):
 
     @routes.route('/pdid')
     def get_pdid(self, request):
-        cors.enable_cors(request)
         pdid = nexus.core.info.pdid
         if pdid is None:
             pdid = ""
@@ -158,7 +157,7 @@ class ConfigApi(object):
 
     @routes.route('/provision', methods=['POST'])
     def provision(self, request):
-        cors.enable_cors(request)
+        cors.config_cors(request)
         body = str2json(request.content.read())
         routerId = body['routerId']
         apitoken = body['apitoken']
@@ -181,29 +180,31 @@ class ConfigApi(object):
 
         if changed:
             PDServerRequest.resetToken()
-            status.apiTokenVerified = False
-            status.wampConnected = False
+            nexus.core.jwt_valid = False
 
             def sessionCallback(session):
                 sendStateReport()
-                updateManager.startUpdate()
+                self.update_fetcher.start_polling()
 
             def sendResponse(result):
                 result = dict()
                 result['provisioned'] = True
-                result['httpConnected'] = status.apiTokenVerified
-                result['wampConnected'] = status.wampConnected
+                result['httpConnected'] = nexus.core.jwt_valid
+                result['wampConnected'] = nexus.core.wamp_connected
                 request.setHeader('Content-Type', 'application/json')
                 return json.dumps(result)
 
-            d = nexus.core.connect(RouterSession)
+            d = nexus.core.connect(WampSession)
             d.addCallback(sessionCallback)
             d.addTimeout(6, reactor).addBoth(sendResponse)
+            return d
+        else:
+            return json.dumps({'success': False,
+                               'message': 'No change on the provision parameters'})
 
 
     @routes.route('/provision')
     def get_provision(self, request):
-        cors.enable_cors(request)
         result = dict()
         result['routerId'] = nexus.core.info.pdid
         result['pdserver'] = nexus.core.info.pdserver
@@ -211,16 +212,15 @@ class ConfigApi(object):
         apitoken = nexus.core.getKey('apitoken')
         result['provisioned'] = (result['routerId'] is not None and \
                                  apitoken is not None)
-        result['httpConnected'] = status.apiTokenVerified
-        result['wampConnected'] = status.wampConnected
-
+        result['httpConnected'] = nexus.core.jwt_valid
+        result['wampConnected'] = nexus.core.wamp_connected
         request.setHeader('Content-Type', 'application/json')
         return json.dumps(result)
 
 
     @routes.route('/startUpdate', methods=['POST'])
     def start_update(self, request):
-        cors.enable_cors(request)
+        cors.config_cors(request)
         updateManager.startUpdate()
         request.setHeader('Content-Type', 'application/json')
         return json.dumps({'success': True})
@@ -229,7 +229,7 @@ class ConfigApi(object):
     @routes.route('/factoryReset', methods=['POST'])
     @inlineCallbacks
     def factory_reset(self, request):
-        cors.enable_cors(request)
+        cors.config_cors(request)
         out.info('Initiating factory reset...')
 
         update = dict(updateClass='ROUTER',

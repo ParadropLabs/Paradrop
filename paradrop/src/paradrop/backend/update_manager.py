@@ -19,7 +19,6 @@ from . import update_object
 class UpdateManager:
 
     """
-        ParaDropConfigurer class.
         This class is in charge of making the configuration changes required on the chutes.
         It utilizes the ChuteStorage class to hold onto the chute data.
 

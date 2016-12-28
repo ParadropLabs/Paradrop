@@ -12,6 +12,7 @@ from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet.ssl import ClientContextFactory
 
+from . import nexus
 from .output import out
 
 
@@ -90,6 +91,8 @@ class BaseSession(ApplicationSession):
     def leave(self):
         # Do not retry if explicitly asked to leave.
         self._transport.factory.maxRetries = 0
+        nexus.core.session = None
+        nexus.core.wamp_connected = False
         super(BaseSession, self).leave()
 
     @inlineCallbacks
@@ -98,8 +101,8 @@ class BaseSession(ApplicationSession):
 
         # Update global session reference.  It's hacky, but we do the import
         # here to solve the circular import problem.  TODO Refactor.
-        from paradrop.base import nexus
         nexus.core.session = self
+        nexus.core.wamp_connected = True
 
         # Reset exponential backoff timer after a successful connection.
         self._transport.factory.resetDelay()

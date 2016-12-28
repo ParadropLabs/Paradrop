@@ -13,7 +13,7 @@ from StringIO import StringIO
 from twisted.internet import reactor
 from twisted.web.http_headers import Headers
 
-from paradrop.base import nexus, settings, status
+from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.lib.chute import chutestorage
 from paradrop.lib.config import devices, hostconfig, resource
@@ -122,16 +122,16 @@ class ReportSender(object):
                     request.url, response.code))
                 reactor.callLater(self.retryDelay, self.send, report)
                 self.increaseDelay()
-                status.apiTokenVerified = False
+                nexus.core.jwt_valid = False
             else:
-                status.apiTokenVerified = True
+                nexus.core.jwt_valid = True
 
         # Check for connection failures and retry.
         def cberror(ignored):
             out.warn('{} to {} failed'.format(request.method, request.url))
             reactor.callLater(self.retryDelay, self.send, report)
             self.increaseDelay()
-            status.apiTokenVerified = False
+            nexus.core.jwt_valid = False
 
         d.addCallback(cbresponse)
         d.addErrback(cberror)

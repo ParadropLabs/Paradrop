@@ -4,7 +4,7 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.lib import config
+from paradrop.lib.config import firewall, osconfig
 
 from . import plangraph
 
@@ -24,14 +24,14 @@ def generatePlans(update):
 #    chutePlan.addPlans(new, plangraph.TRAFFIC_SECURITY_CHECK, (security.checkTraffic, (chuteStor, new)))
    
     # First time, so generate the basic firewall rules in cache (key: 'osFirewallConfig')
-    update.plans.addPlans(plangraph.TRAFFIC_GET_OS_FIREWALL, (config.firewall.getOSFirewallRules, ))
+    update.plans.addPlans(plangraph.TRAFFIC_GET_OS_FIREWALL, (firewall.getOSFirewallRules, ))
 
     # Get developer firewall rules (key: 'developerFirewallRules')
-    update.plans.addPlans(plangraph.TRAFFIC_GET_DEVELOPER_FIREWALL, (config.firewall.getDeveloperFirewallRules, ))
+    update.plans.addPlans(plangraph.TRAFFIC_GET_DEVELOPER_FIREWALL, (firewall.getDeveloperFirewallRules, ))
             
     # Combine rules from above two fucntions, save to file
-    todoPlan = (config.firewall.setOSFirewallRules, )
-    abtPlan = (config.osconfig.revertConfig, "firewall")
+    todoPlan = (firewall.setOSFirewallRules, )
+    abtPlan = (osconfig.revertConfig, "firewall")
     update.plans.addPlans(plangraph.TRAFFIC_SET_OS_FIREWALL, todoPlan, abtPlan)
     
     return None

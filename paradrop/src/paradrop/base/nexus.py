@@ -6,7 +6,6 @@ SETTINGS QUICK REFERENCE:
     # assuming the following import
     from paradrop.base import nexus
 
-    nexus.core.info.mode
     nexus.core.info.version
     nexus.core.info.pdid
 '''
@@ -20,14 +19,11 @@ import smokesignal
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from . import output, settings, cxbr
+from . import output, settings
 
 # Global access. Assign this wherever you instantiate the Nexus object:
 #       nexus.core = MyNexusSubclass()
 core = None
-
-# The type and mode of this nexus instance
-Mode = Enum('Mode', 'production, local')
 
 
 class NexusBase(object):
@@ -43,12 +39,15 @@ class NexusBase(object):
     VERSION = 1                                         # nexus.core.info.version
     PDID = None                                         # nexus.core.info.pdid
 
+
     def __init__(self, stealStdio=True, printToConsole=True):
         '''
         The one big thing this function leaves out is reactor.start(). Call this externally
         *after * initializing a nexus object.
         '''
         self.session = None
+        self.wamp_connected = False
+        self.jwt_valid = False
 
         self.info = AttrWrapper()
         resolveInfo(self, settings.CONFIG_FILE)
@@ -66,11 +65,11 @@ class NexusBase(object):
         # here. Assuming callLater doesn't fire until thats happened
         reactor.callLater(0, self.onStart)
 
+
     def onStart(self):
         pdid = self.info.pdid if self.provisioned() else 'UNPROVISIONED'
         output.out.usage('%s coming up' % (pdid))
 
-        # Start trying to connect to cxbr fabric
 
     def onStop(self):
         self.save()
@@ -78,6 +77,7 @@ class NexusBase(object):
         output.out.usage('%s going down' % (self.info.pdid))
         smokesignal.clear_all()
         output.out.endLogging()
+
 
     @inlineCallbacks
     def connect(self, sessionClass, debug=False):
@@ -90,6 +90,8 @@ class NexusBase(object):
         if (self.session is not None):
             yield self.session.leave()
 
+        self.wamp_connected = False
+
         output.out.info('Connecting to wamp router at URI: %s' % str(self.info.wampRouter))
 
         # Setting self.session here only works for the first connection but
@@ -99,29 +101,13 @@ class NexusBase(object):
         self.session = yield sessionClass.start(self.info.wampRouter, self.info.pdid, debug=debug)
         returnValue(self.session)
 
-    def onConnect(self):
-        '''
-        Called when the session passed into connect suceeds in its connection.
-        That session object is assigned to self.session.
-        '''
-        if not self.provisioned():
-            output.out.warn('Router has no keys or identity. Waiting to connect to to server.')
-        else:
-            reactor.callLater(.1, self.connect)
-
-    def onDisconnect(self):
-        ''' Called when the crossbar session disconnects intentionally (cleanly). '''
-        pass
-
-    def onConnectionLost(self):
-        ''' Called when our session is lost by accident. '''
-        pass
 
     def onInfoChange(self, key, value):
         '''
         Called when an internal setting is changed. Trigger a save automatically.
         '''
         self.save()
+
 
     def save(self):
         ''' Ehh. Ideally this should happen asynchronously. '''

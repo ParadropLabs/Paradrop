@@ -8,7 +8,7 @@ This module generates update plans for a snap operation.
 """
 
 from paradrop.base.output import out
-from paradrop.lib import config
+from paradrop.lib.config import snap
 from . import plangraph
 
 
@@ -17,8 +17,8 @@ def generatePlans(update):
 
     # Check if requested version is already installed.
     update.plans.addPlans(plangraph.SNAP_CHECK_VERSION,
-                          (config.snap.checkVersion, ))
+                          (snap.checkVersion, ))
 
     # Begin installation of the snap - makes a call to pdinstall.
     update.plans.addPlans(plangraph.SNAP_INSTALL,
-                          (config.snap.beginInstall, ))
+                          (snap.beginInstall, ))

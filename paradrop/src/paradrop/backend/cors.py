@@ -4,7 +4,7 @@ Reference: http://msoulier.wordpress.com/2010/06/05/cross-origin-requests-in-twi
 '''
 
 
-def enable_cors(request):
+def config_cors(request):
     request.setHeader('Access-Control-Allow-Origin', '*')
     request.setHeader('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE')
     request.setHeader('Access-Control-Allow-Headers', 'Content-Type')
