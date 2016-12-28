@@ -25,7 +25,8 @@ setup(
         'pycurl',
         'psutil',
         'txmsgpackrpc>=1.1',
-        'klein==16.12.0'
+        'klein==16.12.0',
+        'txsockjs==1.2.2'
     ],
 
     entry_points={
