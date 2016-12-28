@@ -8,11 +8,15 @@ from twisted.web.server import Site
 from twisted.web.static import File
 from twisted.internet import reactor
 from twisted.internet.endpoints import serverFromString
+from twisted.internet.protocol import Factory
 from klein import Klein
+from txsockjs.factory import SockJSResource
 
-from paradrop.backend.information_api import InformationApi
-from paradrop.backend.config_api import ConfigApi
-from paradrop.backend.chute_api import ChuteApi
+from .information_api import InformationApi
+from .config_api import ConfigApi
+from .chute_api import ChuteApi
+from .status_sock_js_protocol import StatusSockJSProtocol
+
 
 class HttpServer(object):
     app = Klein()
@@ -42,6 +46,11 @@ class HttpServer(object):
     @app.route('/api/v1/chute', branch=True)
     def chute(self, request):
         return ChuteApi(self.update_manager).routes.resource()
+
+
+    @app.route('/sockjs/status', branch=True)
+    def status(self, request):
+        return SockJSResource(Factory.forProtocol(StatusSockJSProtocol))
 
 
     @app.route('/', branch=True)
