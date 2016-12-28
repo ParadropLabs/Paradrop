@@ -12,13 +12,14 @@ from klein import Klein
 
 from paradrop.backend.information_api import InformationApi
 from paradrop.backend.config_api import ConfigApi
-
+from paradrop.backend.chute_api import ChuteApi
 
 class HttpServer(object):
     app = Klein()
 
-    def __init__(self, update_manager, portal_dir=None):
+    def __init__(self, update_manager, update_fetcher, portal_dir=None):
         self.update_manager = update_manager
+        self.update_fetcher = update_fetcher
 
         if portal_dir:
             self.portal_dir = portal_dir
@@ -35,7 +36,12 @@ class HttpServer(object):
 
     @app.route('/api/v1/config', branch=True)
     def configuration(self, request):
-        return ConfigApi(self.update_manager).routes.resource()
+        return ConfigApi(self.update_manager, self.update_fetcher).routes.resource()
+
+
+    @app.route('/api/v1/chute', branch=True)
+    def chute(self, request):
+        return ChuteApi(self.update_manager).routes.resource()
 
 
     @app.route('/', branch=True)

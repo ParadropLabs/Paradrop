@@ -30,7 +30,6 @@ smokesignal==0.7.0
 Twisted==16.5.0
 txaio==2.5.1
 txdbus==1.0.13
-txrestapi==0.2
 websocket-client==0.37.0
 zope.interface==4.2.0
 txmsgpackrpc==1.1

@@ -10,7 +10,7 @@ only need to do a subset of the operations.
 """
 
 from paradrop.base.output import out
-from paradrop.lib import config
+from paradrop.lib.config import devices, network, configservice, hostconfig, osconfig
 
 from . import plangraph
 
@@ -31,30 +31,30 @@ def generatePlans(update):
     # reloadAll is added as an abort command here so that it runs when any of
     # the set* plans fail and back out.
     update.plans.addPlans(plangraph.STRUCT_GET_SYSTEM_DEVICES,
-                          (config.devices.getSystemDevices, ),
-                          (config.network.abortNetworkConfig, ))
+                          (devices.getSystemDevices, ),
+                          (network.abortNetworkConfig, ))
     update.plans.addPlans(plangraph.CHECK_SYSTEM_DEVICES,
-                          (config.devices.checkSystemDevices, ))
+                          (devices.checkSystemDevices, ))
     update.plans.addPlans(plangraph.STRUCT_SET_SYSTEM_DEVICES,
-                          (config.devices.setSystemDevices, ),
-                          (config.configservice.reloadAll, ))
+                          (devices.setSystemDevices, ),
+                          (configservice.reloadAll, ))
 
     update.plans.addPlans(plangraph.STRUCT_GET_HOST_CONFIG,
-                          (config.hostconfig.getHostConfig, ))
+                          (hostconfig.getHostConfig, ))
     update.plans.addPlans(plangraph.STRUCT_SET_HOST_CONFIG,
-                          (config.hostconfig.setHostConfig, ),
-                          (config.hostconfig.revertHostConfig, ))
+                          (hostconfig.setHostConfig, ),
+                          (hostconfig.revertHostConfig, ))
 
     # Save current network configuration into chute cache (key: 'networkInterfaces')
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK,
-                          (config.network.getNetworkConfig, ))
+                          (network.getNetworkConfig, ))
 
 
     # Reload configuration files
-    todoPlan = (config.configservice.reloadAll, )
-    abtPlan = [(config.osconfig.revertConfig, "dhcp"),
-               (config.osconfig.revertConfig, "firewall"),
-               (config.osconfig.revertConfig, "network"),
-               (config.osconfig.revertConfig, "wireless"),
-               (config.configservice.reloadAll, )]
+    todoPlan = (configservice.reloadAll, )
+    abtPlan = [(osconfig.revertConfig, "dhcp"),
+               (osconfig.revertConfig, "firewall"),
+               (osconfig.revertConfig, "network"),
+               (osconfig.revertConfig, "wireless"),
+               (configservice.reloadAll, )]
     update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)

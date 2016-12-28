@@ -8,7 +8,7 @@ This module generates update plans for a snap operation.
 """
 
 from paradrop.base.output import out
-from paradrop.lib import config
+from paradrop.lib.config import snap
 from . import plangraph
 
 

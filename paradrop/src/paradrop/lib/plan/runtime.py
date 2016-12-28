@@ -4,7 +4,7 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.lib import config
+from paradrop.lib.config import dockerconfig, osconfig, configservice, dhcp
 from . import plangraph
 
 
@@ -19,24 +19,24 @@ def generatePlans(update):
     out.verbose("%r\n" % (update))
 
     # Generate virt start script, stored in cache (key: 'virtPreamble')
-    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_PREAMBLE, (config.dockerconfig.getVirtPreamble, ))
+    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_PREAMBLE, (dockerconfig.getVirtPreamble, ))
 
     # Make sure volume directories exist.
     update.plans.addPlans(plangraph.CREATE_VOLUME_DIRS,
-            (config.dockerconfig.createVolumeDirs, ),
-            (config.dockerconfig.abortCreateVolumeDirs, ))
+            (dockerconfig.createVolumeDirs, ),
+            (dockerconfig.abortCreateVolumeDirs, ))
 
     # If the user specifies DHCP then we need to generate the config and store it to disk
-    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_DHCP, (config.dhcp.getVirtDHCPSettings, ))
-    update.plans.addPlans(plangraph.RUNTIME_SET_VIRT_DHCP, (config.dhcp.setVirtDHCPSettings, ))
+    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_DHCP, (dhcp.getVirtDHCPSettings, ))
+    update.plans.addPlans(plangraph.RUNTIME_SET_VIRT_DHCP, (dhcp.setVirtDHCPSettings, ))
 
     # Reload configuration files
-    todoPlan = (config.configservice.reloadAll, )
-    abtPlan = [(config.osconfig.revertConfig, "dhcp"),
-               (config.osconfig.revertConfig, "firewall"),
-               (config.osconfig.revertConfig, "network"),
-               (config.osconfig.revertConfig, "wireless"),
-               (config.configservice.reloadAll, )]
+    todoPlan = (configservice.reloadAll, )
+    abtPlan = [(osconfig.revertConfig, "dhcp"),
+               (osconfig.revertConfig, "firewall"),
+               (osconfig.revertConfig, "network"),
+               (osconfig.revertConfig, "wireless"),
+               (configservice.reloadAll, )]
     update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)
 
     return None

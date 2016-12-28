@@ -1,25 +1,22 @@
-import json
+'''
+The WAMP session of the paradrop daemon
+'''
+
 import smokesignal
 
-from twisted.web import xmlrpc
-from twisted.internet import utils
-from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
+from twisted.internet.defer import inlineCallbacks
 from autobahn.wamp import auth
 
 from paradrop.lib.misc import pdinstall
-from paradrop.lib.config import hostconfig
 from paradrop.base.output import out
-from paradrop.base import nexus, cxbr, status
+from paradrop.base import nexus
+from paradrop.base.cxbr import BaseSession
 
-from . import apibridge
 
-
-class RouterSession(cxbr.BaseSession):
-
+class WampSession(BaseSession):
     def __init__(self, *args, **kwargs):
-        self.bridge = apibridge.APIBridge()
         self.uriPrefix = 'org.paradrop.'
-        super(RouterSession, self).__init__(*args, **kwargs)
+        super(WampSession, self).__init__(*args, **kwargs)
 
     def onConnect(self):
         out.info('Router session connected.')
@@ -52,39 +49,29 @@ class RouterSession(cxbr.BaseSession):
         else:
             raise Exception("Invalid authmethod {}".format(challenge.method))
 
+
     @inlineCallbacks
     def onJoin(self, details):
         out.info('Router session joined')
 
-        status.wampConnected = True
-
-        # TEMP: ping the server, let it know we just came up
-        # yield self.call('pd', 'routerConnected', self._session_id)
         yield self.subscribe(self.updatesPending, self.uriPrefix + 'updatesPending')
-        yield self.register(self.ping, self.uriPrefix + 'ping')
         yield self.register(self.update, self.uriPrefix + 'update')
-        # yield self.register(self.logsFromTime, 'logsFromTime')
-        yield self.register(self.getConfig, self.uriPrefix + 'getConfig')
-        yield self.register(self.setConfig, self.uriPrefix + 'setConfig')
-
-        yield self.register(self.createChute, self.uriPrefix + 'createChute')
-        yield self.register(self.updateChute, self.uriPrefix + 'updateChute')
-        yield self.register(self.deleteChute, self.uriPrefix + 'deleteChute')
-        yield self.register(self.startChute, self.uriPrefix + 'startChute')
-        yield self.register(self.stopChute, self.uriPrefix + 'stopChute')
 
         # route output to the logs call
         smokesignal.on('logs', self.logs)
 
-        yield cxbr.BaseSession.onJoin(self, details)
+        yield BaseSession.onJoin(self, details)
+
 
     def onLeave(self, details):
         out.info("Router session left: {}".format(details))
-        status.wampConnected = False
+        nexus.core.wamp_onnected = False
         self.disconnect()
+
 
     def onDisconnect(self):
         out.info("Router session disconnected.")
+
 
     @inlineCallbacks
     def logs(self, logs):
@@ -105,20 +92,6 @@ class RouterSession(cxbr.BaseSession):
         except:
             yield
 
-    def logsFromTime(self, start):
-        '''
-        Loads logs that have timestamps after the given time.
-
-        :param start: seconds since epoch from which to start returning logs
-        :type start: int.
-        :returns: list of logs
-        '''
-
-        return out.getLogsSince(start, purge=False)
-
-    def ping(self, pdid):
-        print 'Router ping'
-        return 'Router ping receipt'
 
     def update(self, pdid, data):
         print("Sending command {} to pdinstall".format(data['command']))
@@ -130,34 +103,6 @@ class RouterSession(cxbr.BaseSession):
         else:
             return "Sending command to pdinstall failed"
 
-    def getConfig(self, pdid):
-        config = hostconfig.prepareHostConfig()
-        result = json.dumps(config, separators=(',',':'))
-        return result
-
-    def setConfig(self, pdid, config):
-        config = json.loads(config)
-        return self.bridge.updateHostConfig(config)
-
-    def createChute(self, pdid, config):
-        out.info('Creating chute...')
-        return self.bridge.createChute(config)
-
-    def updateChute(self, pdid, config):
-        out.info('Updating chute...')
-        return self.bridge.updateChute(config)
-
-    def deleteChute(self, pdid, name):
-        out.info('Deleting chute...')
-        return self.bridge.deleteChute(name)
-
-    def startChute(self, pdid, name):
-        out.info('Starting chute...')
-        return self.bridge.startChute(name)
-
-    def stopChute(self, pdid, name):
-        out.info('Stopping chute...')
-        return self.bridge.stopChute(name)
 
     def updatesPending(self, pdid):
         out.info('Notified of updates...')

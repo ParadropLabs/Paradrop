@@ -24,7 +24,6 @@ setup(
         'pyyaml',
         'pycurl',
         'psutil',
-        'txrestapi',
         'txmsgpackrpc>=1.1',
         'klein==16.12.0'
     ],
