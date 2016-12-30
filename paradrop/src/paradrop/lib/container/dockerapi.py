@@ -403,16 +403,20 @@ def build_host_config(chute, client=None):
     else:
         config = chute.host_config
 
-    extra_hosts = {
-        settings.LOCAL_DOMAIN: getBridgeGateway()
-    }
+    extra_hosts = {}
+    network_mode = config.get('network_mode', 'bridge')
     volumes = chute.getCache('volumes')
+
+    # We are not able to set extra_hosts if the network_mode is set to 'host'.
+    # In that case, the chute uses the same /etc/hosts file as the host system.
+    if network_mode != 'host':
+        extra_hosts[settings.LOCAL_DOMAIN] = getBridgeGateway()
 
     host_conf = client.create_host_config(
         #TO support
         port_bindings=config.get('port_bindings'),
         dns=config.get('dns'),
-        network_mode=config.get('network_mode', 'bridge'),
+        network_mode=network_mode,
         extra_hosts=extra_hosts,
         binds=volumes,
         #links=config.get('links'),
