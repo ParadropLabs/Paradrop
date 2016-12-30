@@ -38,6 +38,7 @@ def test_build_host_config(getBridgeGateway):
 
     #Check that an empty host_config gives us certain default settings
     chute = MagicMock()
+    chute.host_config = {}
     res = dockerapi.build_host_config(chute, client)
     assert res['network_mode'] == 'bridge'
 

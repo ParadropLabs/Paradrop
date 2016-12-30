@@ -412,7 +412,7 @@ def build_host_config(chute, client=None):
         #TO support
         port_bindings=config.get('port_bindings'),
         dns=config.get('dns'),
-        network_mode='bridge',
+        network_mode=config.get('network_mode', 'bridge'),
         extra_hosts=extra_hosts,
         binds=volumes,
         #links=config.get('links'),
