@@ -66,8 +66,11 @@ DYNAMIC_NETWORK_POOL = "192.168.128.0/17"
 #
 # uci
 #
-UCI_CONFIG_DIR = RUNTIME_HOME_DIR +  "uci/config/"
-UCI_BACKUP_DIR = RUNTIME_HOME_DIR + "uci/config-backup.d/"
+# These should be in a persistent directory (not /var/run, /tmp, etc.) because
+# we expect to find them at startup.
+#
+UCI_CONFIG_DIR = CONFIG_HOME_DIR +  "uci/config/"
+UCI_BACKUP_DIR = CONFIG_HOME_DIR + "uci/config-backup.d/"
 
 #
 # local portal
@@ -187,8 +190,8 @@ def updatePaths(configHomeDir, runtimeHomeDir="/var/run/paradrop"):
     mod.CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "config")
     mod.HOST_CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "hostconfig.yaml")
     mod.DEFAULT_HOST_CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "hostconfig.default.yaml")
-    mod.UCI_CONFIG_DIR = os.path.join(mod.RUNTIME_HOME_DIR, "uci/config.d/")
-    mod.UCI_BACKUP_DIR = os.path.join(mod.RUNTIME_HOME_DIR, "uci/config-backup.d/")
+    mod.UCI_CONFIG_DIR = os.path.join(mod.CONFIG_HOME_DIR, "uci/config.d/")
+    mod.UCI_BACKUP_DIR = os.path.join(mod.CONFIG_HOME_DIR, "uci/config-backup.d/")
     mod.PDCONFD_WRITE_DIR = os.path.join(mod.RUNTIME_HOME_DIR, 'pdconfd')
 
 
