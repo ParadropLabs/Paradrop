@@ -1,7 +1,7 @@
 import json
 from klein import Klein
 from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import DeferredList, inlineCallbacks, returnValue
 
 from paradrop.base import nexus
 from paradrop.base.pdutils import timeint, str2json
@@ -141,6 +141,7 @@ class ConfigApi(object):
 
     @routes.route('/hostconfig')
     def get_hostconfig(self, request):
+        cors.config_cors(request)
         config = hostconfig.prepareHostConfig()
         request.setHeader('Content-Type', 'application/json')
         return json.dumps(config, separators=(',',':'))
@@ -148,6 +149,7 @@ class ConfigApi(object):
 
     @routes.route('/pdid')
     def get_pdid(self, request):
+        cors.config_cors(request)
         pdid = nexus.core.info.pdid
         if pdid is None:
             pdid = ""
@@ -182,11 +184,10 @@ class ConfigApi(object):
             PDServerRequest.resetToken()
             nexus.core.jwt_valid = False
 
-            def sessionCallback(session):
-                sendStateReport()
+            def start_polling(session):
                 self.update_fetcher.start_polling()
 
-            def sendResponse(result):
+            def send_response(result):
                 result = dict()
                 result['provisioned'] = True
                 result['httpConnected'] = nexus.core.jwt_valid
@@ -194,10 +195,13 @@ class ConfigApi(object):
                 request.setHeader('Content-Type', 'application/json')
                 return json.dumps(result)
 
-            d = nexus.core.connect(WampSession)
-            d.addCallback(sessionCallback)
-            d.addTimeout(6, reactor).addBoth(sendResponse)
-            return d
+            wampDeferred = nexus.core.connect(WampSession)
+            httpDeferred = sendStateReport()
+            httpDeferred.addCallback(start_polling)
+
+            dl = DeferredList([wampDeferred, httpDeferred], consumeErrors=True)
+            dl.addTimeout(6, reactor).addBoth(send_response)
+            return dl
         else:
             return json.dumps({'success': False,
                                'message': 'No change on the provision parameters'})
@@ -205,6 +209,7 @@ class ConfigApi(object):
 
     @routes.route('/provision')
     def get_provision(self, request):
+        cors.config_cors(request)
         result = dict()
         result['routerId'] = nexus.core.info.pdid
         result['pdserver'] = nexus.core.info.pdserver

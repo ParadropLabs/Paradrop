@@ -141,6 +141,7 @@ class ReportSender(object):
 
         d.addCallback(cbresponse)
         d.addErrback(cberror)
+        return d
 
 
 def sendStateReport():
@@ -148,4 +149,4 @@ def sendStateReport():
     report = builder.prepare()
 
     sender = ReportSender()
-    sender.send(report)
+    return sender.send(report)
