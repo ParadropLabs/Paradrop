@@ -322,9 +322,6 @@ class PDServerRequest(object):
 
         self.body = None
 
-        # This will be returned to the caller to wait for the response.
-        self.deferred = Deferred()
-
     def get(self, **query):
         self.method = 'GET'
         if len(query) > 0:
