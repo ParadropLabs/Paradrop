@@ -188,19 +188,20 @@ class ConfigApi(object):
                 self.update_fetcher.start_polling()
 
             def send_response(result):
-                result = dict()
-                result['provisioned'] = True
-                result['httpConnected'] = nexus.core.jwt_valid
-                result['wampConnected'] = nexus.core.wamp_connected
+                response = dict()
+                response['provisioned'] = True
+                response['httpConnected'] = nexus.core.jwt_valid
+                response['wampConnected'] = nexus.core.wamp_connected
                 request.setHeader('Content-Type', 'application/json')
-                return json.dumps(result)
+                return json.dumps(response)
 
             wampDeferred = nexus.core.connect(WampSession)
             httpDeferred = sendStateReport()
             httpDeferred.addCallback(start_polling)
 
             dl = DeferredList([wampDeferred, httpDeferred], consumeErrors=True)
-            dl.addTimeout(6, reactor).addBoth(send_response)
+            dl.addBoth(send_response)
+            reactor.callLater(6, dl.cancel)
             return dl
         else:
             return json.dumps({'success': False,
