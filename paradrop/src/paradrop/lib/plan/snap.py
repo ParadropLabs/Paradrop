@@ -15,10 +15,5 @@ from . import plangraph
 def generatePlans(update):
     out.verbose("%r\n" % (update))
 
-    # Check if requested version is already installed.
-    update.plans.addPlans(plangraph.SNAP_CHECK_VERSION,
-                          (config.snap.checkVersion, ))
-
-    # Begin installation of the snap - makes a call to pdinstall.
     update.plans.addPlans(plangraph.SNAP_INSTALL,
-                          (config.snap.beginInstall, ))
+                          (config.snap.updateSnap, ))
