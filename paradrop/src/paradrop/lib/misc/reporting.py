@@ -17,7 +17,9 @@ from paradrop.base import nexus, settings, status
 from paradrop.base.output import out
 from paradrop.lib.chute import chutestorage
 from paradrop.lib.config import devices, hostconfig, resource
+from paradrop.lib.misc.snapd import SnapdClient
 from paradrop.lib.utils.http import PDServerRequest
+
 
 def getOSVersion():
     """
@@ -56,6 +58,7 @@ class StateReport(object):
         self.chutes = []
         self.devices = []
         self.hostConfig = {}
+        self.snaps = []
 
     def toJSON(self):
         return json.dumps(self.__dict__)
@@ -97,6 +100,9 @@ class StateReportBuilder(object):
 
         report.devices = devices.listSystemDevices()
         report.hostConfig = hostconfig.prepareHostConfig(write=False)
+
+        client = SnapdClient()
+        report.snaps = client.listSnaps()
 
         return report
 

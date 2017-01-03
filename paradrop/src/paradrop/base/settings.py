@@ -131,6 +131,9 @@ REJECT_DOWNGRADE = False
 
 DOCKER_BIN_DIR = "/usr/bin"
 
+# Interface (e.g. Unix socket) to use to access snapd API.
+SNAPD_INTERFACE = "/run/snapd.socket"
+
 ###############################################################################
 # Helper functions
 ###############################################################################

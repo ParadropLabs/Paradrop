@@ -1,6 +1,5 @@
 """
 """
-
 from paradrop.lib.misc import pdinstall
 from paradrop.lib.misc.reporting import getPackageVersion
 from paradrop.lib.utils.http import PDServerRequest
