@@ -15,8 +15,9 @@ from txsockjs.factory import SockJSResource
 from .information_api import InformationApi
 from .config_api import ConfigApi
 from .chute_api import ChuteApi
-from .status_sock_js_protocol import StatusSockJSProtocol
-
+from .status_sockjs import StatusSockJSFactory
+from .system_status import SystemStatus
+from . import cors
 
 class HttpServer(object):
     app = Klein()
@@ -24,6 +25,7 @@ class HttpServer(object):
     def __init__(self, update_manager, update_fetcher, portal_dir=None):
         self.update_manager = update_manager
         self.update_fetcher = update_fetcher
+        self.system_status = SystemStatus()
 
         if portal_dir:
             self.portal_dir = portal_dir
@@ -50,7 +52,13 @@ class HttpServer(object):
 
     @app.route('/sockjs/status', branch=True)
     def status(self, request):
-        return SockJSResource(Factory.forProtocol(StatusSockJSProtocol))
+        # cors.config_cors(request)
+        options = {
+            'websocket': True,
+            'heartbeat': 5,
+            'timeout': 2,
+        }
+        return SockJSResource(StatusSockJSFactory(self.system_status), options)
 
 
     @app.route('/', branch=True)
