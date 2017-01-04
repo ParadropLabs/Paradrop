@@ -168,7 +168,7 @@ class UpdateObject(object):
             self.progress(kwargs['message'])
 
         if d:
-            reactor.callFromThread(d.callback, self.result)
+            reactor.callFromThread(d.callback, self)
 
     def execute(self):
         """

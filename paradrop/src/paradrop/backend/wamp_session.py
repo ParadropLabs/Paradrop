@@ -104,6 +104,11 @@ class WampSession(BaseSession):
             return "Sending command to pdinstall failed"
 
 
+    def set_update_fetcher(self, update_fetcher):
+        self.update_fetcher = update_fetcher
+
+
     def updatesPending(self, pdid):
         out.info('Notified of updates...')
-        apibridge.updateManager.startUpdate()
+        if (self.update_fetcher):
+            self.update_fetcher.pull_update()

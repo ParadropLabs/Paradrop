@@ -23,15 +23,18 @@ UPDATE_POLL_INTERVAL = 15 * 60
 
 
 class UpdateFetcher(object):
-    def __init__(self):
+    def __init__(self, update_manager):
         # Store set of update IDs that are in progress in order to avoid
         # repeats.
         self.updates_in_progress = set()
+        self.update_manager = update_manager
+        self.scheduled_call = task.LoopingCall(self.pull_update, _auto=True)
 
 
     def start_polling(self):
-        self.scheduled_call = task.LoopingCall(self.pull_update, _auto=True)
-
+        self.pull_update(True)
+        if not self.scheduled_call.running:
+            self.scheduled_call.start(UPDATE_POLL_INTERVAL, now=False)
 
     @inlineCallbacks
     def pull_update(self, _auto=False):
@@ -58,12 +61,7 @@ class UpdateFetcher(object):
         d = request.get(completed=False)
         d.addCallback(self._updates_received)
         d.addErrback(handle_error)
-
         yield d
-
-        # Make sure the LoopingCall is scheduled to run later.
-        if not self.scheduled_call.running:
-            self.scheduled_call.start(UPDATE_POLL_INTERVAL, now=False)
 
 
     @inlineCallbacks
@@ -115,10 +113,10 @@ class UpdateFetcher(object):
             if isinstance(config, dict):
                 update.update(config)
 
-            yield update_manager.add_update(**update)
-            yield _update_complete(update)
+            update = yield self.update_manager.add_update(**update)
+            yield self._update_complete(update)
 
-        out.log("All updates complete, sending state report to server...")
+        out.info("All updates complete, sending state report to server...")
         sendStateReport()
 
     
@@ -141,6 +139,8 @@ class UpdateFetcher(object):
             {'op': 'replace', 'path': '/completed', 'value': True},
             {'op': 'replace', 'path': '/success', 'value': success}
         )
+
+        return d
 
         # TODO: If this notification fails to go through, we should retry or
         # build in some other mechanism to inform the server.

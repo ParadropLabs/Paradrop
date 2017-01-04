@@ -131,9 +131,9 @@ class ConfigApi(object):
                           name='__PARADROP__',
                           tok=timeint(),
                           hostconfig=config)
-            result = yield self.update_manager.add_update(**update)
+            update = yield self.update_manager.add_update(**update)
             request.setHeader('Content-Type', 'application/json')
-            returnValue(json.dumps(result))
+            returnValue(json.dumps(update.result))
         else:
             returnValue(json.dumps({'success': False,
                                     'message': 'No config field in the input parameter'}))
