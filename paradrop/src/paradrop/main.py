@@ -6,6 +6,7 @@ Does not implement any behavior itself.
 
 import argparse
 from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
 
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
@@ -19,11 +20,13 @@ from paradrop import confd
 
 
 class Nexus(nexus.NexusBase):
-    def __init__(self):
+    def __init__(self, update_fetcher):
+        self.update_fetcher = update_fetcher
         # Want to change logging functionality? See optional args on the base class and pass them here
         super(Nexus, self).__init__(stealStdio=True, printToConsole=True)
 
 
+    @inlineCallbacks
     def onStart(self):
         super(Nexus, self).onStart()
         # onStart is called when the reactor starts, not when the connection is made.
@@ -32,7 +35,17 @@ class Nexus(nexus.NexusBase):
             out.warn('Router has no keys or identity. Waiting to connect to to server.')
         else:
             # Try to connect to the WAMP router (crossbar.io)
-            return self.connect(WampSession)
+            try:
+                wamp_session = yield self.connect(WampSession)
+            except Exception:
+                out.warn('The router ID or password is invalid!')
+            else:
+                wamp_session.set_update_fetcher(self.update_fetcher)
+                # Set up communication with pdserver.
+                # 1. Create a report of the current system state and send that.
+                # 2. Poll for a list of updates that should be applied.
+                sendStateReport()
+                self.update_fetcher.start_polling()
 
 
     def onStop(self):
@@ -60,23 +73,15 @@ def main():
 
     settings.loadSettings(args.mode, [])
 
-    # Globally assign the nexus object so anyone else can access it.
-    nexus.core = Nexus()
+    update_manager = UpdateManager(reactor)
+    update_fetcher = UpdateFetcher(update_manager)
+    ProcessMonitor.allowedActions = set()
 
     # Start the configuration service as a thread
     confd.main.run_thread(execute=args.execute)
 
-    update_manager = UpdateManager(reactor)
-    update_fetcher = UpdateFetcher()
-    ProcessMonitor.allowedActions = set()
-
-    if nexus.core.provisioned():
-        # Set up communication with pdserver.
-        # 1. Create a report of the current system state and send that.
-        # 2. Poll for a list of updates that should be applied.
-        sendStateReport()
-        update_fetcher.start_polling()
-
+    # Globally assign the nexus object so anyone else can access it.
+    nexus.core = Nexus(update_fetcher)
     http_server = HttpServer(update_manager, update_fetcher, args.portal)
     setup_http_server(http_server, '0.0.0.0', settings.PORTAL_SERVER_PORT)
 
