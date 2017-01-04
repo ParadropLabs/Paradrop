@@ -31,8 +31,9 @@ class UpdateFetcher(object):
         self.scheduled_call = task.LoopingCall(self.pull_update, _auto=True)
 
 
+    @inlineCallbacks
     def start_polling(self):
-        self.pull_update(True)
+        yield self.pull_update(True)
         if not self.scheduled_call.running:
             self.scheduled_call.start(UPDATE_POLL_INTERVAL, now=False)
 
@@ -117,7 +118,7 @@ class UpdateFetcher(object):
             yield self._update_complete(update)
 
         out.info("All updates complete, sending state report to server...")
-        sendStateReport()
+        yield sendStateReport()
 
     
     def _update_complete(self, update):
@@ -130,6 +131,7 @@ class UpdateFetcher(object):
         if update.delegated:
             return
 
+        out.info("The update is done, report it to servr...")
         update_id = update.external['update_id']
         success = update.result.get('success', False)
 

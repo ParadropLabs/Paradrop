@@ -16,6 +16,7 @@ from paradrop.base.cxbr import BaseSession
 class WampSession(BaseSession):
     def __init__(self, *args, **kwargs):
         self.uriPrefix = 'org.paradrop.'
+        self.update_fetcher = None
         super(WampSession, self).__init__(*args, **kwargs)
 
     def onConnect(self):
@@ -108,7 +109,9 @@ class WampSession(BaseSession):
         self.update_fetcher = update_fetcher
 
 
+    @inlineCallbacks
     def updatesPending(self, pdid):
         out.info('Notified of updates...')
-        if (self.update_fetcher):
-            self.update_fetcher.pull_update()
+        if self.update_fetcher is not None:
+            out.info('Pulling updates from the server...')
+            yield self.update_fetcher.pull_update()
