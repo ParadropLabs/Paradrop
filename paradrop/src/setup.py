@@ -9,6 +9,7 @@ setup(
     url="http://paradrop.org",
     packages=find_packages(),
     install_requires=[
+        'Twisted==16.2.0',
         'autobahn>=0.15.0',
         'bcrypt>=2.0.0',
         'colorama>=0.3.3',

@@ -17,9 +17,10 @@ class SystemStatus(object):
         self.disk_partitions = {}
         self.network = {}
 
+        included_partitions = set(['/', '/writable'])
         partitions = psutil.disk_partitions()
         for p in partitions:
-            if p.fstype == 'ext4':
+            if p.fstype == 'ext4' and p.mountpoint in included_partitions:
                 usage = psutil.disk_usage(p.mountpoint)
                 self.disk_partitions[p.mountpoint] = {
                     'total': usage.total,
