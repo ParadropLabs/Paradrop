@@ -16,11 +16,13 @@ settings.
 import itertools
 import os
 import re
+import subprocess
 import yaml
 
 from paradrop.base.output import out
 from paradrop.base import settings
 from paradrop.lib.config import devices as config_devices
+from paradrop.lib.utils import datastruct
 
 CHANNELS = [1, 6, 11]
 
@@ -94,6 +96,7 @@ def generateHostConfig(devices):
     }
     config['wifi'] = list()
     config['system'] = {
+        'autoUpdate': True,
         'onMissingWiFi': None
     }
 
@@ -204,6 +207,17 @@ def getHostConfig(update):
     update.new.setCache('hostConfig', config)
 
 
+def setAutoUpdate(enable):
+    if enable:
+        actions = ["enable", "start"]
+    else:
+        actions = ["disable", "stop"]
+
+    for action in actions:
+        cmd = ["systemctl", action, "snapd.refresh.timer"]
+        subprocess.call(cmd)
+
+
 def setHostConfig(update):
     """
     Write host configuration to persistent storage.
@@ -211,6 +225,7 @@ def setHostConfig(update):
     Read host configuration from hostConfig.
     """
     config = update.new.getCache('hostConfig')
+    setAutoUpdate(datastruct.getValue(config, "system.autoUpdate", True))
     save(config)
 
 
@@ -221,4 +236,5 @@ def revertHostConfig(update):
     Uses oldHostConfig cache entry.
     """
     config = update.new.getCache('oldHostConfig')
+    setAutoUpdate(datastruct.getValue(config, "system.autoUpdate", True))
     save(config)

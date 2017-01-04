@@ -66,13 +66,22 @@ DYNAMIC_NETWORK_POOL = "192.168.128.0/17"
 #
 # uci
 #
-UCI_CONFIG_DIR = RUNTIME_HOME_DIR +  "uci/config/"
-UCI_BACKUP_DIR = RUNTIME_HOME_DIR + "uci/config-backup.d/"
+# These should be in a persistent directory (not /var/run, /tmp, etc.) because
+# we expect to find them at startup.
+#
+UCI_CONFIG_DIR = CONFIG_HOME_DIR +  "uci/config/"
+UCI_BACKUP_DIR = CONFIG_HOME_DIR + "uci/config-backup.d/"
 
 #
 # local portal
 #
 PORTAL_SERVER_PORT = 80
+
+#
+# Local domain - this domain and subdomains will be resolved to the router so
+# that chutes and their users can access it by name.
+#
+LOCAL_DOMAIN = "home.paradrop.org"
 
 #
 # hostconfig
@@ -121,6 +130,9 @@ REGISTRY_PASSWORD = "zai7geigh0ujahQu"
 REJECT_DOWNGRADE = False
 
 DOCKER_BIN_DIR = "/usr/bin"
+
+# Interface (e.g. Unix socket) to use to access snapd API.
+SNAPD_INTERFACE = "/run/snapd.socket"
 
 ###############################################################################
 # Helper functions
@@ -181,8 +193,8 @@ def updatePaths(configHomeDir, runtimeHomeDir="/var/run/paradrop"):
     mod.CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "config")
     mod.HOST_CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "hostconfig.yaml")
     mod.DEFAULT_HOST_CONFIG_FILE = os.path.join(mod.CONFIG_HOME_DIR, "hostconfig.default.yaml")
-    mod.UCI_CONFIG_DIR = os.path.join(mod.RUNTIME_HOME_DIR, "uci/config.d/")
-    mod.UCI_BACKUP_DIR = os.path.join(mod.RUNTIME_HOME_DIR, "uci/config-backup.d/")
+    mod.UCI_CONFIG_DIR = os.path.join(mod.CONFIG_HOME_DIR, "uci/config.d/")
+    mod.UCI_BACKUP_DIR = os.path.join(mod.CONFIG_HOME_DIR, "uci/config-backup.d/")
     mod.PDCONFD_WRITE_DIR = os.path.join(mod.RUNTIME_HOME_DIR, 'pdconfd')
 
 

@@ -23,7 +23,7 @@ import tempfile
 import pycurl
 
 
-github_re = re.compile("(http|https)://github.com/([\w\-]+)/([\w\-]+)(\.git)?")
+github_re = re.compile("^(http|https)://github.com/([\w\-]+)/([\w\-\.]+?)(\.git)?$")
 general_url_re = re.compile("(http:\/\/|https:\/\/)(\S+)")
 hash_re = re.compile("^.*-([0-9a-f]+)$")
 

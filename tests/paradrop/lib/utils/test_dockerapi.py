@@ -25,7 +25,8 @@ def fake_update():
     return update
 
 
-def test_build_host_config():
+@patch('paradrop.lib.container.dockerapi.getBridgeGateway')
+def test_build_host_config(getBridgeGateway):
     """
     Test that the build_host_config function does it's job.
     """
@@ -37,6 +38,7 @@ def test_build_host_config():
 
     #Check that an empty host_config gives us certain default settings
     chute = MagicMock()
+    chute.host_config = {}
     res = dockerapi.build_host_config(chute, client)
     assert res['network_mode'] == 'bridge'
 
