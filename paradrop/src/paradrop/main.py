@@ -36,16 +36,17 @@ class Nexus(nexus.NexusBase):
         else:
             # Try to connect to the WAMP router (crossbar.io)
             try:
-                wamp_session = yield self.connect(WampSession)
+                yield self.connect(WampSession)
             except Exception:
                 out.warn('The router ID or password is invalid!')
             else:
-                wamp_session.set_update_fetcher(self.update_fetcher)
+                out.info('WAMP session is ready!')
+                self.session.set_update_fetcher(self.update_fetcher)
                 # Set up communication with pdserver.
                 # 1. Create a report of the current system state and send that.
                 # 2. Poll for a list of updates that should be applied.
-                sendStateReport()
-                self.update_fetcher.start_polling()
+                yield sendStateReport()
+                yield self.update_fetcher.start_polling()
 
 
     def onStop(self):

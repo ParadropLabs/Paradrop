@@ -184,8 +184,12 @@ class ConfigApi(object):
             PDServerRequest.resetToken()
             nexus.core.jwt_valid = False
 
-            def start_polling(session):
-                self.update_fetcher.start_polling()
+            def set_update_fetcher(session):
+                session.set_update_fetcher(self.update_fetcher)
+
+            @inlineCallbacks
+            def start_polling(result):
+                yield self.update_fetcher.start_polling()
 
             def send_response(result):
                 response = dict()
@@ -196,6 +200,8 @@ class ConfigApi(object):
                 return json.dumps(response)
 
             wampDeferred = nexus.core.connect(WampSession)
+            wampDeferred.addCallback(set_update_fetcher)
+
             httpDeferred = sendStateReport()
             httpDeferred.addCallback(start_polling)
 
