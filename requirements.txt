@@ -34,3 +34,4 @@ websocket-client==0.37.0
 zope.interface==4.2.0
 txmsgpackrpc==1.1
 txsockjs==1.2.2
+klein==16.12.0

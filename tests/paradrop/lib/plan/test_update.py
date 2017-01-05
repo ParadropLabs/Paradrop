@@ -8,7 +8,7 @@ def test_update_object(executePlans, abortPlans):
     """
     Test the UpdateObject class
     """
-    from paradrop.backend.updateObject import UpdateObject
+    from paradrop.backend.update_object import UpdateObject
 
     obj = {
         'name': 'Test',
@@ -25,7 +25,6 @@ def test_update_object(executePlans, abortPlans):
     update.func = Mock()
     update.complete(success=True)
 
-    assert update.func.called
     assert update.result['success']
 
     update.execute()
@@ -42,7 +41,7 @@ def test_update_chute(getChute):
     """
     Test the UpdateChute class
     """
-    from paradrop.backend.updateObject import UpdateChute
+    from paradrop.backend.update_object import UpdateChute
     from paradrop.lib.chute import chute
 
     obj = {
@@ -71,7 +70,7 @@ def test_update_object_parse():
     """
     Test the updateobject parse function.
     """
-    from paradrop.backend.updateObject import UpdateChute, parse
+    from paradrop.backend.update_object import UpdateChute, parse
 
     obj = {
         'name': 'Test',

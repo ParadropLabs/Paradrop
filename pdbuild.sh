@@ -55,8 +55,8 @@ build() {
 }
 
 test() {
-    virtualenv buildenv/env
-    nosetests
+    activate_virtual_env
+    nosetests -v
     deactivate_virtual_env
 }
 
