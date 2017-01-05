@@ -51,7 +51,7 @@ setup() {
 }
 
 build() {
-    (cd paradrop; snapcraft)     
+    (cd paradrop; snapcraft clean; snapcraft)
 }
 
 test() {
