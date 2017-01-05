@@ -6,12 +6,15 @@ import json
 import os
 from twisted.web.server import Site
 from twisted.web.static import File
+from twisted.web.proxy import ReverseProxyResource
 from twisted.internet import reactor
 from twisted.internet.endpoints import serverFromString
 from twisted.internet.protocol import Factory
 from klein import Klein
 from txsockjs.factory import SockJSResource
 
+from paradrop.base.exceptions import ParadropException
+from paradrop.lib.container import dockerapi
 from .information_api import InformationApi
 from .config_api import ConfigApi
 from .chute_api import ChuteApi
@@ -36,18 +39,27 @@ class HttpServer(object):
 
 
     @app.route('/api/v1/info', branch=True)
-    def information(self, request):
+    def api_information(self, request):
         return InformationApi().routes.resource()
 
 
     @app.route('/api/v1/config', branch=True)
-    def configuration(self, request):
+    def api_configuration(self, request):
         return ConfigApi(self.update_manager, self.update_fetcher).routes.resource()
 
 
     @app.route('/api/v1/chute', branch=True)
-    def chute(self, request):
+    def api_chute(self, request):
         return ChuteApi(self.update_manager).routes.resource()
+
+
+    @app.route('/chutes/<string:name>', branch=True)
+    def chutes(self, request, name):
+        try:
+            ip = dockerapi.getChuteIP(name)
+            return ReverseProxyResource(ip, 80, '/')
+        except ParadropException as error:
+            return str(error)
 
 
     @app.route('/sockjs/status', branch=True)
