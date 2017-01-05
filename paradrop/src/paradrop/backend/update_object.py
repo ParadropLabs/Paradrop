@@ -15,7 +15,7 @@ from paradrop.lib.utils.http import PDServerRequest
 
 
 # Fields that should be present in updates but not chute objects.
-UPDATE_SPECIFIC_ARGS = []
+UPDATE_SPECIFIC_ARGS = ['deferred']
 
 
 class UpdateObject(object):

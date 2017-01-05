@@ -19,8 +19,6 @@ class PDStorage(object):
         This class is designed to be implemented by other classes.
         Its purpose is to make whatever data is considered important persistant to disk.
 
-        This is done by providing a reactor so a "LoopingCall" can be utilized to save to disk.
-
         The implementer can override functions in order to implement this class:
             getAttr() : Get the attr we need to save to disk
             setAttr() : Set the attr we got from disk
@@ -36,7 +34,7 @@ class PDStorage(object):
 
         # Setup looping call to keep chute list perisistant only if reactor present
         if(self.reactor):
-            self.repeater = self.reactor.LoopingCall(self.saveToDisk)
+            self.repeater = LoopingCall(self.saveToDisk)
             self.repeater.start(self.saveTimer)
 
     def loadFromDisk(self):
