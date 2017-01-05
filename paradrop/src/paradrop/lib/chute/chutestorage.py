@@ -82,7 +82,7 @@ class ChuteStorage(PDStorage):
 
     def clearChuteStorage(self):
         ChuteStorage.chuteList.clear()
-        pdos.remove(settings.FC_CHUTESTORAGE_FILE)
+        self.saveToDisk()
 
     #
     # Functions we override to implement PDStorage Properly
