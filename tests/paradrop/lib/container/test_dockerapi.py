@@ -124,10 +124,10 @@ def test_prepare_environment(core):
     assert env['CUSTOM_VARIABLE'] == 42
 
 @patch('paradrop.lib.container.dockerapi.subprocess')
-@patch('paradrop.lib.container.dockerapi.getChutePID')
+@patch('paradrop.lib.container.dockerapi.ChuteContainer.getPID')
 @patch('paradrop.lib.container.dockerapi.call_in_netns')
 @patch('paradrop.lib.container.dockerapi.call_retry')
-def test_setup_net_interfaces(call_retry, call_in_netns, getChutePID, subprocess):
+def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
     chute = MagicMock()
     chute.name = 'test'
     chute.getCache.return_value = [{
@@ -146,6 +146,6 @@ def test_setup_net_interfaces(call_retry, call_in_netns, getChutePID, subprocess
 
     dockerapi.setup_net_interfaces(chute)
 
-    assert getChutePID.called
+    assert getPID.called
     assert call_in_netns.called
     assert call_retry.called

@@ -87,15 +87,18 @@ def reloadChutes():
                 out.warn('Failed to load config section for '
                          'unrecognized chute: {}'.format(failedChuteName))
 
-    #First stop all chutes that failed to bring up interfaces according to
-    #pdconfd then start successful ones #We do this because pdfcd needs to
-    #handle cleaning up uci files and then tell pdconfd
     updates = []
-    for ch in failedChutes:
-        updates.append(dict(updateClass='CHUTE', updateType='stop', name=ch,
-                       tok=timeint(), func=updateStatus,
-                       warning=FAILURE_WARNING))
 
+    # There was code here that looped over the failedChutes set and explicitly
+    # stopped those chutes.  However, if the cause of the failure was
+    # transient, those chutes would remain stopped until manually restarted.
+    # It seems better to leave them alone so that we try again next time the
+    # system reboots.
+    #
+    # TODO: We should still record the failure somewhere.
+
+    # Only try to restart the chutes that had no problems during pdconf
+    # initialization.
     for ch in okChutes:
         updates.append(dict(updateClass='CHUTE', updateType='restart', name=ch,
                        tok=timeint(), func=updateStatus))
@@ -111,8 +114,4 @@ def updateStatus(update):
     :type update: obj
     :returns: None
     """
-    chuteStore = chutestorage.ChuteStorage()
-    if not update.result.get('success'):
-        update.old.state = 'stopped'
-        update.old.warning = FAILURE_WARNING
-        chuteStore.saveChute(update.old)
+    pass

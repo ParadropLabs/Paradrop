@@ -18,9 +18,6 @@ def test_updateStatus(mockStore):
     assert not storage.saveChute.called
     update.result.get.return_value = False
     restart.updateStatus(update)
-    assert update.old.state == 'stopped'
-    assert update.old.warning == restart.FAILURE_WARNING
-    assert storage.saveChute.called
 
 @patch('paradrop.lib.chute.restart.timeint')
 @patch('paradrop.lib.chute.restart.out')
@@ -71,5 +68,4 @@ def test_reloadChutes(mockStore, mockSettings, mResources, mWait, mTime, mOut, m
     assert mOut.warn.call_count == 2
     assert 'Failed to load a system config section' in str(mOut.warn.call_args_list[0])
     assert 'Failed to load config section for unrecognized chute: ch2' in str(mOut.warn.call_args_list[1])
-    assert dict(updateClass='CHUTE', updateType='stop', name=ch1.name, tok=mTimeint.return_value, func=restart.updateStatus, warning=restart.FAILURE_WARNING) in ret
     assert dict(updateClass='CHUTE', updateType='restart', name=ch3.name, tok=mTimeint.return_value, func=restart.updateStatus) in ret

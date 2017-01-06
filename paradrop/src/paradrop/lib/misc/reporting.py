@@ -17,6 +17,7 @@ from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.lib.chute import chutestorage
 from paradrop.lib.config import devices, hostconfig, resource
+from paradrop.lib.container.chutecontainer import ChuteContainer
 from paradrop.lib.misc.snapd import SnapdClient
 from paradrop.lib.utils.http import PDServerRequest
 
@@ -87,9 +88,12 @@ class StateReportBuilder(object):
         allocation = resource.computeResourceAllocation(chutes)
 
         for chute in chutes:
+            container = ChuteContainer(chute.name)
+
             report.chutes.append({
                 'name': chute.name,
-                'state': chute.state,
+                'desired': chute.state,
+                'state': container.getStatus(),
                 'warning': chute.warning,
                 'version': getattr(chute, 'version', None),
                 'allocation': allocation.get(chute.name, None),

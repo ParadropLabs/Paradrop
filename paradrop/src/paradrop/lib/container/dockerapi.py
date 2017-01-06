@@ -16,9 +16,9 @@ import subprocess
 import time
 
 from paradrop.base.output import out
-from paradrop.base.exceptions import ChuteNotFound, ChuteNotRunning
 from paradrop.base import nexus, settings
 from paradrop.lib.chute import chutestorage
+from paradrop.lib.container.chutecontainer import ChuteContainer
 from paradrop.lib.config.devices import getWirelessPhyName
 from paradrop.lib.misc import resopt
 from paradrop.lib.utils import pdos, pdosq
@@ -386,6 +386,26 @@ def restartChute(update):
 
     setup_net_interfaces(update.new)
 
+
+def getBridgeGateway():
+    """
+    Look up the gateway IP address for the docker bridge network.
+
+    This is the docker0 IP address; it is the IP address of the host from the
+    chute's perspective.
+    """
+    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    info = client.inspect_network("bridge")
+    for config in info['IPAM']['Config']:
+        if 'Gateway' in config:
+            return config['Gateway']
+
+    # Fall back to a default if we could not find it.  This address will work
+    # in most places unless Docker changes to use a different address.
+    out.warn('Could not find bridge gateway, using default')
+    return '172.17.0.1'
+
+
 def build_host_config(chute, client=None):
     """
     Build the host_config dict for a docker container based on the passed in update.
@@ -412,6 +432,9 @@ def build_host_config(chute, client=None):
     if network_mode != 'host':
         extra_hosts[settings.LOCAL_DOMAIN] = getBridgeGateway()
 
+    # restart_policy: set to 'no' to prevent Docker from starting containers
+    # automatically on system boot.  Paradrop will set up the host environment
+    # first, then restart the containers.
     host_conf = client.create_host_config(
         #TO support
         port_bindings=config.get('port_bindings'),
@@ -420,7 +443,8 @@ def build_host_config(chute, client=None):
         extra_hosts=extra_hosts,
         binds=volumes,
         #links=config.get('links'),
-        restart_policy={'MaximumRetryCount': 5, 'Name': 'on-failure'},
+        #restart_policy={'MaximumRetryCount': 5, 'Name': 'on-failure'},
+        restart_policy={'Name': 'no'},
         devices=config.get('devices', []),
         lxc_conf={},
         publish_all_ports=False,
@@ -477,7 +501,8 @@ def setup_net_interfaces(chute):
         env['PATH'] += ":" + settings.DOCKER_BIN_DIR
 
     # We need the chute's PID in order to work with Linux namespaces.
-    pid = getChutePID(chute.name)
+    container = ChuteContainer(chute.name)
+    pid = container.getPID()
 
     for iface in interfaces:
         if iface.get('netType') == 'wifi':
@@ -539,7 +564,8 @@ def call_in_netns(chute, env, command):
     command: should be a list of strings.
     """
     # We need the chute's PID in order to work with Linux namespaces.
-    pid = getChutePID(chute.name)
+    container = ChuteContainer(chute.name)
+    pid = container.getPID()
 
     # Set up netns directory and link so that 'ip netns' command works.
     pdosq.makedirs('/var/run/netns')
@@ -588,76 +614,12 @@ def prepare_environment(chute):
     return env
 
 
-def getChuteContainerID(name):
-    """
-    Look up a container by name and return its ID.
-    """
-    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-    try:
-        info = client.inspect_container(name)
-    except docker.errors.NotFound:
-        raise ChuteNotFound("The chute could not be found.")
-
-    return info['Id']
-
-
-def getBridgeGateway():
-    """
-    Look up the gateway IP address for the docker bridge network.
-
-    This is the docker0 IP address; it is the IP address of the host from the
-    chute's perspective.
-    """
-    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-    info = client.inspect_network("bridge")
-    for config in info['IPAM']['Config']:
-        if 'Gateway' in config:
-            return config['Gateway']
-
-    # Fall back to a default if we could not find it.  This address will work
-    # in most places unless Docker changes to use a different address.
-    out.warn('Could not find bridge gateway, using default')
-    return '172.17.0.1'
-
-
-def getChuteIP(name):
-    """
-    Look up a container by name and return its IP address.
-    """
-    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-    try:
-        info = client.inspect_container(name)
-    except docker.errors.NotFound:
-        raise ChuteNotFound("The chute could not be found.")
-
-    if not info['State']['Running']:
-        raise ChuteNotRunning("The chute is not running.")
-
-    return info['NetworkSettings']['IPAddress']
-
-
-def getChutePID(name):
-    """
-    Look up a container by name and return its PID.
-    """
-    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-    try:
-        info = client.inspect_container(name)
-    except docker.errors.NotFound:
-        raise ChuteNotFound("The chute could not be found.")
-
-    if not info['State']['Running']:
-        raise ChuteNotRunning("The chute is not running.")
-
-    return info['State']['Pid']
-
-
 def _setResourceAllocation(allocation):
     client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-    for chute, resources in allocation.iteritems():
+    for chutename, resources in allocation.iteritems():
         out.info("Update chute {} set cpu_shares={}\n".format(
-            chute, resources['cpu_shares']))
-        client.update_container(container=chute,
+            chutename, resources['cpu_shares']))
+        client.update_container(container=chutename,
                 cpu_shares=resources['cpu_shares'])
 
         # Using class id 1:1 for prioritized, 1:3 for best effort.
@@ -669,8 +631,9 @@ def _setResourceAllocation(allocation):
         else:
             classid = "0x10003"
 
+        container = ChuteContainer(chutename)
         try:
-            container_id = getChuteContainerID(chute)
+            container_id = container.getID()
             fname = "/sys/fs/cgroup/net_cls/docker/{}/net_cls.classid".format(container_id)
             with open(fname, "w") as output:
                 output.write(classid)
