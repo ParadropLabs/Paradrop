@@ -5,11 +5,12 @@
 
 import time
 import threading
-from twisted.internet import defer
+from twisted.internet import defer, threads
 
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.base import settings
+from paradrop.lib.misc import reporting
 from paradrop.lib.misc.procmon import dockerMonitor
 from paradrop.lib.chute.restart import reloadChutes
 
@@ -126,6 +127,13 @@ class UpdateManager:
                 continue
 
             self._perform_update(updateObj)
+
+            # Apply a batch of updates and when the queue is empty, send a
+            # state report.  We're not reacquiring the mutex here because the
+            # worst case is we send out an extra state update.
+            if len(self.updateQueue) == 0:
+                threads.blockingCallFromThread(self.reactor,
+                        reporting.sendStateReport)
 
     def _perform_update(self, updateObj):
         """
