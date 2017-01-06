@@ -8,6 +8,7 @@ from paradrop.base.pdutils import timeint, str2json
 from paradrop.lib.config import hostconfig
 from paradrop.lib.misc.reporting import sendStateReport
 from paradrop.lib.utils.http import PDServerRequest
+from paradrop.confd import client as pdconf_client
 
 from .wamp_session import WampSession
 from . import cors
@@ -250,3 +251,14 @@ class ConfigApi(object):
                       tok=timeint())
         result = yield self.update_manager.add_update(**update)
         returnValue(json.dumps(result))
+
+
+    @routes.route('/pdconf', methods=['GET'])
+    def pdconf(self, request):
+        """
+        Returns a list of configuration sections seen by pdconf and whether
+        they were successfully applied.  This can be useful for debugging.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+        return pdconf_client.systemStatus()

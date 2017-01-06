@@ -25,6 +25,13 @@ def reload(path, adapter=''):
     return main.configManager.loadConfig(path)
 
 
+def systemStatus(adapter=''):
+    """
+    Return system status string from pdconf.
+    """
+    return main.configManager.statusString()
+
+
 def waitSystemUp(adapter=''):
     """
     Wait for the configuration daemon to finish its first load.
