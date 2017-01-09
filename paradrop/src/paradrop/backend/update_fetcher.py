@@ -117,10 +117,7 @@ class UpdateFetcher(object):
             update = yield self.update_manager.add_update(**update)
             yield self._update_complete(update)
 
-        out.info("All updates complete, sending state report to server...")
-        yield sendStateReport()
 
-    
     def _update_complete(self, update):
         """
         Internal: callback after an update operation has been completed
