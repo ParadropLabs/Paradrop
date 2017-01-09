@@ -14,7 +14,7 @@ from klein import Klein
 from txsockjs.factory import SockJSResource
 
 from paradrop.base.exceptions import ParadropException
-from paradrop.lib.container import dockerapi
+from paradrop.lib.container.chutecontainer import ChuteContainer
 from .information_api import InformationApi
 from .config_api import ConfigApi
 from .chute_api import ChuteApi
@@ -56,7 +56,8 @@ class HttpServer(object):
     @app.route('/chutes/<string:name>', branch=True)
     def chutes(self, request, name):
         try:
-            ip = dockerapi.getChuteIP(name)
+            container = ChuteContainer(name)
+            ip = container.getIP()
             return ReverseProxyResource(ip, 80, '/')
         except ParadropException as error:
             return str(error)

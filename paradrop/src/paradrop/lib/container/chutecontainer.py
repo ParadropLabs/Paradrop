@@ -23,6 +23,21 @@ class ChuteContainer(object):
 
         return info['Id']
 
+    def getIP(self):
+        """
+        Look up the IP address assigned to the container.
+        """
+        client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+        try:
+            info = client.inspect_container(self.name)
+        except docker.errors.NotFound:
+            raise ChuteNotFound("The chute could not be found.")
+
+        if not info['State']['Running']:
+            raise ChuteNotRunning("The chute is not running.")
+
+        return info['NetworkSettings']['IPAddress']
+
     def getPID(self):
         """
         Look up the PID of the container, if running.
