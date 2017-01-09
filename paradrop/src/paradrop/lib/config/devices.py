@@ -179,16 +179,21 @@ def listSystemDevices():
 
         devices.append(dev)
 
-    for phy in pdos.listdir(IEEE80211_DIR):
-        if phy not in detectedWifi:
-            dev = {
-                'name': phy,
-                'type': 'wifi',
-                'mac': getPhyMACAddress(phy),
-                'phy': phy
-            }
-            detectedWifi.add(phy)
-            devices.append(dev)
+    try:
+        for phy in pdos.listdir(IEEE80211_DIR):
+            if phy not in detectedWifi:
+                dev = {
+                    'name': phy,
+                    'type': 'wifi',
+                    'mac': getPhyMACAddress(phy),
+                    'phy': phy
+                }
+                detectedWifi.add(phy)
+                devices.append(dev)
+    except OSError:
+        # If we get an error here, it probably just means there are no WiFi
+        # devices.
+        pass
 
     return devices
 
