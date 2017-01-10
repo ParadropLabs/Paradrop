@@ -54,10 +54,11 @@ class ConfigDnsmasq(ConfigObject):
         else:
             interfaces = self.interface
 
-        if self.leasefile is None:
-            self.leasefile = "{}/dnsmasq-{}.leases".format(
+        self.__leasefile = self.leasefile
+        if self.__leasefile is None:
+            self.__leasefile = "{}/dnsmasq-{}.leases".format(
                 self.manager.writeDir, visibleName)
-        pdosq.makedirs(os.path.dirname(self.leasefile))
+        pdosq.makedirs(os.path.dirname(self.__leasefile))
 
         pidFile = "{}/dnsmasq-{}.pid".format(
             self.manager.writeDir, visibleName)
@@ -75,7 +76,7 @@ class ConfigDnsmasq(ConfigObject):
             outputFile.write("# Section: {}\n".format(str(self)))
             outputFile.write("#" * 80 + "\n")
             outputFile.write("\n")
-            outputFile.write("dhcp-leasefile={}\n".format(self.leasefile))
+            outputFile.write("dhcp-leasefile={}\n".format(self.__leasefile))
 
             if self.domain:
                 outputFile.write("domain={}\n".format(self.domain))

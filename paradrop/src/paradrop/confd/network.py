@@ -136,8 +136,8 @@ class ConfigInterface(ConfigObject):
         if self.proto == "static":
             if new.ipaddr != self.ipaddr or new.netmask != self.netmask:
                 cmd = ["ip", "addr", "change",
-                       "{}/{}".format(self.ipaddr, self.netmask),
-                       "dev", self.config_ifname]
+                       "{}/{}".format(new.ipaddr, new.netmask),
+                       "dev", new.config_ifname]
                 commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
             if new.gateway != self.gateway:
@@ -180,6 +180,14 @@ class ConfigInterface(ConfigObject):
                            "dev", self.config_ifname]
                     commands.append((-self.PRIO_CONFIG_IFACE,
                         Command(cmd, self)))
+
+            # Delete the old IP address because "ip addr change" seems to leave
+            # it in place.
+            if new.ipaddr != self.ipaddr or new.netmask != self.netmask:
+                cmd = ["ip", "addr", "del",
+                       "{}/{}".format(self.ipaddr, self.netmask),
+                       "dev", self.config_ifname]
+                commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         if self.type == "bridge":
             old_ifnames = set(self.ifname)
