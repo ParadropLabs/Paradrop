@@ -32,12 +32,12 @@ def getSystemPath(filename):
 def stringify(a):
     b = {}
     #print("%s\n" % a)
-    if (type(a) == str):
+    if isinstance(a, basestring):
         return a
     for k, v in a.iteritems():
-        if type(v) is dict:
+        if isinstance(v, dict):
             b[k] = stringify(v)
-        elif type(v) is list:
+        elif isinstance(v, list):
             b[k] = [stringify(v1) for v1 in v]
         else:
             b[k] = str(v)

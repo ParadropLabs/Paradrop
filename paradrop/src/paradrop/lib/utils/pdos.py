@@ -132,9 +132,9 @@ def writeFile(filename, line, mode="a"):
     """Adds the following cfg (either str or list(str)) to this Chute's current
         config file (just stored locally, not written to file."""
     try:
-        if(type(line) is list):
+        if isinstance(line, list):
             data = "\n".join(line) + "\n"
-        elif(type(line) is str):
+        elif isinstance(line, basestring):
             data = "%s\n" % line
         else:
             out.err("Bad line provided for %s\n" % filename)
