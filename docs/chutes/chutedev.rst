@@ -13,6 +13,7 @@ Contents:
    gettingstarted
    development
    deployment
+   nucinstallation
 
 .. These sections are out of date.
    tutorials

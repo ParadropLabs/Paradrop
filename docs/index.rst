@@ -12,8 +12,6 @@
    arch/architecture
    issues
    faq
-   api/modules
-
 
 
 Paradrop
