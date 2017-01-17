@@ -28,6 +28,10 @@ EXCLUDE_IFACES = set(["lo"])
 VIF_MARKERS = [".", "veth"]
 
 
+# Matches various ways of specifying WiFi devices (phy0, wlan0, wifi0).
+WIFI_DEV_REF = re.compile("([a-z]+)(\d+)")
+
+
 def isVirtual(ifname):
     """
     Test if an interface is a virtual one.
@@ -102,7 +106,7 @@ def getMACAddress(ifname):
 
 
 def getPhyMACAddress(phy):
-    path = "{}/{}/address".format(IEEE80211_DIR, phy)
+    path = "{}/{}/macaddress".format(IEEE80211_DIR, phy)
     return readSysFile(path)
 
 
@@ -166,14 +170,8 @@ def listSystemDevices():
         if isWAN(ifname):
             dev['type'] = 'wan'
         elif isWireless(ifname):
-            dev['type'] = 'wifi'
-            dev['phy'] = getWirelessPhyName(ifname)
-            dev['ifname'] = ifname
-
-            # For wireless devices, use the phy name because it is more stable.
-            dev['name'] = dev['phy']
-
-            detectedWifi.add(dev['phy'])
+            # Detect wireless devices separately.
+            continue
         else:
             dev['type'] = 'lan'
 
@@ -182,14 +180,15 @@ def listSystemDevices():
     try:
         for phy in pdos.listdir(IEEE80211_DIR):
             if phy not in detectedWifi:
-                dev = {
-                    'name': phy,
+                mac = getPhyMACAddress(phy)
+                devices.append({
+                    'name': "wifi{}".format(mac.replace(':', '')),
                     'type': 'wifi',
-                    'mac': getPhyMACAddress(phy),
+                    'mac': mac,
                     'phy': phy
-                }
+                })
+
                 detectedWifi.add(phy)
-                devices.append(dev)
     except OSError:
         # If we get an error here, it probably just means there are no WiFi
         # devices.
@@ -248,23 +247,19 @@ def getSystemDevices(update):
 
 def readHostconfigWifi(wifi, wirelessSections):
     for dev in wifi:
-        # Old hostconfig blocks contained an 'interface'.  This is
-        # deprecated in favor of 'phy' or 'ifname', which correspond to UCI
-        # options.
-        if 'phy' in dev:
-            name = dev['phy']
-        elif 'ifname' in dev:
-            name = getWirelessPhyName(dev['ifname'])
+        if 'macaddr' in dev:
+            mac = dev['macaddr']
+        elif 'phy' in dev:
+            mac = getPhyMACAddress(dev['phy'])
         elif 'interface' in dev:
-            # deprecated
-            out.warn("Use of 'interface' field in 'wifi' section is deprecated.")
-            name = getWirelessPhyName(dev['interface'])
+            phy = getWirelessPhyName(dev['interface'])
+            mac = getPhyMACAddress(phy)
         else:
-            raise Exception("Missing phy/ifname field in hostconfig.")
+            raise Exception("Missing MAC address in wifi device definition.")
 
         config = {
             "type": "wifi-device",
-            "name": name
+            "name": "wifi{}".format(mac.replace(":", ""))
         }
 
         # We want to copy over all fields except interface.
@@ -279,18 +274,51 @@ def readHostconfigWifi(wifi, wirelessSections):
         wirelessSections.append((config, options))
 
 
+def resolveWirelessDevRef(name, wirelessSections):
+    """
+    Resolve a WiFi device reference (wlan0, phy0, 00:11:22:33:44:55, etc.) to
+    the name of the device section as used by pdconf (wifiXX).
+
+    Unambiguous naming is preferred going forward (either wifiXX or the MAC
+    address), but to maintain backward compatibility, we attempt to resolve
+    either wlanX or phyX to the MAC address of the device that currently uses
+    that name.
+    """
+    for config, options in wirelessSections:
+        if config['type'] != 'wifi-device':
+            continue
+
+        if config['name'] == name:
+            return name
+        elif options['macaddr'] == name:
+            return config['name']
+
+    # Substitute (e.g. wlan0 -> phy0).
+    match = WIFI_DEV_REF.match(name)
+    phy = "phy{}".format(match.group(2))
+
+    mac = getPhyMACAddress(phy)
+    new_name = "wifi{}".format(mac.replace(":", ""))
+
+    out.warn("Wireless device reference {} resolved to {}, "
+            "consider using MAC address in configuration.".format(name, new_name))
+    return new_name
+
+
 def readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections):
     for iface in wifiInterfaces:
         config = {"type": "wifi-iface"}
 
         options = iface.copy()
 
-        # Old hostconfig blocks used interface name for device.
-        # Translate those to phy names, which are more stable.
-        phy = getWirelessPhyName(options['device'])
-        if phy is not None:
-            out.warn("Use of interface name ({}) instead of device ({}) in wifi-interface section is deprecated.".format(options['device'], phy))
-            options['device'] = phy
+        # There are various ways the host configuration file may have specified
+        # the WiFi device (wlan0, phy0, wifi0, 00:11:22:33:44:55, etc.).  Try
+        # to resolve that to a device name that pdconf will recognize.
+        try:
+            device = resolveWirelessDevRef(options['device'], wirelessSections)
+            options['device'] = device
+        except:
+            pass
 
         wirelessSections.append((config, options))
 
@@ -422,33 +450,6 @@ def setSystemDevices(update):
             "enabled": 0
         }
         qosSections.append((config, options))
-
-    if 'wifi' in hostConfig:
-        for dev in hostConfig['wifi']:
-            if 'phy' in dev:
-                name = dev['phy']
-            elif 'ifname' in dev:
-                name = getWirelessPhyName(dev['ifname'])
-            elif 'interface' in dev:
-                # deprecated
-                out.warn("Use of 'interface' field in 'wifi' section is deprecated.")
-                name = getWirelessPhyName(dev['interface'])
-            else:
-                raise Exception("Missing phy/ifname field in hostconfig.")
-
-            config = {
-                "type": "wifi-device",
-                "name": name
-            }
-
-            # We want to copy over all fields except interface.
-            options = dev.copy()
-            if 'interface' in options:
-                del options['interface']
-
-            # If type is missing, then add it because it is a required field.
-            if 'type' not in options:
-                options['type'] = 'auto'
 
     wifi = hostConfig.get('wifi', [])
     readHostconfigWifi(wifi, wirelessSections)

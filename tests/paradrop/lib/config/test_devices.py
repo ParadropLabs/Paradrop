@@ -4,14 +4,16 @@ from mock import MagicMock, Mock, patch
 from paradrop.lib.config import devices
 
 
+@patch("paradrop.lib.config.devices.getPhyMACAddress")
 @patch("paradrop.lib.config.devices.getWirelessPhyName")
-def test_readHostconfigWifi(getWirelessPhyName):
+def test_readHostconfigWifi(getWirelessPhyName, getPhyMACAddress):
     wifi = [{
         "interface": "wlan1",
         "channel": 1
     }]
 
     getWirelessPhyName.side_effect = lambda x: ("phy." + x)
+    getPhyMACAddress.returns = "00:00:00:00:00:00"
 
     wirelessSections = list()
     devices.readHostconfigWifi(wifi, wirelessSections)
@@ -19,7 +21,7 @@ def test_readHostconfigWifi(getWirelessPhyName):
     assert len(wirelessSections) == 1
     config, options = wirelessSections[0]
     assert config['type'] == 'wifi-device'
-    assert config['name'] == 'phy.wlan1'
+    assert config['name'].startswith('wifi')
 
     wifi = [{
         "phy": "phy0",
@@ -32,13 +34,13 @@ def test_readHostconfigWifi(getWirelessPhyName):
     assert len(wirelessSections) == 1
     config, options = wirelessSections[0]
     assert config['type'] == 'wifi-device'
-    assert config['name'] == 'phy0'
+    assert config['name'].startswith('wifi')
 
 
 @patch("paradrop.lib.config.devices.getWirelessPhyName")
 def test_readHostconfigWifiInterfaces(getWirelessPhyName):
     wifiInterfaces = [{
-        "device": "wlan1",
+        "device": "wifi000000000000",
         "ifname": "wlan1",
         "ssid": "paradrop",
         "mode": "ap",
@@ -53,4 +55,4 @@ def test_readHostconfigWifiInterfaces(getWirelessPhyName):
     assert len(wirelessSections) == 1
     config, options = wirelessSections[0]
     assert config['type'] == 'wifi-iface'
-    assert options['device'] == 'phy.wlan1'
+    assert options['device'] == 'wifi000000000000'

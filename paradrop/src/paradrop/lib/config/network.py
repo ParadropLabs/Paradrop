@@ -87,7 +87,7 @@ def chooseExternalIntf(update, iface):
     # the udev persistent net naming rules, which are hard-coded to certain
     # typical strings such as "eth*" and "wlan*" but not "veth*" or
     # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
-    prefix = "v" + iface['device'] + "."
+    prefix = "vwlan"
 
     # This name should be unique on the system, so the hash is very unlikely to
     # collide with anything.  It still can collide, but this will be our first

@@ -95,6 +95,7 @@ def generateHostConfig(devices):
         }
     }
     config['wifi'] = list()
+    config['wifi-interfaces'] = list()
     config['system'] = {
         'autoUpdate': True,
         'onMissingWiFi': None
@@ -130,17 +131,27 @@ def generateHostConfig(devices):
         config['lan']['interfaces'].append(lanDev['name'])
 
     for wifiDev in devices['wifi']:
-        newWifi = {
-            'phy': wifiDev['name'],
-            'channel': channels.next()
-        }
+        config['wifi'].append({
+            'macaddr': wifiDev['mac'],
+            'channel': channels.next(),
+            'hwmode': '11g',
+            'htmode': 'NONE'
+        })
 
-        config['wifi'].append(newWifi)
-
-    # If we detect WiFi devices now, configure the system to warn if they are
-    # missing later.  Production systems should be configured with "reboot".
     if len(config['wifi']) > 0:
+        # If we detect WiFi devices now, configure the system to warn if they
+        # are missing later.  Production systems should be configured with
+        # "reboot".
         config['system']['onMissingWiFi'] = "warn"
+
+        # Add a default WiFi AP for usability.
+        config['wifi-interfaces'].append({
+            'device': devices['wifi'][0]['mac'],
+            'ssid': 'ParaDrop',
+            'mode': 'ap',
+            'network': 'lan',
+            'ifname': 'hwlan0'
+        })
 
     return config
 

@@ -13,6 +13,9 @@ from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand
 
 
+IEEE80211_DIR = "/sys/class/ieee80211"
+
+
 # Map hardware mode strings from UCI file to hostapd.conf format.
 HOSTAPD_HWMODE = {
     '11b': 'b',
@@ -110,6 +113,19 @@ VHT160_CENTER_INDEX = {
 }
 
 
+def getPhyMACAddress(phy):
+    path = "{}/{}/macaddress".format(IEEE80211_DIR, phy)
+    with open(path, 'r') as source:
+        return source.read().strip()
+
+
+def getPhyFromMAC(mac):
+    for phy in os.listdir(IEEE80211_DIR):
+        if getPhyMACAddress(phy) == mac:
+            return phy
+    raise Exception("No wireless device with MAC address {}".format(mac))
+
+
 def isHexString(data):
     """
     Test if a string contains only hex digits.
@@ -148,6 +164,11 @@ class ConfigWifiDevice(ConfigObject):
         ConfigOption(name="tx_stbc_2by1", type=bool),
         ConfigOption(name="rx_stbc", type=int)
     ]
+
+    def setup(self):
+        self._phy = self.phy
+        if self._phy is None and self.macaddr is not None:
+            self._phy = getPhyFromMAC(self.macaddr)
 
 
 class ConfigWifiIface(ConfigObject):
@@ -195,8 +216,6 @@ class ConfigWifiIface(ConfigObject):
         # Look up the interface section.
         interface = self.lookup(allConfigs, "network", "interface", self.network)
 
-        self.isVirtual = True
-
         # Make this private variable because the real option variable (ifname)
         # should really be read-only.  Changing it breaks our equality checks.
         self._ifname = self.ifname
@@ -204,45 +223,27 @@ class ConfigWifiIface(ConfigObject):
         # Type to pass to iw command, e.g. '__ap'.
         iw_type = IW_IFACE_TYPE[self.mode]
 
-        if self.ifname == wifiDevice.name:
-            # This interface is using the physical device directly (eg. wlan0).
-            # This case is when the configuration specified the ifname option.
-            self.isVirtual = False
-
-            cmd = ["iw", "dev", self.ifname, "set", "type", iw_type]
-            commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
-
-        elif interface.config_ifname == wifiDevice.name:
-            # This interface is using the physical device directly (eg. wlan0).
-            # TODO: Remove this case if it is not used.
-            self._ifname = interface.config_ifname
-            self.isVirtual = False
-
-            cmd = ["iw", "dev", interface.config_ifname, "set", "type", iw_type]
-            commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
-
-        elif self.ifname is None:
+        if self.ifname is None:
             # This interface is a virtual one (eg. foo.wlan0 using wlan0).  Get
             # the virtual interface name from the network it's attached to.
             # This is unusual behavior which may be dropped in favor of
             # generating a name here.
             self._ifname = interface.config_ifname
 
-        if self.isVirtual:
-            # Try removing interface first in case it already exists.
-            cmd = ["iw", "dev", self._ifname, "del"]
-            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
+        # Try removing interface first in case it already exists.
+        cmd = ["iw", "dev", self._ifname, "del"]
+        commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
 
-            # Command to create the virtual interface.
-            cmd = ["iw", "phy", wifiDevice.name, "interface", "add",
-                   self._ifname, "type", iw_type]
-            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
+        # Command to create the virtual interface.
+        cmd = ["iw", "phy", wifiDevice._phy, "interface", "add",
+               self._ifname, "type", iw_type]
+        commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
-            # Assign a random MAC address to avoid conflict with other
-            # interfaces using the same device.
-            cmd = ["ip", "link", "set", "dev", self._ifname,
-                    "address", self.getRandomMAC()]
-            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
+        # Assign a random MAC address to avoid conflict with other
+        # interfaces using the same device.
+        cmd = ["ip", "link", "set", "dev", self._ifname,
+                "address", self.getRandomMAC()]
+        commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         if self.mode == "ap":
             confFile = self.makeHostapdConf(wifiDevice, interface)
@@ -272,9 +273,8 @@ class ConfigWifiIface(ConfigObject):
                 KillCommand(self.pidFile, self)))
 
         # Delete our virtual interface.
-        if self.isVirtual:
-            cmd = ["iw", "dev", self._ifname, "del"]
-            commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
+        cmd = ["iw", "dev", self._ifname, "del"]
+        commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         return commands
 
