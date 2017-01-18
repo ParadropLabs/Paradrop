@@ -23,6 +23,9 @@ import tempfile
 import pycurl
 
 
+from paradrop.base import settings
+
+
 github_re = re.compile("^(http|https)://github.com/([\w\-]+)/([\w\-\.]+?)(\.git)?$")
 general_url_re = re.compile("(http:\/\/|https:\/\/)(\S+)")
 hash_re = re.compile("^.*-([0-9a-f]+)$")
@@ -79,6 +82,8 @@ class Downloader(object):
                 raise Exception("Archive contains a forbidden path: {}".format(path))
             elif path.startswith("/"):
                 raise Exception("Archive contains an absolute path: {}".format(path))
+            elif path.endswith(settings.CHUTE_CONFIG_FILE):
+                runPath = path
             elif path.endswith("Dockerfile"):
                 runPath = path
             elif self.commitHash is None:
@@ -89,7 +94,8 @@ class Downloader(object):
         tar.extractall(path=self.workDir)
 
         if runPath is None:
-            raise Exception("Repository does not contain a Dockerfile")
+            raise Exception("Repository does not contain {} or Dockerfile".format(
+                settings.CHUTE_CONFIG_FILE))
 
         relRunDir = os.path.dirname(runPath)
         runDir = os.path.join(self.workDir, relRunDir)

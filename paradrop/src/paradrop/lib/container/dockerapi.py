@@ -10,10 +10,14 @@ Functions associated with deploying and cleaning up docker containers.
 import docker
 import json
 import os
+import platform
 import random
 import re
 import subprocess
 import time
+import yaml
+
+from io import BytesIO
 
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
@@ -139,16 +143,16 @@ def buildImage(update):
             update.progress("Pull failed, attempting a local build.")
 
     if hasattr(update, 'dockerfile'):
-        buildSuccess = _buildImage(update, client, rm=True, tag=repo,
-                fileobj=update.dockerfile)
+        buildSuccess = _buildImage(update, client, True,
+                rm=True, tag=repo, fileobj=update.dockerfile)
     elif hasattr(update, 'download'):
         # download field should be an object with at least 'url' but may also
         # contain 'user' and 'secret' for authentication.
         download_args = update.download
         with downloader(**download_args) as dl:
             workDir, meta = dl.fetch()
-            buildSuccess = _buildImage(update, client, rm=True, tag=repo,
-                    path=workDir)
+            buildSuccess = _buildImage(update, client, False,
+                    rm=True, tag=repo, path=workDir)
     else:
         raise Exception("No Dockerfile or download location supplied.")
 
@@ -157,12 +161,71 @@ def buildImage(update):
         raise Exception("Building docker image failed; check your Dockerfile for errors.")
 
 
-def _buildImage(update, client, **buildArgs):
+def generateDockerfile(conf):
+    # Required fields for generating Dockerfile.
+    # Developer tells us what language pack to use and what command to run.
+    language = conf['use']
+    command = conf['command']
+
+    # Optional fields.
+    image_source = conf.get('image_source', 'paradrop')
+    image_version = conf.get('image_version', 'latest')
+
+    # Example base image: paradrop/node-x86_64:latest
+    from_image = "{}/{}-{}:{}".format(image_source, language,
+            platform.machine(), image_version)
+
+    if isinstance(command, basestring):
+        cmd_string = command
+    elif isinstance(command, list):
+        cmd_string = "[{}]".format(",".join(
+            "\"{}\"".format(v) for v in command))
+    else:
+        raise Exception("command must be either a string or list of strings")
+
+    return "FROM {}\nCMD {}\n".format(from_image, cmd_string)
+
+
+def _buildImage(update, client, inline, **buildArgs):
     """
     Build the Docker image and monitor progress (worker function).
 
+    inline: whether Dockerfile is specified as a string or a file in the
+    working path.
+
     Returns True on success, False on failure.
     """
+    # Look for additional build information, either as a dictionary in the
+    # update object or a YAML file in the checkout directory.
+    #
+    # If build_conf is specified in both places, we'll let values from
+    # the update object override the file.
+    build_conf = {}
+    if 'path' in buildArgs:
+        conf_path = os.path.join(buildArgs['path'], settings.CHUTE_CONFIG_FILE)
+        try:
+            with open(conf_path, 'r') as source:
+                build_conf = yaml.safe_load(source)
+        except:
+            pass
+    if hasattr(update, 'build'):
+        build_conf.update(update.build)
+
+    # If this is a light chute, generate a Dockerfile.
+    chute_type = build_conf.get('type', 'heavy')
+    if chute_type == 'light':
+        buildArgs['pull'] = True
+        dockerfile = generateDockerfile(build_conf)
+
+        if inline:
+            # Pass the dockerfile string directly.
+            buildArgs['fileobj'] = BytesIO(dockerfile.encode("utf-8"))
+        else:
+            # Write it out to a file in the working directory.
+            path = os.path.join(buildArgs['path'], "Dockerfile")
+            with open(path, 'w') as output:
+                output.write(dockerfile)
+
     output = client.build(**buildArgs)
 
     buildSuccess = True

@@ -83,7 +83,7 @@ def test_buildImage_worker():
         '{"message": "Message3   "}'
     ]
 
-    res = dockerapi._buildImage(update, client)
+    res = dockerapi._buildImage(update, client, True)
     assert res is True
 
     # The second message should be suppressed as well as the whitespace after Message3.
