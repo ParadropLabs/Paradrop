@@ -238,7 +238,7 @@ def _buildImage(update, client, inline, **buildArgs):
             if isinstance(value, dict):
                 continue
             else:
-                msg = str(value).rstrip()
+                msg = value.rstrip()
                 if len(msg) > 0 and suppress_re.match(msg) is None:
                     update.progress(msg)
 
