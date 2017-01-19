@@ -66,7 +66,7 @@ class WampSession(BaseSession):
 
     def onLeave(self, details):
         out.info("Router session left: {}".format(details))
-        nexus.core.wamp_onnected = False
+        nexus.core.wamp_connected = False
         self.disconnect()
 
 
