@@ -68,7 +68,7 @@ RUNTIME_RELOAD_CONFIG           = 63
 # Operations On Configuration Changes
 STATE_CALL_CFG                  = 70
 FILES_COPY_FROM_OS              = 71
-FILES_FETCH                     = 72
+ZEROTIER_CONFIGURE              = 72
 STATE_FILES_STOP                = 75
 FILES_COPY_USER                 = 76
 FILES_COPY_TO_MNT               = 77

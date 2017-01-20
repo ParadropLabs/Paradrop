@@ -10,7 +10,7 @@ only need to do a subset of the operations.
 """
 
 from paradrop.base.output import out
-from paradrop.lib.config import devices, network, configservice, hostconfig, osconfig
+from paradrop.lib.config import devices, network, configservice, hostconfig, osconfig, zerotier
 
 from . import plangraph
 
@@ -49,6 +49,9 @@ def generatePlans(update):
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK,
                           (network.getNetworkConfig, ))
 
+    # Apply zerotier configuration.
+    update.plans.addPlans(plangraph.ZEROTIER_CONFIGURE,
+                          (zerotier.configure, ))
 
     # Reload configuration files
     todoPlan = (configservice.reloadAll, )
