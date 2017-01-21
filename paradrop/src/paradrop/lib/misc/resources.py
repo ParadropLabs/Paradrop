@@ -58,7 +58,7 @@ def getDeviceReservations():
     reservations = collections.defaultdict(DeviceReservations)
 
     hostConfig = prepareHostConfig()
-    wifiInterfaces = hostConfig.get('wifi-interfaces', [])
+    wifiInterfaces = hostConfig.get('aps', [])
     for iface in wifiInterfaces:
         if 'device' not in iface:
             continue
@@ -87,7 +87,7 @@ def getInterfaceReservations():
     reservations = set()
 
     hostConfig = prepareHostConfig()
-    wifiInterfaces = hostConfig.get('wifi-interfaces', [])
+    wifiInterfaces = hostConfig.get('aps', [])
     for iface in wifiInterfaces:
         if 'ifname' not in iface:
             continue

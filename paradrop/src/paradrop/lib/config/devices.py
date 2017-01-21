@@ -76,8 +76,10 @@ def detectSystemDevices():
     indexed by 'wan', 'wifi', and 'lan'.  Other devices may be supported by
     adding additional lists.
 
-    Within each list, a device is represented by a dictionary.  Currently, only
-    the 'name' field is defined.  Later, we may fill in device information
+    Within each list, a device is represented by a dictionary.
+    For all devices, the 'name' and 'mac' fields are defined.
+    For WiFi devices, the 'phy' is defined in addition.
+    Later, we may fill in more device information
     (e.g. what channels a WiFi card supports).
     """
     devices = dict()
@@ -301,7 +303,7 @@ def resolveWirelessDevRef(name, wirelessSections):
     new_name = "wifi{}".format(mac.replace(":", ""))
 
     out.warn("Wireless device reference {} resolved to {}, "
-            "consider using MAC address in configuration.".format(name, new_name))
+             "consider using MAC address in configuration.".format(name, new_name))
     return new_name
 
 
@@ -454,7 +456,7 @@ def setSystemDevices(update):
     wifi = hostConfig.get('wifi', [])
     readHostconfigWifi(wifi, wirelessSections)
 
-    wifiInterfaces = hostConfig.get('wifi-interfaces', [])
+    wifiInterfaces = hostConfig.get('aps', [])
     readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections)
 
     # Add additional firewall rules.

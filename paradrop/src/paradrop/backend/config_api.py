@@ -17,7 +17,7 @@ class ConfigApi(object):
     """
     Configuration API.
     This class handles HTTP API calls related to router configuration.
-    
+
     Hostconfig example:
     {
         "lan": {
@@ -51,7 +51,7 @@ class ConfigApi(object):
                 "short_gi_40": true
             }
         ],
-        "wifi-interfaces": [
+        "aps": [
             {
                 "device": "wlan0",
                 "ssid": "paradrop",
@@ -73,7 +73,7 @@ class ConfigApi(object):
     Right now it is just the channel number.
     Other settings related to 11n or 11ac may go there as we implement them.
 
-    The "wifi-interfaces" section sets up virtual interfaces.  Each virtual
+    The "aps" section sets up virtual interfaces.  Each virtual
     interface has an underlying physical device, but there can be multiple
     interfaces per device up to a limit set somewhere in the driver,
     firmware, or hardware.  Virtual interfaces can be configured as APs as
@@ -88,9 +88,9 @@ class ConfigApi(object):
 
     Here are a few ways we can modify the example configuration:
     - If we want to run a second AP on the second device, we can add a
-      section to wifi-interfaces with device="wlan1" and ifname="wlan1".
+      section to "aps" with device="wlan1" and ifname="wlan1".
     - If we want to run a second AP on the first device, we can add a
-      section to wifi-interfaces with device="wlan0" and an ifname that is
+      section to "aps" with device="wlan0" and an ifname that is
       different from all others interfaces sharing the device.
       We should avoid anything that starts with "wlan" except the case
       where the name exactly matches the device.

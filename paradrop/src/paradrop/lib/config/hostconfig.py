@@ -95,7 +95,7 @@ def generateHostConfig(devices):
         }
     }
     config['wifi'] = list()
-    config['wifi-interfaces'] = list()
+    config['aps'] = list()
     config['system'] = {
         'autoUpdate': True,
         'onMissingWiFi': None
@@ -145,7 +145,7 @@ def generateHostConfig(devices):
         config['system']['onMissingWiFi'] = "warn"
 
         # Add a default WiFi AP for usability.
-        config['wifi-interfaces'].append({
+        config['aps'].append({
             'device': devices['wifi'][0]['mac'],
             'ssid': 'ParaDrop',
             'mode': 'ap',
