@@ -75,6 +75,10 @@ class SystemStatus(object):
             if key in excluded_interfaces:
                 continue
 
+            # ignore virtual ethernet interfaces
+            if key.startswith('veth'):
+                continue
+
             interfaces[key] = {
                 'isup': value.isup,
                 'speed': value.speed,
@@ -83,8 +87,9 @@ class SystemStatus(object):
 
         addresses = psutil.net_if_addrs()
         for key, value in addresses.iteritems():
-            if key in excluded_interfaces:
+            if key not in interfaces:
                 continue
+
             for i in value:
                 if i.family == 2:
                     interfaces[key]['ipv4'] = i.address
@@ -94,7 +99,7 @@ class SystemStatus(object):
 
         traffic = psutil.net_io_counters(pernic=True)
         for key, value in traffic.iteritems():
-            if key in excluded_interfaces:
+            if key not in interfaces:
                 continue
 
             interfaces[key]['bytes_sent'] = value.bytes_sent
