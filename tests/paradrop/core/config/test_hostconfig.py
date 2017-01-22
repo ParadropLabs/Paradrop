@@ -24,7 +24,9 @@ def test_generateHostConfig():
     devices['wifi'] = [{
         'name': 'phy0',
         'mac': '00:00:00:00:00:02',
-        'ifname': 'wlan0'
+        'ifname': 'wlan0',
+        'vendor': '16ic',
+        'device': '002a'
     }]
 
     config = generateHostConfig(devices)

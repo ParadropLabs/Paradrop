@@ -134,6 +134,8 @@ def generateHostConfig(devices):
     for wifiDev in devices['wifi']:
         config['wifi'].append({
             'macaddr': wifiDev['mac'],
+            'vendor': wifiDev['vendor'],
+            'device': wifiDev['device'],
             'channel': channels.next(),
             'hwmode': '11g',
             'htmode': 'NONE'

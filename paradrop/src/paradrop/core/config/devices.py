@@ -117,27 +117,27 @@ def getWirelessPhyName(ifname):
     return readSysFile(path)
 
 
-def getWirelessDeviceId(ifname):
+def getWirelessDeviceId(phy):
     """
     Return the physical device ID for a wireless interface.
 
-    This is will be a pair of hexadecimal numbers separated by a colon.  The
-    first four digits are the vendor, and the second four our the device.
+    This is will be a pair of hexadecimal numbers separated.
+    The first four digits are the vendor, and the second four our the device.
     You may find information about devices in /usr/share/hwdata/pci.ids.
 
-    For example: our Qualcomm 802.11n chips have the ID 168c:002a.
+    For example: our Qualcomm 802.11n chips have the ID (168c, 002a).
     """
-    path = "{}/{}/phy80211/device/vendor".format(SYS_DIR, ifname)
+    path = "{}/{}/device/vendor".format(IEEE80211_DIR, phy)
     vendor = readSysFile(path)
     if vendor is None:
         vendor = "????"
 
-    path = "{}/{}/phy80211/device/device".format(SYS_DIR, ifname)
+    path = "{}/{}/device/device".format(IEEE80211_DIR, phy)
     device = readSysFile(path)
     if device is None:
         device = "????"
 
-    return "{}:{}".format(vendor, device)
+    return vendor, device
 
 
 def listSystemDevices():
@@ -183,11 +183,14 @@ def listSystemDevices():
         for phy in pdos.listdir(IEEE80211_DIR):
             if phy not in detectedWifi:
                 mac = getPhyMACAddress(phy)
+                vendor, device_id = getWirelessDeviceId(phy)
                 devices.append({
                     'name': "wifi{}".format(mac.replace(':', '')),
                     'type': 'wifi',
                     'mac': mac,
-                    'phy': phy
+                    'phy': phy,
+                    'vendor': vendor,
+                    'device': device_id
                 })
 
                 detectedWifi.add(phy)
