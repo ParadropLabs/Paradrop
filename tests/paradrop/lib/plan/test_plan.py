@@ -206,7 +206,7 @@ def test_state():
     Test plan generation for state module
     """
     from paradrop.lib.plan import state
-    from paradrop.lib.chute import chute
+    from paradrop.lib.chute.chute import Chute
     from paradrop.base import settings
 
     # Set this to exercise debug mode code
@@ -226,21 +226,21 @@ def test_state():
 
     # Install with no old chute should succeed
     update.updateType = "install"
-    update.new.state = chute.STATE_RUNNING
+    update.new.state = Chute.STATE_RUNNING
     assert state.generatePlans(update) is None
 
     # Entering invalid state should fail
-    update.new.state = chute.STATE_INVALID
+    update.new.state = Chute.STATE_INVALID
     assert state.generatePlans(update) is True
 
     # Start with old chute already running should fail
     update.old = MockChute()
     update.updateType = "start"
-    update.old.state = chute.STATE_RUNNING
+    update.old.state = Chute.STATE_RUNNING
     assert state.generatePlans(update) is True
 
     # But if the old chute was stopped, then start should succeed
-    update.old.state = chute.STATE_STOPPED
+    update.old.state = Chute.STATE_STOPPED
     assert state.generatePlans(update) is None
 
     # Should be fine
@@ -252,15 +252,15 @@ def test_state():
     assert state.generatePlans(update) is True
 
     # Delete and set to stopped is fine
-    update.new.state = chute.STATE_STOPPED
+    update.new.state = Chute.STATE_STOPPED
     update.updateType = "delete"
     assert state.generatePlans(update) is None
 
     # Stopping an already stopped chute should fail
     update.updateType = "stop"
-    update.old.state = chute.STATE_STOPPED
+    update.old.state = Chute.STATE_STOPPED
     assert state.generatePlans(update) is True
 
     # Stopping a running chute is fine
-    update.old.state = chute.STATE_RUNNING
+    update.old.state = Chute.STATE_RUNNING
     assert state.generatePlans(update) is None

@@ -1,4 +1,4 @@
-from paradrop.lib.chute import chutestorage
+from paradrop.lib.chute.chute_storage import ChuteStorage
 from paradrop.lib.misc import resopt
 
 
@@ -44,7 +44,7 @@ def computeResourceAllocation(chutes):
 
 
 def getResourceAllocation(update):
-    chuteStore = chutestorage.ChuteStorage()
+    chuteStore = ChuteStorage()
     chutes = chuteStore.getChuteList()
 
     old_allocation = computeResourceAllocation(chutes)

@@ -21,7 +21,7 @@ from io import BytesIO
 
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
-from paradrop.lib.chute import chutestorage
+from paradrop.lib.chute.chute_storage import ChuteStorage
 from paradrop.lib.container.chutecontainer import ChuteContainer
 from paradrop.lib.config.devices import getWirelessPhyName
 from paradrop.lib.misc import resopt

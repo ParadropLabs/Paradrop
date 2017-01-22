@@ -27,13 +27,12 @@ class PDStorage(object):
             attrSaveable(): Returns True if we should save this attr
     """
 
-    def __init__(self, filename, reactor, saveTimer):
+    def __init__(self, filename, saveTimer):
         self.filename = filename
-        self.reactor = reactor
         self.saveTimer = saveTimer
 
-        # Setup looping call to keep chute list perisistant only if reactor present
-        if(self.reactor):
+        # Setup looping call to keep chute list perisistant
+        if (self.saveTimer > 0):
             self.repeater = LoopingCall(self.saveToDisk)
             self.repeater.start(self.saveTimer)
 

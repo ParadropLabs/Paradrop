@@ -22,7 +22,7 @@ config interface wan #__PARADROP__
 
 class TestStorage(PDStorage):
     def __init__(self, filename):
-        super(TestStorage, self).__init__(filename, None, None)
+        super(TestStorage, self).__init__(filename, 0)
         self.data = None
 
     def setAttr(self, data):
@@ -202,10 +202,7 @@ def test_storage():
     temp = tempfile.mkdtemp()
     filename = os.path.join(temp, "storage")
 
-    storage = PDStorage(filename, MagicMock(), None)
-
-    # Constructor should have called this start function.
-    assert storage.repeater.start.called
+    storage = PDStorage(filename, 0)
 
     # PDStorage needs to be subclassed; the base class always returns not
     # saveable.

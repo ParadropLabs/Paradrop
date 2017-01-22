@@ -1,8 +1,8 @@
-from paradrop.lib.chute import chutestorage
+from paradrop.lib.chute.chute_storage import ChuteStorage
 
 
 def saveChute(update):
-    chuteStore = chutestorage.ChuteStorage()
+    chuteStore = ChuteStorage()
     if update.updateType == "delete":
         chuteStore.deleteChute(update.old)
     else:
@@ -10,7 +10,7 @@ def saveChute(update):
 
 
 def revertChute(update):
-    chuteStore = chutestorage.ChuteStorage()
+    chuteStore = ChuteStorage()
     if update.updateType == "delete":
         chuteStore.saveChute(update.old)
     elif update.old is not None:
@@ -20,5 +20,5 @@ def revertChute(update):
 
 
 def removeAllChutes(update):
-    chuteStore = chutestorage.ChuteStorage()
+    chuteStore = ChuteStorage()
     chuteStore.clearChuteStorage()

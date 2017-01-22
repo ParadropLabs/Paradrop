@@ -14,7 +14,7 @@ import collections
 
 from paradrop.lib.config.devices import getWirelessPhyName
 from paradrop.lib.config.hostconfig import prepareHostConfig
-from paradrop.lib.chute.chutestorage import ChuteStorage
+from paradrop.lib.chute.chute_storage import ChuteStorage
 
 
 class DeviceReservations(object):

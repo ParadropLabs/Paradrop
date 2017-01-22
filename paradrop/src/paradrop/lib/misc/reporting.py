@@ -15,7 +15,7 @@ from twisted.web.http_headers import Headers
 
 from paradrop.base import nexus, settings
 from paradrop.base.output import out
-from paradrop.lib.chute import chutestorage
+from paradrop.lib.chute.chute_storage import ChuteStorage
 from paradrop.lib.config import devices, hostconfig, resource
 from paradrop.lib.container.chutecontainer import ChuteContainer
 from paradrop.lib.misc.snapd import SnapdClient
@@ -83,7 +83,7 @@ class StateReportBuilder(object):
         # separate snap.
 
         report.chutes = []
-        chuteStore = chutestorage.ChuteStorage()
+        chuteStore = ChuteStorage()
         chutes = chuteStore.getChuteList()
         allocation = resource.computeResourceAllocation(chutes)
 

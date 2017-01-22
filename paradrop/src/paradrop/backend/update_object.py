@@ -10,7 +10,8 @@ from twisted.python.failure import Failure
 from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.lib import plan
-from paradrop.lib.chute import chute, chutestorage
+from paradrop.lib.chute.chute import Chute
+from paradrop.lib.chute.chute_storage import ChuteStorage
 from paradrop.lib.utils.http import PDServerRequest
 
 
@@ -50,9 +51,9 @@ class UpdateObject(object):
         # Each update gets its own plan map
         self.plans = plan.plangraph.PlanMap(self.name)
         # Grab a reference to our storage system
-        self.chuteStor = chutestorage.ChuteStorage()
+        self.chuteStor = ChuteStorage()
         # Explicitly define a reference to the new data object
-        self.new = chute.Chute(obj, strip=UPDATE_SPECIFIC_ARGS)
+        self.new = Chute(obj, strip=UPDATE_SPECIFIC_ARGS)
         # Grab the old version if it exists
         self.old = self.chuteStor.getChute(self.name)
 
@@ -218,12 +219,12 @@ class UpdateObject(object):
 
 # This gives the new chute state if an update of a given type succeeds.
 NEW_CHUTE_STATE = {
-    'create': chute.STATE_RUNNING,
-    'update': chute.STATE_RUNNING,
-    'start': chute.STATE_RUNNING,
-    'restart': chute.STATE_RUNNING,
-    'delete': chute.STATE_STOPPED,
-    'stop': chute.STATE_STOPPED
+    'create': Chute.STATE_RUNNING,
+    'update': Chute.STATE_RUNNING,
+    'start': Chute.STATE_RUNNING,
+    'restart': Chute.STATE_RUNNING,
+    'delete': Chute.STATE_STOPPED,
+    'stop': Chute.STATE_STOPPED
 }
 
 
@@ -244,7 +245,7 @@ class UpdateChute(UpdateObject):
 
     def __init__(self, obj):
         updateType = obj.get('updateType', None)
-        obj['state'] = NEW_CHUTE_STATE.get(updateType, chute.STATE_INVALID)
+        obj['state'] = NEW_CHUTE_STATE.get(updateType, Chute.STATE_INVALID)
 
         super(UpdateChute, self).__init__(obj)
 

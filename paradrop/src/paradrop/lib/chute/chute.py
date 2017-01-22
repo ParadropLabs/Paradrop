@@ -5,16 +5,18 @@
 
 from paradrop.base.output import out
 
-STATE_INVALID = "invalid"
-STATE_DISABLED = "disabled"
-STATE_RUNNING = "running"
-STATE_FROZEN = "frozen"
-STATE_STOPPED = "stopped"
 
 class Chute(object):
     """
         Wrapper class for Chute objects.
     """
+
+    STATE_INVALID = "invalid"
+    STATE_DISABLED = "disabled"
+    STATE_RUNNING = "running"
+    STATE_FROZEN = "frozen"
+    STATE_STOPPED = "stopped"
+
     def __init__(self, descriptor, strip=None):
         # Set these first so we don't have to worry about it later
         self.name = None

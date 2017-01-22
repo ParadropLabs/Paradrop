@@ -6,7 +6,7 @@
 from paradrop.base.output import out
 from paradrop.base.pdutils import jsonPretty
 from paradrop.base import settings
-from paradrop.lib.chute import chute
+from paradrop.lib.chute.chute import Chute
 from paradrop.lib.config import state
 from paradrop.lib.container import dockerapi
 
@@ -37,13 +37,13 @@ def generatePlans(update):
             update.failure = "No chute found with id: " + update.name
             return True
         # If we are now running then everything has to be setup for the first time
-        if(update.new.state == chute.STATE_RUNNING):
+        if(update.new.state == Chute.STATE_RUNNING):
             update.plans.addPlans(plangraph.STATE_CALL_START,
                     (dockerapi.startChute, ),
                     (dockerapi.removeNewContainer, ))
 
         # Check if the state is invalid, we should return bad things in this case (don't do anything)
-        elif(update.new.state == chute.STATE_INVALID):
+        elif(update.new.state == Chute.STATE_INVALID):
             if(settings.DEBUG_MODE):
                 update.responses.append('Chute state is invalid')
             return True
@@ -51,7 +51,7 @@ def generatePlans(update):
     # Not a new chute
     else:
         if update.updateType == 'start':
-            if update.old.state == chute.STATE_RUNNING:
+            if update.old.state == Chute.STATE_RUNNING:
                 update.failure = update.name + " already running."
                 return True
             update.plans.addPlans(plangraph.STATE_CALL_START, (dockerapi.restartChute,))
@@ -76,11 +76,11 @@ def generatePlans(update):
                         (dockerapi.removeNewContainer, ))
                 update.plans.addPlans(plangraph.STATE_CALL_CLEANUP,
                         (dockerapi.removeOldImage, ))
-        elif update.new.state == chute.STATE_STOPPED:
+        elif update.new.state == Chute.STATE_STOPPED:
             if update.updateType == 'delete':
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (dockerapi.removeChute,))
             if update.updateType == 'stop':
-                if update.old.state == chute.STATE_STOPPED:
+                if update.old.state == Chute.STATE_STOPPED:
                     update.failure = update.name + " already stopped."
                     return True
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (dockerapi.stopChute,))

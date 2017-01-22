@@ -1,13 +1,12 @@
 from paradrop.lib.chute import restart
+from paradrop.lib.chute.chute_storage import ChuteStorage
 from mock import patch, MagicMock
 
-@patch('paradrop.lib.chute.chutestorage.ChuteStorage')
-def test_updateStatus(mockStore):
+@patch.object(ChuteStorage, 'saveChute')
+def test_updateStatus(mock_saveChute):
     """
     Test that the updateStatus function does it's job.
     """
-    storage = MagicMock()
-    mockStore.return_value = storage
     update = MagicMock()
     update.old.state = 'running'
     update.old.warning = None
@@ -15,7 +14,7 @@ def test_updateStatus(mockStore):
     restart.updateStatus(update)
     assert update.old.state == 'running'
     assert update.old.warning == None
-    assert not storage.saveChute.called
+    assert not mock_saveChute.called
     update.result.get.return_value = False
     restart.updateStatus(update)
 
@@ -25,22 +24,20 @@ def test_updateStatus(mockStore):
 @patch('paradrop.lib.chute.restart.waitSystemUp')
 @patch('paradrop.lib.chute.restart.reclaimNetworkResources')
 @patch('paradrop.lib.chute.restart.settings')
-@patch('paradrop.lib.chute.chutestorage.ChuteStorage')
-def test_reloadChutes(mockStore, mockSettings, mResources, mWait, mTime, mOut, mTimeint):
+@patch.object(ChuteStorage, 'getChuteList')
+def test_reloadChutes(mock_getChuteList, mockSettings, mResources, mWait, mTime, mOut, mTimeint):
     """
     Test that the reloadChutes function does it's job.
     """
     #Test that if pdconfd isn't enabled we return an empty list
     mockSettings.PDCONFD_ENABLED = False
-    storage = MagicMock()
-    mockStore.return_value = storage
 
     #Call
     ret = restart.reloadChutes()
 
     #Assertions
     assert ret == []
-    assert not mockStore.called
+    assert not mock_getChuteList.called
 
     #Test that if pdconfd is enabled we do our job
     mTimeint.return_value = 'Now'
@@ -54,7 +51,7 @@ def test_reloadChutes(mockStore, mockSettings, mResources, mWait, mTime, mOut, m
     ch2.state = 'stopped'
     ch3.state = 'running'
     ch3.name = 'ch3'
-    storage.getChuteList.return_value = [ch1, ch2, ch3]
+    mock_getChuteList.return_value = [ch1, ch2, ch3]
     mWait.side_effect = [None, None, '[{"success": false, "comment": "PDROP"},{"success": false, "comment": "ch1"},{"success": false, "comment": "ch2"},{"success": true, "comment": "ch3"},{"success": true, "comment": "error"}]']
 
     #Call

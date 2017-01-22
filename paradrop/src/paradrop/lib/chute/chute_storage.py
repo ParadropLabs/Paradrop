@@ -1,5 +1,5 @@
 ###################################################################
-# Copyright 2013-2014 All Rights Reserved
+# Copyright 2013-2017 All Rights Reserved
 # Authors: The Paradrop Team
 ###################################################################
 
@@ -10,8 +10,7 @@ import base64
 
 from paradrop.base.output import out
 from paradrop.base import pdutils, settings
-from paradrop.lib.utils import pdos
-from paradrop.lib.utils.storage import PDStorage
+from paradrop.lib.utils.pd_storage import PDStorage
 
 from .chute import Chute
 
@@ -28,10 +27,11 @@ class ChuteStorage(PDStorage):
     # Class variable of chute list so all instances see the same thing
     chuteList = dict()
 
-    def __init__(self, filename=None, reactor=None):
+    def __init__(self, filename=None, save_timer=settings.FC_CHUTESTORAGE_SAVE_TIMER):
         if(not filename):
             filename = settings.FC_CHUTESTORAGE_FILE
-        PDStorage.__init__(self, filename, reactor, settings.FC_CHUTESTORAGE_SAVE_TIMER)
+
+        PDStorage.__init__(self, filename, save_timer)
 
         # Has it been loaded?
         if(len(ChuteStorage.chuteList) == 0):
@@ -70,8 +70,6 @@ class ChuteStorage(PDStorage):
         # check if there is a version of the chute already
         oldch = ChuteStorage.chuteList.get(ch.name, None)
         if(oldch != None):
-            # TODO: what's the purpose of newch?
-            newch = copy.deepcopy(oldch)
             # we should merge these chutes so we don't lose any data
             oldch.__dict__.update(ch.__dict__)
             # TODO: do we need to deal with cache separate? Old code we did

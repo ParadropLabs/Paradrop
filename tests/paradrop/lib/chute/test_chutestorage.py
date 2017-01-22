@@ -1,16 +1,15 @@
 from mock import patch, MagicMock
 
-from paradrop.lib.chute import chutestorage
+from paradrop.lib.chute import chute_storage
 from paradrop.lib.chute.chute import Chute
 from paradrop.base import settings 
 
 
-@patch('paradrop.lib.chute.chutestorage.pdos')
-@patch('paradrop.lib.utils.storage.PDStorage.saveToDisk')
-def test_chutestorage(mSave, mPdos):
+@patch('paradrop.lib.utils.pd_storage.PDStorage.saveToDisk')
+def test_chute_storage(mSave):
 
     #Test setAttr & getAttr
-    s = chutestorage.ChuteStorage()
+    s = chute_storage.ChuteStorage()
     assert s.chuteList == {}
     s.setAttr('test')
     assert s.chuteList == 'test'
@@ -51,10 +50,10 @@ def test_chutestorage(mSave, mPdos):
     assert 'ch1' not in s.getChuteList()
 
     #Test clearChuteStorage
-    assert not mPdos.remove.called
     assert s.getChuteList != []
+    mSave.reset_mock()
     s.clearChuteStorage()
-    mPdos.remove.assert_called_once_with(settings.FC_CHUTESTORAGE_FILE)
+    mSave.assert_called_once_with()
     assert s.getChuteList() == []
 
     

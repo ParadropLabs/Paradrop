@@ -1,5 +1,5 @@
 ####################################################################
-# Copyright 2013-2015 All Rights Reserved
+# Copyright 2013-2017 All Rights Reserved
 # Authors: The Paradrop Team
 ###################################################################
 
@@ -14,7 +14,7 @@ import time
 from paradrop.base.output import out
 from paradrop.base.pdutils import json2str, str2json, timeint, urlDecodeMe
 from paradrop.base import settings
-from paradrop.lib.chute import chute, chutestorage
+from paradrop.lib.chute.chute_storage import ChuteStorage
 from paradrop.confd.client import waitSystemUp
 from paradrop.lib.config.network import reclaimNetworkResources
 
@@ -41,7 +41,7 @@ def reloadChutes():
     """
     if not settings.PDCONFD_ENABLED:
         return []
-    chuteStore = chutestorage.ChuteStorage()
+    chuteStore = ChuteStorage()
     chutes = [ ch for ch in chuteStore.getChuteList() if ch.state == 'running']
 
     # Part of restoring the chute to its previously running state is reclaiming

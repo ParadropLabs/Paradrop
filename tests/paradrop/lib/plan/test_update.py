@@ -36,7 +36,7 @@ def test_update_object(executePlans, abortPlans):
     update.execute()
 
 
-@patch("paradrop.lib.chute.chutestorage.ChuteStorage.getChute")
+@patch("paradrop.lib.chute.chute_storage.ChuteStorage.getChute")
 def test_update_chute(getChute):
     """
     Test the UpdateChute class
