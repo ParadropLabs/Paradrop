@@ -11,11 +11,11 @@ from twisted.internet.defer import inlineCallbacks
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
 from paradrop.lib.misc.procmon import ProcessMonitor
-from paradrop.lib.misc.reporting import sendStateReport
-from paradrop.backend.update_fetcher import UpdateFetcher
-from paradrop.backend.update_manager import UpdateManager
+from paradrop.core.agent.reporting import sendStateReport
+from paradrop.core.agent.wamp_session import WampSession
+from paradrop.core.update.update_fetcher import UpdateFetcher
+from paradrop.core.update.update_manager import UpdateManager
 from paradrop.backend.http_server import HttpServer, setup_http_server
-from paradrop.backend.wamp_session import WampSession
 from paradrop import confd
 
 

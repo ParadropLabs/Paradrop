@@ -12,9 +12,9 @@ This can be called as needed.
 """
 import collections
 
-from paradrop.lib.config.devices import getWirelessPhyName
-from paradrop.lib.config.hostconfig import prepareHostConfig
-from paradrop.lib.chute.chute_storage import ChuteStorage
+from paradrop.core.config.devices import getWirelessPhyName
+from paradrop.core.config.hostconfig import prepareHostConfig
+from paradrop.core.chute.chute_storage import ChuteStorage
 
 
 class DeviceReservations(object):

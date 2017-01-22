@@ -5,13 +5,14 @@ from twisted.internet.defer import DeferredList, inlineCallbacks, returnValue
 
 from paradrop.base import nexus
 from paradrop.base.pdutils import timeint, str2json
-from paradrop.lib.config import hostconfig
-from paradrop.lib.misc.reporting import sendStateReport
-from paradrop.lib.utils.http import PDServerRequest
+from paradrop.core.config import hostconfig
+from paradrop.core.agent.http import PDServerRequest
+from paradrop.core.agent.reporting import sendStateReport
+from paradrop.core.agent.wamp_session import WampSession
 from paradrop.confd import client as pdconf_client
 
-from .wamp_session import WampSession
 from . import cors
+
 
 class ConfigApi(object):
     """

@@ -10,7 +10,7 @@ from pdmock import MockChute, MockChuteStorage, writeTempFile
 
 from paradrop.lib.utils import pdos
 from paradrop.lib.utils import pdosq
-from paradrop.lib.utils.storage import PDStorage
+from paradrop.lib.utils.pd_storage import PDStorage
 
 
 NETWORK_WAN_CONFIG = """

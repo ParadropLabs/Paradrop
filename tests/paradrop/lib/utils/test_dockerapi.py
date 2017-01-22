@@ -1,4 +1,4 @@
-from paradrop.lib.container import dockerapi
+from paradrop.core.container import dockerapi
 from mock import patch, MagicMock
 from nose.tools import assert_raises
 
@@ -25,7 +25,7 @@ def fake_update():
     return update
 
 
-@patch('paradrop.lib.container.dockerapi.getBridgeGateway')
+@patch('paradrop.core.container.dockerapi.getBridgeGateway')
 def test_build_host_config(getBridgeGateway):
     """
     Test that the build_host_config function does it's job.
@@ -48,8 +48,8 @@ def test_build_host_config(getBridgeGateway):
     res = dockerapi.build_host_config(chute, client)
     assert res['dns'] == ['0.0.0.0', '8.8.8.8']
 
-@patch('paradrop.lib.container.dockerapi.setup_net_interfaces')
-@patch('paradrop.lib.container.dockerapi.out')
+@patch('paradrop.core.container.dockerapi.setup_net_interfaces')
+@patch('paradrop.core.container.dockerapi.out')
 @patch('docker.Client')
 def test_restartChute(mockDocker, mockOutput, mockInterfaces):
     """
@@ -64,7 +64,7 @@ def test_restartChute(mockDocker, mockOutput, mockInterfaces):
     mockInterfaces.assert_called_once_with(update.new)
     client.start.assert_called_once_with(container=update.name)
 
-@patch('paradrop.lib.container.dockerapi.out')
+@patch('paradrop.core.container.dockerapi.out')
 @patch('docker.Client')
 def test_stopChute(mockDocker, mockOutput):
     """
@@ -78,7 +78,7 @@ def test_stopChute(mockDocker, mockOutput):
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     client.stop.assert_called_once_with(container=update.name)
 
-@patch('paradrop.lib.container.dockerapi.out')
+@patch('paradrop.core.container.dockerapi.out')
 @patch('docker.Client')
 def test_removeChute(mockDocker, mockOutput):
     """
@@ -101,10 +101,10 @@ def test_removeChute(mockDocker, mockOutput):
         assert e.message == 'Test'
     client.remove_container.assert_called_once_with(container=update.name, force=True)
 
-@patch('paradrop.lib.container.dockerapi.prepare_environment')
-@patch('paradrop.lib.container.dockerapi.build_host_config')
-@patch('paradrop.lib.container.dockerapi.setup_net_interfaces')
-@patch('paradrop.lib.container.dockerapi.out')
+@patch('paradrop.core.container.dockerapi.prepare_environment')
+@patch('paradrop.core.container.dockerapi.build_host_config')
+@patch('paradrop.core.container.dockerapi.setup_net_interfaces')
+@patch('paradrop.core.container.dockerapi.out')
 @patch('docker.Client')
 def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, prepare_environment):
     """
@@ -137,8 +137,8 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, prepare_
     assert_raises(Exception, dockerapi.startChute, update)
 
 @patch('__builtin__.open')
-@patch('paradrop.lib.container.dockerapi.os')
-@patch('paradrop.lib.container.dockerapi.out')
+@patch('paradrop.core.container.dockerapi.os')
+@patch('paradrop.core.container.dockerapi.out')
 def test_writeDockerConfig(mockOutput, mockOS, mock_open):
     """
     Test that the writeDockerConfig function does it's job.
