@@ -1,0 +1,11 @@
+'use strict';
+
+const AppConstants = {
+  // set the IP address of the box for debugging
+  // host: 'http://radion.cs.wisc.edu',
+  host: 'http://128.105.22.81',
+  api: '/api/v1',
+  sockjs: '/sockjs'
+};
+
+export default AppConstants;
