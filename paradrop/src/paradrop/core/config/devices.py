@@ -459,7 +459,7 @@ def setSystemDevices(update):
     wifi = hostConfig.get('wifi', [])
     readHostconfigWifi(wifi, wirelessSections)
 
-    wifiInterfaces = hostConfig.get('aps', [])
+    wifiInterfaces = hostConfig.get('wifi-interfaces', [])
     readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections)
 
     # Add additional firewall rules.

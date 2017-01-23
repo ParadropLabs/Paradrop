@@ -29,7 +29,7 @@ def test_getDeviceReservations(ChuteStorage, prepareHostConfig, getWirelessPhyNa
     assert reservations['wlan1'].count() == 0
 
     prepareHostConfig.return_value = {
-        'aps': [{
+        'wifi-interfaces': [{
             'device': 'wlan0',
             'ifname': 'wlan0',
             'mode': 'ap',
@@ -71,7 +71,7 @@ def test_getInterfaceReservations(ChuteStorage, prepareHostConfig, getWirelessPh
     assert 'vwlan0.0000' in reservations
 
     prepareHostConfig.return_value = {
-        'aps': [{
+        'wifi-interfaces': [{
             'device': 'wlan0',
             'ifname': 'wlan0',
             'mode': 'ap',
