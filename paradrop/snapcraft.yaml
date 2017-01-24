@@ -10,7 +10,7 @@ confinement: devmode
 
 apps:
   paradrop:
-    command: runpd.sh
+    command: paradrop
     daemon: simple
     plugs:
       - network
@@ -22,12 +22,6 @@ apps:
       - docker
 
 parts:
-  glue:
-    plugin: dump
-    source: wrapper/
-    organize:
-      runpd.sh: bin/runpd.sh
-
   localweb:
     plugin: dump
     source: localweb/
