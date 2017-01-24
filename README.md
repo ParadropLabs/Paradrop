@@ -20,21 +20,15 @@ Since Wi-Fi routers are the central nervous system for all Internet based servic
 ## Building the Paradrop disk image
 
 The following commands build a disk image starting from a clean installation
-of Ubuntu 14.04.
+of Ubuntu 16.04.
 
-First, set `DEV_MACHINE_IP=paradrop.org` in pdbuild.conf.  pdbuild.sh will
-refuse to run if this variable is not set.
-
+Setup environment
 ```
-sudo add-apt-repository ppa:snappy-dev/tools
-sudo apt-get update
-sudo apt-get install -y libcurl4-openssl-dev libffi-dev pip python-dev snappy-tools
-sudo pip install pex
-./pdbuild.sh build_prod
-cd snappy_v1
-wget https://paradrop.io/storage/snaps/dnsmasq_2.74_all.snap
-wget https://paradrop.io/storage/snaps/hostapd_2.4-1_all.snap
-./build_image.sh
+./pdbuild.sh setup
 ```
 
+Build paradrop-daemon_*.snap
+```
+./pdbuild.sh build
+```
 
