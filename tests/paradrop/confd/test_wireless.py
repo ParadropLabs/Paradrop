@@ -34,10 +34,10 @@ def test_ConfigWifiIface_apply():
 
 def test_HostapdConfGenerator_getMainOptions():
     wifiIface = MagicMock()
-    wifiIface._ifname = "wlan0"
     wifiIface.ssid = "Paradrop"
     wifiIface.maxassoc = 200
     wifiIface.wmm = True
+    wifiIface.getIfname.return_value = "wlan0"
 
     wifiDevice = MagicMock()
     wifiDevice.country = "US"

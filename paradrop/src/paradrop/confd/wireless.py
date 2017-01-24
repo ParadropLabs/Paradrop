@@ -191,6 +191,24 @@ class ConfigWifiIface(ConfigObject):
         ConfigOption(name="ifname")
     ]
 
+    def getIfname(self, interface=None, allConfigs=None):
+        """
+        Returns the name to be used by this WiFi interface, e.g. as seen by
+        ifconfig.
+
+        This comes from the "ifname" option if it is set.  Otherwise, we use
+        the interface name of the associated network.
+
+        Either interface or allConfigs must be set.
+        """
+        if self.ifname is not None:
+            return self.ifname
+        elif interface is not None:
+            return interface.config_ifname
+        else:
+            interface = self.lookup(allConfigs, "network", "interface", self.network)
+            return interface.config_ifname
+
     def getName(self):
         if self.ifname is None:
             return ConfigObject.getName(self)
@@ -222,32 +240,23 @@ class ConfigWifiIface(ConfigObject):
         # Look up the interface section.
         interface = self.lookup(allConfigs, "network", "interface", self.network)
 
-        # Make this private variable because the real option variable (ifname)
-        # should really be read-only.  Changing it breaks our equality checks.
-        self._ifname = self.ifname
-
         # Type to pass to iw command, e.g. '__ap'.
         iw_type = IW_IFACE_TYPE[self.mode]
 
-        if self.ifname is None:
-            # This interface is a virtual one (eg. foo.wlan0 using wlan0).  Get
-            # the virtual interface name from the network it's attached to.
-            # This is unusual behavior which may be dropped in favor of
-            # generating a name here.
-            self._ifname = interface.config_ifname
+        ifname = self.getIfname(interface=interface)
 
         # Try removing interface first in case it already exists.
-        cmd = ["iw", "dev", self._ifname, "del"]
+        cmd = ["iw", "dev", ifname, "del"]
         commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
 
         # Command to create the virtual interface.
         cmd = ["iw", "phy", wifiDevice._phy, "interface", "add",
-               self._ifname, "type", iw_type]
+               ifname, "type", iw_type]
         commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         # Assign a random MAC address to avoid conflict with other
         # interfaces using the same device.
-        cmd = ["ip", "link", "set", "dev", self._ifname,
+        cmd = ["ip", "link", "set", "dev", ifname,
                 "address", self.getRandomMAC()]
         commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
@@ -279,7 +288,7 @@ class ConfigWifiIface(ConfigObject):
                 KillCommand(self.pidFile, self)))
 
         # Delete our virtual interface.
-        cmd = ["iw", "dev", self._ifname, "del"]
+        cmd = ["iw", "dev", self.getIfname(allConfigs=allConfigs), "del"]
         commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
 
         return commands
@@ -386,7 +395,8 @@ class HostapdConfGenerator(object):
     def getMainOptions(self):
         options = list()
 
-        options.append(("interface", self.wifiIface._ifname))
+        ifname = self.wifiIface.getIfname(interface=self.interface)
+        options.append(("interface", ifname))
 
         if self.interface.type == "bridge":
             options.append(("bridge", self.interface.config_ifname))
