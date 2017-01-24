@@ -1,7 +1,7 @@
 from . import main
 
 
-def reloadAll(adapter=''):
+def reloadAll():
     """
     Reload all files from the system configuration directory.
 
@@ -13,7 +13,7 @@ def reloadAll(adapter=''):
     return main.configManager.loadConfig()
 
 
-def reload(path, adapter=''):
+def reload(path):
     """
     Reload file(s) specified by path.
 
@@ -25,14 +25,14 @@ def reload(path, adapter=''):
     return main.configManager.loadConfig(path)
 
 
-def systemStatus(adapter=''):
+def systemStatus():
     """
     Return system status string from pdconf.
     """
     return main.configManager.statusString()
 
 
-def waitSystemUp(adapter=''):
+def waitSystemUp():
     """
     Wait for the configuration daemon to finish its first load.
 
