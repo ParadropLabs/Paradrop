@@ -21,10 +21,18 @@ apps:
       - firewall-control
       - docker
 
+  pdlog:
+    command: pdlog
+
 parts:
   localweb:
     plugin: dump
     source: localweb/
+
+  pdlog:
+    plugin: python
+    python-version: python2
+    source: tools/pdlog
 
   paradrop:
     plugin: python
