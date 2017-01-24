@@ -26,11 +26,13 @@ def reloadAll(update):
     # should still succeed.
     status = json.loads(statusString)
     for section in status:
-        if section['success']:
+        # Checking age > 0 filters out errors that occurred in the past.
+        if section['success'] or section['age'] > 0:
             continue
 
+        message = "Error installing configuration section {} {} for chute {}".format(
+                section['type'], section['name'], section['comment'])
         if section['comment'] == update.new.name:
-            raise Exception("Error preparing host environment for chute")
+            raise Exception(message)
         else:
-            out.warn("Error installing configuration section {} {} for chute {}".format(
-                    section['type'], section['name'], section['comment']))
+            out.warn(message)

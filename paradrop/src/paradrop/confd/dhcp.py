@@ -28,6 +28,9 @@ class ConfigDomain(ConfigObject):
         ConfigOption(name="ip", type=str)
     ]
 
+    def getName(self):
+        return self.name
+
 
 class ConfigDnsmasq(ConfigObject):
     typename = "dnsmasq"

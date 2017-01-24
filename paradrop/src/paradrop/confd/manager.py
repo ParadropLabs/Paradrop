@@ -96,6 +96,10 @@ class ConfigManager(object):
         # after the first load completes and will remain set thereafter.
         self.systemUp = threading.Event()
 
+        # Track epoch number so that we know which configuration sections
+        # were applied in the most recent epoch.
+        self.epoch = 0
+
     def changingSet(self, files):
         """
         Return the sections from the current configuration that may have
@@ -174,6 +178,8 @@ class ConfigManager(object):
          - Yes -> Revert current section, mark any affected dependents,
                   add new section, apply changes, and stop.
         """
+        self.epoch += 1
+
         # Map (type, name) -> config
         allConfigs = dict(self.currentConfig)
 
@@ -265,6 +271,13 @@ class ConfigManager(object):
             else:
                 new = allConfigs[config.getTypeAndName()]
                 commands.extend(config.updateApply(new, allConfigs))
+
+            # Mark that the config section was applied in this epoch.
+            config.epoch = self.epoch
+
+            # Reset list of executed commands so that previous failures do not
+            # haunt us.
+            config.executed = list()
 
         # Finally, execute the commands.
         if execute and self.execCommands:
@@ -362,14 +375,15 @@ class ConfigManager(object):
                 'type': config.typename,
                 'name': config.name,
                 'comment': config.comment,
-                'success': success
+                'success': success,
+                'age': self.epoch - config.epoch
             }
             status.append(configStatus)
         return json.dumps(status)
 
     def unload(self, execute=True):
         commands = CommandList()
-        
+
         undoWork = ConfigObject.prioritizeConfigs(self.currentConfig.values())
         heapq.heapify(undoWork)
 

@@ -191,6 +191,12 @@ class ConfigWifiIface(ConfigObject):
         ConfigOption(name="ifname")
     ]
 
+    def getName(self):
+        if self.ifname is None:
+            return ConfigObject.getName(self)
+        else:
+            return self.ifname
+
     def apply(self, allConfigs):
         commands = list()
 
@@ -274,7 +280,7 @@ class ConfigWifiIface(ConfigObject):
 
         # Delete our virtual interface.
         cmd = ["iw", "dev", self._ifname, "del"]
-        commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
+        commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
 
         return commands
 

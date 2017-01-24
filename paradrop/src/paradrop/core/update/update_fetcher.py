@@ -128,7 +128,7 @@ class UpdateFetcher(object):
         if update.delegated:
             return
 
-        out.info("The update is done, report it to servr...")
+        out.info("The update is done, report it to server...")
         update_id = update.external['update_id']
         success = update.result.get('success', False)
 

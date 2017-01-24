@@ -29,6 +29,7 @@ class ConfigObject(object):
         self.id = ConfigObject.nextId
         ConfigObject.nextId += 1
 
+        self.epoch = 0
         self.source = None
         self.name = name
         self.comment = None
@@ -130,11 +131,20 @@ class ConfigObject(object):
 
         return result
 
+    def getName(self):
+        """
+        Return section name.
+
+        Subclasses that do not have names (anonymous sections) should override
+        this to return some other unique identifier such as an interface name.
+        """
+        return self.internalName
+
     def getTypeAndName(self):
         """
         Return tuple (section module, section type, section name).
         """
-        return (self.getModule(), self.typename, self.internalName)
+        return (self.getModule(), self.typename, self.getName())
 
     def lookup(self, allConfigs, sectionModule, sectionType, sectionName, addDependent=True):
         """
