@@ -67,8 +67,6 @@ def main():
     p.add_argument('--no-exec', help='Skip execution of configuration commands',
                    action='store_false', dest='execute')
 
-    p.add_argument('--verbose', '-v', help='Enable verbose', action='store_true')
-
     args = p.parse_args()
     # print args
 
