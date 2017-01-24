@@ -16,7 +16,7 @@ from twisted.web.http_headers import Headers
 from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.core.chute.chute_storage import ChuteStorage
-from paradrop.core.config import devices, hostconfig, resource
+from paradrop.core.config import devices, hostconfig, resource, zerotier
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.agent.http import PDServerRequest
 from paradrop.lib.misc.snapd import SnapdClient
@@ -60,6 +60,7 @@ class StateReport(object):
         self.devices = []
         self.hostConfig = {}
         self.snaps = []
+        self.zerotierAddress = None
 
     def toJSON(self):
         return json.dumps(self.__dict__)
@@ -107,6 +108,8 @@ class StateReportBuilder(object):
 
         client = SnapdClient()
         report.snaps = client.listSnaps()
+
+        report.zerotierAddress = zerotier.getAddress()
 
         return report
 

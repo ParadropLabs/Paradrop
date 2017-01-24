@@ -101,6 +101,10 @@ def generateHostConfig(devices):
         'autoUpdate': True,
         'onMissingWiFi': None
     }
+    config['zerotier'] = {
+        'enabled': False,
+        'networks': []
+    }
 
     # Cycle through the channel list to assign different channels to
     # WiFi interfaces.
