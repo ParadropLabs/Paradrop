@@ -9,7 +9,7 @@ from twisted.internet import defer, threads
 
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
-from paradrop.base import settings
+from paradrop.base import nexus, settings
 from paradrop.core.agent import reporting
 from paradrop.lib.misc.procmon import dockerMonitor
 from paradrop.core.chute.restart import reloadChutes
@@ -131,7 +131,7 @@ class UpdateManager:
             # Apply a batch of updates and when the queue is empty, send a
             # state report.  We're not reacquiring the mutex here because the
             # worst case is we send out an extra state update.
-            if len(self.updateQueue) == 0:
+            if len(self.updateQueue) == 0 and nexus.core.provisioned():
                 threads.blockingCallFromThread(self.reactor,
                         reporting.sendStateReport)
 
