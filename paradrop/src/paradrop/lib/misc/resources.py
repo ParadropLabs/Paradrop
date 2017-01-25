@@ -12,6 +12,8 @@ This can be called as needed.
 """
 import collections
 
+
+from paradrop.base import settings
 from paradrop.core.config.devices import getWirelessPhyName
 from paradrop.core.config.hostconfig import prepareHostConfig
 from paradrop.core.chute.chute_storage import ChuteStorage
