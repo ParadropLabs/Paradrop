@@ -41,8 +41,11 @@ def test_executionplan():
 
     # Make a plan with non-callable ("fail" string) to cause an error
     plans = list()
-    plans.append(("fail", ("data",)))
-    plans.append(("fail", ("data",))) # Need two failures to break abortPlans
+    def fail(data):
+        pass
+
+    plans.append((fail, ("data",)))
+    plans.append((fail, ("data",))) # Need two failures to break abortPlans
     plans.append(None)  # Popping None will end the loop.
     plans.reverse()
     abortPlans = list(plans)
