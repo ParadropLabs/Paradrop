@@ -161,6 +161,19 @@ class ConfigObject(object):
             config.dependents.add(self)
         return config
 
+    def removeFromParents(self):
+        """
+        Remove this section from being tracked by its parents.
+
+        Call this before discarding a configuration section so that later on,
+        if the parent is updated, it doesn't try to update non-existent
+        children.
+        """
+        for parent in self.parents:
+            if self in parent.dependents:
+                parent.dependents.remove(self)
+        self.parents.clear()
+
     def findByType(self, allConfigs, module, typename):
         """
         Look up sections by type (generator).

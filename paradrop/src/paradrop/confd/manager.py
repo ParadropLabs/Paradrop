@@ -243,6 +243,7 @@ class ConfigManager(object):
         # have their changes undone.
         for config in deletionSet:
             del allConfigs[config.getTypeAndName()]
+            config.removeFromParents()
             undoConfigs.add(config)
 
         # Remove configs that are in both sets---we should not try to reload
