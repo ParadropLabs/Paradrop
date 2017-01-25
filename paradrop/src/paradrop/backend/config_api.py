@@ -10,6 +10,7 @@ from paradrop.core.agent.http import PDServerRequest
 from paradrop.core.agent.reporting import sendStateReport
 from paradrop.core.agent.wamp_session import WampSession
 from paradrop.confd import client as pdconf_client
+from paradrop.lib.misc import ssh_keys
 
 from . import cors
 
@@ -263,3 +264,22 @@ class ConfigApi(object):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
         return pdconf_client.systemStatus()
+
+    @routes.route('/sshKeys', methods=['GET', 'POST'])
+    def sshKeys(self, request):
+        """
+        Manage list of authorized keys for SSH access.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        if request.method == "GET":
+            keys = ssh_keys.getAuthorizedKeys()
+            return json.dumps(keys)
+
+        else:
+            body = str2json(request.content.read())
+            key = body['key'].strip()
+
+            ssh_keys.addAuthorizedKey(key)
+            return key
