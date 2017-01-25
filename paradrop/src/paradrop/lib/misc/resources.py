@@ -71,7 +71,7 @@ def getDeviceReservations():
             # there that use e.g. wlan0 instead of phy0 in their hostconfig.
             dev = phy
 
-        reservations[dev].add('__PARADROP__', 'wifi',
+        reservations[dev].add(settings.RESERVED_CHUTE, 'wifi',
                 iface.get('mode', 'ap'))
 
     for chute in ChuteStorage.chuteList.values():

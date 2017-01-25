@@ -85,7 +85,7 @@ class UpdateManager:
         """
         return dict(updateClass='ROUTER',
                     updateType='inithostconfig',
-                    name='__PARADROP__',
+                    name=settings.RESERVED_CHUTE,
                     tok=timeint())
 
     def _perform_updates(self, checkDocker=True):
