@@ -14,7 +14,7 @@ printhelp() {
     echo "Usage:"
     echo -e "  setup\t\t prepares environment for development"
     echo -e "  run\t\t run paradrop locally"
-    echo -e "  build\t\t build snaps"
+    echo -e "  build [version]\t\t build snap with optional version string"
     echo -e "  test\t\t run unit tests"
     echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"
     exit
@@ -51,6 +51,10 @@ setup() {
 }
 
 build() {
+    if [ -n "$1" ]; then
+        sed -i "s/^version:.*/version: $1/" -i paradrop/snapcraft.yaml
+        sed -i "s/version=.*,/version='$1',/" -i paradrop/src/setup.py
+    fi
     (cd paradrop; snapcraft clean; snapcraft)
 }
 
@@ -96,7 +100,7 @@ case "$1" in
     "--help") printhelp;;
     "setup") setup;;
     "test") test;;
-    "build") build;;
+    "build") build $2;;
     "clean") clean;;
     "run") run;;
     "docs") docs;;

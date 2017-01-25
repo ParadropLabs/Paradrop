@@ -7,6 +7,8 @@ import platform
 from psutil import virtual_memory
 from klein import Klein
 
+
+from paradrop.core.agent import reporting
 from paradrop.lib.utils import pdos
 from . import cors
 
@@ -43,7 +45,7 @@ class InformationApi:
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
         data = dict()
-        data['pdVersion'] = '0.3.0'
+        data['pdVersion'] = reporting.getPackageVersion('paradrop')
         data['biosVendor'] = self.biosVendor
         data['biosVersion'] = self.biosVersion
         data['biosDate'] = self.biosDate
