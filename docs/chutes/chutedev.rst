@@ -12,6 +12,7 @@ Contents:
 
    gettingstarted
    development
+   lightchutes
    deployment
    nucinstallation
 
