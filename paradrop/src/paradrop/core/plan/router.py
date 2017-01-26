@@ -28,5 +28,5 @@ def generatePlans(update):
                               (power.reboot, ))
 
     elif update.updateType == "shutdown":
-        uphane.plans.addPlans(plangraph.STATE_CALL_STOP,
+        update.plans.addPlans(plangraph.STATE_CALL_STOP,
                               (power.shutdown, ))
