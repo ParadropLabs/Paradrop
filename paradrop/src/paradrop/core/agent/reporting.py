@@ -5,45 +5,20 @@
 #
 
 import json
-import pkg_resources
 import time
-
 from StringIO import StringIO
 
 from twisted.internet import reactor
 from twisted.web.http_headers import Headers
 
-from paradrop.base import nexus, settings
 from paradrop.base.output import out
+from paradrop.base import nexus, settings
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config import devices, hostconfig, resource, zerotier
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.agent.http import PDServerRequest
+from paradrop.core.system.system_info import getOSVersion, getPackageVersion
 from paradrop.lib.misc.snapd import SnapdClient
-
-
-def getOSVersion():
-    """
-    Return a string identifying the host OS.
-    """
-    try:
-        with open('/proc/version_signature', 'r') as source:
-            return source.read().strip()
-    except:
-        return None
-
-
-def getPackageVersion(name):
-    """
-    Get a python package version.
-
-    Returns: a string or None
-    """
-    try:
-        pkg = pkg_resources.get_distribution(name)
-        return pkg.version
-    except:
-        return None
 
 
 class StateReport(object):
