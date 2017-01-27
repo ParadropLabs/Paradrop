@@ -15,11 +15,13 @@ from txsockjs.factory import SockJSResource
 
 from paradrop.base.exceptions import ParadropException
 from paradrop.core.container.chutecontainer import ChuteContainer
+from paradrop.core.container.log_provider import LogProvider
 from paradrop.core.system.system_status import SystemStatus
 
 from .information_api import InformationApi
 from .config_api import ConfigApi
 from .chute_api import ChuteApi
+from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
 from . import cors
 
@@ -62,6 +64,18 @@ class HttpServer(object):
             return ReverseProxyResource(ip, 80, '/')
         except ParadropException as error:
             return str(error)
+
+
+    @app.route('/sockjs/logs/<string:name>', branch=True)
+    def logs(self, request, name):
+        # cors.config_cors(request)
+        options = {
+            'websocket': True,
+            'heartbeat': 5,
+            'timeout': 2,
+        }
+        provider = LogProvider(name)
+        return SockJSResource(LogSockJSFactory(provider), options)
 
 
     @app.route('/sockjs/status', branch=True)
