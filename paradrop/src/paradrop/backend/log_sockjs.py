@@ -13,7 +13,7 @@ class LogSockJSProtocol(Protocol):
         if not hasattr(self.factory, "transports"):
             self.factory.transports = set()
         self.factory.transports.add(self.transport)
-        out.info('sockjs /status connected')
+        out.info('sockjs /logs connected')
 
         d = self.queue.get()
         d.addCallback(self.sendLogMessage)
@@ -23,7 +23,7 @@ class LogSockJSProtocol(Protocol):
 
     def connectionLost(self, reason):
         self.factory.transports.remove(self.transport)
-        out.info('sockjs /status disconnected')
+        out.info('sockjs /logs disconnected')
 
 
 class LogSockJSFactory(Factory):
@@ -32,4 +32,4 @@ class LogSockJSFactory(Factory):
         self.transports = set()
 
     def buildProtocol(self, addr):
-        return StatusSockJSProtocol(self)
+        return LogSockJSProtocol(self)
