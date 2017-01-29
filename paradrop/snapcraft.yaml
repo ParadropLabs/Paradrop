@@ -34,6 +34,31 @@ parts:
     python-version: python2
     source: tools/pdlog
 
+  haproxy:
+    plugin: make
+    source: http://git.haproxy.org/git/haproxy-1.7.git/
+    source-type: git
+    source-tag: v1.7.2
+    build-packages:
+      - build-essential
+      - libssl-dev
+      - libpcre++-dev
+    make-parameters:
+      - TARGET=linux2628
+      - CPU=generic
+      - USE_STATIC_PCRE=1
+      - USE_OPENSSL=1
+      - USE_ZLIB=1
+      - USE_LINUX_SPLICE=1
+      - USE_LINUX_TPROXY=1
+    organize:
+      usr/local/sbin/haproxy: bin/haproxy
+    filesets:
+      binaries:
+        - bin/haproxy
+    snap:
+      - $binaries
+
   paradrop:
     plugin: python
     python-version: python2
