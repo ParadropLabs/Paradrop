@@ -75,7 +75,7 @@ UCI_BACKUP_DIR = CONFIG_HOME_DIR + "uci/config-backup.d/"
 #
 # local portal
 #
-PORTAL_SERVER_PORT = 80
+PORTAL_SERVER_PORT = 8080
 
 #
 # Local domain - this domain and subdomains will be resolved to the router so

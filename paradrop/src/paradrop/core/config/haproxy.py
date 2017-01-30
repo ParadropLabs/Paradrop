@@ -1,0 +1,109 @@
+"""
+This module is responsible for configuration haproxy.
+"""
+import os
+import subprocess
+
+from paradrop.base import settings
+from paradrop.core.chute.chute_storage import ChuteStorage
+from paradrop.core.container.chutecontainer import ChuteContainer
+
+
+def generateConfigSections():
+    sections = []
+
+    sections.append({
+        "header": "global",
+        "lines": [
+            "daemon",
+            "maxconn 256",
+        ]
+    })
+
+    sections.append({
+        "header": "defaults",
+        "lines": [
+            "mode http",
+            "timeout connect 5000ms",
+            "timeout client 50000ms",
+            "timeout server 50000ms"
+        ]
+    })
+
+    sections.append({
+        "header": "backend portal",
+        "lines": [
+            "server pd_portal 127.0.0.1:8080 maxconn 256"
+        ]
+    })
+
+    frontend = {
+        "header": "frontend http-in",
+        "lines": [
+            "bind *:80",
+            "default_backend portal"
+        ]
+    }
+    sections.append(frontend)
+
+    chuteStore = ChuteStorage()
+    chutes = chuteStore.getChuteList()
+    for chute in chutes:
+        container = ChuteContainer(chute.name)
+
+        if not container.isRunning():
+            continue
+
+        # Generate rules that match HTTP host header to chute name.
+        frontend['lines'].append("acl host_{} hdr(host) -i {}.chute.paradrop.org".format(
+            chute.name, chute.name))
+        frontend['lines'].append("use_backend {} if host_{}".format(
+            chute.name, chute.name))
+
+        # Generate rules that match the beginning of the URL.
+        frontend['lines'].append("acl path_{} url_beg /chutes/{}".format(
+            chute.name, chute.name))
+        frontend['lines'].append("use_backend {} if path_{}".format(
+            chute.name, chute.name))
+
+        # Point it to the chute's IP address.
+        sections.append({
+            "header": "backend {}".format(chute.name),
+            "lines": [
+                "reqrep ^([^\ ]*\ )/chutes/{}(.*) \\1/\\2".format(chute.name),
+                "server {} {}:80 maxconn 256".format(chute.name, container.getIP())
+            ]
+        })
+
+    return sections
+
+
+def writeConfigFile(output):
+    sections = generateConfigSections()
+    print(sections)
+    for section in sections:
+        output.write(section['header'] + "\n")
+        for line in section['lines']:
+            output.write("    " + line + "\n")
+        output.write("\n")
+
+
+def startProxy(update):
+    confFile = os.path.join(settings.RUNTIME_HOME_DIR, "haproxy.conf")
+    pidFile = os.path.join(settings.RUNTIME_HOME_DIR, "haproxy.pid")
+
+    with open(confFile, "w") as output:
+        writeConfigFile(output)
+
+    cmd = ["haproxy", "-f", confFile, "-D", "-p", pidFile]
+
+    if os.path.exists(pidFile):
+        with open(pidFile, "r") as source:
+            pid = source.read().strip()
+            cmd.extend(["-sf", pid])
+
+    subprocess.call(cmd)
+
+
+def reconfigureProxy(update):
+    startProxy(update)

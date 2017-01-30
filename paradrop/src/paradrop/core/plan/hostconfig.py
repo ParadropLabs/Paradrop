@@ -10,7 +10,7 @@ only need to do a subset of the operations.
 """
 
 from paradrop.base.output import out
-from paradrop.core.config import devices, network, configservice, hostconfig, osconfig, zerotier
+from paradrop.core.config import devices, haproxy, network, configservice, hostconfig, osconfig, zerotier
 
 from . import plangraph
 
@@ -61,3 +61,7 @@ def generatePlans(update):
                (osconfig.revertConfig, "wireless"),
                (configservice.reloadAll, )]
     update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)
+
+    # Start haproxy.
+    update.plans.addPlans(plangraph.RECONFIGURE_PROXY,
+            (haproxy.startProxy, ))

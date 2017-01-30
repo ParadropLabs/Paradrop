@@ -9,7 +9,7 @@ def test_generatePlans(mockOutput):
     Test that the generatePlans function does it's job.
     """
     update = MagicMock()
-    update.plans.addPlans.side_effect = [Exception('e'), None, Exception('e'), None, None, None]
+#    update.plans.addPlans.side_effect = [Exception('e'), None, Exception('e'), None, None, None]
     todoPlan = (config.configservice.reloadAll, )
     abtPlan = [(config.osconfig.revertConfig, "dhcp"),
                (config.osconfig.revertConfig, "firewall"),
@@ -24,9 +24,11 @@ def test_generatePlans(mockOutput):
         todoPlan = (config.firewall.setOSFirewallRules, )
         abtPlan = (config.osconfig.revertConfig, "firewall")
         update.plans.addPlans.assert_called_with(plangraph.TRAFFIC_SET_OS_FIREWALL, todoPlan, abtPlan)
-    for call in [c1, c2, c3]:
-        try:
-            traffic.generatePlans(update)
-        except Exception as e:
-            pass
-        call()
+
+    traffic.generatePlans(update)
+#    for call in [c1, c2, c3]:
+#        try:
+#            traffic.generatePlans(update)
+#        except Exception as e:
+#            pass
+#        call()

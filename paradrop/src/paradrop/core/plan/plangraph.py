@@ -91,6 +91,7 @@ STATE_FILES_START               = 90
 STATE_SAVE_CHUTE                = 95
 RESOURCE_SET_ALLOCATION         = 96
 
+RECONFIGURE_PROXY               = 98
 SNAP_INSTALL                    = 99
 COAP_CHANGE_PROCESSES           = 100
 
