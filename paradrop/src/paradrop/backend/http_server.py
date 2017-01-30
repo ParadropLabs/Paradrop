@@ -15,7 +15,6 @@ from txsockjs.factory import SockJSResource
 
 from paradrop.base.exceptions import ParadropException
 from paradrop.core.container.chutecontainer import ChuteContainer
-from paradrop.core.container.log_provider import LogProvider
 from paradrop.core.system.system_status import SystemStatus
 
 from .information_api import InformationApi
@@ -74,8 +73,7 @@ class HttpServer(object):
             'heartbeat': 5,
             'timeout': 2,
         }
-        provider = LogProvider(name)
-        return SockJSResource(LogSockJSFactory(provider), options)
+        return SockJSResource(LogSockJSFactory(name), options)
 
 
     @app.route('/sockjs/status', branch=True)
