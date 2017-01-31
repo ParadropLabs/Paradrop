@@ -70,7 +70,7 @@ def generateConfigSections():
         if len(portconf) > 0:
             # TODO: Are there other elements in the list?
             binding = portconf[0]
-            frontend['lines'].append("http-request redirect location http://%[req.hdr_ip(host)]:{} code 301 if path_{}".format(
+            frontend['lines'].append("http-request redirect location http://%[req.hdr(host)]:{} code 301 if path_{}".format(
                 binding['HostPort'], chute.name))
 
         # Add a server at the chute's IP address.
@@ -86,7 +86,6 @@ def generateConfigSections():
 
 def writeConfigFile(output):
     sections = generateConfigSections()
-    print(sections)
     for section in sections:
         output.write(section['header'] + "\n")
         for line in section['lines']:
