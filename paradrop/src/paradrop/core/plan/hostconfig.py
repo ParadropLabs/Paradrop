@@ -64,4 +64,4 @@ def generatePlans(update):
 
     # Start haproxy.
     update.plans.addPlans(plangraph.RECONFIGURE_PROXY,
-            (haproxy.startProxy, ))
+            (haproxy.reconfigureProxy, ))

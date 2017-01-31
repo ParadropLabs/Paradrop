@@ -53,6 +53,27 @@ class ChuteContainer(object):
 
         return info['State']['Pid']
 
+    def getPortConfiguration(self, port, protocol="tcp"):
+        """
+        Look up network port configuration.  This tells us if a port in the
+        host is bound to a port inside the container.
+
+        Returns a list, typically with zero or one elements.
+
+        Example:
+
+            [{
+                "HostIp": "0.0.0.0",
+                "HostPort": "32768"
+            }]
+        """
+        info = self.inspect()
+        key = "{}/{}".format(port, protocol)
+        try:
+            return info['NetworkSettings']['Ports'][key]
+        except:
+            return []
+
     def getStatus(self):
         """
         Return the status of the container (running, exited, paused).
@@ -64,6 +85,17 @@ class ChuteContainer(object):
             return "missing"
 
         return info['State']['Status']
+
+    def inspect(self):
+        """
+        Return the full container status from Docker.
+        """
+        client = docker.Client(base_url=self.docker_url, version='auto')
+        try:
+            info = client.inspect_container(self.name)
+            return info
+        except docker.errors.NotFound:
+            raise ChuteNotFound("The chute could not be found.")
 
     def isRunning(self):
         """

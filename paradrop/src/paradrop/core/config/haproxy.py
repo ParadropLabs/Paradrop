@@ -50,27 +50,33 @@ def generateConfigSections():
     chutes = chuteStore.getChuteList()
     for chute in chutes:
         container = ChuteContainer(chute.name)
-
         if not container.isRunning():
             continue
 
-        # Generate rules that match HTTP host header to chute name.
+        # Generate a rule that matches HTTP host header to chute name.
         frontend['lines'].append("acl host_{} hdr(host) -i {}.chute.paradrop.org".format(
             chute.name, chute.name))
         frontend['lines'].append("use_backend {} if host_{}".format(
             chute.name, chute.name))
 
-        # Generate rules that match the beginning of the URL.
+        # Generate a rule that matches the beginning of the URL.
         frontend['lines'].append("acl path_{} url_beg /chutes/{}".format(
             chute.name, chute.name))
-        frontend['lines'].append("use_backend {} if path_{}".format(
-            chute.name, chute.name))
 
-        # Point it to the chute's IP address.
+        # Try to find a host binding for port 80 to redirect:
+        # http://<host addr>/chutes/<chute> ->
+        # http://<host addr>:<chute port>
+        portconf = container.getPortConfiguration(80, "tcp")
+        if len(portconf) > 0:
+            # TODO: Are there other elements in the list?
+            binding = portconf[0]
+            frontend['lines'].append("http-request redirect location http://%[req.hdr_ip(host)]:{} code 301 if path_{}".format(
+                binding['HostPort'], chute.name))
+
+        # Add a server at the chute's IP address.
         sections.append({
             "header": "backend {}".format(chute.name),
             "lines": [
-                "reqrep ^([^\ ]*\ )/chutes/{}(.*) \\1/\\2".format(chute.name),
                 "server {} {}:80 maxconn 256".format(chute.name, container.getIP())
             ]
         })
@@ -88,7 +94,7 @@ def writeConfigFile(output):
         output.write("\n")
 
 
-def startProxy(update):
+def reconfigureProxy(update):
     confFile = os.path.join(settings.RUNTIME_HOME_DIR, "haproxy.conf")
     pidFile = os.path.join(settings.RUNTIME_HOME_DIR, "haproxy.pid")
 
@@ -103,7 +109,3 @@ def startProxy(update):
             cmd.extend(["-sf", pid])
 
     subprocess.call(cmd)
-
-
-def reconfigureProxy(update):
-    startProxy(update)

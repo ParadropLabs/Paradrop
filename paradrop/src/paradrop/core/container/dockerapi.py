@@ -495,12 +495,19 @@ def build_host_config(chute, client=None):
     if network_mode != 'host':
         extra_hosts[settings.LOCAL_DOMAIN] = getBridgeGateway()
 
+    # If the chute has not configured a host binding for port 80, let Docker
+    # assign a dynamic one.  We will use it to redirect HTTP requests to the
+    # chute.
+    port_bindings = config.get('port_bindings', {})
+    if "80" not in port_bindings and "80/tcp" not in port_bindings:
+        port_bindings['80/tcp'] = None
+
     # restart_policy: set to 'no' to prevent Docker from starting containers
     # automatically on system boot.  Paradrop will set up the host environment
     # first, then restart the containers.
     host_conf = client.create_host_config(
         #TO support
-        port_bindings=config.get('port_bindings'),
+        port_bindings=port_bindings,
         dns=config.get('dns'),
         network_mode=network_mode,
         extra_hosts=extra_hosts,
