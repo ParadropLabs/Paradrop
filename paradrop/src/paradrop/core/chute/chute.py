@@ -83,3 +83,25 @@ class Chute(object):
         r.append(val)
         self.setCache(key, r)
         return True
+
+    def getHostConfig(self):
+        """
+        Get the chute's host_config options for Docker.
+
+        Returns an empty dictionary if there is no host_config setting.
+        """
+        config = getattr(self, 'host_config', None)
+        if config is None:
+            config = {}
+        return config
+
+    def getWebPort(self):
+        """
+        Get the port configured for the chute's web server.
+
+        Returns None if no port is configured.
+        """
+        if hasattr(self, 'web'):
+            return self.web.get('port', None)
+        else:
+            return None

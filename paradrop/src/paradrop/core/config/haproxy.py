@@ -49,6 +49,10 @@ def generateConfigSections():
     chuteStore = ChuteStorage()
     chutes = chuteStore.getChuteList()
     for chute in chutes:
+        port = chute.getWebPort()
+        if port is None:
+            continue
+
         container = ChuteContainer(chute.name)
         if not container.isRunning():
             continue
@@ -63,10 +67,13 @@ def generateConfigSections():
         frontend['lines'].append("acl path_{} url_beg /chutes/{}".format(
             chute.name, chute.name))
 
-        # Try to find a host binding for port 80 to redirect:
+        # Try to find a host binding for the web port to redirect:
         # http://<host addr>/chutes/<chute> ->
         # http://<host addr>:<chute port>
-        portconf = container.getPortConfiguration(80, "tcp")
+        #
+        # We need to do a lookup because the host port might be dynamically
+        # assigned by Docker.
+        portconf = container.getPortConfiguration(port, "tcp")
         if len(portconf) > 0:
             # TODO: Are there other elements in the list?
             binding = portconf[0]
@@ -77,7 +84,8 @@ def generateConfigSections():
         sections.append({
             "header": "backend {}".format(chute.name),
             "lines": [
-                "server {} {}:80 maxconn 256".format(chute.name, container.getIP())
+                "server {} {}:{} maxconn 256".format(chute.name,
+                    container.getIP(), port)
             ]
         })
 

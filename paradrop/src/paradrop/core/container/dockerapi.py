@@ -469,6 +469,25 @@ def getBridgeGateway():
     return '172.17.0.1'
 
 
+def prepare_port_bindings(chute):
+    host_config = chute.getHostConfig()
+    bindings = host_config.get('port_bindings', {}).copy()
+
+    # If the chute is configured to host a web service, check
+    # whether there is a host port binding associated with it.
+    # If not, we will add blank one so that Docker dynamically
+    # assigns a port in the host to forward to the container.
+    web_port = chute.getWebPort()
+    if web_port is not None:
+        # The port could appear in multiple formats, e.g. 80, 80/tcp.
+        # If any of them are present, we do not need to add anything.
+        keys = [web_port, str(web_port), "{}/tcp".format(web_port)]
+        if not any(k in bindings for k in keys):
+            bindings["{}/tcp".format(web_port)] = None
+
+    return bindings
+
+
 def build_host_config(chute, client=None):
     """
     Build the host_config dict for a docker container based on the passed in update.
@@ -481,10 +500,7 @@ def build_host_config(chute, client=None):
     if client is None:
         client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
 
-    if not hasattr(chute, 'host_config') or chute.host_config == None:
-        config = dict()
-    else:
-        config = chute.host_config
+    config = chute.getHostConfig()
 
     extra_hosts = {}
     network_mode = config.get('network_mode', 'bridge')
@@ -498,9 +514,7 @@ def build_host_config(chute, client=None):
     # If the chute has not configured a host binding for port 80, let Docker
     # assign a dynamic one.  We will use it to redirect HTTP requests to the
     # chute.
-    port_bindings = config.get('port_bindings', {})
-    if "80" not in port_bindings and "80/tcp" not in port_bindings:
-        port_bindings['80/tcp'] = None
+    port_bindings = prepare_port_bindings(chute)
 
     # restart_policy: set to 'no' to prevent Docker from starting containers
     # automatically on system boot.  Paradrop will set up the host environment
