@@ -124,3 +124,6 @@ class ProcessMonitor(object):
 
 
 dockerMonitor = ProcessMonitor("docker", action="reboot")
+containerdMonitor = ProcessMonitor("docker-containerd",
+        pidfile="/var/snap/docker/current/run/docker/libcontainerd/docker-containerd.pid",
+        action="reboot")
