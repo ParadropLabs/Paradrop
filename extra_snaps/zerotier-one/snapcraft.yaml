@@ -1,0 +1,41 @@
+name: zerotier-one
+version: '1.1.12'
+summary: ZeroTier is a software-based managed Ethernet switch for planet Earth.
+description: |
+  ZeroTier is a software-based managed Ethernet switch for planet Earth.
+
+  It erases the LAN/WAN distinction and makes VPNs, tunnels, proxies, and other kludges arising from the inflexible nature of physical networks obsolete. Everything is encrypted end-to-end and traffic takes the most direct (peer to peer) path available.
+
+  This repository contains ZeroTier One, a service that provides ZeroTier network connectivity to devices running Windows, Mac, Linux, iOS, Android, and FreeBSD and makes joining virtual networks as easy as joining IRC or Slack channels. It also contains the OS-independent core ZeroTier protocol implementation in node/.
+
+  Visit ZeroTier's site for more information and pre-built binary packages. Apps for Android and iOS are available for free in the Google Play and Apple app stores.
+
+confinement: strict
+grade: stable
+
+apps:
+  zerotier-one:
+    command: zerotier-one
+    daemon: simple
+    plugs:
+      - network
+      - network-bind
+      - network-control
+
+parts:
+  zerotier-one:
+    plugin: make
+    source: https://github.com/zerotier/ZeroTierOne/archive/1.1.12.tar.gz
+    source-type: tar
+    build-packages:
+      - build-essential
+      - libc++-dev
+    make-parameters:
+      - CXX=g++
+    filesets:
+      binaries:
+        - usr/sbin/zerotier-one
+        - usr/sbin/zerotier-cli
+        - usr/sbin/zerotier-idtool
+    prime:
+      - $binaries
