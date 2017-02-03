@@ -56,7 +56,7 @@ parts:
     filesets:
       binaries:
         - bin/haproxy
-    snap:
+    prime:
       - $binaries
 
   paradrop:
@@ -84,7 +84,7 @@ parts:
     filesets:
       binaries:
         - bin/dnsmasq
-    snap:
+    prime:
       - $binaries
 
   hostapd:
@@ -105,5 +105,5 @@ parts:
       binaries:
         - bin/hostapd
         - bin/hostapd_cli
-    snap:
+    prime:
       - $binaries
