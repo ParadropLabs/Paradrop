@@ -11,7 +11,7 @@ from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.base import nexus, settings
 from paradrop.core.agent import reporting
-from paradrop.lib.misc.procmon import dockerMonitor
+from paradrop.lib.misc.procmon import dockerMonitor, containerdMonitor
 from paradrop.core.chute.restart import reloadChutes
 
 from . import update_object
@@ -103,6 +103,11 @@ class UpdateManager:
             ready = dockerMonitor.ensureReady()
             if not ready:
                 out.warn("Docker does not appear to be running.  "
+                            "Most functionality with containers will be broken.")
+
+            ready = containerdMonitor.ensureReady()
+            if not ready:
+                out.warn("Docker containerd does not appear to be running.  "
                             "Most functionality with containers will be broken.")
 
         # add any chutes that should already be running to the front of the

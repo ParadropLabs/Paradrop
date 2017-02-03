@@ -1,0 +1,49 @@
+name: openvswitch
+version: '2.6.1'
+summary: Open vSwitch is a multilayer software switch.
+description: |
+  Open vSwitch is a multilayer software switch licensed under the open source Apache 2 license. Our goal is to implement a production quality switch platform that supports standard management interfaces and opens the forwarding functions to programmatic extension and control.
+
+confinement: strict
+grade: stable
+
+apps:
+  openvswitch:
+    command: start-ovs
+    daemon: forking
+    plugs:
+      - network
+      - network-bind
+      - network-control
+
+parts:
+  scripts:
+    plugin: dump
+    source: scripts/
+    organize:
+      start-ovs: bin/start-ovs
+
+  openvswitch:
+    plugin: autotools
+    source: http://openvswitch.org/releases/openvswitch-2.6.1.tar.gz
+    source-type: tar
+    build-packages:
+      - build-essential
+      - libcap-ng-dev
+      - libssl-dev
+    configflags:
+      - "--prefix=/usr"
+      - "--localstatedir=/var/snap/openvswitch/common"
+      - "--sysconfdir=/var/snap/openvswitch/common"
+    filesets:
+      binaries:
+        - usr/bin/*
+        - usr/sbin/*
+      share:
+        - usr/share/openvswitch
+      state:
+        - var/snap/openvswitch/common
+    prime:
+      - $binaries
+      - $share
+      - $state

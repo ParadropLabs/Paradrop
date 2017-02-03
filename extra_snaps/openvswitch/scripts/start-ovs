@@ -1,0 +1,26 @@
+#!/bin/bash
+
+modprobe openvswitch
+
+mkdir -p /var/snap/openvswitch/common/openvswitch
+mkdir -p /var/snap/openvswitch/common/log/openvswitch
+mkdir -p /var/snap/openvswitch/common/run/openvswitch
+
+if [ ! -f /var/snap/openvswitch/common/openvswitch/conf.db ]; then
+    /snap/openvswitch/current/usr/bin/ovsdb-tool \
+        create \
+        /var/snap/openvswitch/common/openvswitch/conf.db \
+        /snap/openvswitch/current/usr/share/openvswitch/vswitch.ovsschema
+fi
+
+/snap/openvswitch/current/usr/sbin/ovsdb-server \
+    --remote=punix:/var/snap/openvswitch/common/run/openvswitch/db.sock \
+    --remote=db:Open_vSwitch,Open_vSwitch,manager_options \
+    --private-key=db:Open_vSwitch,SSL,private_key \
+    --certificate=db:Open_vSwitch,SSL,certificate \
+    --bootstrap-ca-cert=db:Open_vSwitch,SSL,ca_cert \
+    --pidfile --detach --log-file
+
+/snap/openvswitch/current/usr/bin/ovs-vsctl --no-wait init
+
+/snap/openvswitch/current/usr/sbin/ovs-vswitchd --pidfile --detach --log-file

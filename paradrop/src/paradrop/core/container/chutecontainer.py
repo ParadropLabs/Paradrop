@@ -15,11 +15,7 @@ class ChuteContainer(object):
         """
         Look up the container ID as used by Docker.
         """
-        client = docker.Client(base_url=self.docker_url, version='auto')
-        try:
-            info = client.inspect_container(self.name)
-        except docker.errors.NotFound:
-            raise ChuteNotFound("The chute could not be found.")
+        info = self.inspect()
 
         return info['Id']
 
@@ -27,11 +23,7 @@ class ChuteContainer(object):
         """
         Look up the IP address assigned to the container.
         """
-        client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-        try:
-            info = client.inspect_container(self.name)
-        except docker.errors.NotFound:
-            raise ChuteNotFound("The chute could not be found.")
+        info = self.inspect()
 
         if not info['State']['Running']:
             raise ChuteNotRunning("The chute is not running.")
@@ -42,11 +34,7 @@ class ChuteContainer(object):
         """
         Look up the PID of the container, if running.
         """
-        client = docker.Client(base_url=self.docker_url, version='auto')
-        try:
-            info = client.inspect_container(self.name)
-        except docker.errors.NotFound:
-            raise ChuteNotFound("The chute could not be found.")
+        info = self.inspect()
 
         if not info['State']['Running']:
             raise ChuteNotRunning("The chute is not running.")
@@ -77,14 +65,14 @@ class ChuteContainer(object):
     def getStatus(self):
         """
         Return the status of the container (running, exited, paused).
-        """
-        client = docker.Client(base_url=self.docker_url, version='auto')
-        try:
-            info = client.inspect_container(self.name)
-        except docker.errors.NotFound:
-            return "missing"
 
-        return info['State']['Status']
+        Returns "missing" if the chute does not exist.
+        """
+        try:
+            info = self.inspect()
+            return info['State']['Status']
+        except ChuteNotFound:
+            return "missing"
 
     def inspect(self):
         """
@@ -101,12 +89,10 @@ class ChuteContainer(object):
         """
         Check if container is running.
 
-        Returns True/False.
+        Returns True/False; returns False if the container does not exist.
         """
-        client = docker.Client(base_url=self.docker_url, version='auto')
         try:
-            info = client.inspect_container(self.name)
-        except docker.errors.NotFound:
+            info = self.inspect()
+            return info['State']['Running']
+        except ChuteNotFound:
             return False
-
-        return info['State']['Running']
