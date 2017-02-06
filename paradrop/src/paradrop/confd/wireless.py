@@ -243,20 +243,22 @@ class ConfigWifiIface(ConfigObject):
         # Type to pass to iw command, e.g. '__ap'.
         iw_type = IW_IFACE_TYPE[self.mode]
 
-        ifname = self.getIfname(interface=interface)
+        # Set _ifname while the section is being applied so that it is still
+        # available when the section is being reverted.
+        self._ifname = self.getIfname(interface=interface)
 
         # Try removing interface first in case it already exists.
-        cmd = ["iw", "dev", ifname, "del"]
+        cmd = ["iw", "dev", self._ifname, "del"]
         commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
 
         # Command to create the virtual interface.
         cmd = ["iw", "phy", wifiDevice._phy, "interface", "add",
-               ifname, "type", iw_type]
+               self._ifname, "type", iw_type]
         commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         # Assign a random MAC address to avoid conflict with other
         # interfaces using the same device.
-        cmd = ["ip", "link", "set", "dev", ifname,
+        cmd = ["ip", "link", "set", "dev", self._ifname,
                 "address", self.getRandomMAC()]
         commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
@@ -288,7 +290,7 @@ class ConfigWifiIface(ConfigObject):
                 KillCommand(self.pidFile, self)))
 
         # Delete our virtual interface.
-        cmd = ["iw", "dev", self.getIfname(allConfigs=allConfigs), "del"]
+        cmd = ["iw", "dev", self._ifname, "del"]
         commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
 
         return commands
