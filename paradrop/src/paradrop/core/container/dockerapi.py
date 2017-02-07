@@ -377,6 +377,11 @@ def removeNewContainer(update):
     try:
         client = docker.Client(base_url="unix://var/run/docker.sock",
                 version='auto')
+
+        # Grab the last 40 log messages to help with debugging.
+        logs = client.logs(name, stream=False, tail=40, timestamps=False)
+        update.progress("{}: {}".format(name, logs.rstrip()))
+
         client.remove_container(container=name, force=True)
     except Exception as error:
         out.warn("Error removing container: {}".format(error))
