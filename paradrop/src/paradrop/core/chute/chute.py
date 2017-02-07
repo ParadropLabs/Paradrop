@@ -99,9 +99,14 @@ class Chute(object):
         """
         Get the port configured for the chute's web server.
 
-        Returns None if no port is configured.
+        Returns port (int) or None if no port is configured.
         """
+        port = None
         if hasattr(self, 'web'):
-            return self.web.get('port', None)
+            port = self.web.get('port', None)
+
+        if port is not None:
+            # Make sure it is an int.
+            return int(port)
         else:
             return None

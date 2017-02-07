@@ -72,24 +72,32 @@ def getPortList(chute):
         "1111/udp": 1111,
         "2222": 2222
     }
-    getPortList returns [(1111, 'udp'), 2222]
+    getPortList returns [(1111, 'udp'), (2222, 'tcp')]
     """
     if not hasattr(chute, 'host_config') or chute.host_config == None:
-        return []
-
-    config = chute.host_config
+        config = {}
+    else:
+        config = chute.host_config
 
     ports = []
     for port in config.get('port_bindings', {}).keys():
         if isinstance(port, int):
-            ports.append(port)
+            ports.append((port, 'tcp'))
             continue
 
         parts = port.split('/')
         if len(parts) == 1:
-            ports.append(int(parts[0]))
+            ports.append((int(parts[0]), 'tcp'))
         else:
             ports.append((int(parts[0]), parts[1]))
+
+    # If the chute is configured to host a web service, check
+    # whether there is already an entry in the list for the
+    # web port.  If not, we should add one.
+    web_port = chute.getWebPort()
+    if web_port is not None:
+        if not any(p[0] == web_port for p in ports):
+            ports.append((web_port, 'tcp'))
 
     return ports
 

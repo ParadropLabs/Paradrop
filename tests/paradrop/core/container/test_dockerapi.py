@@ -28,7 +28,12 @@ def test_getPortList():
 
     # Test with missing host_config.
     chute.host_config = None
+    chute.getWebPort.return_value = None
     assert dockerapi.getPortList(chute) == []
+
+    chute.getWebPort.return_value = 80
+    result = dockerapi.getPortList(chute)
+    assert (80, 'tcp') in result
 
     chute.host_config = {
         'port_bindings': {
@@ -39,7 +44,7 @@ def test_getPortList():
 
     result = dockerapi.getPortList(chute)
     assert (1111, 'udp') in result
-    assert 2222 in result
+    assert (2222, 'tcp') in result
 
 
 @patch('paradrop.core.container.downloader.downloader')
