@@ -2,9 +2,10 @@ from mock import MagicMock, patch
 from nose.tools import assert_raises
 
 
+@patch("os.chown")
 @patch("paradrop.lib.utils.pdosq.makedirs")
 @patch("paradrop.lib.utils.pdos.remove")
-def test_createVolumeDirs(remove, makedirs):
+def test_createVolumeDirs(remove, makedirs, chown):
     from paradrop.core.config.dockerconfig import createVolumeDirs
 
     # A delete update should call remove but not makedirs.

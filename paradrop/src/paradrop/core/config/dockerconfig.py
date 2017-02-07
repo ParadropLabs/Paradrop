@@ -6,6 +6,7 @@
         or the HostConfig JSON object known at init time of the chute.
 """
 
+import os
 from io import BytesIO
 
 from paradrop.base.output import out
@@ -57,6 +58,7 @@ def createVolumeDirs(update):
     else:
         pdosq.makedirs(extDataDir)
         pdosq.makedirs(extSystemDir)
+        os.chown(extDataDir, settings.CONTAINER_UID, -1)
 
 
 def abortCreateVolumeDirs(update):

@@ -6,7 +6,7 @@ ADD init-app.sh /usr/local/bin/
 # Make /home/paradrop so that npm can drop some files in there.
 # Make /opt/paradrop/app for installing the app files.
 # Add cap_net_bind_service to node so that it can bind to ports 1-1024.
-RUN useradd --system paradrop && \
+RUN useradd --system --uid 999 paradrop && \
     mkdir -p /home/paradrop && \
     chown paradrop /home/paradrop && \
     mkdir -p /opt/paradrop/app && \

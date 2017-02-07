@@ -138,6 +138,10 @@ SNAPD_INTERFACE = "/run/snapd.socket"
 # build the chute.
 CHUTE_CONFIG_FILE = "paradrop.yaml"
 
+# UID for unprivileged containers.  File ownership on mounted volumes needs to
+# be consistent between the container and host.
+CONTAINER_UID = 999
+
 ###############################################################################
 # Helper functions
 ###############################################################################
