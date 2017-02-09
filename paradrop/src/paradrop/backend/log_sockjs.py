@@ -1,17 +1,14 @@
 import json
 from twisted.internet.protocol import Protocol, Factory
+from twisted.internet.task import LoopingCall
 
 from paradrop.base.output import out
 from paradrop.core.container.log_provider import LogProvider
 
-
 class LogSockJSProtocol(Protocol):
-    def __init__(self, factory, log_provider):
+    def __init__(self, factory):
         self.factory = factory
-        self.log_provider = log_provider
-
-        self.queue = None
-        self.queueDeferred = None
+        self.loop = LoopingCall(self.check_log)
 
     def connectionMade(self):
         if not hasattr(self.factory, "transports"):
@@ -19,36 +16,25 @@ class LogSockJSProtocol(Protocol):
         self.factory.transports.add(self.transport)
         out.info('sockjs /logs connected')
 
-        self.connected = True
-        self.queue = self.log_provider.attach()
+        self.factory.log_provider.attach()
+        self.loop.start(1.0)
 
-        self.queueDeferred = self.queue.get()
-        self.queueDeferred.addCallback(self.sendLogMessage)
-
-    def sendLogMessage(self, msg):
-        self.transport.write(json.dumps(msg))
-
-        # Repeat with the next message from the queue.
-        self.queueDeferred = self.queue.get()
-        self.queueDeferred.addCallback(self.sendLogMessage)
+    def check_log(self):
+        logs = self.factory.log_provider.get_logs()
+        for log in logs:
+            self.transport.write(json.dumps(log))
 
     def connectionLost(self, reason):
         self.factory.transports.remove(self.transport)
         out.info('sockjs /logs disconnected')
 
-        self.connected = False
-        self.log_provider.detach()
-
-        # If there is a Deferred waiting for the next message, cancel it.
-        if self.queueDeferred is not None:
-            self.queueDeferred.cancel()
-
+        self.loop.stop()
+        self.factory.log_provider.detach()
 
 class LogSockJSFactory(Factory):
     def __init__(self, chutename):
-        self.chutename = chutename
         self.transports = set()
+        self.log_provider = LogProvider(chutename)
 
     def buildProtocol(self, addr):
-        log_provider = LogProvider(self.chutename)
-        return LogSockJSProtocol(self, log_provider)
+        return LogSockJSProtocol(self)

@@ -1,16 +1,42 @@
 '''
 Provides messages from container logs (STDOUT and STDERR).
 '''
-
 import docker
-from twisted.internet import reactor, threads
-from twisted.internet.defer import DeferredQueue
+from multiprocessing import Process, Queue
 
+
+def monitor_logs(chute_name, queue):
+    """
+    Iterate over log messages from a container and add them to the queue
+    for consumption.  This function will block and wait for new messages
+    from the container.  Use the queue to interface with async code.
+    """
+    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    output = client.logs(chute_name, stdout=True, stderr=True,
+                         stream=True, timestamps=True, follow=True)
+    for line in output:
+        # I have grown to distrust Docker streaming functions.  It may
+        # return a string; it may return an object.  If it is a string,
+        # separate the timestamp portion from the rest of the message.
+        if isinstance(line, basestring):
+            parts = line.split(" ", 1)
+            if len(parts) > 1:
+                queue.put({
+                    'timestamp': parts[0],
+                    'message': parts[1].rstrip()
+                })
+
+            else:
+                queue.put({
+                    'message': line.rstrip()
+                })
+        else:
+            queue.put(line)
 
 class LogProvider(object):
     def __init__(self, chutename):
         self.chutename = chutename
-        self.queue = DeferredQueue()
+        self.queue = Queue()
         self.listening = False
 
     def attach(self):
@@ -25,9 +51,17 @@ class LogProvider(object):
             'message': 'Something happened'
         }
         """
-        reactor.callInThread(self.__follow)
-        self.listening = True
-        return self.queue
+        if not self.listening:
+            self.process = Process(target=monitor_logs, args=(self.chutename, self.queue))
+            self.process.start()
+            self.listening = True
+
+    def get_logs(self):
+        logs = []
+        while not self.queue.empty():
+            msg = self.queue.get()
+            logs.append(msg)
+        return logs
 
     def detach(self):
         """
@@ -36,35 +70,6 @@ class LogProvider(object):
         After this is called, no additional messages will be added to the
         queue.
         """
-        self.listening = False
-
-    def __follow(self):
-        """
-        Iterate over log messages from a container and add them to the queue
-        for consumption.  This function will block and wait for new messages
-        from the container.  Use the queue to interface with async code.
-        """
-        client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-        output = client.logs(self.chutename, stdout=True, stderr=True,
-                stream=True, timestamps=True, follow=True)
-        for line in output:
-            if not self.listening:
-                break
-
-            # I have grown to distrust Docker streaming functions.  It may
-            # return a string; it may return an object.  If it is a string,
-            # separate the timestamp portion from the rest of the message.
-            if isinstance(line, basestring):
-                parts = line.split(" ", 1)
-                if len(parts) > 1:
-                    self.queue.put({
-                        'timestamp': parts[0],
-                        'message': parts[1].rstrip()
-                    })
-
-                else:
-                    self.queue.put({
-                        'message': line.rstrip()
-                    })
-            else:
-                self.queue.put(line)
+        if self.listening:
+            self.process.terminate()
+            self.listening = False

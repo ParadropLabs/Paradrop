@@ -55,6 +55,8 @@ class HttpServer(object):
         return ChuteApi(self.update_manager).routes.resource()
 
 
+    '''
+    # Not being used for now because we are using HAProxy to setup the reverse proxy
     @app.route('/chutes/<string:name>', branch=True)
     def chutes(self, request, name):
         try:
@@ -63,7 +65,7 @@ class HttpServer(object):
             return ReverseProxyResource(ip, 80, '/')
         except ParadropException as error:
             return str(error)
-
+    '''
 
     @app.route('/sockjs/logs/<string:name>', branch=True)
     def logs(self, request, name):
