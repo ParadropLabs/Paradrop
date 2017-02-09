@@ -5,15 +5,19 @@ import docker
 from multiprocessing import Process, Queue
 
 
-def monitor_logs(chute_name, queue):
+def monitor_logs(chute_name, queue, tail=200):
     """
     Iterate over log messages from a container and add them to the queue
     for consumption.  This function will block and wait for new messages
     from the container.  Use the queue to interface with async code.
+
+    tail: number of lines to retrieve from log history; the string "all"
+    is also valid, but highly discouraged for performance reasons.
     """
     client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
     output = client.logs(chute_name, stdout=True, stderr=True,
-                         stream=True, timestamps=True, follow=True)
+                         stream=True, timestamps=True, follow=True,
+                         tail=tail)
     for line in output:
         # I have grown to distrust Docker streaming functions.  It may
         # return a string; it may return an object.  If it is a string,
