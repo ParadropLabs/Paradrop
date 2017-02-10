@@ -9,6 +9,7 @@ class LogSockJSProtocol(Protocol):
     def __init__(self, factory):
         self.factory = factory
         self.loop = LoopingCall(self.check_log)
+        self.log_provider = None
 
     def connectionMade(self):
         if not hasattr(self.factory, "transports"):
@@ -16,11 +17,12 @@ class LogSockJSProtocol(Protocol):
         self.factory.transports.add(self.transport)
         out.info('sockjs /logs connected')
 
-        self.factory.log_provider.attach()
+        self.log_provider = LogProvider(self.factory.chute_name)
+        self.log_provider.attach()
         self.loop.start(1.0)
 
     def check_log(self):
-        logs = self.factory.log_provider.get_logs()
+        logs = self.log_provider.get_logs()
         for log in logs:
             self.transport.write(json.dumps(log))
 
@@ -29,12 +31,13 @@ class LogSockJSProtocol(Protocol):
         out.info('sockjs /logs disconnected')
 
         self.loop.stop()
-        self.factory.log_provider.detach()
+        self.log_provider.detach()
+        self.log_provider = None
 
 class LogSockJSFactory(Factory):
     def __init__(self, chutename):
         self.transports = set()
-        self.log_provider = LogProvider(chutename)
+        self.chute_name = chutename
 
     def buildProtocol(self, addr):
         return LogSockJSProtocol(self)

@@ -1,6 +1,8 @@
 '''
 Provides messages from container logs (STDOUT and STDERR).
 '''
+import os
+import signal
 import docker
 from multiprocessing import Process, Queue
 
@@ -43,8 +45,6 @@ class LogProvider(object):
         """
         Start listening for log messages.
 
-        Returns a DeferredQueue that can be used by an async consumer.
-
         Log messages in the queue will appear like the following:
         {
             'timestamp': '2017-01-30T15:46:23.009397536Z',
@@ -71,5 +71,9 @@ class LogProvider(object):
         queue.
         """
         if self.listening:
-            self.process.terminate()
+            # We have to kill the process explicitly with SIGKILL,
+            # terminate() function does not work here.
+            os.kill(self.process.pid, signal.SIGKILL)
+            # self.process.terminate()
+            # self.process.join()
             self.listening = False
