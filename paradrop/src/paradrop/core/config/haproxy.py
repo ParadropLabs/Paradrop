@@ -73,11 +73,16 @@ def generateConfigSections():
         #
         # We need to do a lookup because the host port might be dynamically
         # assigned by Docker.
+        #
+        # Use HTTP code 302 for the redirect, which will not be cached by the
+        # web browser.  The port portion of the URL can change whenever the
+        # chute restarts, so we don't want web browsers to cache it.  Browsers
+        # will cache a 301 (Moved Permanently) response.
         portconf = container.getPortConfiguration(port, "tcp")
         if len(portconf) > 0:
             # TODO: Are there other elements in the list?
             binding = portconf[0]
-            frontend['lines'].append("http-request redirect location http://%[req.hdr(host)]:{} code 301 if path_{}".format(
+            frontend['lines'].append("http-request redirect location http://%[req.hdr(host)]:{} code 302 if path_{}".format(
                 binding['HostPort'], chute.name))
 
         # Add a server at the chute's IP address.
