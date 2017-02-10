@@ -14,6 +14,9 @@ RUN useradd --system --uid 999 paradrop && \
     chmod a+s /opt/paradrop/app && \
     setcap 'cap_net_bind_service=+ep' /usr/local/bin/node
 
+# Install popular tools here.
+RUN npm install --global gulp-cli
+
 # Defang setuid/setgid binaries.
 RUN find / -perm +6000 -type f -exec chmod a-s {} \; || true
 
