@@ -18,7 +18,8 @@ RUN useradd --system --uid 999 paradrop && \
 RUN find / -perm +6000 -type f -exec chmod a-s {} \; || true
 
 WORKDIR /opt/paradrop/app
-USER paradrop
 
-ONBUILD ADD . /opt/paradrop/app/
+ONBUILD COPY . /opt/paradrop/app/
+ONBUILD RUN chown paradrop:paradrop -R /opt/paradrop/app
+ONBUILD USER paradrop
 ONBUILD RUN init-app.sh
