@@ -162,6 +162,8 @@ class ConfigWifiDevice(ConfigObject):
         ConfigOption(name="short_gi_80", type=bool),
         ConfigOption(name="short_gi_160", type=bool),
         ConfigOption(name="tx_stbc_2by1", type=bool),
+        ConfigOption(name="rx_antenna_pattern", type=bool),
+        ConfigOption(name="tx_antenna_pattern", type=bool),
         ConfigOption(name="rx_stbc", type=int)
     ]
 
@@ -184,6 +186,9 @@ class ConfigWifiIface(ConfigObject):
         ConfigOption(name="encryption"),
         ConfigOption(name="key"),
         ConfigOption(name="maxassoc", type=int),
+
+        ConfigOption(name="doth", type=bool, default=True),
+        ConfigOption(name="short_preamble", type=bool, default=True),
 
         # NOTE: ifname is not defined in the UCI specs.  We use it to declare a
         # desired name for the virtual wireless interface that should be
@@ -408,6 +413,8 @@ class HostapdConfGenerator(object):
         if self.wifiDevice.country is not None:
             options.append(("country_code", self.wifiDevice.country))
             options.append(("ieee80211d", 1))
+            if self.wifiIface.doth:
+                options.append(("ieee80211h", 1))
 
         hwmode = self.wifiDevice.hwmode
         if hwmode is not None:
@@ -429,6 +436,9 @@ class HostapdConfGenerator(object):
             options.append(("rts_threshold", self.wifiDevice.rts))
         if self.wifiDevice.frag is not None:
             options.append(("fragm_threshold", self.wifiDevice.rts))
+
+        if self.wifiIface.short_preamble:
+            options.append(("preamble", 1))
 
         options.append(("wmm_enabled", 1 * self.wifiIface.wmm))
 
@@ -501,6 +511,10 @@ class HostapdConfGenerator(object):
             vht_capab += "[SHORT-GI-160]"
         if self.wifiDevice.tx_stbc_2by1:
             vht_capab += "[TX-STBC-2BY1]"
+        if self.wifiDevice.rx_antenna_pattern:
+            vht_capab += "[RX-ANTENNA-PATTERN]"
+        if self.wifiDevice.tx_antenna_pattern:
+            vht_capab += "[TX-ANTENNA-PATTERN]"
         if self.wifiDevice.rx_stbc == 1:
             vht_capab += "[RX-STBC-1]"
         elif self.wifiDevice.rx_stbc == 2:

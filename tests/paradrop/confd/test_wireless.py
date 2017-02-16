@@ -125,7 +125,7 @@ def test_HostapdConfGenerator_get11acOptions():
     options = generator.get11acOptions()
     print(options)
     assert ("ieee80211ac", 1) in options
-    assert ("vht_capab", "[SHORT-GI-80][SHORT-GI-160][TX-STBC-2BY1][RX-STBC-12]") in options
+    assert ("vht_capab", "[SHORT-GI-80][SHORT-GI-160][TX-STBC-2BY1][RX-ANTENNA-PATTERN][TX-ANTENNA-PATTERN][RX-STBC-12]") in options
     assert ("vht_oper_chwidth", 0) in options
     assert ("vht_oper_centr_freq_seg0_idx", 38) in options
 
