@@ -172,6 +172,26 @@ class ConfigWifiDevice(ConfigObject):
         if self._phy is None and self.macaddr is not None:
             self._phy = getPhyFromMAC(self.macaddr)
 
+    def apply(self, allConfigs):
+        commands = []
+
+        if self.txpower is not None:
+            # txpower is in dBm, iw takes mBm.
+            power = self.txpower * 100
+            cmd = ["iw", "phy", self._phy, "set", "txpower",
+                    "fixed", str(power)]
+        else:
+            cmd = ["iw", "phy", self._phy, "set", "txpower", "auto"]
+
+        commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
+        return commands
+
+    def revert(self, allConfigs):
+        commands = []
+        cmd = ["iw", "phy", self._phy, "set", "txpower", "auto"]
+        commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
+        return commands
+
 
 class ConfigWifiIface(ConfigObject):
     typename = "wifi-iface"
