@@ -188,8 +188,13 @@ class ConfigWifiDevice(ConfigObject):
 
     def revert(self, allConfigs):
         commands = []
-        cmd = ["iw", "phy", self._phy, "set", "txpower", "auto"]
-        commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
+
+        # We only need to revert txpower if it was actually set in the apply
+        # step.
+        if self.txpower is not None:
+            cmd = ["iw", "phy", self._phy, "set", "txpower", "auto"]
+            commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
+
         return commands
 
 
