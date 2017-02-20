@@ -340,7 +340,7 @@ class ConfigWifiIface(ConfigObject):
             confFile = new.makeHostapdConf(wifiDevice, interface)
 
             new.pidFile = "{}/hostapd-{}.pid".format(
-                new.manager.writeDir, self.internalName)
+                new.manager.writeDir, new.internalName)
 
             cmd = ["hostapd", "-P", new.pidFile, "-B", confFile]
             commands.append((self.PRIO_START_DAEMON, Command(cmd, new)))

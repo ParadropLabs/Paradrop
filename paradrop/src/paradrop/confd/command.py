@@ -24,9 +24,19 @@ def kill(pid, kill_signal=4, timeout=8):
     start = time.time()
     while (time.time() - start) < kill_signal:
         time.sleep(0.1)
-        _, status = os.waitpid(pid, os.WNOHANG)
-        if status != 0:
-            return True
+
+        try:
+            # waitpid returns (0, 0) if the process is still running.
+            # Otherwise, it returns (pid, status).
+            opid, status = os.waitpid(pid, os.WNOHANG)
+            if opid == pid:
+                return True
+        except OSError as error:
+            # I think ECHILD means there is no process with the given pid.
+            if error.errno == errno.ECHILD:
+                return True
+            else:
+                raise error
 
     try:
         os.kill(pid, signal.SIGKILL)
@@ -40,9 +50,19 @@ def kill(pid, kill_signal=4, timeout=8):
 
     while (time.time() - start) < timeout:
         time.sleep(0.1)
-        _, status = os.waitpid(pid, os.WNOHANG)
-        if status != 0:
-            return True
+
+        try:
+            # waitpid returns (0, 0) if the process is still running.
+            # Otherwise, it returns (pid, status).
+            opid, status = os.waitpid(pid, os.WNOHANG)
+            if opid == pid:
+                return True
+        except OSError as error:
+            # I think ECHILD means there is no process with the given pid.
+            if error.errno == errno.ECHILD:
+                return True
+            else:
+                raise error
 
     return False
 
