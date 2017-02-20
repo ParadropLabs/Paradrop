@@ -115,9 +115,9 @@ class Command(object):
                     stderr=subprocess.PIPE)
             self.pid = proc.pid
             for line in proc.stdout:
-                out.verbose("{}: {}".format(self.command[0], line))
+                out.verbose("{} {}: {}".format(self.command[0], self.pid, line))
             for line in proc.stderr:
-                out.verbose("{}: {}".format(self.command[0], line))
+                out.verbose("{} {}: {}".format(self.command[0], self.pid, line))
             self.result = proc.wait()
             out.info('Command "{}" returned {}\n'.format(
                      " ".join(self.command), self.result))
@@ -187,9 +187,11 @@ class KillCommand(Command):
             return True
 
         try:
-            kill(pid)
+            retval = kill(pid)
             self.result = 0
+            out.info('Command "kill {}" returned {}\n'.format(pid, retval))
         except Exception as e:
+            out.info('Command "kill {}" raised exception {}\n'.format(pid, e))
             self.result = e
 
         return (self.result == 0)
