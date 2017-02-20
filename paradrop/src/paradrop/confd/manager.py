@@ -232,6 +232,10 @@ class ConfigManager(object):
                     # one's change.
                     updatedConfigs.update(matchByName.dependents)
 
+                    # Remove links to the old version because it will be
+                    # redundant after the new configuration goes into effect.
+                    matchByName.removeFromParents()
+
                 else:
                     # If it did not exist or is different, add it to our queue
                     # of sections to execute.
