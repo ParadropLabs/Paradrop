@@ -17,8 +17,6 @@ import subprocess
 import time
 import yaml
 
-from io import BytesIO
-
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
 from paradrop.lib.misc import resopt
@@ -27,6 +25,7 @@ from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config.devices import getWirelessPhyName
 
 from .chutecontainer import ChuteContainer
+from .dockerfile import Dockerfile
 from .downloader import downloader
 
 
@@ -169,31 +168,6 @@ def buildImage(update):
         raise Exception("Building docker image failed; check your Dockerfile for errors.")
 
 
-def generateDockerfile(conf):
-    # Required fields for generating Dockerfile.
-    # Developer tells us what language pack to use and what command to run.
-    language = conf['use']
-    command = conf['command']
-
-    # Optional fields.
-    image_source = conf.get('image_source', 'paradrop')
-    image_version = conf.get('image_version', 'latest')
-
-    # Example base image: paradrop/node-x86_64:latest
-    from_image = "{}/{}-{}:{}".format(image_source, language,
-            platform.machine(), image_version)
-
-    if isinstance(command, basestring):
-        cmd_string = command
-    elif isinstance(command, list):
-        cmd_string = "[{}]".format(",".join(
-            "\"{}\"".format(v) for v in command))
-    else:
-        raise Exception("command must be either a string or list of strings")
-
-    return "FROM {}\nCMD {}\n".format(from_image, cmd_string)
-
-
 def _buildImage(update, client, inline, **buildArgs):
     """
     Build the Docker image and monitor progress (worker function).
@@ -223,16 +197,19 @@ def _buildImage(update, client, inline, **buildArgs):
     chute_type = build_conf.get('type', 'heavy')
     if chute_type == 'light':
         buildArgs['pull'] = True
-        dockerfile = generateDockerfile(build_conf)
+
+        dockerfile = Dockerfile(build_conf)
+        valid, reason = dockerfile.isValid()
+        if not valid:
+            raise Exception("Invalid configuration: {}".format(reason))
 
         if inline:
             # Pass the dockerfile string directly.
-            buildArgs['fileobj'] = BytesIO(dockerfile.encode("utf-8"))
+            buildArgs['fileobj'] = dockerfile.getBytesIO()
         else:
             # Write it out to a file in the working directory.
             path = os.path.join(buildArgs['path'], "Dockerfile")
-            with open(path, 'w') as output:
-                output.write(dockerfile)
+            dockerfile.writeFile(path)
 
     output = client.build(**buildArgs)
 

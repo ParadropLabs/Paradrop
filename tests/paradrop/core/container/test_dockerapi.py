@@ -154,23 +154,3 @@ def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
     assert getPID.called
     assert call_in_netns.called
     assert call_retry.called
-
-
-@patch('paradrop.core.container.dockerapi.platform')
-def test_generateDockerfile(platform):
-    conf = {
-        'use': 'python2',
-        'command': 'python main.py',
-        'image_source': 'paradrop',
-        'image_version': 'latest',
-    }
-
-    platform.machine.return_value = 'x86_64'
-
-    result = dockerapi.generateDockerfile(conf)
-    assert "FROM paradrop/python2-x86_64:latest" in result
-    assert "CMD python main.py" in result
-
-    conf['command'] = ['python', 'main.py']
-    result = dockerapi.generateDockerfile(conf)
-    assert 'CMD ["python","main.py"]' in result

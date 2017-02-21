@@ -21,5 +21,7 @@ WORKDIR /opt/paradrop/app
 
 ONBUILD COPY . /opt/paradrop/app/
 ONBUILD RUN chown paradrop:paradrop -R /opt/paradrop/app
-ONBUILD USER paradrop
+
+# Run init-app.sh as root to install python packages.
 ONBUILD RUN init-app.sh
+ONBUILD USER paradrop
