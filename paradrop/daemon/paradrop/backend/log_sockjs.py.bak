@@ -1,0 +1,40 @@
+import json
+from twisted.internet.protocol import Protocol, Factory
+
+from paradrop.base.output import out
+from paradrop.core.container.log_provider import LogProvider
+
+
+class LogSockJSProtocol(Protocol):
+    def __init__(self, factory, log_provider):
+        self.factory = factory
+        self.log_provider = log_provider
+
+    def connectionMade(self):
+        if not hasattr(self.factory, "transports"):
+            self.factory.transports = set()
+        self.factory.transports.add(self.transport)
+        out.info('sockjs /logs connected')
+
+        self.connected = True
+        self.log_provider.attach(self)
+
+    def on_new_message(self, msg):
+        self.transport.write(msg)
+
+    def connectionLost(self, reason):
+        self.factory.transports.remove(self.transport)
+        out.info('sockjs /logs disconnected')
+
+        self.connected = False
+        self.log_provider.detach()
+
+
+class LogSockJSFactory(Factory):
+    def __init__(self, chutename):
+        self.chutename = chutename
+        self.transports = set()
+
+    def buildProtocol(self, addr):
+        log_provider = LogProvider(self.chutename)
+        return LogSockJSProtocol(self, log_provider)
