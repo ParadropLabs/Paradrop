@@ -7,7 +7,7 @@ import platform
 from psutil import virtual_memory
 from klein import Klein
 
-from paradrop.core.config.devices import detectSystemDevices, getWirelessDeviceId
+from paradrop.core.config.devices import detectSystemDevices
 from paradrop.core.system.system_info import getOSVersion, getPackageVersion
 from paradrop.lib.utils import pdos
 from . import cors
@@ -29,7 +29,8 @@ class InformationApi:
             self.wifi.append({
                 'macAddr': wifiDev['mac'],
                 'vendorId': wifiDev['vendor'],
-                'deviceId': wifiDev['device']
+                'deviceId': wifiDev['device'],
+                'pciSlot': wifiDev['pci_slot']
             })
 
         self.biosVendor = pdos.readFile('/sys/devices/virtual/dmi/id/bios_vendor')[0]

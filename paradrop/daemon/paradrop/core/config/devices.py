@@ -117,27 +117,50 @@ def getWirelessPhyName(ifname):
     return readSysFile(path)
 
 
-def getWirelessDeviceId(phy):
-    """
-    Return the physical device ID for a wireless interface.
+class SysReader(object):
+    def __init__(self, phy):
+        self.phy = phy
+        self.device_path = "{}/{}/device".format(IEEE80211_DIR, phy)
 
-    This is will be a pair of hexadecimal numbers separated.
-    The first four digits are the vendor, and the second four our the device.
-    You may find information about devices in /usr/share/hwdata/pci.ids.
+    def getDeviceId(self, default="????"):
+        """
+        Return the device ID for the device.
 
-    For example: our Qualcomm 802.11n chips have the ID (168c, 002a).
-    """
-    path = "{}/{}/device/vendor".format(IEEE80211_DIR, phy)
-    vendor = readSysFile(path)
-    if vendor is None:
-        vendor = "????"
+        This is a four-digit hexadecimal number.  For example, our Qualcomm
+        802.11n chips have device ID 002a.
+        """
+        path = os.path.join(self.device_path, "device")
+        device = readSysFile(path)
+        if device is None:
+            device = default
+        return device
 
-    path = "{}/{}/device/device".format(IEEE80211_DIR, phy)
-    device = readSysFile(path)
-    if device is None:
-        device = "????"
+    def getSlotName(self, default=None):
+        """
+        Return the PCI slot name for the device.
 
-    return vendor, device
+        Example: "0000:04:00.0"
+        """
+        path = os.path.join(self.device_path, "uevent")
+        with open(path, "r") as source:
+            for line in source:
+                key, value = line.split("=")
+                if key == "PCI_SLOT_NAME":
+                    return value
+        return default
+
+    def getVendorId(self, default="????"):
+        """
+        Return the vendor ID for the device.
+
+        This is a four-digit hexadecimal number.  For example, our Qualcomm
+        802.11n chips have vendor ID 168c.
+        """
+        path = os.path.join(self.device_path, "vendor")
+        vendor = readSysFile(path)
+        if vendor is None:
+            vendor = default
+        return vendor
 
 
 def listSystemDevices():
@@ -183,14 +206,16 @@ def listSystemDevices():
         for phy in pdos.listdir(IEEE80211_DIR):
             if phy not in detectedWifi:
                 mac = getPhyMACAddress(phy)
-                vendor, device_id = getWirelessDeviceId(phy)
+                reader = SysReader(phy)
+
                 devices.append({
                     'name': "wifi{}".format(mac.replace(':', '')),
                     'type': 'wifi',
                     'mac': mac,
                     'phy': phy,
-                    'vendor': vendor,
-                    'device': device_id
+                    'vendor': reader.getVendorId(),
+                    'device': reader.getDeviceId(),
+                    'pci_slot': reader.getSlotName()
                 })
 
                 detectedWifi.add(phy)
