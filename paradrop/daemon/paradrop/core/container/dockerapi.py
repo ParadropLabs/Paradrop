@@ -665,7 +665,7 @@ def call_in_netns(chute, env, command):
         out.warn("ip netns exec command failed, resorting to docker exec\n")
 
         client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-        status = client.exec_create(chute.name, command)
+        status = client.exec_create(chute.name, command, user='root')
         client.exec_start(status['Id'])
 
 
