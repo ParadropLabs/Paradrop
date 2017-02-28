@@ -52,7 +52,7 @@ setup() {
 
 build() {
     if [ -n "$1" ]; then
-        sed -i "s/^version:.*/version: $1/" -i paradrop/snapcraft.yaml
+        sed -i "s/^version:.*/version: $1/" -i paradrop/snap/snapcraft.yaml
         sed -i "s/version=.*,/version='$1',/" -i paradrop/src/setup.py
     fi
     (cd paradrop; snapcraft clean; snapcraft)
