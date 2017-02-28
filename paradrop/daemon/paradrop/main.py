@@ -41,7 +41,6 @@ class Nexus(nexus.NexusBase):
                 out.warn('The router ID or password is invalid!')
             else:
                 out.info('WAMP session is ready!')
-                self.session.set_update_fetcher(self.update_fetcher)
                 # Set up communication with pdserver.
                 # 1. Create a report of the current system state and send that.
                 # 2. Poll for a list of updates that should be applied.
@@ -74,6 +73,7 @@ def main():
 
     update_manager = UpdateManager(reactor)
     update_fetcher = UpdateFetcher(update_manager)
+    WampSession.set_update_fetcher(update_fetcher)
     ProcessMonitor.allowedActions = set()
 
     # Start the configuration service as a thread

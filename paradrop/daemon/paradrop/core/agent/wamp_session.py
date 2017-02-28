@@ -14,9 +14,13 @@ from paradrop.base.cxbr import BaseSession
 
 
 class WampSession(BaseSession):
+    # Make this a class variable because a new WampSession object is created
+    # whenever the WAMP connection resets, but we only call set_update_fetcher
+    # on program initialization.
+    update_fetcher = None
+
     def __init__(self, *args, **kwargs):
         self.uriPrefix = 'org.paradrop.'
-        self.update_fetcher = None
         super(WampSession, self).__init__(*args, **kwargs)
 
     def onConnect(self):
@@ -105,13 +109,14 @@ class WampSession(BaseSession):
             return "Sending command to pdinstall failed"
 
 
-    def set_update_fetcher(self, update_fetcher):
-        self.update_fetcher = update_fetcher
+    @classmethod
+    def set_update_fetcher(cls, update_fetcher):
+        WampSession.update_fetcher = update_fetcher
 
 
     @inlineCallbacks
     def updatesPending(self, pdid):
         out.info('Notified of updates...')
-        if self.update_fetcher is not None:
+        if WampSession.update_fetcher is not None:
             out.info('Pulling updates from the server...')
-            yield self.update_fetcher.pull_update()
+            yield WampSession.update_fetcher.pull_update()
