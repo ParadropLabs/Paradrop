@@ -29,7 +29,7 @@ with the following contents::
       "version": "1.0.0",
       "description": "Post images for others to see.",
       "main": "index.js",
-      "author": "ParaDrop Team",
+      "author": "ParaDrop Team"
     }
 
 Install Dependencies
@@ -37,7 +37,7 @@ Install Dependencies
 
 Use the following command to install some dependencies that we will be
 using to build the application.  We use express as a simple web server
-along with a plugin for accepting file uploads.  W will also use Embedded
+along with a plugin for accepting file uploads.  We will also use Embedded
 JS (EJS) for simple templating, demonstrated later in this tutorial.
 
 The ``--save`` option instructs npm to save the packages to the package.json
@@ -244,6 +244,9 @@ We use some Embedded JS code to loop over the array of notes stored
 in ``app.locals.notes`` and generate an img element for each one with
 the appropriate filename.
 
+Now when you run the app and load ``http://localhost:3000/`` you should
+see the filler images.  Try using the form to upload an image, and
+it should appear on the board.
 
 Preparing the Chute
 -------------------
