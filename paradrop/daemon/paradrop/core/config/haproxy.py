@@ -63,8 +63,13 @@ def generateConfigSections():
         frontend['lines'].append("use_backend {} if host_{}".format(
             chute.name, chute.name))
 
-        # Generate a rule that matches the beginning of the URL.
-        frontend['lines'].append("acl path_{} url_beg /chutes/{}".format(
+        # Generate rules that matches the beginning of the URL.
+        # We need to be careful and either have an exact match
+        # or make sure there is a slash after the chute name to
+        # avoid mix-ups, e.g. "sticky-board" and "sticky-board-new".
+        frontend['lines'].append("acl path_{} url /chutes/{}".format(
+            chute.name, chute.name))
+        frontend['lines'].append("acl path_{} url_beg /chutes/{}/".format(
             chute.name, chute.name))
 
         # Try to find a host binding for the web port to redirect:
