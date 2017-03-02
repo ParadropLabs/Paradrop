@@ -15,6 +15,7 @@ Contents:
    lightchutes
    deployment
    nucinstallation
+   tutorial-sticky-board
 
 .. These sections are out of date.
    tutorials
