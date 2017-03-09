@@ -140,3 +140,32 @@ def test_HostapdConfGenerator_get11acOptions():
     options = generator.get11acOptions()
     assert ("vht_oper_chwidth", 2) in options
     assert ("vht_oper_centr_freq_seg0_idx", 50) in options
+
+
+def test_HostapdConfGenerator_getRadiusOptions():
+    wifiIface = ConfigWifiIface()
+    wifiIface.ssid = "Paradrop"
+    wifiIface.maxassoc = 200
+    wifiIface.wmm = True
+    wifiIface.ifname = "wlan0"
+    wifiIface.auth_server = "10.42.0.1"
+    wifiIface.auth_secret = "secret"
+    wifiIface.acct_server = "10.42.0.1"
+    wifiIface.acct_secret = "secret"
+
+    wifiDevice = MagicMock()
+    wifiDevice.country = "US"
+    wifiDevice.hwmode = "11a"
+    wifiDevice.channel = 36
+    wifiDevice.beacon_int = 100
+    wifiDevice.rts = -1
+    wifiDevice.frag = -1
+
+    interface = MagicMock()
+    interface.type = "bridge"
+    interface.config_ifname = "br-lan"
+
+    generator = HostapdConfGenerator(wifiIface, wifiDevice, interface)
+
+    options = generator.getRadiusOptions()
+    print(options)
