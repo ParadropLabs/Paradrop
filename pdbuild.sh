@@ -31,7 +31,7 @@ deactivate_virtual_env() {
 setup() {
     echo -e "${COLOR}Setting up virtualenv" && tput sgr0
     if [ ! -f /usr/local/bin/virtualenv ]; then
-        sudo apt-get install python-setuptools python-dev build-essential libcurl4-gnutls-dev libghc-gnutls-dev libffi-dev
+        sudo apt-get install python-setuptools python-dev build-essential libcurl4-gnutls-dev libghc-gnutls-dev libffi-dev libssl-dev
         sudo easy_install pip
         sudo pip install --upgrade virtualenv
     fi
