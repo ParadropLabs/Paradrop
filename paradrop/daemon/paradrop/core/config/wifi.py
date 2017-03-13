@@ -37,6 +37,9 @@ def getOSWirelessConfig(update):
         if 'key' in iface:
             options['key'] = iface['key']
 
+        # Add extra options.
+        options.update(iface['options'])
+
         wifiIfaces.append((config, options))
 
     update.new.setCache('osWirelessConfig', wifiIfaces)

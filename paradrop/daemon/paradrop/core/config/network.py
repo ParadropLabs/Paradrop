@@ -21,6 +21,15 @@ MAX_INTERFACE_NUMBERS = 65536
 # Size of subnets to assign to chutes.
 SUBNET_SIZE = 24
 
+# Extra Wi-Fi interface options that we will pass on directly to confd.
+IFACE_EXTRA_OPTIONS = set([
+    "auth_server",
+    "auth_secret",
+    "acct_server",
+    "acct_secret",
+    "acct_interval"
+])
+
 
 def getInterfaceDict(chute):
     """
@@ -230,6 +239,18 @@ def fulfillDeviceRequest(cfg, devices):
     raise Exception("Could not satisfy requirement for device of type {}.".format(dtype))
 
 
+def getExtraOptions(cfg):
+    """
+    Get dictionary of extra wifi-iface options that we are not interpreting but
+    just passing on to pdconf.
+    """
+    options = dict()
+    for key, value in cfg.iteritems():
+        if key in IFACE_EXTRA_OPTIONS:
+            options[key] = value
+    return options
+
+
 def getNetworkConfig(update):
     """
     For the Chute provided, return the dict object of a 100% filled out
@@ -296,6 +317,12 @@ def getNetworkConfig(update):
         # Pass on DHCP configuration if it exists.
         if 'dhcp' in cfg:
             iface['dhcp'] = cfg['dhcp']
+
+        # TODO: Refactor!  The problem here is that `cfg` contains a mixture of
+        # fields, some that we will interpret and some that we will pass on to
+        # pdconf.  The result is a lot of logic that tests and copies without
+        # actually accomplishing much.
+        iface['options'] = getExtraOptions(cfg)
 
         interfaces.append(iface)
 

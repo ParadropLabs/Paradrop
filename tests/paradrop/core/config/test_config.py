@@ -17,13 +17,15 @@ def fake_interface_list():
         'name': 'mywan',
         'netType': 'wan',
         'externalIntf': 'v0000.eth0',
-        'externalIpaddr': '192.168.1.1'
+        'externalIpaddr': '192.168.1.1',
+        'options': {}
     })
     interfaces.append({
         'name': 'mylan',
         'netType': 'lan',
         'externalIntf': 'v0000.eth1',
-        'externalIpaddr': '192.168.2.1'
+        'externalIpaddr': '192.168.2.1',
+        'options': {}
     })
     interfaces.append({
         'name': 'mywifi',
@@ -40,7 +42,8 @@ def fake_interface_list():
             'limit': 100,
             'lease': '12h',
             'dns': ['8.8.8.8']
-        }
+        },
+        'options': {}
     })
     return interfaces
 
