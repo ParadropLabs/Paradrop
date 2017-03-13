@@ -51,7 +51,7 @@ def getWifiKeySettings(cfg, iface):
     Read encryption settings from cfg and transfer them to iface.
     """
     # If 'key' is present, but 'encryption' is not, then default to
-    # psk2.  If 'key' is not present, and 'encryption' is not none,
+    # psk2.  If 'key' is not present, and 'encryption' is psk or psk2,
     # then we have an error.
     iface['encryption'] = "none"
     if 'key' in cfg:
@@ -59,7 +59,7 @@ def getWifiKeySettings(cfg, iface):
         iface['encryption'] = 'psk2'  # default to psk2
     if 'encryption' in cfg:
         iface['encryption'] = cfg['encryption']
-        if cfg['encryption'] != "none" and 'key' not in cfg:
+        if cfg['encryption'].startswith('psk') and 'key' not in cfg:
             out.warn("Key field must be defined "
                      "when encryption is enabled.")
             raise Exception("No key field defined for WiFi encryption")

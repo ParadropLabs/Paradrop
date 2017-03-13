@@ -582,8 +582,10 @@ class HostapdConfGenerator(object):
         if self.wifiIface.encryption is None or \
                 self.wifiIface.encryption == "none":
             options.append(("wpa", 0))
+            return options
 
-        elif self.wifiIface.encryption == "psk2":
+        modes = self.wifiIface.encryption.split("+")
+        if modes[0] == "psk2":
             options.append(("wpa", 1))
 
             # If key is a 64 character hex string, then treat it as the PSK
@@ -593,11 +595,30 @@ class HostapdConfGenerator(object):
             else:
                 options.append(("wpa_passphrase", self.wifiIface.key))
 
+            options.append(("wpa_key_mgmt", "WPA-PSK"))
+
             # Encryption for WPA
             options.append(("wpa_pairwise", "TKIP CCMP"))
 
             # Encryption for WPA2
             options.append(("rsn_pairwise", "CCMP"))
+
+        elif modes[0] == "wpa2":
+            if self.wifiIface.auth_server is None:
+                raise Exception("Must configure auth_server with wpa2")
+
+            options.append(("wpa", 2))
+
+            options.append(("wpa_key_mgmt", "WPA-EAP"))
+
+            # Encryption for WPA
+            options.append(("wpa_pairwise", "TKIP CCMP"))
+
+            # Encryption for WPA2
+            options.append(("rsn_pairwise", "CCMP"))
+
+            # TODO: Separate section for 802.1X?
+            options.append(("ieee8021x", "1"))
 
         else:
             out.warn("Encryption type {} not supported (supported: "
