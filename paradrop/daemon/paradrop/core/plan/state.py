@@ -56,7 +56,12 @@ def generatePlans(update):
                 return True
             update.plans.addPlans(plangraph.STATE_CALL_START, (dockerapi.restartChute,))
         elif update.updateType == 'restart':
-            update.plans.addPlans(plangraph.STATE_CALL_START, (dockerapi.restartChute,))
+            update.plans.addPlans(plangraph.STATE_CALL_STOP,
+                    (dockerapi.removeOldContainer, ),
+                    (dockerapi.startOldContainer, ))
+            update.plans.addPlans(plangraph.STATE_CALL_START,
+                    (dockerapi.startChute, ),
+                    (dockerapi.removeNewContainer, ))
         elif update.updateType == 'create':
             update.failure = update.name + " already exists on this device."
             return True
