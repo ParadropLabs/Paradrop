@@ -17,7 +17,7 @@ from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config import devices, hostconfig, resource, zerotier
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.agent.http import PDServerRequest
-from paradrop.core.system.system_info import getOSVersion, getPackageVersion
+from paradrop.core.system import system_info
 from paradrop.lib.misc.snapd import SnapdClient
 
 
@@ -36,6 +36,7 @@ class StateReport(object):
         self.hostConfig = {}
         self.snaps = []
         self.zerotierAddress = None
+        self.dmi = {}
 
     def toJSON(self):
         return json.dumps(self.__dict__)
@@ -49,10 +50,10 @@ class StateReportBuilder(object):
 
         report.name = nexus.core.info.pdid
 
-        report.osVersion = getOSVersion()
+        report.osVersion = system_info.getOSVersion()
 
         # We can get the paradrop version from the installed python package.
-        report.paradropVersion = getPackageVersion('paradrop')
+        report.paradropVersion = system_info.getPackageVersion('paradrop')
 
         # TODO: Get pdinstall version - we will have to work with snappy or
         # devise some other mechanism, since it installs as a completely
@@ -85,6 +86,7 @@ class StateReportBuilder(object):
         report.snaps = client.listSnaps()
 
         report.zerotierAddress = zerotier.getAddress()
+        report.dmi = system_info.getDMI()
 
         return report
 
