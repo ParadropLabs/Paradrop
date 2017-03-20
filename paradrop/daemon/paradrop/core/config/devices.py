@@ -186,6 +186,8 @@ def listSystemDevices():
             continue
         if ifname.startswith("docker"):
             continue
+        if ifname.startswith("sit"):
+            continue
 
         dev = {
             'name': ifname,
