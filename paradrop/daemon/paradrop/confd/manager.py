@@ -241,6 +241,9 @@ class ConfigManager(object):
                     # of sections to execute.
                     newConfigs.add(config)
 
+                # Mark that the config section was applied in this epoch.
+                config.epoch = self.epoch
+
                 allConfigs[config.getTypeAndName()] = config
 
         # Items from the deletion set should be deleted from memory as well as
@@ -276,9 +279,6 @@ class ConfigManager(object):
             else:
                 new = allConfigs[config.getTypeAndName()]
                 commands.extend(config.updateApply(new, allConfigs))
-
-            # Mark that the config section was applied in this epoch.
-            config.epoch = self.epoch
 
             # Reset list of executed commands so that previous failures do not
             # haunt us.

@@ -14,6 +14,11 @@ class ConfigDefaults(ConfigObject):
         ConfigOption(name="forward", default="ACCEPT")
     ]
 
+    def getName(self):
+        # There should only be one defaults section.  If we return a constant
+        # string for all instances, we can match them across file versions.
+        return "SINGLETON"
+
     def apply(self, allConfigs):
         commands = list()
 
@@ -80,7 +85,12 @@ class ConfigDefaults(ConfigObject):
                     "--jump", path+"_rule"]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
-            # Create the X_rule chain.
+            # Flush the X_rule chain.
+            cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "nat",
+                    "--flush", path+"_rule"]
+            commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
+
+            # Delete the X_rule chain.
             cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "nat",
                     "--delete-chain", path+"_rule"]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
@@ -91,7 +101,12 @@ class ConfigDefaults(ConfigObject):
                     "--jump", "delegate_"+path]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
-            # Create the delegate_X chain.
+            # Flush the delegate_X chain.
+            cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "nat",
+                    "--flush", "delegate_"+path]
+            commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
+
+            # Delete the delegate_X chain.
             cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "nat",
                     "--delete-chain", "delegate_"+path]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
@@ -103,7 +118,12 @@ class ConfigDefaults(ConfigObject):
                     "--jump", path+"_rule"]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
-            # Create the X_rule chain.
+            # Flush the X_rule chain.
+            cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "filter",
+                    "--flush", path+"_rule"]
+            commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
+
+            # Delete the X_rule chain.
             cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "filter",
                     "--delete-chain", path+"_rule"]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
@@ -114,7 +134,12 @@ class ConfigDefaults(ConfigObject):
                     "--jump", "delegate_"+path]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
-            # Create the paradrop_X chain.
+            # Flush the paradrop_X chain.
+            cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "filter",
+                    "--flush", "delegate_"+path]
+            commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
+
+            # Delete the paradrop_X chain.
             cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "filter",
                     "--delete-chain", "delegate_"+path]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
@@ -125,6 +150,21 @@ class ConfigDefaults(ConfigObject):
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
         return commands
+
+    def updateApply(self, new, allConfigs):
+        commands = list()
+
+        for path in ["input", "output", "forward"]:
+            # Set the default policy.
+            cmd = ["iptables", "--wait", IPTABLES_WAIT, "--table", "filter",
+                    "--policy", path.upper(), getattr(new, path)]
+            commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, new)))
+
+        return commands
+
+    def updateRevert(self, new, allConfigs):
+        return []
+
 
 class ConfigZone(ConfigObject):
     typename = "zone"
