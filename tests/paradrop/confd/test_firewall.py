@@ -80,7 +80,7 @@ def test_ConfigDefaults():
     assert len(commands) == 23
 
     commands = config.revert(allConfigs)
-    assert len(commands) == 23
+    assert len(commands) >= 23
 
 
 def test_ConfigZone():

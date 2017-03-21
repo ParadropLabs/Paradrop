@@ -483,6 +483,31 @@ def setSystemDevices(update):
         }
         qosSections.append((config, options))
 
+    # Automatically generate loopback section.  There is generally not much to
+    # configure for loopback, but we could add support to the host
+    # configuration.
+    config = {"type": "interface", "name": "loopback"}
+    options = {
+        'ifname': 'lo',
+        'proto': 'static',
+        'ipaddr': '127.0.0.1',
+        'netmask': '255.0.0.0'
+    }
+    uciutils.setList(options, 'ifname', ['lo'])
+    networkSections.append((config, options))
+
+    config = {'type': 'zone'}
+    options = {
+        'name': 'loopback',
+        'masq': '0',
+        'conntrack': '1',
+        'input': 'ACCEPT',
+        'forward': 'ACCEPT',
+        'output': 'ACCEPT'
+    }
+    uciutils.setList(options, 'network', ['loopback'])
+    firewallSections.append((config, options))
+
     wifi = hostConfig.get('wifi', [])
     readHostconfigWifi(wifi, wirelessSections)
 
