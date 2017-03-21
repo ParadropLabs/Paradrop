@@ -23,11 +23,6 @@ class ConfigDefaults(ConfigObject):
         commands = list()
 
         for path in ["input", "output", "forward"]:
-            # Set the default policy.
-            cmd = ["iptables", "--wait", IPTABLES_WAIT, "--table", "filter",
-                    "--policy", path.upper(), getattr(self, path)]
-            commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
-
             # Create the delegate_X chain.
             cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "filter",
                     "--new", "delegate_"+path]
@@ -48,6 +43,12 @@ class ConfigDefaults(ConfigObject):
             cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "filter",
                     "--append", path.upper(),
                     "--jump", path+"_rule"]
+            commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
+
+            # Add a rule at the end with the default policy.
+            cmd = ["iptables", "--wait", IPTABLES_WAIT, "--table", "filter",
+                    "--append", path.upper(),
+                    "--jump", getattr(self, path)]
             commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
         for path in ["prerouting", "postrouting"]:
@@ -144,9 +145,10 @@ class ConfigDefaults(ConfigObject):
                     "--delete-chain", "delegate_"+path]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
-            # Set the default policy.
-            cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "filter",
-                    "--policy", path.upper(), "ACCEPT"]
+            # Delete the default rule.
+            cmd = ["iptables", "--wait", IPTABLES_WAIT, "--table", "filter",
+                    "--delete", path.upper(),
+                    "--jump", getattr(self, path)]
             commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
         return commands
@@ -155,15 +157,33 @@ class ConfigDefaults(ConfigObject):
         commands = list()
 
         for path in ["input", "output", "forward"]:
-            # Set the default policy.
+            if getattr(self, path) == getattr(new, path):
+                # Skip if no change.
+                continue
+
+            # Add the new default rule.
             cmd = ["iptables", "--wait", IPTABLES_WAIT, "--table", "filter",
-                    "--policy", path.upper(), getattr(new, path)]
-            commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, new)))
+                    "--append", path.upper(),
+                    "--jump", getattr(self, path)]
+            commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
         return commands
 
     def updateRevert(self, new, allConfigs):
-        return []
+        commands = list()
+
+        for path in ["input", "output", "forward"]:
+            if getattr(self, path) == getattr(new, path):
+                # Skip if no change.
+                continue
+
+            # Delete the old default rule.
+            cmd = ["iptables", "--wait", IPTABLES_WAIT, "--table", "filter",
+                    "--delete", path.upper(),
+                    "--jump", getattr(self, path)]
+            commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
+
+        return commands
 
 
 class ConfigZone(ConfigObject):
