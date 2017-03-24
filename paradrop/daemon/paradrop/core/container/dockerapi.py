@@ -681,6 +681,8 @@ def prepare_environment(chute):
     env['PARADROP_ROUTER_ID'] = nexus.core.info.pdid
     env['PARADROP_DATA_DIR'] = chute.getCache('internalDataDir')
     env['PARADROP_SYSTEM_DIR'] = chute.getCache('internalSystemDir')
+    env['PARADROP_BASE_URL'] = "http://{}/api/v1/chutes/{}".format(
+            settings.LOCAL_DOMAIN, chute.name)
 
     if hasattr(chute, 'version'):
         env['PARADROP_CHUTE_VERSION'] = chute.version
