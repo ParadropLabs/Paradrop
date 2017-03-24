@@ -159,7 +159,7 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     iface['mode'] = cfg.get("mode", "ap")
 
     # Add extra fields for WiFi devices.
-    if cfg['type'] == "wifi" and iface['mode'] == 'ap':
+    if cfg['type'] == "wifi":
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['ssid'])
         if res:
@@ -198,8 +198,9 @@ def fulfillDeviceRequest(cfg, devices):
     for device in devlist:
         dname = device['name']
 
-        # Monitor mode interfaces require exclusive access to the device.
-        if dtype == "wifi" and mode == "monitor":
+        # Monitor and station mode interfaces require exclusive access to the
+        # device.
+        if dtype == "wifi" and mode in ["monitor", "sta"]:
             if reservations[dname].count() > 0:
                 continue
 
@@ -210,9 +211,12 @@ def fulfillDeviceRequest(cfg, devices):
             bestDevice = device
             break
 
-        # AP mode interfaces can share a device, but not with monitor mode.
+        # AP mode interfaces can share a device, but not with monitor mode or
+        # station mode.
         elif dtype == "wifi" and mode == "ap":
             if reservations[dname].count(mode="monitor") > 0:
+                continue
+            if reservations[dname].count(mode="sta") > 0:
                 continue
 
             apcount = reservations[dname].count(mode="ap")

@@ -107,3 +107,22 @@ parts:
         - bin/hostapd_cli
     prime:
       - $binaries
+
+#
+# wpa_supplicant is already installed on Snappy, so this section is not needed.
+# However, it is a good example of how to install a binary from a pre-built
+# package rather than from source.
+#
+#  wpasupplicant:
+#    plugin: nil
+#    stage-packages:
+#      - wpasupplicant
+#    organize:
+#      sbin: bin
+#    filesets:
+#      binaries:
+#        - bin/wpa_supplicant
+#    stage:
+#      - $binaries
+#    prime:
+#      - $binaries

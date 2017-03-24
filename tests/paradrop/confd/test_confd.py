@@ -496,7 +496,6 @@ def test_config_wireless_ap():
     os.remove(pidFile)
 
 
-@raises(Exception)
 def test_config_wireless_sta():
     """
     Test loading a wireless sta config
