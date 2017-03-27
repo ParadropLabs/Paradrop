@@ -152,18 +152,22 @@ class ConfigWifiDevice(ConfigObject):
         ConfigOption(name="rts", type=int),
 
         # 802.11n Capabilities
+        ConfigOption(name="ldpc", type=bool),
         ConfigOption(name="short_gi_20", type=bool),
         ConfigOption(name="short_gi_40", type=bool),
         ConfigOption(name="tx_stbc", type=int),
         ConfigOption(name="rx_stbc", type=int),
+        ConfigOption(name="max_amsdu", type=bool),
         ConfigOption(name="dsss_cck_40", type=bool),
 
         # 802.11ac Capabilities
+        ConfigOption(name="rxldpc", type=bool),
         ConfigOption(name="short_gi_80", type=bool),
         ConfigOption(name="short_gi_160", type=bool),
         ConfigOption(name="tx_stbc_2by1", type=bool),
         ConfigOption(name="rx_antenna_pattern", type=bool),
         ConfigOption(name="tx_antenna_pattern", type=bool),
+        ConfigOption(name="vht_max_mpdu", type=int),
         ConfigOption(name="rx_stbc", type=int)
     ]
 
@@ -533,6 +537,8 @@ class HostapdConfGenerator(ConfGenerator):
             elif self.wifiDevice.channel in HT40_UPPER_CHANNELS:
                 ht_capab += "[HT40-]"
 
+        if self.wifiDevice.ldpc:
+            ht_capab += "[LDPC]"
         if self.wifiDevice.short_gi_20:
             ht_capab += "[SHORT-GI-20]"
         if self.wifiDevice.short_gi_40:
@@ -545,6 +551,8 @@ class HostapdConfGenerator(ConfGenerator):
             ht_capab += "[RX-STBC12]"
         elif self.wifiDevice.rx_stbc >= 3:
             ht_capab += "[RX-STBC123]"
+        if self.wifiDevice.max_amsdu:
+            ht_capab += "[MAX-AMSDU-7935]"
         if self.wifiDevice.dsss_cck_40:
             ht_capab += "[DSSS_CCK-40]"
 
@@ -580,6 +588,8 @@ class HostapdConfGenerator(ConfGenerator):
         # We need a second channel number to specify seg1_idx in that case.
 
         vht_capab = ""
+        if self.wifiDevice.rxldpc:
+            vht_capab += "[RXLDPC]"
         if self.wifiDevice.short_gi_80:
             vht_capab += "[SHORT-GI-80]"
         if self.wifiDevice.short_gi_160:
@@ -590,6 +600,10 @@ class HostapdConfGenerator(ConfGenerator):
             vht_capab += "[RX-ANTENNA-PATTERN]"
         if self.wifiDevice.tx_antenna_pattern:
             vht_capab += "[TX-ANTENNA-PATTERN]"
+        if self.wifiDevice.vht_max_mpdu == 7991:
+            vht_capab += "[MAX-MPDU-7991]"
+        elif self.wifiDevice.vht_max_mpdu == 11454:
+            vht_capab += "[MAX-MPDU-11454]"
         if self.wifiDevice.rx_stbc == 1:
             vht_capab += "[RX-STBC-1]"
         elif self.wifiDevice.rx_stbc == 2:
