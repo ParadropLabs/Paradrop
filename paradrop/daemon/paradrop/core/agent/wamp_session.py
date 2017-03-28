@@ -1,7 +1,7 @@
 '''
 The WAMP session of the paradrop daemon
 '''
-
+import six
 import smokesignal
 
 from twisted.internet.defer import inlineCallbacks
@@ -28,7 +28,8 @@ class WampSession(BaseSession):
         if (nexus.core.info.pdid and nexus.core.getKey('apitoken')):
             out.info('Starting WAMP-CRA authentication on realm "{}" as user "{}"...'\
                      .format(self.config.realm, nexus.core.info.pdid))
-            self.join(self.config.realm, [u'wampcra'], nexus.core.info.pdid)
+            self.join(self.config.realm, [u'wampcra'],
+                    six.u(nexus.core.info.pdid))
 
     def onChallenge(self, challenge):
         if challenge.method == u"wampcra":
