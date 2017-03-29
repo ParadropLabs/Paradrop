@@ -510,6 +510,15 @@ class HostapdConfGenerator(ConfGenerator):
 
         if self.wifiIface.maxassoc is not None:
             options.append(("max_num_sta", self.wifiIface.maxassoc))
+            options.append(("no_probe_resp_if_max_sta", 1))
+
+        # 1 = send empty (length=0) SSID in beacon and ignore probe request for
+        #     broadcast SSID
+        # 2 = clear SSID (ASCII 0), but keep the original length (this may be required
+        #     with some clients that do not support empty SSID) and ignore probe
+        #     requests for broadcast SSID
+        if self.wifiIface.hidden:
+            options.append(("ignore_broadcast_ssid", 2))
 
         if self.wifiDevice.rts is not None:
             options.append(("rts_threshold", self.wifiDevice.rts))
