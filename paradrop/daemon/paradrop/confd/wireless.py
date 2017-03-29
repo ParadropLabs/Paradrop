@@ -210,6 +210,7 @@ class ConfigWifiIface(ConfigObject):
         ConfigOption(name="mode", required=True),
         ConfigOption(name="ssid", default="Paradrop"),
         ConfigOption(name="hidden", type=bool, default=False),
+        ConfigOption(name="isolate", type=bool, default=False),
         ConfigOption(name="wmm", type=bool, default=True),
         ConfigOption(name="network", default="lan"),
         ConfigOption(name="encryption", default="none"),
@@ -519,6 +520,9 @@ class HostapdConfGenerator(ConfGenerator):
         #     requests for broadcast SSID
         if self.wifiIface.hidden:
             options.append(("ignore_broadcast_ssid", 2))
+
+        if self.wifiIface.isolate:
+            options.append(("ap_isolate", 1))
 
         if self.wifiDevice.rts is not None:
             options.append(("rts_threshold", self.wifiDevice.rts))
