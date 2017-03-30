@@ -263,10 +263,21 @@ class ConfigWifiIface(ConfigObject):
             return interface.config_ifname
 
     def getName(self):
-        if self.ifname is None:
-            return ConfigObject.getName(self)
-        else:
+        """
+        Return a unique and consistent identifier for the section.
+
+        If ifname is set, then that is a good choice for the name because
+        interface names need to be unique on the system.
+
+        If ifname is not set, then we use the combined string device:network.
+        The assumption is that no one will put multiple APs on the name device
+        and same network, or if they do, (e.g. multiple APs on the br-lan
+        bridge), then they will configure the ifname to be unique.
+        """
+        if self.ifname is not None:
             return self.ifname
+        else:
+            return "{}:{}".format(self.device, self.network)
 
     def apply(self, allConfigs):
         commands = list()
