@@ -147,6 +147,7 @@ config wifi-iface ap1
     option network 'wifi'
     option encryption 'psk2'
     option key 'password'
+    option ifname 'wlan0'
 
 config wifi-iface ap2
     option device 'radio'
@@ -155,6 +156,7 @@ config wifi-iface ap2
     option network 'wifi'
     option encryption 'psk2'
     option key '0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff'
+    option ifname 'vwlan0.0'
 
 config wifi-iface ap3
     option device 'radio'
@@ -162,6 +164,7 @@ config wifi-iface ap3
     option ssid 'Paradrop3'
     option network 'wifi'
     option encryption 'none'
+    option ifname 'vwlan0.1'
 """
 
 WIRELESS_STA_CONFIG = """

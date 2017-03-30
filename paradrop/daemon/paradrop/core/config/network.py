@@ -22,6 +22,7 @@ MAX_INTERFACE_NUMBERS = 65536
 SUBNET_SIZE = 24
 
 # Extra Wi-Fi interface options that we will pass on directly to confd.
+# Deprecated: move to 'options' object after 1.0 release.
 IFACE_EXTRA_OPTIONS = set([
     "auth_server",
     "auth_secret",
@@ -248,10 +249,15 @@ def getExtraOptions(cfg):
     Get dictionary of extra wifi-iface options that we are not interpreting but
     just passing on to pdconf.
     """
-    options = dict()
+    # Using an 'options' object in the configuration is more extensible than
+    # enumerating the possible extra options.
+    options = cfg.get('options', {})
+
+    # Deprecated: remove after 1.0 release.
     for key, value in cfg.iteritems():
         if key in IFACE_EXTRA_OPTIONS:
             options[key] = value
+
     return options
 
 
