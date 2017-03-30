@@ -74,7 +74,7 @@ def getLineParts(line):
                     addStr = "%s %s" % (addStr, parts[i][:-1]) 
 
                     a = [parts[0], parts[1]]
-                    a.append(addStr)                                                  
+                    a.append(addStr)
                     if (len(parts) > i+1):
                         a.extend(parts[i+1:])
                     break
@@ -112,7 +112,7 @@ def chuteConfigsMatch(chutePre, chutePost):
         else:
             return False
 
-    return True    
+    return True
 
 
 def isMatch(a, b):
@@ -123,9 +123,9 @@ def isMatch(a, b):
 
 def isMatchIgnoreComments(a, b):
     import copy
-    a1 = copy.deepcopy(a) 
+    a1 = copy.deepcopy(a)
     b1 = copy.deepcopy(b)
-    
+
     a1.pop('comment', None)
     b1.pop('comment', None)
     a1 = stringify(a1)
@@ -137,6 +137,20 @@ def singleConfigMatches(a, b):
     (c1, o1) = a
     (c2, o2) = b
     return isMatch(c1, c2) and isMatch(o1, o2)
+
+
+def stringifyOptionValue(value):
+    """
+    Convert option value from in-memory representation to a suitable string.
+
+    In particular, boolean values are converted to '0' or '1'.
+    """
+    if value is True:
+        return '1'
+    elif value is False:
+        return '0'
+    else:
+        return str(value)
 
 
 class UCIConfig:
@@ -382,7 +396,7 @@ class UCIConfig:
             if('comment' in c.keys()):
                 line += " #%s" % c['comment']
             output += "%s\n" % line
-            
+
             # Get options
             # check for lists first, if they exist remove them first
             if('list' in o.keys()):
@@ -392,11 +406,13 @@ class UCIConfig:
 
             # Now process everything else quick
             for k,v in o.iteritems():
+                sv = stringifyOptionValue(v)
+
                 # Make sure we skip the lists key
                 if(k != 'list'):
-                    line = "\toption %s '%s'\n" % (k,v)
+                    line = "\toption %s '%s'\n" % (k,sv)
                     output += line
-            
+
             # Now process the list
             if(theLists):
                 # theLists is a dict where the key is each list name
@@ -410,13 +426,13 @@ class UCIConfig:
 
             # Now add one extra newline before the next set
             output += "\n"
-        
+
         # Now write to disk
         try:
             out.info('Saving %s to disk\n' % (self.filepath))
             fd = pdos.open(self.filepath, 'w')
             fd.write(output)
-            
+
             # Guarantee that its written to disk before we close
             fd.flush()
             os.fsync(fd.fileno())

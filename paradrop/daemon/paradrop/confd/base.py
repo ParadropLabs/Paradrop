@@ -2,6 +2,21 @@ import attr
 import copy
 
 
+def interpretBoolean(s):
+    """
+    Interpret string as a boolean value.
+
+    "0" and "False" are interpreted as False.  All other strings result in
+    True.  Technically, only "0" and "1" values should be seen in UCI files.
+    However, because of some string conversions in Python, we may encounter
+    "False".
+    """
+    if s in ["0", "False"]:
+        return False
+    else:
+        return True
+
+
 class ConfigObject(object):
     nextId = 0
     typename = None
@@ -307,7 +322,7 @@ class ConfigObject(object):
                     found = True
             elif opdef.type == bool:
                 if opdef.name in options:
-                    value = options[opdef.name] != '0'
+                    value = interpretBoolean(options[opdef.name])
                     found = True
             else:
                 if opdef.name in options:

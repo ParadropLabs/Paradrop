@@ -1,6 +1,16 @@
 from mock import MagicMock
 
 
+def test_interpretBoolean():
+    from paradrop.confd.base import interpretBoolean
+
+    assert interpretBoolean("0") is False
+    assert interpretBoolean("1") is True
+
+    assert interpretBoolean("False") is False
+    assert interpretBoolean("True") is True
+
+
 def test_ConfigObject():
     """
     Test the ConfigObject class
