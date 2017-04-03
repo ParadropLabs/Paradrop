@@ -184,7 +184,7 @@ def test_config_devices():
                 'leasetime': '12h'
             }
         },
-        'wifi': [{'interface': 'wlan0', 'channel': 1}]
+        'wifi': [{'macaddr': '00:11:22:33:44:55', 'channel': 1}]
     }
     update.new.setCache('hostConfig', hostConfig)
 
