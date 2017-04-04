@@ -214,6 +214,9 @@ def getHostConfig(update):
     if update.updateType == 'sethostconfig':
         config = update.hostconfig
 
+    elif update.updateType == 'patchhostconfig':
+        config = jsonpatch.apply_patch(config, update.patch)
+
     # For factoryreset, try to load the default configuration or automatically
     # generate a new one if the file is not found.
     elif update.updateType == 'factoryreset':

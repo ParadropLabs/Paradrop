@@ -20,6 +20,7 @@ setup(
         'enum34',
         'docker-py==1.10.6',
         'ipaddress',
+        'jsonpatch==1.15',
         'txdbus',
         'wget',
         'pyyaml',

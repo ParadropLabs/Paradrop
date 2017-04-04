@@ -81,3 +81,19 @@ def test_getHostconfig(prepareHostConfig):
     update = MagicMock()
     getHostConfig(update)
     assert update.new.setCache.called
+
+
+@patch("paradrop.core.config.hostconfig.prepareHostConfig")
+def test_patchHostconfig(prepareHostConfig):
+    from paradrop.core.config.hostconfig import getHostConfig
+
+    update = MagicMock()
+    update.updateType = "patchhostconfig"
+
+    patch = [
+        {"op": "replace", "path": "/zerotier/enabled", "value": True},
+        {"op": "add", "path": "/zerotier/networks", "value": "e5cd7a9e1c2753e4"}
+    ]
+
+    getHostConfig(update)
+    assert update.new.setCache.called

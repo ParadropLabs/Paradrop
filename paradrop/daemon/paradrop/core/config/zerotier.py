@@ -28,7 +28,7 @@ def configure(update):
         execute("snap", "connect", "zerotier-one:network-control")
 
         networks = datastruct.getValue(hostConfig, "zerotier.networks", [])
-        for network in networks:
+        for network in set(networks):
             execute("/snap/zerotier-one/current/usr/sbin/zerotier-cli",
                     "join", network)
 
