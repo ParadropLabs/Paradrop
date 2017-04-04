@@ -17,6 +17,7 @@ from paradrop.base.exceptions import ParadropException
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.system.system_status import SystemStatus
 
+from .auth import requires_auth
 from .information_api import InformationApi
 from .config_api import ConfigApi
 from .chute_api import ChuteApi
@@ -41,15 +42,18 @@ class HttpServer(object):
 
 
     @app.route('/api/v1/info', branch=True)
+    @requires_auth
     def api_information(self, request):
         return InformationApi().routes.resource()
 
 
     @app.route('/api/v1/config', branch=True)
+    @requires_auth
     def api_configuration(self, request):
         return ConfigApi(self.update_manager, self.update_fetcher).routes.resource()
 
 
+    # TODO: Add @requires_auth after updating captive portal to use a token.
     @app.route('/api/v1/chutes', branch=True)
     def api_chute(self, request):
         return ChuteApi(self.update_manager).routes.resource()
