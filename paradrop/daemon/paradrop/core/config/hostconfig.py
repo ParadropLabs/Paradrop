@@ -14,6 +14,7 @@ settings.
 """
 
 import itertools
+import jsonpatch
 import os
 import re
 import subprocess
