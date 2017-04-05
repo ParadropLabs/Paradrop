@@ -15,7 +15,7 @@ build_job:
   only:
     - master
   when: on_success
-  image: paradrop/builder:1
+  image: paradrop/builder:2
   script:
     - ./pdbuild.sh build
   artifacts:
