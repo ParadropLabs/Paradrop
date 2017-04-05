@@ -1,15 +1,23 @@
 image: python:2.7
 
-test:
-  script:
-  - pip install -r requirements.txt
-  - nosetests --with-coverage --cover-package=paradrop
+stages:
+  - unit_test
+  - build
 
-build:
+unit_test_job:
+  stage: unit_test
+  script:
+    - pip install -r requirements.txt
+    - nosetests --with-coverage --cover-package=paradrop
+
+build_job:
+  stage: build
+  only:
+    - master
   when: on_success
   image: paradrop/builder:1
   script:
-  - cd paradrop && snapcraft
+    - ./pdbuild.sh build-ci
   artifacts:
     paths:
-    - "paradrop/*.snap"
+      - "paradrop/*.snap"

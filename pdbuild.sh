@@ -14,10 +14,20 @@ printhelp() {
     echo "Usage:"
     echo -e "  setup\t\t prepares environment for development"
     echo -e "  run\t\t run paradrop locally"
-    echo -e "  build [version]\t\t build snap with optional version string"
+    echo -e "  build\t\t build snap"
     echo -e "  test\t\t run unit tests"
     echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"
+    echo -e "  version [version]\t\t get or set Paradrop version"
     exit
+}
+
+version() {
+    if [ -n "$1" ]; then
+        sed -i "s/^version:.*/version: $1/" -i paradrop/snap/snapcraft.yaml
+        sed -i "s/version=.*,/version='$1',/" -i paradrop/daemon/setup.py
+    else
+        grep -oP "(?<=version: )\d+\.\d+\.\d+" paradrop/snap/snapcraft.yaml
+    fi
 }
 
 activate_virtual_env() {
@@ -51,10 +61,12 @@ setup() {
 }
 
 build() {
-    if [ -n "$1" ]; then
-        sed -i "s/^version:.*/version: $1/" -i paradrop/snap/snapcraft.yaml
-        sed -i "s/version=.*,/version='$1',/" -i paradrop/daemon/setup.py
+    # Set the build number if this is a CI build.
+    if [ -n "$CI_JOB_ID" ]; then
+        semver=$(version)
+        version $semver+$CI_JOB_ID
     fi
+
     (cd paradrop; snapcraft clean; snapcraft)
 }
 
@@ -100,10 +112,11 @@ case "$1" in
     "--help") printhelp;;
     "setup") setup;;
     "test") test;;
-    "build") build $2;;
+    "build") build;;
     "clean") clean;;
     "run") run;;
     "docs") docs;;
+    "version") version $2;;
     *) echo "Unknown input $1"
    ;;
 esac
