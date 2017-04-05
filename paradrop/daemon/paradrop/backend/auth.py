@@ -37,9 +37,9 @@ def get_allowed_bearer():
     chuteStore = ChuteStorage()
     chutes = chuteStore.getChuteList()
     for chute in chutes:
-        env = getattr(chute, 'environment', {})
-        if 'PARADROP_API_TOKEN' in env:
-            allowed.add(env['PARADROP_API_TOKEN'])
+        token = chute.getCache('apiToken')
+        if token is not None:
+            allowed.add(token)
 
     return allowed
 

@@ -48,10 +48,6 @@ DOCKER_OPTIONS="--restart=false"
 suppress_re = re.compile("^(Downloading|Extracting|[a-z0-9]+|\[=*>?\s*\].*)$")
 
 
-def generateToken(bits=128):
-    return "{:x}".format(random.getrandbits(bits))
-
-
 def getImageName(chute):
     if hasattr(chute, 'external_image'):
         return chute.external_image
@@ -687,7 +683,7 @@ def prepare_environment(chute):
     env['PARADROP_SYSTEM_DIR'] = chute.getCache('internalSystemDir')
     env['PARADROP_BASE_URL'] = "http://{}/api/v1/chutes/{}".format(
             settings.LOCAL_DOMAIN, chute.name)
-    env['PARADROP_API_TOKEN'] = generateToken()
+    env['PARADROP_API_TOKEN'] = chute.getCache('apiToken')
 
     if hasattr(chute, 'version'):
         env['PARADROP_CHUTE_VERSION'] = chute.version

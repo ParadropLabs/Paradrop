@@ -7,11 +7,16 @@
 """
 
 import os
+import random
 from io import BytesIO
 
 from paradrop.base.output import out
 from paradrop.base import settings
 from paradrop.lib.utils import pdos, pdosq
+
+
+def generateToken(bits=128):
+    return "{:x}".format(random.getrandbits(bits))
 
 
 def getVirtPreamble(update):
@@ -38,6 +43,7 @@ def getVirtPreamble(update):
     update.new.setCache('externalDataDir', extDataDir)
     update.new.setCache('internalSystemDir', intSystemDir)
     update.new.setCache('externalSystemDir', extSystemDir)
+    update.new.setCache('apiToken', generateToken())
 
     if not hasattr(update, 'dockerfile'):
         return
