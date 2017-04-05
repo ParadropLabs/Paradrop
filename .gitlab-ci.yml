@@ -17,7 +17,7 @@ build_job:
   when: on_success
   image: paradrop/builder:1
   script:
-    - ./pdbuild.sh build-ci
+    - ./pdbuild.sh build
   artifacts:
     paths:
       - "paradrop/*.snap"
