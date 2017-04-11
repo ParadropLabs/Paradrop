@@ -24,6 +24,7 @@ from .chute_api import ChuteApi
 from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
 from . import cors
+from . import password_manager
 
 class HttpServer(object):
     app = Klein()
@@ -32,6 +33,7 @@ class HttpServer(object):
         self.update_manager = update_manager
         self.update_fetcher = update_fetcher
         self.system_status = SystemStatus()
+        self.passwordManager = password_manager.PasswordManager()
 
         if portal_dir:
             self.portal_dir = portal_dir

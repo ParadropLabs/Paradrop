@@ -1,3 +1,4 @@
+import os
 import crypt
 import random
 
@@ -10,7 +11,7 @@ DEFAULT_PASSWORD = ''
 class PasswordManager(object):
 
     def __init__(self):
-        self.password_file = settings.CONFIG_HOME_DIR + 'password'
+        self.password_file = os.path.join(settings.CONFIG_HOME_DIR, 'password')
 
         # Try to parse the password file
         # self.records will have the pairs of user name and password hash
