@@ -199,9 +199,9 @@ def fulfillDeviceRequest(cfg, devices):
     for device in devlist:
         dname = device['name']
 
-        # Monitor and station mode interfaces require exclusive access to the
-        # device.
-        if dtype == "wifi" and mode in ["monitor", "sta"]:
+        # Monitor, station, and airshark mode interfaces require exclusive
+        # access to the device.
+        if dtype == "wifi" and mode in ["monitor", "sta", "airshark"]:
             if reservations[dname].count() > 0:
                 continue
 

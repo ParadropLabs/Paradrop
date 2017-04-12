@@ -27,9 +27,12 @@ EXCLUDE_IFACES = set(["lo"])
 # Strings that identify a virtual interface.
 VIF_MARKERS = [".", "veth"]
 
-
 # Matches various ways of specifying WiFi devices (phy0, wlan0, wifi0).
 WIFI_DEV_REF = re.compile("([a-z]+)(\d+)")
+
+# Set of wifi-interface mode values that are handled by Paradrop rather than
+# UCI configuration system.
+WIFI_NONSTANDARD_MODES = set(["airshark"])
 
 
 def isVirtual(ifname):
@@ -339,6 +342,11 @@ def resolveWirelessDevRef(name, wirelessSections):
 
 def readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections):
     for iface in wifiInterfaces:
+        # We handle nonstandard modes (e.g. Airshark) separately rather than
+        # through the UCI system.
+        if iface.get('mode', None) in WIFI_NONSTANDARD_MODES:
+            continue
+
         config = {"type": "wifi-iface"}
 
         options = iface.copy()

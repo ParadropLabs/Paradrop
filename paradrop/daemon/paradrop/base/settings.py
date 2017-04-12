@@ -142,6 +142,10 @@ CHUTE_CONFIG_FILE = "paradrop.yaml"
 # be consistent between the container and host.
 CONTAINER_UID = 999
 
+# Directory containing Airshark installation ('airshark' binary and
+# 'run_airshark.sh' script).
+AIRSHARK_INSTALL_DIR = "/snap/airshark/current"
+
 ###############################################################################
 # Helper functions
 ###############################################################################
