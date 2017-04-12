@@ -87,7 +87,7 @@ def pdserver_request(method, url, json=None, headers=None):
     return res
 
 
-def router_request(method, url, json=None, headers=None):
+def router_request(method, url, json=None, headers=None, dump=True):
     """
     Issue a router API request.
 
@@ -109,10 +109,11 @@ def router_request(method, url, json=None, headers=None):
             session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
             prepped = session.prepare_request(request)
 
-        elif res.ok:
-            data = res.json()
-            pprint(data)
-            break
+        else:
+            if res.ok and dump:
+                data = res.json()
+                pprint(data)
+            return res
 
 
 def routers_tree(arguments):
@@ -188,7 +189,7 @@ def hostconfig_tree(router_addr, arguments):
     url = "http://{}/api/v1/config/hostconfig".format(router_addr)
 
     if arguments['change']:
-        req = requests.get(url)
+        req = router_request("GET", url, dump=False)
         config = req.json()
         change_json(config, arguments['<option>'], arguments['<value>'])
         data = {
