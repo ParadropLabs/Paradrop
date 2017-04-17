@@ -152,7 +152,7 @@ class ChuteApi(object):
             }
             result.append(data)
 
-        return json.dumps(data)
+        return json.dumps(result)
 
     @routes.route('/<chute>/networks/<network>', methods=['GET'])
     def get_network(self, request, chute, network):
