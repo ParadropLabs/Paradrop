@@ -14,6 +14,8 @@ Usage:
     pdcli local <router_addr> sshkeys
     pdcli local <router_addr> password
     pdcli local <router_addr> provision <router_id> <router_password> [--server=<server>] [--wamp=<wamp>]
+    pdcli local <router_addr> networks <chute>
+    pdcli local <router_addr> stations <chute> <network>
 
 Options:
     router_addr         Router address and optional port (e.g. 10.42.0.150:80).
@@ -249,6 +251,26 @@ def provision(router_addr, arguments):
     router_request("POST", url, json=data)
 
 
+def networks(router_addr, arguments):
+    """
+    List a chute's networks.
+    """
+    url = "http://{}/api/v1/chutes/{}/networks".format(router_addr,
+            arguments['<chute>'])
+
+    router_request("GET", url)
+
+
+def stations(router_addr, arguments):
+    """
+    List stations connected to a chute's network.
+    """
+    url = "http://{}/api/v1/chutes/{}/networks/{}/stations".format(router_addr,
+            arguments['<chute>'], arguments['<network>'])
+
+    router_request("GET", url)
+
+
 def local_tree(arguments):
     """
     Handle functions related to router API.
@@ -264,6 +286,10 @@ def local_tree(arguments):
         password_tree(router_addr, arguments)
     elif arguments['provision']:
         provision(router_addr, arguments)
+    elif arguments['networks']:
+        networks(router_addr, arguments)
+    elif arguments['stations']:
+        stations(router_addr, arguments)
 
 
 def main():
