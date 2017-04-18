@@ -7,6 +7,7 @@
    :maxdepth: 2
    :hidden:
 
+   device/index
    chutes/chutedev
    pd/paradropdev
    arch/architecture
@@ -21,7 +22,7 @@ Paradrop is a software platform that enables apps to run on Wi-Fi routers.
 We call these apps "chutes" like a parachute.
 The name Paradrop comes from the fact that we are enabling the ability to "drop" supplies and resources ("apps") into a difficult and not well-travelled environment - the home.
 
-Paradrop runs on top of `Snappy Ubuntu <https://developer.ubuntu.com/en/snappy/>`_, a trimmed-down and secured operating system that can run on ARM adn x86.
+Paradrop runs on top of `Snappy Ubuntu <https://developer.ubuntu.com/en/snappy/>`_, a trimmed-down and secured operating system that can run on ARM and x86.
 We also enable our apps through containerization by leveraging `Docker <https://www.docker.com/>`_.
 
 

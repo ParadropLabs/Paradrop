@@ -15,6 +15,7 @@ printhelp() {
     echo -e "  setup\t\t prepares environment for development"
     echo -e "  run\t\t run paradrop locally"
     echo -e "  build\t\t build snap"
+    echo -e "  image\t\t build disk image"
     echo -e "  test\t\t run unit tests"
     echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"
     echo -e "  version [version]\t\t get or set Paradrop version"
@@ -70,6 +71,28 @@ build() {
     (cd paradrop; snapcraft clean; snapcraft)
 }
 
+image() {
+    image="paradrop-amd64.img"
+
+    echo "Select the paradrop-daemon snap to use:"
+    select pdsnap in paradrop/*.snap;
+    do
+        break
+    done
+
+    sudo ubuntu-image -o $image \
+        --extra-snaps docker \
+        --extra-snaps bluez \
+        --extra-snaps pulseaudio \
+        --extra-snaps zerotier-one \
+        --extra-snaps $pdsnap \
+        --image-size 4G \
+        assertions/paradrop-amd64.model
+
+    xz --compress $image
+    echo "Created image $image.xz"
+}
+
 test() {
     activate_virtual_env
     nosetests -v
@@ -113,6 +136,7 @@ case "$1" in
     "setup") setup;;
     "test") test;;
     "build") build;;
+    "image") image;;
     "clean") clean;;
     "run") run;;
     "docs") docs;;

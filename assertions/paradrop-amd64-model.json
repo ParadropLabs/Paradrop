@@ -1,0 +1,14 @@
+{
+    "type": "model",
+    "authority-id": "V5LQUvE6qno21yFrcGAM7posL78I816Q",
+    "brand-id": "V5LQUvE6qno21yFrcGAM7posL78I816Q",
+    "series": "16",
+    "model": "paradrop-amd64",
+    "architecture": "amd64",
+    "gadget": "pc",
+    "kernel": "pc-kernel",
+    "required-snaps": ["docker", "paradrop-daemon"],
+    "timestamp": "2017-04-18T15:39:44+00:00"
+}
+
+

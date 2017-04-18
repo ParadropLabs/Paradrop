@@ -10,11 +10,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   gettingstarted
    development
    lightchutes
    deployment
-   nucinstallation
    tutorial-sticky-board
 
 .. These sections are out of date.
