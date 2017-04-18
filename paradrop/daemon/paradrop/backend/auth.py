@@ -72,7 +72,7 @@ def requires_auth(func):
     @functools.wraps(func)
     def decorated(self, request, *args, **kwargs):
         auth_header = request.getHeader('Authorization')
-        if not auth_header or not check_auth(self.passwordManager, auth_header):
+        if not auth_header or not check_auth(self.password_manager, auth_header):
             request.setResponseCode(401)
             request.setHeader("WWW-Authenticate", "Basic realm=\"Login Required\"")
             return

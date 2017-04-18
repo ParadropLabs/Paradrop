@@ -21,6 +21,7 @@ from .auth import requires_auth
 from .information_api import InformationApi
 from .config_api import ConfigApi
 from .chute_api import ChuteApi
+from .password_api import PasswordApi
 from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
 from . import cors
@@ -33,7 +34,7 @@ class HttpServer(object):
         self.update_manager = update_manager
         self.update_fetcher = update_fetcher
         self.system_status = SystemStatus()
-        self.passwordManager = password_manager.PasswordManager()
+        self.password_manager = password_manager.PasswordManager()
 
         if portal_dir:
             self.portal_dir = portal_dir
@@ -61,6 +62,12 @@ class HttpServer(object):
         return ChuteApi(self.update_manager).routes.resource()
 
 
+    @app.route('/api/v1/password', branch=True)
+    @requires_auth
+    def api_password(self, request):
+        return PasswordApi(self.password_manager).routes.resource()
+
+
     '''
     # Not being used for now because we are using HAProxy to setup the reverse proxy
     @app.route('/chutes/<string:name>', branch=True)
@@ -74,6 +81,7 @@ class HttpServer(object):
     '''
 
     @app.route('/sockjs/logs/<string:name>', branch=True)
+    @requires_auth
     def logs(self, request, name):
         # cors.config_cors(request)
         options = {
@@ -85,6 +93,7 @@ class HttpServer(object):
 
 
     @app.route('/sockjs/status', branch=True)
+    @requires_auth
     def status(self, request):
         # cors.config_cors(request)
         options = {
@@ -96,6 +105,7 @@ class HttpServer(object):
 
 
     @app.route('/', branch=True)
+    @requires_auth
     def home(self, request):
         return File(self.portal_dir)
 

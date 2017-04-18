@@ -58,7 +58,7 @@ class PasswordManager(object):
         if len(elements) != 4:
             return None
         else:
-            # The first two must '' and '6'
+            # Use SHA512
             return '$6$' + elements[2]
 
     def _hash_password(self, password):
@@ -109,6 +109,9 @@ class PasswordManager(object):
 
     # We need to verify the user with the old password first
     def change_password(self, user_name, newPassword):
+        if not user_name:
+            user_name = DEFAULT_USER_NAME
+
         for i in self.records:
             if i['user_name'] == user_name:
                 i['password_hash'] = self._hash_password(newPassword)
