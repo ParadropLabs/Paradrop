@@ -28,9 +28,18 @@ class SystemStatus(object):
                 }        
 
 
-    def getStatus(self):
+    def getStatus(self, max_age=0.8):
+        """
+        Get current system status.
+
+        max_age: maximum tolerable age of cached status information.  Set to
+        None to force a refresh regardless of cache age.
+
+        Returns a dictionary with fields 'cpu_load', 'mem', 'disk', and
+        'network'.
+        """
         timestamp = time.time()
-        if (timestamp > self.timestamp + 0.8):
+        if (max_age is None or timestamp > self.timestamp + max_age):
             self.timestamp = timestamp
             self.refreshCpuLoad()
             self.refreshMemoryInfo()

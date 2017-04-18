@@ -18,6 +18,7 @@ from paradrop.core.config import devices, hostconfig, resource, zerotier
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.agent.http import PDServerRequest
 from paradrop.core.system import system_info
+from paradrop.core.system.system_status import SystemStatus
 from paradrop.lib.misc.snapd import SnapdClient
 
 
@@ -37,6 +38,7 @@ class StateReport(object):
         self.snaps = []
         self.zerotierAddress = None
         self.dmi = {}
+        self.status = {}
 
     def toJSON(self):
         return json.dumps(self.__dict__)
@@ -87,6 +89,12 @@ class StateReportBuilder(object):
 
         report.zerotierAddress = zerotier.getAddress()
         report.dmi = system_info.getDMI()
+
+        # Add CPU, memory, disk, and network interface information.  This gives
+        # the controller useful debugging information such as high memory or
+        # disk utilization and IP addresses.
+        status_source = SystemStatus()
+        report.status = status_source.getStatus(max_age=None)
 
         return report
 
