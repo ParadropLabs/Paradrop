@@ -1,4 +1,4 @@
-Getting Started
+Virtual Machine
 ===============
 
 This will quickly take you through the process of bringing up a Hello World chute in a virtual machine on your computer.
@@ -14,16 +14,16 @@ These steps wil download our router image and launch it a virtual machine.
 
     sudo apt-get install qemu-kvm
 
-2. Download the latest image (paradrop_router.img.gz) from `our releases <https://paradrop.org/release/2017-01-09/>`_.
+2. Download the latest build of the Paradrop disk image.  https://paradrop.org/release/|version|/paradrop-amd64.img.xz
 3. Extract the image::
 
-    gunzip paradrop_router.img.gz
+    xz -d paradrop-amd64.img.xz
 
 4. Launch the VM::
 
     sudo kvm -m 1024 \
     -netdev user,id=net0,hostfwd=tcp::8000-:8000,hostfwd=tcp::80-:80 \
-    -device virtio-net-pci,netdev=net0 -drive file=paradrop_router.img,format=raw
+    -device virtio-net-pci,netdev=net0 -drive file=paradrop-amd64.img,format=raw
 
 Please note: there is no username/password to log into the system.  Please follow the steps in the next section to access your router through paradrop.org.
 

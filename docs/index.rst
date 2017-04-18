@@ -7,6 +7,7 @@
    :maxdepth: 2
    :hidden:
 
+   device/index
    chutes/chutedev
    pd/paradropdev
    arch/architecture
