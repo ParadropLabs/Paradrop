@@ -282,4 +282,4 @@ class ConfigApi(object):
             key = body['key'].strip()
 
             ssh_keys.addAuthorizedKey(key)
-            return key
+            return json.dumps(body)
