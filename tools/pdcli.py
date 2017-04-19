@@ -12,6 +12,7 @@ Usage:
     pdcli local <router_addr> hostconfig
     pdcli local <router_addr> hostconfig change <option> <value>
     pdcli local <router_addr> sshkeys
+    pdcli local <router_addr> sshkeys add <path>
     pdcli local <router_addr> password
     pdcli local <router_addr> provision <router_id> <router_password> [--server=<server>] [--wamp=<wamp>]
     pdcli local <router_addr> networks <chute>
@@ -208,8 +209,17 @@ def sshkeys_tree(router_addr, arguments):
     Handle functions related to router SSH authorized keys.
     """
     url = "http://{}/api/v1/config/sshKeys".format(router_addr)
-    # TODO Implement adding SSH keys.
-    router_request("GET", url)
+
+    if arguments['add']:
+        with open(arguments['<path>'], 'r') as source:
+            key_string = source.read().strip()
+        data = {
+            'key': key_string
+        }
+        router_request("POST", url, json=data)
+
+    else:
+        router_request("GET", url)
 
 
 def password_tree(router_addr, arguments):
