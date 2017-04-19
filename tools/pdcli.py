@@ -45,6 +45,9 @@ import requests
 
 PDSERVER_URL = os.environ.get('PDSERVER_URL', 'https://paradrop.org')
 
+LOCAL_DEFAULT_USERNAME = "paradrop"
+LOCAL_DEFAULT_PASSWORD = ""
+
 
 def change_json(data, path, value):
     """
@@ -98,6 +101,13 @@ def router_request(method, url, json=None, headers=None, dump=True):
     """
     session = requests.Session()
     request = requests.Request(method, url, json=json, headers=headers)
+
+    # First try with the default username and password.
+    # If that fails, prompt user and try again.
+    userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
+    encoded = base64.b64encode(userpass).decode('ascii')
+    session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
+
     prepped = session.prepare_request(request)
 
     while True:
