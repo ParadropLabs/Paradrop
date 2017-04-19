@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import re
 import shutil
@@ -50,7 +52,7 @@ class Snap(object):
             return isInstalled(self.name, self.version)
 
 
-def callSnappy(command, *args):
+def callSnappy(command, *args, **kwargs):
     """
     Call a snappy command.
 
@@ -58,37 +60,39 @@ def callSnappy(command, *args):
 
     Returns True/False indicating success or failure.
     """
+    progress = kwargs.get('progress', print)
+
     cmd = ["snappy", command]
     if command == "install":
         cmd.append("--allow-unauthenticated")
     cmd.extend(args)
 
-    print("Call: {}".format(" ".join(cmd)))
+    progress("Call: {}".format(" ".join(cmd)))
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                    stderr=subprocess.PIPE)
     except Exception as e:
-        print('Warning: "snappy {}" command failed: {}'.format(
+        progress('Warning: "snappy {}" command failed: {}'.format(
               command, e))
         return False
 
     for line in proc.stdout:
-        print(" . " + line.rstrip())
+        progress(" . " + line.rstrip())
     for line in proc.stderr:
-        print(" ! " + line.rstrip())
+        progress(" ! " + line.rstrip())
 
     proc.wait()
-    print("Command returned: {}".format(proc.returncode))
+    progress("Command returned: {}".format(proc.returncode))
     return proc.returncode == 0
 
 
-def installSnap(snap):
+def installSnap(snap, progress=print):
     """
     Install a snap.
-    
+
     Returns True/False to indicate success/failure.
     """
-    
+
     # If we are changing from one version to another, and the data directory
     # does not already exist, then Snappy will copy data from the running
     # version to the newly installed version.  We make sure that will happen by
@@ -99,18 +103,21 @@ def installSnap(snap):
         if os.path.exists(dataDir):
             shutil.rmtree(dataDir)
 
-    if not callSnappy("install", snap.source):
+    if not callSnappy("install", snap.source, progress=progress):
         return False
 
-    return snap.isInstalled()
+    # We use ignoreVersion here because `snappy list` returns a random string
+    # for the version, so we cannot check against the version string in
+    # the snap file name.
+    return snap.isInstalled(ignoreVersion=True)
 
 
 def parseSnappyList(source):
     """
     Parse output of 'snappy list' to find versions of installed snaps.
 
-    Returns dictionary mapping snap name to list of versions installed, e.g.
-    {"paradrop": ["0.1.0"]}.
+    Returns dictionary mapping snap name to the version installed, e.g.
+    {"paradrop": "0.1.0"}.
     """
     snaps = dict()
 
@@ -128,10 +135,7 @@ def parseSnappyList(source):
 
             name = fields[0]
             version = fields[2]
-
-            if name not in snaps:
-                snaps[name] = list()
-            snaps[name].append(version)
+            snaps[name] = version
 
     return snaps
 
@@ -140,8 +144,8 @@ def installedSnaps():
     """
     Get versions of installed snaps.
 
-    Returns dictionary mapping snap name to list of versions installed, e.g.
-    {"paradrop": ["0.1.0"]}.
+    Returns dictionary mapping snap name to the version installed, e.g.
+    {"paradrop": "0.1.0"}.
     """
     snaps = dict()
 
@@ -164,4 +168,4 @@ def isInstalled(name, version=None):
     snaps = installedSnaps()
     if name not in snaps:
         return False
-    return (version is None or version in snaps[name])
+    return (version is None or version == snaps[name])

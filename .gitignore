@@ -11,8 +11,6 @@ env/
 develop-eggs/
 dist/
 downloads/
-eggs/
-.eggs/
 #lib/
 lib64/
 parts/
@@ -69,8 +67,6 @@ buildenv/*
 
 paradrop/dist
 paradrop/build
-paradrop/paradrop.egg-info/
-paradrop/*.snap
 
 pdtools/build
 
@@ -78,16 +74,19 @@ docs/_build
 docs/_static
 docs/_templates
 
-snap/bin/pd
-snap/bin/dnsmasq
-snap/bin/pipework
 *.img
 *.swp
 *.pyc
 
 .DS_STORE
 
+TESTS
+
 *.xz
 pid.txt
 log.txt
 third-party/
+
+# snapcraft
+paradrop/prime
+paradrop/stage

@@ -7,13 +7,12 @@
    :maxdepth: 2
    :hidden:
 
+   device/index
    chutes/chutedev
    pd/paradropdev
    arch/architecture
    issues
    faq
-   api/modules
-
 
 
 Paradrop
@@ -23,8 +22,7 @@ Paradrop is a software platform that enables apps to run on Wi-Fi routers.
 We call these apps "chutes" like a parachute.
 The name Paradrop comes from the fact that we are enabling the ability to "drop" supplies and resources ("apps") into a difficult and not well-travelled environment - the home.
 
-Our early versions of Paradrop relied on OpenWrt, however we are revamping the platform and tailoring it towards a broader developer community.
-Paradrop now runs on top of `Snappy Ubuntu <https://developer.ubuntu.com/en/snappy/>`_, a trimmed-down and secured operating system that can run on ARM and x86.
+Paradrop runs on top of `Snappy Ubuntu <https://developer.ubuntu.com/en/snappy/>`_, a trimmed-down and secured operating system that can run on ARM and x86.
 We also enable our apps through containerization by leveraging `Docker <https://www.docker.com/>`_.
 
 
@@ -33,7 +31,7 @@ The Paradrop workflow
 
 There are two components to the Paradrop platform:
 
-* The `build tools <https://pypi.python.org/pypi/pdtools>`_ - our CLI that enables registration, login, and control.
+* The `build tools <https://pypi.python.org/pypi/pdtools>`_ - our CLI that enables registration, login, and control.  With version 0.2 and up, Paradrop routers can be managed through our `cloud management <https://paradrop.org>`_ service instead of the CLI.
 * The `instance tools <https://github.com/ParadropLabs/Paradrop>`_ - our configuration daemons and tools to launch apps on hardware.
 
 .. image:: images/dev_tools_map.png
@@ -55,7 +53,7 @@ Where to go from here?
 ====================================
 
 We have advanced app examples found under :doc:`chutes/chutedev`.
-If you are interested in working on the instance side of paradrop (our github code) than check out: :doc:`pd/paradropdev`. 
+If you are interested in working on the instance side of paradrop (our github code) than check out: :doc:`pd/paradropdev`.
 
 
 .. _no_ubuntu:
@@ -63,7 +61,4 @@ If you are interested in working on the instance side of paradrop (our github co
 What if I don't have Ubuntu?
 ====================================
 
-We will soon switch our development system to Vagrant, which will allow support across all major operating systems.
-We will also update the docs with notes on how to download precompiled versions of our Paradrop instance tools once they have been fully tested.
-
-
+With version 0.2 and up, all of Paradrop's capabilities can be managed through our web-based service at `paradrop.org <https://paradrop.org>`_.

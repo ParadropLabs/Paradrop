@@ -1,3 +1,0 @@
-Paradrop
-
-This is paradrop.

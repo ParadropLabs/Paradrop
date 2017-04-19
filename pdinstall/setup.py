@@ -5,7 +5,7 @@ setup(
     version="0.1.0",
     author="Paradrop Labs",
     description="Paradrop installer",
-    install_requires=[],
+    install_requires=['requests'],
     packages=find_packages(),
     zip_safe=True,
     entry_points = {

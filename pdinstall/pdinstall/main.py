@@ -1,9 +1,12 @@
+from __future__ import print_function
+
 import argparse
 import os
 import re
 import subprocess
 
 from . import snappy
+from .progress import ProgressHandler
 from .server import CommandServer
 
 
@@ -35,7 +38,7 @@ def cleanupServiceFiles(name):
             os.remove(path)
 
 
-def getSnaps(sources):
+def getSnaps(sources, progress=print):
     """
     Get an ordered list of snaps to try installing.
 
@@ -49,19 +52,19 @@ def getSnaps(sources):
     # start installing unless we are sure the fallback snaps are available.
     for snap in snapList:
         if not snap.getFile():
-            print("Could not find snap file: {}".format(snap.source))
+            progress("Could not find snap file: {}".format(snap.source))
 
             # Relative paths do not always work on Snappy, so give a helpful
             # hint to the user.
             if not snap.source.startswith("http") and \
                     not snap.source.startswith("/"):
-                print("Try giving an absolute path to the snap file.")
+                progress("Try giving an absolute path to the snap file.")
             return []
 
     return snapList
 
 
-def installFromList(snaps, ignoreVersion=False):
+def installFromList(snaps, ignoreVersion=False, progress=print):
     """
     Install one of the snaps from a list.
 
@@ -84,23 +87,34 @@ def installFromList(snaps, ignoreVersion=False):
         # for currently installed version.
         if not ignoreVersion:
             if snap.isInstalled():
-                print('The snap ({}) is already installed.'.format(str(snap)))
+                progress('The snap ({}) is already installed.'.format(str(snap)))
                 return True
 
-        if snappy.installSnap(snap):
-            print('The snap ({}) was successfully installed.'
+        if snappy.installSnap(snap, progress=progress):
+            progress('The snap ({}) was successfully installed.'
                     .format(str(snap)))
             return True
 
         cleanupServiceFiles(snap.name)
 
-    print('No version could be installed.')
+    progress('No version could be installed.')
     return False
 
 
 def installHandler(data):
-    snaps = getSnaps(data['sources'])
-    success = installFromList(snaps, data.get("ignore-version", False))
+    handler = None
+    progress = print
+    if 'external' in data:
+        handler = ProgressHandler(**data['external'])
+        progress = handler.write
+
+    snaps = getSnaps(data['sources'], progress=progress)
+    success = installFromList(snaps, data.get("ignore-version", False),
+            progress=progress)
+
+    if handler is not None:
+        handler.complete(success)
+
     return success
 
 

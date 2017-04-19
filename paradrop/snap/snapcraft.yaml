@@ -1,0 +1,128 @@
+name: paradrop-daemon
+version: 0.4.0
+summary: The ParaDrop daemon running at the extreme edge
+description: |
+  The ParaDrop deamon manages resources in the Wi-Fi routers and provides a virtualized environment for chutes.
+  It also expose local environment information for chutes.
+
+grade: devel
+confinement: devmode
+
+apps:
+  paradrop:
+    command: paradrop
+    daemon: simple
+    plugs:
+      - network
+      - network-bind
+      - network-control
+      - hardware-observe
+      - system-observe
+      - firewall-control
+      - docker
+
+  pdlog:
+    command: pdlog
+
+parts:
+  localweb:
+    plugin: dump
+    source: localweb/
+
+  pdlog:
+    plugin: python
+    python-version: python2
+    source: tools/pdlog
+
+  haproxy:
+    plugin: make
+    source: http://git.haproxy.org/git/haproxy-1.7.git/
+    source-type: git
+    source-tag: v1.7.2
+    build-packages:
+      - build-essential
+      - libssl-dev
+      - libpcre++-dev
+    make-parameters:
+      - TARGET=linux2628
+      - CPU=generic
+      - USE_STATIC_PCRE=1
+      - USE_OPENSSL=1
+      - USE_ZLIB=1
+      - USE_LINUX_SPLICE=1
+      - USE_LINUX_TPROXY=1
+    organize:
+      usr/local/sbin/haproxy: bin/haproxy
+    filesets:
+      binaries:
+        - bin/haproxy
+    prime:
+      - $binaries
+
+  paradrop:
+    plugin: python
+    python-version: python2
+    source: daemon
+    build-packages:
+      - python-dev
+      - libffi-dev
+    stage-packages:
+      - libcurl4-openssl-dev
+      - python-openssl
+
+  dnsmasq:
+    plugin: make
+    source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
+    source-type: git
+    source-branch: dnsmasq/2.75
+    build-packages:
+      - build-essential
+    make-parameters:
+      - PREFIX=/
+    organize:
+      sbin/dnsmasq: bin/dnsmasq
+    filesets:
+      binaries:
+        - bin/dnsmasq
+    prime:
+      - $binaries
+
+  hostapd:
+    plugin: make
+    source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
+    source-type: git
+    source-branch: hostapd/2.5
+    build-packages:
+      - build-essential
+      - pkg-config
+      - libnl-3-dev
+      - libnl-genl-3-dev
+      - libnl-route-3-dev
+      - libssl-dev
+    make-parameters:
+      - BINDIR=/bin
+    filesets:
+      binaries:
+        - bin/hostapd
+        - bin/hostapd_cli
+    prime:
+      - $binaries
+
+#
+# wpa_supplicant is already installed on Snappy, so this section is not needed.
+# However, it is a good example of how to install a binary from a pre-built
+# package rather than from source.
+#
+#  wpasupplicant:
+#    plugin: nil
+#    stage-packages:
+#      - wpasupplicant
+#    organize:
+#      sbin: bin
+#    filesets:
+#      binaries:
+#        - bin/wpa_supplicant
+#    stage:
+#      - $binaries
+#    prime:
+#      - $binaries

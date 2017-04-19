@@ -10,7 +10,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   gettingstarted
+   development
+   lightchutes
+   deployment
+   tutorial-sticky-board
+
+.. These sections are out of date.
    tutorials
    configuration
    installation

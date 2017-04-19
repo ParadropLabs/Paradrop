@@ -1,0 +1,23 @@
+image: python:2.7
+
+stages:
+  - unit_test
+  - build
+
+unit_test_job:
+  stage: unit_test
+  script:
+    - pip install -r requirements.txt
+    - nosetests --with-coverage --cover-package=paradrop
+
+build_job:
+  stage: build
+  only:
+    - master
+  when: on_success
+  image: paradrop/builder:2
+  script:
+    - ./pdbuild.sh build
+  artifacts:
+    paths:
+      - "paradrop/*.snap"

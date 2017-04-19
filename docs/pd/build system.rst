@@ -1,11 +1,13 @@
 Build System
 ====================================
 
-Paradrop includes a set of build tools to make development as easy as possible. 
+Paradrop includes a set of build tools to make development as easy
+as possible.
 
-Currently this system takes the form of a bash script that automates installation and execution, but 
-in time this may evolve into a published python package. This page outlines the steps required to 
-manually build the components required to develop with paradrop.
+Currently this system takes the form of a bash script that automates
+installation and execution, but in time this may evolve into a published
+python package. This page outlines the steps required to manually build
+the components required to develop with paradrop.
 
 Components in the build process:
 
@@ -14,60 +16,68 @@ Components in the build process:
 - `Installing paradrop`_
 - `Creating chutes`_
 
+We recommend using Ubuntu 14.04 as the build environment for this version
+of Paradrop.  Ubuntu 16.04 will not work because the snappy development
+tools have changed.  The next release of Paradrop will use the new tools.
+
+You will only need to follow these instructions if you will be making
+changes to the Paradrop instance tools.  Otherwise, you can
+use our pre-built Paradrop disk image.  Please visit the
+:doc:`../chutes/gettingstarted` page.
+
 Installing and running Ubuntu Snappy
 ------------------------------------
 
-[Snappy](https://developer.ubuntu.com/en/snappy/) is an Ubuntu release focusing on low-overhead for a large set of platforms. These instructions are for getting a Snappy instance up and running using 'kvm'. 
+`Snappy <https://developer.ubuntu.com/en/snappy/>`_ is an Ubuntu release
+focusing on low-overhead for a large set of platforms. These instructions
+are for getting a Snappy instance up and running using 'kvm'.
 
 Download and unzip a snappy image::
 
     wget http://releases.ubuntu.com/15.04/ubuntu-15.04-snappy-amd64-generic.img.xz
     unxz ubuntu-15.04-snappy-amd64-generic.img.xz
 
-
 Launch the snappy image using kvm::
 
     kvm -m 512 -redir :8090::80 -redir :8022::22 ubuntu-15.04-snappy-amd64-generic.img
-
 
 Connect to local instance using ssh::
 
     ssh -p 8022 ubuntu@localhost
 
-
 Building paradrop
 --------------------
 
-Snappy is a closed system (by design!). Arbitrary program installation is not allowed, so to allow paradrop access to the wide world of ``pypi`` the build system relies on two tools. 
+Snappy is a closed system (by design!). Arbitrary program installation
+is not allowed, so to allow paradrop access to the wide world of ``pypi``
+the build system relies on two tools.
 
-- ``virtualenv`` is a tool that creates encapsulated environments in which python packages can be installed. 
-- ``pex`` can compress python packages into a zip file that can be executed by any python interpreter.
+- ``virtualenv`` is a tool that creates encapsulated environments in
+  which python packages can be installed.
+- ``pex`` can compress python packages into a zip file that can be
+  executed by any python interpreter.
+- ``snappy`` is a tool for building snap packages.  *Note:* Ubuntu 16.04
+  uses snapcraft instead, which produces incompatible packages.
 
-Dependancies for paradrop are packaged with the final snap as a pex file created by freezing a virtualenv. These are the steps needed to do this:
+First, set `DEV_MACHINE_IP=paradrop.org` in pdbuild.conf.  The build
+script will refuse to run if this variable is not set.
 
-1. ``venv.pex`` is packaged with paradrop source code. This is a pex that contains only the virtualenv package. This file bootstraps virtualenv so it does not need to be installed on the local system. 
-2. A new virtual environment is created under ``/buildenv/env`` by calling ``venv.pex ./buildenv/env``
-3. The environment is activated with ``source ./buildenv/env/bin/activate``. Any python package installations will now be placed here. 
-4. Paradrop is installed with ``pip install -e .``. This installs paradrop in the virtual as well as all dependancies. Dependancies are listed in ``src/setup.py``. You must add depedencies here in order to include new python packages with paradrop. 
-5. Dependancies are saved into ``bin/pddepedencies.pex`` with the command ``pex -r docs/requirements.txt -o bin/pddepedencies.pex``. Note: requirements are written out to the file in step 4. This is done so that the ``paradrop`` dependancy is not included in the pex, since pex won't know how to look for it! The command used to do this is ``pip freeze | grep -v 'pex' | grep -v 'paradrop' > docs/requirements.txt``.
+Install the necessary development tools::
 
-At this point you can run paradrop by activating the virtualenv (step #3) and then simply calling ``paradrop``. Note that the bundled dependancies pex does not affect locally running paradrop instances-- its used in the next section.
+    ./pdbuild.sh setup
 
+Build the Paradrop snap package::
+
+    ./pdbuild.sh build
 
 Installing paradrop
 --------------------
-All programs installed on snappy are called ``snaps``. Snappy development tools are required to build snaps::
 
-    sudo add-apt-repository ppa:snappy-dev/tools
-    sudo apt-get update
-    sudo apt-get install snappy-tools bzr
+Install dependencies on the virtual machine::
 
-To build a snap::
+    ./pdbuild.sh install_deps
 
-    snappy build .
+Install the newly created Paradrop snap package::
 
-Push a snap to a running instance of snappy::
-
-    snappy-remote --url=ssh://localhost:8022 install SNAPNAME
-
+    ./pdbuild.sh install_dev
 
