@@ -34,31 +34,6 @@ parts:
     python-version: python2
     source: tools/pdlog
 
-  haproxy:
-    plugin: make
-    source: http://git.haproxy.org/git/haproxy-1.7.git/
-    source-type: git
-    source-tag: v1.7.2
-    build-packages:
-      - build-essential
-      - libssl-dev
-      - libpcre++-dev
-    make-parameters:
-      - TARGET=linux2628
-      - CPU=generic
-      - USE_STATIC_PCRE=1
-      - USE_OPENSSL=1
-      - USE_ZLIB=1
-      - USE_LINUX_SPLICE=1
-      - USE_LINUX_TPROXY=1
-    organize:
-      usr/local/sbin/haproxy: bin/haproxy
-    filesets:
-      binaries:
-        - bin/haproxy
-    prime:
-      - $binaries
-
   paradrop:
     plugin: python
     python-version: python2
@@ -70,59 +45,26 @@ parts:
       - libcurl4-openssl-dev
       - python-openssl
 
-  dnsmasq:
-    plugin: make
-    source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
-    source-type: git
-    source-branch: dnsmasq/2.75
-    build-packages:
-      - build-essential
-    make-parameters:
-      - PREFIX=/
+  dependencies:
+    plugin: nil
+    stage-packages:
+      - dnsmasq
+      - haproxy
+      - hostapd
     organize:
-      sbin/dnsmasq: bin/dnsmasq
+      usr/sbin: bin
+      usr/lib: lib
     filesets:
       binaries:
         - bin/dnsmasq
-    prime:
-      - $binaries
-
-  hostapd:
-    plugin: make
-    source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
-    source-type: git
-    source-branch: hostapd/2.5
-    build-packages:
-      - build-essential
-      - pkg-config
-      - libnl-3-dev
-      - libnl-genl-3-dev
-      - libnl-route-3-dev
-      - libssl-dev
-    make-parameters:
-      - BINDIR=/bin
-    filesets:
-      binaries:
+        - bin/haproxy
         - bin/hostapd
         - bin/hostapd_cli
+      libraries:
+        - lib/x86_64-linux-gnu/liblua5.3.so.*
+    stage:
+      - $binaries
+      - $libraries
     prime:
       - $binaries
-
-#
-# wpa_supplicant is already installed on Snappy, so this section is not needed.
-# However, it is a good example of how to install a binary from a pre-built
-# package rather than from source.
-#
-#  wpasupplicant:
-#    plugin: nil
-#    stage-packages:
-#      - wpasupplicant
-#    organize:
-#      sbin: bin
-#    filesets:
-#      binaries:
-#        - bin/wpa_supplicant
-#    stage:
-#      - $binaries
-#    prime:
-#      - $binaries
+      - $libraries
