@@ -81,13 +81,14 @@ image() {
     done
 
     sudo ubuntu-image -o $image \
+        --channel stable \
         --extra-snaps docker \
         --extra-snaps bluez \
         --extra-snaps pulseaudio \
         --extra-snaps zerotier-one \
         --extra-snaps $pdsnap \
         --image-size 4G \
-        assertions/paradrop-amd64.model
+        assertions/pc-amd64.model
 
     xz --compress $image
     echo "Created image $image.xz"

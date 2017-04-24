@@ -1,0 +1,21 @@
+type: model
+authority-id: canonical
+series: 16
+brand-id: canonical
+model: pc-amd64
+architecture: amd64
+gadget: pc
+kernel: pc-kernel
+timestamp: 2016-08-31T00:00:00.0Z
+sign-key-sha3-384: 9tydnLa6MTJ-jaQTFUXEwHl1yRx7ZS4K5cyFDhYDcPzhS7uyEkDxdUjg9g08BtNn
+
+AcLBXAQAAQoABgUCV9A82wAKCRDgT5vottzAEhq1D/4z66k0JS7sQrD54Ccros3HaAABF+7KwGqV
+ggg6Mk+N2QKNxpl7fxHeyB82KUy49v4Kp8cg4icPUfrZb1DyzjgyuJIzZfCp1+LLQ4ShJ0ZW9MLW
+p7r/FbITtbmGlCKjVtaSwLYTkZNfae/MTTuTB1nLXH939vdicRPtRQ1MsoQ6v8wUYeE4/F+SUxL9
+ekYf4G8sz+vzcO5BK9+1T3Wo/aLHDi0N4EOS3K4ia1BVITZKvyeIUEHOLQJAHKk43dAL0PqMFW+W
+IHhDXQoUeiURBfy6zcrRynaIj5tzlhFmJ3pjlmLQLlVCeGJ4yuZ6xb0YIl+oHpYzZrxTad2mEMUY
+si4qIyxVNGj7LZCloLRsDFBMh8RS9a8L0/Cq3hA2Q1Ugyw2D5U7J427SVYCDS9rrihNVvMFscou6
+vrZHMnAVl/F/TRUDYy29idiiibBQU02D1l4Qu7QnDQQCZygq1n+aeW5ZPwtF/KclkJm0YRUkqbtR
+FG2TYLmQ06MPmRuqVRaAdjfhnZ9YtFBDhI+obn99q/OmG2e7d4WNU3JPG1h5arIQGNeR9kVzBER1
+iO0V3iYjD0DxOsd2QVOdI/o8HqCRfycTMo/7TydVdWKXKpKdzeezfz/df2LRDCE712NVFhY0hDC6
+BvV4mMoqS17K7OMHfDohh0DFfp0yFl9oYfLY55G5HA==
