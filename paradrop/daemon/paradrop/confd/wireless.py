@@ -1,6 +1,7 @@
 import heapq
 import ipaddress
 import os
+import operator
 import random
 import string
 import subprocess
@@ -171,10 +172,96 @@ class ConfigWifiDevice(ConfigObject):
         ConfigOption(name="rx_stbc", type=int)
     ]
 
+    def detectPrimaryInterface(self):
+        """
+        Find the primary network interface associated with this Wi-Fi device.
+
+        By primary we mean the first interface (e.g. wlan0 or wlan1) that
+        exists at system startup before any `interface add` commands.  We will
+        use the primary interface first, and create additional virtual
+        interfaces after that.
+
+        That seems overly complicated, but it is required in cases where the
+        Wi-Fi device does not support virtual interfaces.
+
+        Returns interface name or None.
+        """
+        matches = []
+
+        # Search through all network interfaces.  This includes non-wireless
+        # interfaces, so we will get some exceptions trying to read from
+        # the phy80211 subdirectory.
+        for ifname in os.listdir('/sys/class/net'):
+            try:
+                path = '/sys/class/net/{}/ifindex'.format(ifname)
+                with open(path, 'r') as source:
+                    ifindex = int(source.read().rstrip())
+
+                info = {
+                    'ifname': ifname,
+                    'ifindex': ifindex
+                }
+
+                # Check if the current interface matches by phy name.
+                path = '/sys/class/net/{}/phy80211/name'.format(ifname)
+                with open(path, 'r') as source:
+                    phy = source.read().rstrip()
+                if phy == self.phy:
+                    matches.append(info)
+                    continue
+
+                # Check if the current interface matches by macaddress.
+                path = '/sys/class/net/{}/phy80211/macaddress'.format(ifname)
+                with open(path, 'r') as source:
+                    macaddr = source.read().rstrip()
+                if macaddr == self.macaddr:
+                    matches.append(info)
+                    continue
+            except:
+                pass
+
+        if len(matches) > 0:
+            # Sort by ifindex - lower ifindex means it was created earlier.
+            matches.sort(key=operator.itemgetter('ifindex'))
+            return matches[0]['ifname']
+        else:
+            return None
+
+    def nextInterfaceName(self):
+        """
+        Get the next available interface name.
+        """
+        if self._primary_available:
+            ifname = self._ifname
+            self._primary_available = False
+        else:
+            ifname = "v{}.{:04x}".format(self._ifname, self._ifname_counter)
+            self._ifname_counter += 1
+        return ifname
+
+    def releaseInterfaceName(self, ifname):
+        """
+        Mark an interface name as no longer used.
+        """
+        if ifname == self._ifname:
+            self._primary_available = True
+
     def setup(self):
         self._phy = self.phy
         if self._phy is None and self.macaddr is not None:
             self._phy = getPhyFromMAC(self.macaddr)
+
+        # Used to generate unique names for virtual interfaces.
+        self._ifname_counter = 0
+        self._primary_available = True
+
+        self._ifname = self.ifname
+        if self._ifname is None:
+            self._ifname = self.detectPrimaryInterface()
+        if self._ifname is None:
+            #TODO put a random hex string here.
+            self._ifname = "unknown"
+            self._primary_available = False
 
     def apply(self, allConfigs):
         commands = []
@@ -241,25 +328,29 @@ class ConfigWifiIface(ConfigObject):
         # NOTE: ifname is not defined in the UCI specs.  We use it to declare a
         # desired name for the virtual wireless interface that should be
         # created.
+        #
+        # DEPRECATED: Remove in 1.0 release.
         ConfigOption(name="ifname")
     ]
 
-    def getIfname(self, interface=None, allConfigs=None):
+    def getIfname(self, device, interface):
         """
         Returns the name to be used by this WiFi interface, e.g. as seen by
         ifconfig.
 
         This comes from the "ifname" option if it is set.  Otherwise, we use
         the interface name of the associated network.
-
-        Either interface or allConfigs must be set.
         """
         if self.ifname is not None:
+            # We were given a specific ifname to use (deprecated).
             return self.ifname
-        elif interface is not None:
-            return interface.config_ifname
+        elif interface.type == "bridge":
+            # It's a bridge (e.g. br-lan), so generate a name based on the
+            # device properties.
+            return device.nextInterfaceName()
         else:
-            interface = self.lookup(allConfigs, "network", "interface", self.network)
+            # It's not a bridge (e.g. a chute's network), so use the the ifname
+            # from the network interface section.
             return interface.config_ifname
 
     def getName(self):
@@ -270,7 +361,7 @@ class ConfigWifiIface(ConfigObject):
         interface names need to be unique on the system.
 
         If ifname is not set, then we use the combined string device:network.
-        The assumption is that no one will put multiple APs on the name device
+        The assumption is that no one will put multiple APs on the same device
         and same network, or if they do, (e.g. multiple APs on the br-lan
         bridge), then they will configure the ifname to be unique.
         """
@@ -284,6 +375,7 @@ class ConfigWifiIface(ConfigObject):
 
         # Look up the wifi-device section.
         wifiDevice = self.lookup(allConfigs, "wireless", "wifi-device", self.device)
+        self._device = wifiDevice
 
         # Look up the interface section.
         interface = self.lookup(allConfigs, "network", "interface", self.network)
@@ -293,22 +385,30 @@ class ConfigWifiIface(ConfigObject):
 
         # Set _ifname while the section is being applied so that it is still
         # available when the section is being reverted.
-        self._ifname = self.getIfname(interface=interface)
+        self._ifname = self.getIfname(wifiDevice, interface)
 
-        # Try removing interface first in case it already exists.
-        cmd = ["iw", "dev", self._ifname, "del"]
-        commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
+        # If this is a primary interface, it should always exist.  We just need
+        # to change its mode.  Otherwise, it is a virtual interface, and we need
+        # to create it.
+        if self._ifname == wifiDevice._ifname:
+            # It needs to be "down" before changing type.
+            cmd = ["ip", "link", "set", "dev", self._ifname, "down"]
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
-        # Command to create the virtual interface.
-        cmd = ["iw", "phy", wifiDevice._phy, "interface", "add",
-               self._ifname, "type", iw_type]
-        commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
+            cmd = ["iw", "dev", self._ifname, "set", "type", iw_type]
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
-        # Assign a random MAC address to avoid conflict with other
-        # interfaces using the same device.
-        cmd = ["ip", "link", "set", "dev", self._ifname,
-                "address", self.getRandomMAC()]
-        commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
+        else:
+            # Command to create the virtual interface.
+            cmd = ["iw", "phy", wifiDevice._phy, "interface", "add",
+                   self._ifname, "type", iw_type]
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
+
+            # Assign a random MAC address to avoid conflict with other
+            # interfaces using the same device.
+            cmd = ["ip", "link", "set", "dev", self._ifname,
+                    "address", self.getRandomMAC()]
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         if self.mode == "ap":
             confFile = self.makeHostapdConf(wifiDevice, interface)
@@ -356,9 +456,13 @@ class ConfigWifiIface(ConfigObject):
             commands.append((-self.PRIO_START_DAEMON,
                 KillCommand(self.pidFile, self)))
 
-        # Delete our virtual interface.
-        cmd = ["iw", "dev", self._ifname, "del"]
-        commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self, ignoreFailure=True)))
+        # If this is a primary interface we leave it alone but mark it as
+        # available again.  Otherwise, delete the interface.
+        if self._ifname != self._device._ifname:
+            # Delete our virtual interface.
+            cmd = ["iw", "dev", self._ifname, "del"]
+            commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
+        self._device.releaseInterfaceName(self._ifname)
 
         return commands
 
@@ -378,6 +482,10 @@ class ConfigWifiIface(ConfigObject):
 
             # Look up the interface section.
             interface = new.lookup(allConfigs, "network", "interface", new.network)
+
+            # Copy fields that would normally be set in apply method.
+            new._device = wifiDevice
+            new._ifname = self._ifname
 
             confFile = new.makeHostapdConf(wifiDevice, interface)
 
@@ -493,8 +601,7 @@ class HostapdConfGenerator(ConfGenerator):
     def getMainOptions(self):
         options = list()
 
-        ifname = self.wifiIface.getIfname(interface=self.interface)
-        options.append(("interface", ifname))
+        options.append(("interface", self.wifiIface._ifname))
 
         if self.interface.type == "bridge":
             options.append(("bridge", self.interface.config_ifname))
