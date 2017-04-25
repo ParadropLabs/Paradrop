@@ -16,7 +16,8 @@ def test_readHostconfigWifi(getWirelessPhyName, getPhyMACAddress):
     getPhyMACAddress.returns = "00:00:00:00:00:00"
 
     wirelessSections = list()
-    devices.readHostconfigWifi(wifi, wirelessSections)
+    networkDevices = dict()
+    devices.readHostconfigWifi(wifi, wirelessSections, networkDevices)
 
     assert len(wirelessSections) == 1
     config, options = wirelessSections[0]
@@ -29,7 +30,7 @@ def test_readHostconfigWifi(getWirelessPhyName, getPhyMACAddress):
     }]
 
     wirelessSections = list()
-    devices.readHostconfigWifi(wifi, wirelessSections)
+    devices.readHostconfigWifi(wifi, wirelessSections, networkDevices)
 
     assert len(wirelessSections) == 1
     config, options = wirelessSections[0]
@@ -50,7 +51,8 @@ def test_readHostconfigWifiInterfaces(getWirelessPhyName):
     getWirelessPhyName.side_effect = lambda x: ("phy." + x)
 
     wirelessSections = list()
-    devices.readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections)
+    networkDevices = dict()
+    devices.readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections, networkDevices)
 
     assert len(wirelessSections) == 1
     config, options = wirelessSections[0]

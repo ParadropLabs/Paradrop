@@ -138,7 +138,7 @@ def generateHostConfig(devices):
 
     for wifiDev in devices['wifi']:
         config['wifi'].append({
-            'macaddr': wifiDev['mac'],
+            'id': wifiDev['id'],
             'channel': channels.next(),
             'hwmode': '11g',
             'htmode': 'NONE'
@@ -152,11 +152,10 @@ def generateHostConfig(devices):
 
         # Add a default WiFi AP for usability.
         config['wifi-interfaces'].append({
-            'device': devices['wifi'][0]['mac'],
+            'device': devices['wifi'][0]['id'],
             'ssid': 'ParaDrop',
             'mode': 'ap',
-            'network': 'lan',
-            'ifname': 'hwlan0'
+            'network': 'lan'
         })
 
     return config

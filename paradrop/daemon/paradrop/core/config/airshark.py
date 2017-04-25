@@ -5,6 +5,7 @@ import subprocess
 
 from paradrop.base import settings
 from paradrop.base.output import out
+from paradrop.core.config import devices
 from paradrop.lib.utils import datastruct, pdosq
 
 
@@ -93,6 +94,7 @@ class AirsharkManager(object):
 
 def configure(update):
     hostConfig = update.new.getCache('hostConfig')
+    networkDevices = update.new.getCache('networkDevices')
 
     interfaces = hostConfig.get('wifi-interfaces', [])
     shark_interfaces = []
@@ -102,8 +104,10 @@ def configure(update):
         if interface.get('mode', None) != 'airshark':
             continue
 
-        ifname = findInterfaceFromMAC(interface['device'])
-        shark_interfaces.append(ifname)
+        device = devices.resolveWirelessDevRef(interface['device'],
+                networkDevices)
+        if device['primary_interface'] is not None:
+            shark_interfaces.append(device['primary_interface'])
 
     # Give a helpful error if user tried to configure Airshark, but it is not
     # installed.

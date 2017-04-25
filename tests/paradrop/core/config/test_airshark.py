@@ -1,6 +1,7 @@
 from nose.tools import assert_raises
 from mock import mock_open, patch, MagicMock
 
+from paradrop.core.chute.chute import Chute
 from paradrop.core.config import airshark
 
 
@@ -56,23 +57,39 @@ def test_AirsharkManager(Popen, kill):
 
 
 @patch('paradrop.core.config.airshark.AirsharkManager')
-@patch('paradrop.core.config.airshark.findInterfaceFromMAC')
 @patch('paradrop.core.config.airshark.airsharkInstalled')
-def test_configure(airsharkInstalled, findInterfaceFromMAC, AirsharkManager):
+def test_configure(airsharkInstalled, AirsharkManager):
     hostconfig = {
         'wifi-interfaces': [{
             'mode': 'ap',
-            'device': '00:00:00:00:00:00'
+            'device': 'pci-wifi-0'
         }, {
             'mode': 'airshark',
-            'device': '00:00:00:00:00:01'
+            'device': 'usb-wifi-0'
+        }]
+    }
+
+    networkDevices = {
+        'wifi': [{
+            'id': 'pci-wifi-0',
+            'name': 'wifiXXXX',
+            'mac': '00:00:00:00:00:01',
+            'phy': 'phy0',
+            'primary_interface': 'wlan0'
+        }, {
+            'id': 'usb-wifi-0',
+            'name': 'wifiYYYY',
+            'mac': '00:00:00:00:00:02',
+            'phy': 'phy1',
+            'primary_interface': 'wlan1'
         }]
     }
 
     update = MagicMock()
-    update.new.getCache.return_value = hostconfig
+    update.new = Chute({})
 
-    findInterfaceFromMAC.return_value = 'wlan0'
+    update.new.setCache('hostConfig', hostconfig)
+    update.new.setCache('networkDevices', networkDevices)
 
     manager = MagicMock()
     AirsharkManager.return_value = manager
@@ -81,4 +98,4 @@ def test_configure(airsharkInstalled, findInterfaceFromMAC, AirsharkManager):
     airsharkInstalled.return_value = True
 
     airshark.configure(update)
-    manager.setActive.assert_called_with(['wlan0'])
+    manager.setActive.assert_called_with(['wlan1'])

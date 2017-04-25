@@ -26,13 +26,14 @@ def test_generateHostConfig():
         'mac': '00:00:00:00:00:02',
         'ifname': 'wlan0',
         'vendor': '16ic',
-        'device': '002a'
+        'device': '002a',
+        'id': 'pci-wifi-0'
     }]
 
     config = generateHostConfig(devices)
     assert config['wan']['interface'] == "eth0"
     assert config['lan']['interfaces'] == ["eth1"]
-    assert config['wifi'][0]['macaddr'] == "00:00:00:00:00:02"
+    assert config['wifi'][0]['id'] == "pci-wifi-0"
 
 
 @patch("paradrop.core.config.devices.detectSystemDevices")

@@ -11,6 +11,7 @@ so they only need to be added when missing.
 """
 
 import itertools
+import operator
 import os
 import re
 import subprocess
@@ -27,7 +28,7 @@ EXCLUDE_IFACES = set(["lo"])
 # Strings that identify a virtual interface.
 VIF_MARKERS = [".", "veth"]
 
-# Matches various ways of specifying WiFi devices (phy0, wlan0, wifi0).
+# Matches various ways of specifying WiFi devices (phy0, wlan0).
 WIFI_DEV_REF = re.compile("([a-z]+)(\d+)")
 
 # Set of wifi-interface mode values that are handled by Paradrop rather than
@@ -166,6 +167,77 @@ class SysReader(object):
         return vendor
 
 
+def listWiFiDevices():
+    # Collect information about the physical devices (e.g. phy0 -> MAC address,
+    # device type, PCI slot, etc.) and store as objects in a dictionary.
+    devices = dict()
+    try:
+        for phy in pdos.listdir(IEEE80211_DIR):
+            mac = getPhyMACAddress(phy)
+            reader = SysReader(phy)
+
+            devices[phy] = {
+                'name': "wifi{}".format(mac.replace(':', '')),
+                'type': 'wifi',
+                'mac': mac,
+                'phy': phy,
+                'vendor': reader.getVendorId(),
+                'device': reader.getDeviceId(),
+                'pci_slot': reader.getSlotName()
+            }
+    except OSError:
+        # If we get an error here, it probably just means there are no WiFi
+        # devices.
+        pass
+
+    # Collect a list of interfaces corresponding to each physical device
+    # (e.g. phy0 -> wlan0, vwlan0.0000, etc.)
+    interfaces = dict((dev, []) for dev in devices.keys())
+    for ifname in pdos.listdir(SYS_DIR):
+        try:
+            path = "{}/{}/phy80211/name"
+            phy = readSysFile(path)
+
+            path = "{}/{}/ifindex"
+            ifindex = int(readSysFile(path))
+
+            interfaces[phy].append({
+                'ifname': ifname,
+                'ifindex': ifindex
+            })
+        except:
+            # Error probably means it was not a wireless interface.
+            pass
+
+    # Sort by ifindex to identify the primary interface, which is the one that
+    # was created when the device was first added.  We make use the fact that
+    # Linux uses monotonically increasing ifindex values.
+    for phy, device in devices.iteritems():
+        if len(interfaces[phy]) > 0:
+            interfaces[phy].sort(key=operator.itemgetter('ifindex'))
+            device['primary_interface'] = interfaces[phy]['ifname']
+        else:
+            device['primary_interface'] = None
+
+    # Finally, sort the device list by PCI slot to create an ordering that is
+    # stable across device reboots and somewhat stable across hardware swaps.
+    # TODO: sort PCI devices by pci_slot and USB devices by something else.
+    result = devices.values()
+    result.sort(key=operator.itemgetter('pci_slot'))
+
+    pci_index = 0
+    usb_index = 0
+    for dev in result:
+        if dev['pci_slot'] is not None:
+            dev['id'] = "pci-wifi-{}".format(pci_index)
+            pci_index += 1
+        else:
+            dev['id'] = "usb-wifi-{}".format(usb_index)
+            usb_index += 1
+
+    return result
+
+
 def listSystemDevices():
     """
     Detect devices on the system.
@@ -207,27 +279,8 @@ def listSystemDevices():
 
         devices.append(dev)
 
-    try:
-        for phy in pdos.listdir(IEEE80211_DIR):
-            if phy not in detectedWifi:
-                mac = getPhyMACAddress(phy)
-                reader = SysReader(phy)
-
-                devices.append({
-                    'name': "wifi{}".format(mac.replace(':', '')),
-                    'type': 'wifi',
-                    'mac': mac,
-                    'phy': phy,
-                    'vendor': reader.getVendorId(),
-                    'device': reader.getDeviceId(),
-                    'pci_slot': reader.getSlotName()
-                })
-
-                detectedWifi.add(phy)
-    except OSError:
-        # If we get an error here, it probably just means there are no WiFi
-        # devices.
-        pass
+    wifi_devices = listWiFiDevices()
+    devices.extend(wifi_devices)
 
     return devices
 
@@ -280,9 +333,24 @@ def getSystemDevices(update):
     update.new.setCache('networkDevices', devices)
 
 
-def readHostconfigWifi(wifi, wirelessSections):
+def readHostconfigWifi(wifi, wirelessSections, networkDevices):
     for dev in wifi:
-        if 'macaddr' in dev:
+        # The preferred method is to use the id field, which could contain many
+        # different kinds of identifiers (MAC address, phy, interface, or
+        # index), and use the resolveWirelessDevRef to produce a MAC
+        # address-based name.  resolve that to a MAC address-based name.  Most
+        # importantly, index-based names here mean host configurations can be
+        # copied to different machines, but then resolved unambiguously to
+        # devices.
+        #
+        # We can also a few other forms of identification from older
+        # configuration files (macaddr, phy, or interface) and convert to
+        # MAC-based name.
+
+        if 'id' in dev:
+            resolved = resolveWirelessDevRef(dev['id'], networkDevices)
+            mac = resolved['mac']
+        elif 'macaddr' in dev:
             mac = dev['macaddr']
         elif 'phy' in dev:
             mac = getPhyMACAddress(dev['phy'])
@@ -290,17 +358,23 @@ def readHostconfigWifi(wifi, wirelessSections):
             phy = getWirelessPhyName(dev['interface'])
             mac = getPhyMACAddress(phy)
         else:
-            raise Exception("Missing MAC address in wifi device definition.")
+            raise Exception("Missing name or address field in wifi device definition.")
 
         config = {
             "type": "wifi-device",
             "name": "wifi{}".format(mac.replace(":", ""))
         }
 
-        # We want to copy over all fields except interface.
+        # We want to copy over all fields except name, interface, and phy.
         options = dev.copy()
-        if 'interface' in options:
-            del options['interface']
+
+        for key in ['id', 'interface', 'phy']:
+            if key in options:
+                del options[key]
+
+        # Make sure macaddr is specified because that is the based way for
+        # pdconf to identify the device.
+        options['macaddr'] = mac
 
         # If type is missing, then add it because it is a required field.
         if 'type' not in options:
@@ -309,38 +383,41 @@ def readHostconfigWifi(wifi, wirelessSections):
         wirelessSections.append((config, options))
 
 
-def resolveWirelessDevRef(name, wirelessSections):
+def resolveWirelessDevRef(name, networkDevices):
     """
     Resolve a WiFi device reference (wlan0, phy0, 00:11:22:33:44:55, etc.) to
-    the name of the device section as used by pdconf (wifiXX).
+    the name of the device section as used by pdconf (wifiXXXXXXXXXXXX).
 
     Unambiguous naming is preferred going forward (either wifiXX or the MAC
     address), but to maintain backward compatibility, we attempt to resolve
     either wlanX or phyX to the MAC address of the device that currently uses
     that name.
     """
-    for config, options in wirelessSections:
-        if config['type'] != 'wifi-device':
-            continue
+    for device in networkDevices['wifi']:
+        # Construct a set of accepted identifiers for this device.
+        identifiers = set()
 
-        if config['name'] == name:
-            return name
-        elif options['macaddr'] == name:
-            return config['name']
+        # MAC-based identifiers, e.g. wifi001122334455 or 00:11:22:33:44:55
+        identifiers.add(device['name'])
+        identifiers.add(device['mac'])
 
-    # Substitute (e.g. wlan0 -> phy0).
-    match = WIFI_DEV_REF.match(name)
-    phy = "phy{}".format(match.group(2))
+        # Index-based with deterministic ordering, e.g. pci-wifi-0
+        identifiers.add(device['id'])
 
-    mac = getPhyMACAddress(phy)
-    new_name = "wifi{}".format(mac.replace(":", ""))
+        # Ambiguous identifiers, e.g. phy0 or wlan0
+        identifiers.add(device['phy'])
+        if device['primary_interface'] is not None:
+            identifiers.add(device['primary_interface'])
 
-    out.warn("Wireless device reference {} resolved to {}, "
-             "consider using MAC address in configuration.".format(name, new_name))
-    return new_name
+        # If the given name matches anything in the current set, return the
+        # device name.
+        if name in identifiers:
+            return device
+
+    raise Exception("Could not resolve wireless device {}".format(name))
 
 
-def readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections):
+def readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections, networkDevices):
     for iface in wifiInterfaces:
         # We handle nonstandard modes (e.g. Airshark) separately rather than
         # through the UCI system.
@@ -352,11 +429,11 @@ def readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections):
         options = iface.copy()
 
         # There are various ways the host configuration file may have specified
-        # the WiFi device (wlan0, phy0, wifi0, 00:11:22:33:44:55, etc.).  Try
-        # to resolve that to a device name that pdconf will recognize.
+        # the WiFi device (wlan0, phy0, pci-wifi-0, 00:11:22:33:44:55, etc.).
+        # Try to resolve that to a device name that pdconf will recognize.
         try:
-            device = resolveWirelessDevRef(options['device'], wirelessSections)
-            options['device'] = device
+            device = resolveWirelessDevRef(options['device'], networkDevices)
+            options['device'] = device['name']
         except:
             pass
 
@@ -394,6 +471,7 @@ def setSystemDevices(update):
     Creates basic sections that all chutes require such as the "wan" interface.
     """
     hostConfig = update.new.getCache('hostConfig')
+    networkDevices = update.new.getCache('networkDevices')
 
     dhcpSections = list()
     networkSections = list()
@@ -517,10 +595,10 @@ def setSystemDevices(update):
     firewallSections.append((config, options))
 
     wifi = hostConfig.get('wifi', [])
-    readHostconfigWifi(wifi, wirelessSections)
+    readHostconfigWifi(wifi, wirelessSections, networkDevices)
 
     wifiInterfaces = hostConfig.get('wifi-interfaces', [])
-    readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections)
+    readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections, networkDevices)
 
     # Add additional firewall rules.
     rules = datastruct.getValue(hostConfig, "firewall.rules", [])
