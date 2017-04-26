@@ -122,6 +122,9 @@ def getWirelessPhyName(ifname):
 
 
 class SysReader(object):
+    PCI_BUS_ID = re.compile(r"\d+:\d+:\d+\.\d+")
+    USB_BUS_ID = re.compile(r"\d+\-\d+:\d+\.\d+")
+
     def __init__(self, phy):
         self.phy = phy
         self.device_path = "{}/{}/device".format(IEEE80211_DIR, phy)
@@ -141,17 +144,19 @@ class SysReader(object):
 
     def getSlotName(self, default=None):
         """
-        Return the PCI slot name for the device.
+        Return the PCI/USB slot name for the device.
 
-        Example: "0000:04:00.0"
+        Example: "pci/0000:04:00.0" or "usb/1-1:1.0"
         """
-        path = os.path.join(self.device_path, "uevent")
-        with open(path, "r") as source:
-            for line in source:
-                key, value = line.split("=")
-                if key == "PCI_SLOT_NAME":
-                    return value
-        return default
+        path = os.path.join(self.device_path, "driver")
+        for fname in os.listdir(path):
+            match = SysReader.PCI_BUS_ID.match(fname)
+            if match is not None:
+                return "pci/" + fname
+
+            match = SysReader.USB_BUS_ID.match(fname)
+            if match is not None:
+                return "usb/" + fname
 
     def getVendorId(self, default="????"):
         """
@@ -183,7 +188,7 @@ def listWiFiDevices():
                 'phy': phy,
                 'vendor': reader.getVendorId(),
                 'device': reader.getDeviceId(),
-                'pci_slot': reader.getSlotName()
+                'slot': reader.getSlotName()
             }
     except OSError:
         # If we get an error here, it probably just means there are no WiFi
@@ -219,19 +224,19 @@ def listWiFiDevices():
         else:
             device['primary_interface'] = None
 
-    # Finally, sort the device list by PCI slot to create an ordering that is
-    # stable across device reboots and somewhat stable across hardware swaps.
-    # TODO: sort PCI devices by pci_slot and USB devices by something else.
+    # Finally, sort the device list by PCI/USB slot to create an ordering that
+    # is stable across device reboots and somewhat stable across hardware
+    # swaps.
     result = devices.values()
-    result.sort(key=operator.itemgetter('pci_slot'))
+    result.sort(key=operator.itemgetter('slot'))
 
     pci_index = 0
     usb_index = 0
     for dev in result:
-        if dev['pci_slot'] is not None:
+        if dev['slot'].startswith("pci"):
             dev['id'] = "pci-wifi-{}".format(pci_index)
             pci_index += 1
-        else:
+        elif dev['slot'].startswith("usb"):
             dev['id'] = "usb-wifi-{}".format(usb_index)
             usb_index += 1
 
