@@ -576,4 +576,4 @@ def test_interface_update():
     print("---")
     for cmd in commands:
         print(cmd)
-    assert len(commands) == 14
+    assert len(commands) >= 13

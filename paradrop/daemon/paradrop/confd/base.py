@@ -32,6 +32,7 @@ class ConfigObject(object):
     # Priorities to ensure proper interleaving of commands.
     # Revert commands should use negated value.
     PRIO_CREATE_IFACE = 20
+    PRIO_CREATE_VLAN = 25
     PRIO_CONFIG_IFACE = 30
     PRIO_IPTABLES_TOP = 35
     PRIO_IPTABLES_ZONE = 36
