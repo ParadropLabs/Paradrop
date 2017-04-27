@@ -30,7 +30,7 @@ class InformationApi:
                 'macAddr': wifiDev['mac'],
                 'vendorId': wifiDev['vendor'],
                 'deviceId': wifiDev['device'],
-                'pciSlot': wifiDev['pci_slot']
+                'slot': wifiDev['slot']
             })
 
         self.biosVendor = pdos.readFile('/sys/devices/virtual/dmi/id/bios_vendor')[0]
