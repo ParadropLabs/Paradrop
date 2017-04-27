@@ -88,6 +88,11 @@ class SystemStatus(object):
             if key.startswith('veth'):
                 continue
 
+            # Quick fix - ignore interfaces with dots because our server
+            # refuses to accept keys with dots.
+            if '.' in key:
+                continue
+
             interfaces[key] = {
                 'isup': value.isup,
                 'speed': value.speed,

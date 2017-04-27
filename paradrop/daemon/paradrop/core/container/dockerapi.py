@@ -579,16 +579,14 @@ def setup_net_interfaces(chute):
     pid = container.getPID()
 
     for iface in interfaces:
-        if iface.get('netType') == 'wifi':
-            IP = iface.get('ipaddrWithPrefix')
-            internalIntf = iface.get('internalIntf')
-            externalIntf = iface.get('externalIntf')
-        else: # pragma: no cover
-            continue
-
         mode = iface.get('mode', 'ap')
 
         if mode == 'ap':
+            # NOTE: VLAN interfaces use this branch path as well.
+            IP = iface['ipaddrWithPrefix']
+            internalIntf = iface['internalIntf']
+            externalIntf = iface['externalIntf']
+
             # Generate a temporary interface name.  It just needs to be unique.
             # We will rename to the internalIntf name as soon as the interface
             # is inside the chute.
@@ -620,6 +618,9 @@ def setup_net_interfaces(chute):
             call_in_netns(chute, env, cmd)
 
         elif mode == 'monitor':
+            internalIntf = iface['internalIntf']
+            externalIntf = iface['externalIntf']
+
             phyname = getWirelessPhyName(externalIntf)
 
             cmd = ['iw', 'phy', phyname, 'set', 'netns', str(pid)]

@@ -155,12 +155,12 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     iface['ipaddrWithPrefix'] = "{}/{}".format(
             iface['internalIpaddr'], subnet.prefixlen)
 
-    # AP mode is the default, but we are adding support for monitor and sta
-    # mode.
-    iface['mode'] = cfg.get("mode", "ap")
-
     # Add extra fields for WiFi devices.
     if cfg['type'] == "wifi":
+        # AP mode is the default, but we are adding support for monitor and sta
+        # mode.
+        iface['mode'] = cfg.get("mode", "ap")
+
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['ssid'])
         if res:
@@ -177,6 +177,46 @@ def getNetworkConfigWifi(update, name, cfg, iface):
         if 'dhcp' not in cfg:
             out.warn("No dhcp block found for interface {}; "
                      "will not run a DHCP server".format(name))
+
+
+def getNetworkConfigVlan(update, name, cfg, iface):
+    res = pdutils.check(cfg, dict, ['vlan_id'])
+    if res:
+        raise Exception("Interface definition missing field(s)")
+
+    # Make a dictionary of old interfaces.  Any new interfaces that are
+    # identical to an old one do not need to be changed.
+    oldInterfaces = getInterfaceDict(update.old)
+    if name in oldInterfaces:
+        oldIface = oldInterfaces[iface['name']]
+        subnet = oldIface['subnet']
+        iface['externalIntf'] = oldIface['externalIntf']
+
+    else:
+        # Claim a subnet for this interface from the pool.
+        subnet = chooseSubnet(update, iface)
+
+        # Generate a name for the new interface in the host.
+        iface['externalIntf'] = "br-lan.{}".format(cfg['vlan_id'])
+
+    # Generate internal (in the chute) and external (in the host)
+    # addresses.
+    #
+    # Example:
+    # subnet: 192.168.30.0/24
+    # netmask: 255.255.255.0
+    # external: 192.168.30.1
+    # internal: 192.168.30.2
+    hosts = subnet.hosts()
+    iface['subnet'] = subnet
+    iface['netmask'] = str(subnet.netmask)
+    iface['externalIpaddr'] = str(hosts.next())
+    iface['internalIpaddr'] = str(hosts.next())
+
+    # Generate the internal IP address with prefix length (x.x.x.x/y) for
+    # convenience of other code that expect that format (e.g. pipework).
+    iface['ipaddrWithPrefix'] = "{}/{}".format(
+            iface['internalIpaddr'], subnet.prefixlen)
 
 
 def fulfillDeviceRequest(cfg, devices):
@@ -310,19 +350,27 @@ def getNetworkConfig(update):
             'internalIntf': cfg['intfName']         # Interface name in chute
         }
 
-        oldIface = oldInterfaces.get(name, None)
-        if oldIface is None or oldIface['netType'] != iface['netType']:
-            # Try to find a physical device of the requested type.
-            #
-            # Note: we try this first because it can fail, and then we will not try
-            # to allocate any resources for it.
-            device = fulfillDeviceRequest(cfg, devices)
-            iface['device'] = device['name']
-        else:
-            iface['device'] = oldIface['device']
-
         if cfg['type'] == "wifi":
+            oldIface = oldInterfaces.get(name, None)
+            if oldIface is None or oldIface['netType'] != iface['netType']:
+                # Try to find a physical device of the requested type.
+                #
+                # Note: we try this first because it can fail, and then we will not try
+                # to allocate any resources for it.
+                device = fulfillDeviceRequest(cfg, devices)
+                iface['device'] = device['name']
+            else:
+                iface['device'] = oldIface['device']
+
             getNetworkConfigWifi(update, name, cfg, iface)
+
+        elif cfg['type'] == "vlan":
+            # TODO: Check that the chute is able to claim this VLAN, ie.  no
+            # other chute or host configuration setting has already claimed it.
+            getNetworkConfigVlan(update, name, cfg, iface)
+
+        else:
+            raise Exception("Unsupported network type, {}".format(cfg['type']))
 
         # Pass on DHCP configuration if it exists.
         if 'dhcp' in cfg:

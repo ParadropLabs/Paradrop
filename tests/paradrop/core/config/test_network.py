@@ -47,17 +47,14 @@ def test_getNetworkConfig():
     assert_raises(Exception, network.getNetworkConfig, update)
 
     update.new.net = {
-        'wifi': {
-            'intfName': 'wlan0',
-            'type': 'other', # use 'other' to skip wifi logic
-            'dhcp': {}
+        'vlan': {
+            'intfName': 'eth1',
+            'type': 'vlan',
+            'dhcp': {},
+            'vlan_id': 5
         }
     }
 
-    # Exception: Missing device(s) requested by chute
-    assert_raises(Exception, network.getNetworkConfig, update)
-
-    update.new.getCache.return_value = {'other': [{'name': 'wlan0'}]}
     network.getNetworkConfig(update)
 
     # Should have called setCache with a list containing one interface.
