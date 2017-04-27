@@ -13,6 +13,8 @@ Usage:
     pdcli local <router_addr> hostconfig change <option> <value>
     pdcli local <router_addr> sshkeys
     pdcli local <router_addr> sshkeys add <path>
+    pdcli local <router_addr> pdconf
+    pdcli local <router_addr> pdconf reload
     pdcli local <router_addr> password
     pdcli local <router_addr> provision <router_id> <router_password> [--server=<server>] [--wamp=<wamp>]
     pdcli local <router_addr> networks <chute>
@@ -35,6 +37,7 @@ from __future__ import print_function
 
 import base64
 import getpass
+import operator
 import os
 from pprint import pprint
 
@@ -291,6 +294,27 @@ def stations(router_addr, arguments):
     router_request("GET", url)
 
 
+def pdconf(router_addr, arguments):
+    """
+    Access the pdconf subsystem.
+    """
+    url = "http://{}/api/v1/config/pdconf".format(router_addr)
+
+    if arguments['reload']:
+        res = router_request("PUT", url, dump=False)
+    else:
+        res = router_request("GET", url, dump=False)
+
+    if res.ok:
+        data = res.json()
+        data.sort(key=operator.itemgetter("age"))
+
+        print("{:3s} {:12s} {:20s} {:30s} {:5s}".format("Age", "Type", "Name",
+            "Comment", "Pass"))
+        for item in data:
+            print("{age:<3d} {type:12s} {name:20s} {comment:30s} {success}".format(**item))
+
+
 def local_tree(arguments):
     """
     Handle functions related to router API.
@@ -310,6 +334,8 @@ def local_tree(arguments):
         networks(router_addr, arguments)
     elif arguments['stations']:
         stations(router_addr, arguments)
+    elif arguments['pdconf']:
+        pdconf(router_addr, arguments)
 
 
 def main():

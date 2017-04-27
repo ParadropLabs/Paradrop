@@ -254,7 +254,6 @@ class ConfigApi(object):
         result = yield self.update_manager.add_update(**update)
         returnValue(json.dumps(result))
 
-
     @routes.route('/pdconf', methods=['GET'])
     def pdconf(self, request):
         """
@@ -264,6 +263,17 @@ class ConfigApi(object):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
         return pdconf_client.systemStatus()
+
+    @routes.route('/pdconf', methods=['PUT'])
+    def pdconf_reload(self, request):
+        """
+        Triggers pdconf to reload UCI configuration files and return the
+        status.  This function is intended for low-level debugging of the
+        pdconf system.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+        return pdconf_client.reloadAll()
 
     @routes.route('/sshKeys', methods=['GET', 'POST'])
     def sshKeys(self, request):
