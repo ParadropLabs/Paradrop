@@ -1,0 +1,64 @@
+name: paradrop-snmpd
+version: '5.7.3'
+summary: SNMP agent packaged for ParaDrop
+description: |
+  snmpd is an SNMP agent which binds to a port and awaits requests from
+  SNMP management software. Upon receiving a request, it processes the
+  request(s), collects the requested information and/or performs the
+  requested operation(s) and returns the information to the sender.
+
+confinement: strict
+grade: stable
+
+apps:
+  snmpd:
+    command: snmpd -c $SNAP/snmpd.conf -M "$SNAP/mibs:$SNAP/mibs/iana:$SNAP/mibs/ietf:$SNAP/mibs/netsnmp"
+    daemon: forking
+    plugs:
+      - hardware-observe
+      - network
+      - network-bind
+      - network-observe
+      - network-setup-observe
+      - system-observe
+
+parts:
+  snmpd:
+    plugin: nil
+    stage-packages:
+      - snmpd
+    organize:
+      usr/sbin: bin
+      usr/lib: lib
+      usr/share/snmp/mibs: mibs/netsnmp
+    filesets:
+      binaries:
+        - bin/snmpd
+      libraries:
+        - lib/x86_64-linux-gnu
+    stage:
+      - $binaries
+      - $libraries
+      - mibs/netsnmp
+    prime:
+      - $binaries
+      - $libraries
+      - mibs/netsnmp
+
+  configuration:
+    plugin: dump
+    source: .
+    stage:
+      - snmpd.conf
+    prime:
+      - snmpd.conf
+
+  mibs:
+    plugin: dump
+    source: /var/lib/mibs
+    organize:
+      '*': mibs/
+    stage:
+      - mibs
+    prime:
+      - mibs

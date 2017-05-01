@@ -1,0 +1,6 @@
+Important: before building the snmpd snap, install MIB files on the
+build machine.  I could not find a straightforward way to do this through
+snapcraft, so instead it copies MIB files from the build machine into
+the snap.
+
+    sudo apt-get install snmp-mibs-downloader
