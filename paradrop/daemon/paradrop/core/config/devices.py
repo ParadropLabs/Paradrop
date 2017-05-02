@@ -171,6 +171,18 @@ class SysReader(object):
             vendor = default
         return vendor
 
+    def read_uevent(self):
+        """
+        Read the device uevent file and return the contents as a dictionary.
+        """
+        result = dict()
+        path = os.path.join(self.device_path, "uevent")
+        with open(path, "r") as source:
+            for line in source:
+                key, value = line.split("=")
+                result[key] = value
+        return result
+
 
 def listWiFiDevices():
     # Collect information about the physical devices (e.g. phy0 -> MAC address,
