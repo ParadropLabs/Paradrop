@@ -5,8 +5,8 @@ and it will walk through all of the functions that make up a chute creation
 operation.
 """
 
-from paradrop.backend.updateObject import UpdateChute
-from paradrop.lib.plan import executionplan, plangraph
+from paradrop.core.update.update_object import UpdateChute
+from paradrop.core.plan import executionplan, plangraph
 
 
 def loadPriorityMap():

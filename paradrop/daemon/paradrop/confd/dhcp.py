@@ -2,7 +2,6 @@ import ipaddress
 import os
 
 from paradrop.lib.utils import pdosq
-from paradrop.base.output import out
 
 from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand

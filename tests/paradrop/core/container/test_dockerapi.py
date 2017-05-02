@@ -146,7 +146,10 @@ def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
         'internalIntf': 'Inside',
         'externalIntf': 'Outside'
     }, {
-        'netType': 'lan'
+        'netType': 'vlan',
+        'ipaddrWithPrefix': '0.0.0.0/24',
+        'internalIntf': 'Inside',
+        'externalIntf': 'Outside'
     }]
 
     dockerapi.setup_net_interfaces(chute)

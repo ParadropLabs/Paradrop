@@ -7,9 +7,6 @@ import string
 import subprocess
 from pprint import pprint
 
-from paradrop.base.output import out
-from paradrop.lib.utils import pdosq
-
 from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand
 
@@ -798,8 +795,6 @@ class HostapdConfGenerator(ConfGenerator):
             options.append(("ieee8021x", "1"))
 
         else:
-            out.warn("Encryption type {} not supported (supported: "
-                     "none|psk2)".format(self.wifiIface.encryption))
             raise Exception("Encryption type not supported")
 
         return options
