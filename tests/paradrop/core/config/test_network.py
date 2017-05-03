@@ -37,6 +37,8 @@ def test_getNetworkConfig():
     update = MagicMock()
     update.old = None
 
+    update.new.getCache.return_value = {}
+
     update.new.net = {
         'wifi': {
             'dhcp': {}

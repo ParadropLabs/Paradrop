@@ -4,7 +4,7 @@ import itertools
 
 from paradrop.base.output import out
 from paradrop.base import pdutils, settings
-from paradrop.lib.utils import addresses, uci
+from paradrop.lib.utils import addresses, datastruct, uci
 from paradrop.lib.misc import resources
 
 from . import configservice, uciutils
@@ -76,14 +76,21 @@ def getWifiKeySettings(cfg, iface):
 
 
 def chooseSubnet(update, iface):
-    network = ipaddress.ip_network(unicode(settings.DYNAMIC_NETWORK_POOL), strict=False)
-    if SUBNET_SIZE < network.prefixlen:
-        raise Exception("Invalid subnetSize {} for network {}".format(
-            SUBNET_SIZE, network))
+    # Get subnet configuration settings from host configuration.
+    host_config = update.new.getCache('hostConfig')
+    network_pool = datastruct.getValue(host_config,
+            "system.chuteSubnetPool", settings.DYNAMIC_NETWORK_POOL)
+    prefix_size = datastruct.getValue(host_config,
+            "system.chutePrefixSize", SUBNET_SIZE)
+
+    network = ipaddress.ip_network(unicode(network_pool))
+    if prefix_size < network.prefixlen:
+        raise Exception("Router misconfigured: prefix size {} is invalid for network {}".format(
+            prefix_size, network))
 
     reservations = resources.getSubnetReservations()
 
-    subnets = network.subnets(new_prefix=SUBNET_SIZE)
+    subnets = network.subnets(new_prefix=prefix_size)
     for subnet in subnets:
         if subnet not in reservations:
             return subnet

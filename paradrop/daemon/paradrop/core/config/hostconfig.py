@@ -100,6 +100,8 @@ def generateHostConfig(devices):
     config['wifi-interfaces'] = list()
     config['system'] = {
         'autoUpdate': True,
+        'chuteSubnetPool': settings.DYNAMIC_NETWORK_POOL,
+        'chutePrefixSize': 24,
         'onMissingWiFi': None
     }
     config['zerotier'] = {

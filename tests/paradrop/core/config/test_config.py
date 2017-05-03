@@ -368,6 +368,7 @@ def test_get_network_config_wifi():
     # Set up enough fake data to make call.
     update = MagicMock()
     update.old = None
+    update.new.getCache.return_value = {}
 
     cfg = dict()
     cfg['type'] = "wifi"
