@@ -102,7 +102,7 @@ HOST_DATA_PARTITION = "/"
 # Internal is inside the chute; external is in the host.
 #
 INTERNAL_DATA_DIR = "/data/"
-EXTERNAL_DATA_DIR = "~/.paradrop/{chute}/"
+EXTERNAL_DATA_DIR = "~/.paradrop/chute-data/{chute}/"
 
 #
 # System directory is used to share system information from the host
@@ -198,7 +198,7 @@ def updatePaths(configHomeDir, runtimeHomeDir="/var/run/paradrop"):
     mod.CONFIG_HOME_DIR = configHomeDir
     mod.RUNTIME_HOME_DIR = runtimeHomeDir
     mod.FC_CHUTESTORAGE_FILE = os.path.join(mod.CONFIG_HOME_DIR, "chutes")
-    mod.EXTERNAL_DATA_DIR = os.path.join(mod.CONFIG_HOME_DIR, "{chute}/")
+    mod.EXTERNAL_DATA_DIR = os.path.join(mod.CONFIG_HOME_DIR, "chute-data/{chute}/")
     mod.LOG_DIR = os.path.join(mod.CONFIG_HOME_DIR, "logs/")
     mod.KEY_DIR = os.path.join(mod.CONFIG_HOME_DIR, "keys/")
     mod.MISC_DIR = os.path.join(mod.CONFIG_HOME_DIR, "misc/")
