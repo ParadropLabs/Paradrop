@@ -77,7 +77,7 @@ def test_ConfigDefaults():
 
     commands = config.apply(allConfigs)
     print(commands)
-    assert len(commands) == 23
+    assert len(commands) >= 23
 
     commands = config.revert(allConfigs)
     assert len(commands) >= 23
@@ -102,10 +102,10 @@ def test_ConfigZone():
     config.manager.conntrackLoaded = False
 
     commands = config.apply(allConfigs)
-    assert len(commands) == 17
+    assert len(commands) >= 17
 
     commands = config.revert(allConfigs)
-    assert len(commands) == 16
+    assert len(commands) >= 16
 
 
 def test_ConfigForwarding():
