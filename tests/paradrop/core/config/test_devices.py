@@ -15,12 +15,13 @@ def test_readHostconfigWifi(getWirelessPhyName, getPhyMACAddress):
     getWirelessPhyName.side_effect = lambda x: ("phy." + x)
     getPhyMACAddress.returns = "00:00:00:00:00:00"
 
-    wirelessSections = list()
+    builder = devices.UCIBuilder()
     networkDevices = dict()
-    devices.readHostconfigWifi(wifi, wirelessSections, networkDevices)
+    devices.readHostconfigWifi(wifi, networkDevices, builder)
 
-    assert len(wirelessSections) == 1
-    config, options = wirelessSections[0]
+    sections = builder.getSections("wireless")
+    assert len(sections) == 1
+    config, options = sections[0]
     assert config['type'] == 'wifi-device'
     assert config['name'].startswith('wifi')
 
@@ -29,17 +30,20 @@ def test_readHostconfigWifi(getWirelessPhyName, getPhyMACAddress):
         "channel": 6
     }]
 
-    wirelessSections = list()
-    devices.readHostconfigWifi(wifi, wirelessSections, networkDevices)
+    builder = devices.UCIBuilder()
+    devices.readHostconfigWifi(wifi, networkDevices, builder)
 
-    assert len(wirelessSections) == 1
-    config, options = wirelessSections[0]
+    sections = builder.getSections("wireless")
+    assert len(sections) == 1
+    config, options = sections[0]
     assert config['type'] == 'wifi-device'
     assert config['name'].startswith('wifi')
 
 
 @patch("paradrop.core.config.devices.getWirelessPhyName")
 def test_readHostconfigWifiInterfaces(getWirelessPhyName):
+    builder = devices.UCIBuilder()
+
     wifiInterfaces = [{
         "device": "wifi000000000000",
         "ifname": "wlan1",
@@ -52,9 +56,39 @@ def test_readHostconfigWifiInterfaces(getWirelessPhyName):
 
     wirelessSections = list()
     networkDevices = dict()
-    devices.readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections, networkDevices)
+    devices.readHostconfigWifiInterfaces(wifiInterfaces, networkDevices, builder)
 
-    assert len(wirelessSections) == 1
-    config, options = wirelessSections[0]
+    sections = builder.getSections("wireless")
+    assert len(sections) == 1
+    config, options = sections[0]
     assert config['type'] == 'wifi-iface'
     assert options['device'] == 'wifi000000000000'
+
+
+def test_readHostconfigVlan():
+    builder = devices.UCIBuilder()
+
+    vlanInterfaces = [{
+        'id': 2,
+        'name': 'test',
+        'proto': 'static',
+        'ipaddr': '192.168.2.1',
+        'netmask': '255.255.255.0',
+        'dhcp': {
+            'leasetime': '12h',
+            'limit': 100,
+            'start': 100,
+        },
+        'firewall': {
+            'defaults': {
+                'forward': 'REJECT',
+                'input': 'ACCEPT',
+                'output': 'ACCEPT'
+            }
+        }
+    }]
+
+    devices.readHostconfigVlan(vlanInterfaces, builder)
+
+    sections = builder.getSections("firewall")
+    assert len(sections) >= 1

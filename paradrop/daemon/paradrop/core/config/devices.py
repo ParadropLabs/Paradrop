@@ -350,7 +350,7 @@ def getSystemDevices(update):
     update.new.setCache('networkDevices', devices)
 
 
-def readHostconfigWifi(wifi, wirelessSections, networkDevices):
+def readHostconfigWifi(wifi, networkDevices, builder):
     for dev in wifi:
         # The preferred method is to use the id field, which could contain many
         # different kinds of identifiers (MAC address, phy, interface, or
@@ -377,10 +377,7 @@ def readHostconfigWifi(wifi, wirelessSections, networkDevices):
         else:
             raise Exception("Missing name or address field in wifi device definition.")
 
-        config = {
-            "type": "wifi-device",
-            "name": "wifi{}".format(mac.replace(":", ""))
-        }
+        name = "wifi{}".format(mac.replace(":", ""))
 
         # We want to copy over all fields except name, interface, and phy.
         options = dev.copy()
@@ -397,7 +394,7 @@ def readHostconfigWifi(wifi, wirelessSections, networkDevices):
         if 'type' not in options:
             options['type'] = 'auto'
 
-        wirelessSections.append((config, options))
+        builder.add("wireless", "wifi-device", options, name=name)
 
 
 def resolveWirelessDevRef(name, networkDevices):
@@ -434,14 +431,12 @@ def resolveWirelessDevRef(name, networkDevices):
     raise Exception("Could not resolve wireless device {}".format(name))
 
 
-def readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections, networkDevices):
+def readHostconfigWifiInterfaces(wifiInterfaces, networkDevices, builder):
     for iface in wifiInterfaces:
         # We handle nonstandard modes (e.g. Airshark) separately rather than
         # through the UCI system.
         if iface.get('mode', None) in WIFI_NONSTANDARD_MODES:
             continue
-
-        config = {"type": "wifi-iface"}
 
         options = iface.copy()
 
@@ -454,7 +449,7 @@ def readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections, networkDevice
         except:
             pass
 
-        wirelessSections.append((config, options))
+        builder.add("wireless", "wifi-iface", options)
 
 
 def checkSystemDevices(update):
@@ -479,6 +474,110 @@ def checkSystemDevices(update):
             out.warn("No WiFi devices were detected.")
 
 
+def readHostconfigVlan(vlanInterfaces, builder):
+    for interface in vlanInterfaces:
+        name = interface['name']
+
+        options = {
+            'proto': interface['proto']
+        }
+
+        if interface['proto'] == 'static':
+            options['ipaddr'] = interface['ipaddr']
+            options['netmask'] = interface['netmask']
+
+        # TODO: Support VLANs on interfaces other than the lan bridge.
+        ifname = "br-lan.{}".format(interface['id'])
+        uciutils.setList(options, 'ifname', [ifname])
+
+        builder.add("network", "interface", options, name=name)
+
+        if 'dhcp' in interface:
+            dhcp = interface['dhcp']
+
+            options = {}
+            uciutils.setList(options, 'interface', [name])
+            builder.add("dhcp", "dnsmasq", options)
+
+            options = {
+                'interface': name,
+                'start': dhcp['start'],
+                'limit': dhcp['limit'],
+                'leasetime': dhcp['leasetime']
+            }
+            builder.add("dhcp", "dhcp", options, name=name)
+
+            # Allow DNS requests.
+            options = {
+                'src': name,
+                'proto': 'udp',
+                'dest_port': 53,
+                'target': 'ACCEPT'
+            }
+            builder.add("firewall", "rule", options)
+
+            # Allow DHCP requests.
+            options = {
+                'src': name,
+                'proto': 'udp',
+                'dest_port': 67,
+                'target': 'ACCEPT'
+            }
+            builder.add("firewall", "rule", options)
+
+        # Make a zone entry with defaults.
+        options = datastruct.getValue(interface,
+                "firewall.defaults", {}).copy()
+        options['name'] = name
+        uciutils.setList(options, 'network', [name])
+        builder.add("firewall", "zone", options)
+
+        # Add forwarding entries.
+        rules = datastruct.getValue(interface, "firewall.forwarding", [])
+        for rule in rules:
+            builder.add("firewall", "forwarding", rule)
+
+        rules = datastruct.getValue(interface, "firewall.rules", [])
+        for rule in rules:
+            builder.add("firewall", "rule", rule)
+
+
+class UCIBuilder(object):
+    """
+    UCIBuilder helps aggregate UCI configuration sections for writing to files.
+    """
+    FILES = ["dhcp", "network", "firewall", "wireless", "qos"]
+
+    def __init__(self):
+        self.contents = dict((f, []) for f in UCIBuilder.FILES)
+
+    def add(self, file_, type_, options, name=None):
+        """
+        Add a new configuration section.
+        """
+        config = {"type": type_}
+        if name is not None:
+            config['name'] = name
+
+        self.contents[file_].append((config, options))
+
+    def getSections(self, file_):
+        """
+        Get sections associated with a single file.
+
+        Returns: list of tuples, [(config, options)]
+        """
+        return self.contents[file_]
+
+    def write(self):
+        """
+        Write all of the configuration sections to files.
+        """
+        for f in UCIBuilder.FILES:
+            setConfig(settings.RESERVED_CHUTE, self.contents[f],
+                    uci.getSystemPath(f))
+
+
 def setSystemDevices(update):
     """
     Initialize system configuration files.
@@ -490,106 +589,86 @@ def setSystemDevices(update):
     hostConfig = update.new.getCache('hostConfig')
     networkDevices = update.new.getCache('networkDevices')
 
-    dhcpSections = list()
-    networkSections = list()
-    firewallSections = list()
-    wirelessSections = list()
-    qosSections = list()
+    builder = UCIBuilder()
 
     # This section defines the default input, output, and forward policies for
     # the firewall.
-    config = {"type": "defaults"}
     options = datastruct.getValue(hostConfig, "firewall.defaults", {})
-    firewallSections.append((config, options))
+    builder.add("firewall", "defaults", options)
 
     def zoneFirewallSettings(name):
         # Create zone entry with defaults (input, output, forward policies and
         # other configuration).
         #
         # Make a copy of the object from hostconfig because we modify it.
-        config = {"type": "zone"}
         options = datastruct.getValue(hostConfig,
                 name+".firewall.defaults", {}).copy()
         options['name'] = name
         uciutils.setList(options, 'network', [name])
-        firewallSections.append((config, options))
+        builder.add("firewall", "zone", options)
 
         # Add forwarding entries (rules that allow traffic to move from one
         # zone to another).
         rules = datastruct.getValue(hostConfig, name+".firewall.forwarding", [])
         for rule in rules:
-            config = {"type": "forwarding"}
-            firewallSections.append((config, rule))
+            builder.add("firewall", "forwarding", rule)
 
     if 'wan' in hostConfig:
-        config = {"type": "interface", "name": "wan"}
-
         options = dict()
         options['ifname'] = hostConfig['wan']['interface']
         options['proto'] = "dhcp"
-
-        networkSections.append((config, options))
+        builder.add("network", "interface", options, name="wan")
 
         zoneFirewallSettings("wan")
 
-        config = {"type": "interface", "name": "wan"}
         options = {
             "enabled": 0
         }
-        qosSections.append((config, options))
+        builder.add("qos", "interface", options, name="wan")
 
     if 'lan' in hostConfig:
-        config = {"type": "interface", "name": "lan"}
-
         options = dict()
         options['type'] = "bridge"
         options['bridge_empty'] = "1"
-
         options['proto'] = 'static'
         options['ipaddr'] = hostConfig['lan']['ipaddr']
         options['netmask'] = hostConfig['lan']['netmask']
         uciutils.setList(options, 'ifname', hostConfig['lan']['interfaces'])
-
-        networkSections.append((config, options))
+        builder.add("network", "interface", options, name="lan")
 
         if 'dhcp' in hostConfig['lan']:
             dhcp = hostConfig['lan']['dhcp']
 
-            config = {'type': 'dnsmasq'}
             options = {
                 'interface': 'lan',
                 'domain': settings.LOCAL_DOMAIN
             }
-            dhcpSections.append((config, options))
+            builder.add("dhcp", "dnsmasq", options)
 
-            config = {'type': 'dhcp', 'name': 'lan'}
             options = {
                 'interface': 'lan',
                 'start': dhcp['start'],
                 'limit': dhcp['limit'],
                 'leasetime': dhcp['leasetime']
             }
-            dhcpSections.append((config, options))
+            builder.add("dhcp", "dhcp", options, name="lan")
 
-            config = {'type': 'domain'}
             options = {
                 'name': settings.LOCAL_DOMAIN,
                 'ip': hostConfig['lan']['ipaddr']
             }
-            dhcpSections.append((config, options))
+            builder.add("dhcp", "domain", options)
 
         zoneFirewallSettings("lan")
 
-        config = {"type": "interface", "name": "lan"}
         options = {
             "enabled": 0
         }
-        qosSections.append((config, options))
+        builder.add("qos", "interface", options, name="lan")
 
     # Automatically generate loopback section.  There is generally not much to
     # configure for loopback, but we could add support to the host
     # configuration.
-    config = {"type": "interface", "name": "loopback"}
     options = {
         'ifname': 'lo',
         'proto': 'static',
@@ -597,9 +676,8 @@ def setSystemDevices(update):
         'netmask': '255.0.0.0'
     }
     uciutils.setList(options, 'ifname', ['lo'])
-    networkSections.append((config, options))
+    builder.add("network", "interface", options, name="loopback")
 
-    config = {'type': 'zone'}
     options = {
         'name': 'loopback',
         'masq': '0',
@@ -609,27 +687,21 @@ def setSystemDevices(update):
         'output': 'ACCEPT'
     }
     uciutils.setList(options, 'network', ['loopback'])
-    firewallSections.append((config, options))
+    builder.add("firewall", "zone", options)
 
     wifi = hostConfig.get('wifi', [])
-    readHostconfigWifi(wifi, wirelessSections, networkDevices)
+    readHostconfigWifi(wifi, networkDevices, builder)
 
     wifiInterfaces = hostConfig.get('wifi-interfaces', [])
-    readHostconfigWifiInterfaces(wifiInterfaces, wirelessSections, networkDevices)
+    readHostconfigWifiInterfaces(wifiInterfaces, networkDevices, builder)
+
+    vlanInterfaces = hostConfig.get('vlan-interfaces', [])
+    readHostconfigVlan(vlanInterfaces, builder)
 
     # Add additional firewall rules.
     rules = datastruct.getValue(hostConfig, "firewall.rules", [])
     for rule in rules:
-        config = {"type": "rule"}
-        firewallSections.append((config, rule))
+        builder.add("firewall", "rule", rule)
 
-    setConfig(settings.RESERVED_CHUTE, dhcpSections,
-              uci.getSystemPath("dhcp"))
-    setConfig(settings.RESERVED_CHUTE, networkSections,
-              uci.getSystemPath("network"))
-    setConfig(settings.RESERVED_CHUTE, firewallSections,
-              uci.getSystemPath("firewall"))
-    setConfig(settings.RESERVED_CHUTE, wirelessSections,
-              uci.getSystemPath("wireless"))
-    setConfig(settings.RESERVED_CHUTE, qosSections,
-              uci.getSystemPath("qos"))
+    # Write all of the changes to UCI files at once.
+    builder.write()
