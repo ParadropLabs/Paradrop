@@ -134,6 +134,32 @@ class ChuteApi(object):
         request.setHeader('Content-Type', 'application/json')
         returnValue(json.dumps(result, cls=UpdateEncoder))
 
+    # TODO: move the index endpoint from "/get" to "/" to resolve
+    # the conflict when a chute chute is named "get".
+    @routes.route('/<chute>', methods=['GET'])
+    def get_chute(self, request, chute):
+        cors.config_cors(request)
+
+        request.setHeader('Content-Type', 'application/json')
+
+        chute_obj = ChuteStorage.chuteList[chute]
+        container = ChuteContainer(chute)
+
+        chuteStorage = ChuteStorage()
+        allocation = resource.computeResourceAllocation(
+                chuteStorage.getChuteList())
+
+        result = {
+            'name': chute,
+            'state': container.getStatus(),
+            'version': getattr(chute_obj, 'version', None),
+            'allocation': allocation.get(chute, None),
+            'environment': getattr(chute_obj, 'environment', None),
+            'resources': getattr(chute_obj, 'resources', None)
+        }
+
+        return json.dumps(result)
+
     @routes.route('/<chute>/networks', methods=['GET'])
     def get_networks(self, request, chute):
         cors.config_cors(request)
