@@ -162,12 +162,11 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     iface['ipaddrWithPrefix'] = "{}/{}".format(
             iface['internalIpaddr'], subnet.prefixlen)
 
-    # Add extra fields for WiFi devices.
-    if cfg['type'] == "wifi":
-        # AP mode is the default, but we are adding support for monitor and sta
-        # mode.
-        iface['mode'] = cfg.get("mode", "ap")
+    # AP mode is the default, but we are adding support for monitor and sta
+    # mode.
+    iface['mode'] = cfg.get("mode", "ap")
 
+    if iface['mode'] in ["ap", "sta"]:
         # Check for required fields.
         res = pdutils.check(cfg, dict, ['ssid'])
         if res:
@@ -176,14 +175,14 @@ def getNetworkConfigWifi(update, name, cfg, iface):
 
         iface['ssid'] = cfg['ssid']
 
-        # Optional encryption settings
-        getWifiKeySettings(cfg, iface)
+    # Optional encryption settings
+    getWifiKeySettings(cfg, iface)
 
-        # Give a warning if the dhcp block is missing, since it is likely
-        # that developers will want a DHCP server to go with their AP.
-        if 'dhcp' not in cfg:
-            out.warn("No dhcp block found for interface {}; "
-                     "will not run a DHCP server".format(name))
+    # Give a warning if the dhcp block is missing, since it is likely
+    # that developers will want a DHCP server to go with their AP.
+    if 'dhcp' not in cfg:
+        out.warn("No dhcp block found for interface {}; "
+                 "will not run a DHCP server".format(name))
 
 
 def getNetworkConfigVlan(update, name, cfg, iface):
