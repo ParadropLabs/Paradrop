@@ -5,10 +5,12 @@ Usage:
     pdcli routers list
     pdcli routers create <name> [--orphaned] [--claim=<ct>]
     pdcli routers delete <router_id>
-    pdcli local <router_addr> chutes list
-    pdcli local <router_addr> chutes start <chute>
-    pdcli local <router_addr> chutes stop <chute>
-    pdcli local <router_addr> chutes delete <chute>
+    pdcli local <router_addr> chute list
+    pdcli local <router_addr> chute <chute> start
+    pdcli local <router_addr> chute <chute> stop
+    pdcli local <router_addr> chute <chute> delete
+    pdcli local <router_addr> chute <chute> info
+    pdcli local <router_addr> chute <chute> cache
     pdcli local <router_addr> hostconfig
     pdcli local <router_addr> hostconfig change <option> <value>
     pdcli local <router_addr> sshkeys
@@ -162,7 +164,7 @@ def routers_tree(arguments):
         result = pdserver_request('DELETE', url)
 
 
-def chutes_tree(router_addr, arguments):
+def chute_tree(router_addr, arguments):
     """
     Handle functions related to chutes.
     """
@@ -196,6 +198,16 @@ def chutes_tree(router_addr, arguments):
             }
         }
         router_request("DELETE", url, json=data)
+
+    elif arguments['info']:
+        chute = arguments['<chute>']
+        url = "http://{}/api/v1/chutes/{}".format(router_addr, chute)
+        router_request("GET", url)
+
+    elif arguments['cache']:
+        chute = arguments['<chute>']
+        url = "http://{}/api/v1/chutes/{}/cache".format(router_addr, chute)
+        router_request("GET", url)
 
 
 def hostconfig_tree(router_addr, arguments):
@@ -320,8 +332,8 @@ def local_tree(arguments):
     Handle functions related to router API.
     """
     router_addr = arguments['<router_addr>']
-    if arguments['chutes']:
-        chutes_tree(router_addr, arguments)
+    if arguments['chute']:
+        chute_tree(router_addr, arguments)
     elif arguments['hostconfig']:
         hostconfig_tree(router_addr, arguments)
     elif arguments['sshkeys']:

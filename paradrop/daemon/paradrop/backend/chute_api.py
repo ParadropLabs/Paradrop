@@ -14,6 +14,21 @@ from paradrop.core.container.chutecontainer import ChuteContainer
 from . import cors
 
 
+class ChuteCacheEncoder(json.JSONEncoder):
+    """
+    JSON encoder for chute cache dictionary.
+
+    The chute cache can contain arbitrary objects, some of which may not be
+    JSON-serializable.  This encoder returns handles unserializable objects by
+    returning the `repr` string.
+    """
+    def default(self, o):
+        try:
+            return json.JSONEncoder.default(self, o)
+        except TypeError as error:
+            return repr(o)
+
+
 class UpdateEncoder(json.JSONEncoder):
     def default(self, o):
         result = {
@@ -159,6 +174,23 @@ class ChuteApi(object):
         }
 
         return json.dumps(result)
+
+    @routes.route('/<chute>/cache', methods=['GET'])
+    def get_chute_cache(self, request, chute):
+        """
+        Get chute cache contents.
+
+        The chute cache is a key-value store used during chute installation.
+        It can be useful for debugging the Paradrop platform.
+        """
+        cors.config_cors(request)
+
+        request.setHeader('Content-Type', 'application/json')
+
+        chute_obj = ChuteStorage.chuteList[chute]
+        result = chute_obj.getCacheContents()
+
+        return json.dumps(result, cls=ChuteCacheEncoder)
 
     @routes.route('/<chute>/networks', methods=['GET'])
     def get_networks(self, request, chute):

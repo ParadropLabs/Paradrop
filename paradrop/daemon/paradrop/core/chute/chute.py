@@ -69,6 +69,12 @@ class Chute(object):
         """
         return "\n".join(["%s:%s" % (k,v) for k,v in self._cache.iteritems()])
 
+    def getCacheContents(self):
+        """
+        Return the cache dictionary.
+        """
+        return self._cache
+
     def appendCache(self, key, val):
         """
             Finds the key they requested and appends the val into it, this function assumes the cache object
