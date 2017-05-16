@@ -212,10 +212,10 @@ def listWiFiDevices():
     interfaces = dict((dev, []) for dev in devices.keys())
     for ifname in pdos.listdir(SYS_DIR):
         try:
-            path = "{}/{}/phy80211/name"
+            path = "{}/{}/phy80211/name".format(SYS_DIR, ifname)
             phy = readSysFile(path)
 
-            path = "{}/{}/ifindex"
+            path = "{}/{}/ifindex".format(SYS_DIR, ifname)
             ifindex = int(readSysFile(path))
 
             interfaces[phy].append({
@@ -232,7 +232,7 @@ def listWiFiDevices():
     for phy, device in devices.iteritems():
         if len(interfaces[phy]) > 0:
             interfaces[phy].sort(key=operator.itemgetter('ifindex'))
-            device['primary_interface'] = interfaces[phy]['ifname']
+            device['primary_interface'] = interfaces[phy][0]['ifname']
         else:
             device['primary_interface'] = None
 
