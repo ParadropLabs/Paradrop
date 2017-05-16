@@ -3,6 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
+import errno
 import os
 import subprocess
 import shutil
@@ -104,11 +105,17 @@ def move(a, b):
     return shutil.move(a, b)
 
 
-def remove(a):
-    if (isdir(a)):
-        return shutil.rmtree(a)
+def remove(path, suppressNotFound=False):
+    if (isdir(path)):
+        return shutil.rmtree(path)
     else:
-        return os.remove(a)
+        try:
+            os.remove(path)
+        except OSError as err:
+            # Suppress the exception if it is a file not found error and the
+            # suppressNotFound flag is set.  Otherwise, re-raise the exception.
+            if not suppressNotFound or err.errno != errno.ENOENT:
+                raise
 
 
 def isdir(a):

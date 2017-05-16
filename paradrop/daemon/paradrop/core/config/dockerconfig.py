@@ -59,8 +59,8 @@ def createVolumeDirs(update):
     extSystemDir = update.new.getCache('externalSystemDir')
 
     if update.updateType == 'delete':
-        pdos.remove(extDataDir)
-        pdos.remove(extSystemDir)
+        pdos.remove(extDataDir, suppressNotFound=True)
+        pdos.remove(extSystemDir, suppressNotFound=True)
     else:
         pdosq.makedirs(extDataDir)
         pdosq.makedirs(extSystemDir)
