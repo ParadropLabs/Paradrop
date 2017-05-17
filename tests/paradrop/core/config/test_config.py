@@ -428,7 +428,7 @@ def test_get_network_config():
     }
 
     devices = {
-        'wifi': [{'name': 'wlan0', 'mac': '00:11:22:33:44:55'}]
+        'wifi': [{'name': 'wlan0', 'mac': '00:11:22:33:44:55', 'phy': 'phy0'}]
     }
     update.new.setCache("networkDevices", devices)
 

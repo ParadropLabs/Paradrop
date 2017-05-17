@@ -236,6 +236,40 @@ def getNetworkConfigVlan(update, name, cfg, iface):
             iface['internalIpaddr'], subnet.prefixlen)
 
 
+def getNetworkConfigLan(update, name, cfg, iface):
+    # Make a dictionary of old interfaces.  Any new interfaces that are
+    # identical to an old one do not need to be changed.
+    oldInterfaces = getInterfaceDict(update.old)
+    if name in oldInterfaces:
+        oldIface = oldInterfaces[iface['name']]
+        subnet = oldIface['subnet']
+        iface['externalIntf'] = oldIface['externalIntf']
+
+    else:
+        # Claim a subnet for this interface from the pool.
+        subnet = chooseSubnet(update, iface)
+        iface['externalIntf'] = iface['device']
+
+    # Generate internal (in the chute) and external (in the host)
+    # addresses.
+    #
+    # Example:
+    # subnet: 192.168.30.0/24
+    # netmask: 255.255.255.0
+    # external: 192.168.30.1
+    # internal: 192.168.30.2
+    hosts = subnet.hosts()
+    iface['subnet'] = subnet
+    iface['netmask'] = str(subnet.netmask)
+    iface['externalIpaddr'] = str(hosts.next())
+    iface['internalIpaddr'] = str(hosts.next())
+
+    # Generate the internal IP address with prefix length (x.x.x.x/y) for
+    # convenience of other code that expect that format (e.g. pipework).
+    iface['ipaddrWithPrefix'] = "{}/{}".format(
+            iface['internalIpaddr'], subnet.prefixlen)
+
+
 def fulfillDeviceRequest(cfg, devices):
     """
     Find a physical device that matches the requested device type.
@@ -288,8 +322,13 @@ def fulfillDeviceRequest(cfg, devices):
                 bestScore = apcount
 
         else:
-            # Handle other cases...
-            bestDevice = device
+            # Handle other devices types, namely "lan".  Assume they require
+            # exclusive access.
+            if reservations[dname].count() > 0:
+                continue
+            else:
+                bestDevice = device
+                break
 
     if bestDevice is not None:
         out.info("Assign device {} for requested type {}".format(bestDevice['name'], dtype))
@@ -384,6 +423,16 @@ def getNetworkConfig(update):
             # TODO: Check that the chute is able to claim this VLAN, ie.  no
             # other chute or host configuration setting has already claimed it.
             getNetworkConfigVlan(update, name, cfg, iface)
+
+        elif cfg['type'] == "lan":
+            oldIface = oldInterfaces.get(name, None)
+            if oldIface is None or oldIface['netType'] != iface['netType']:
+                device = fulfillDeviceRequest(cfg, devices)
+                iface['device'] = device['name']
+            else:
+                iface['device'] = oldIface['device']
+
+            getNetworkConfigLan(update, name, cfg, iface)
 
         else:
             raise Exception("Unsupported network type, {}".format(cfg['type']))

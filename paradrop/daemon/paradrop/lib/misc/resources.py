@@ -17,6 +17,7 @@ from paradrop.base import settings
 from paradrop.core.config.devices import getWirelessPhyName
 from paradrop.core.config.hostconfig import prepareHostConfig
 from paradrop.core.chute.chute_storage import ChuteStorage
+from paradrop.lib.utils import datastruct
 
 
 class DeviceReservations(object):
@@ -60,6 +61,7 @@ def getDeviceReservations():
     reservations = collections.defaultdict(DeviceReservations)
 
     hostConfig = prepareHostConfig()
+
     wifiInterfaces = hostConfig.get('wifi-interfaces', [])
     for iface in wifiInterfaces:
         if 'device' not in iface:
@@ -75,6 +77,10 @@ def getDeviceReservations():
 
         reservations[dev].add(settings.RESERVED_CHUTE, 'wifi',
                 iface.get('mode', 'ap'))
+
+    lanInterfaces = datastruct.getValue(hostConfig, 'lan.interfaces', [])
+    for iface in lanInterfaces:
+        reservations[iface].add(settings.RESERVED_CHUTE, 'lan', None)
 
     for chute in ChuteStorage.chuteList.values():
         for iface in chute.getCache('networkInterfaces'):

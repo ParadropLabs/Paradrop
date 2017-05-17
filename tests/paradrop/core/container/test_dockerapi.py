@@ -139,12 +139,14 @@ def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
         'netType': 'wifi',
         'ipaddrWithPrefix': '0.0.0.0/24',
         'internalIntf': 'Inside',
-        'externalIntf': 'Outside'
+        'externalIntf': 'Outside',
+        'phy': 'phy0'
     }, {
         'netType': 'wifi',
         'mode': 'monitor',
         'internalIntf': 'Inside',
-        'externalIntf': 'Outside'
+        'externalIntf': 'Outside',
+        'phy': 'phy1'
     }, {
         'netType': 'vlan',
         'ipaddrWithPrefix': '0.0.0.0/24',

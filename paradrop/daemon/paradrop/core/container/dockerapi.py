@@ -599,10 +599,10 @@ def setup_net_interfaces(chute):
     borrowedInterfaces = []
 
     for iface in interfaces:
+        itype = iface.get('type', 'wifi')
         mode = iface.get('mode', 'ap')
 
-        if mode == 'ap':
-            # NOTE: VLAN interfaces use this branch path as well.
+        if itype == 'lan' or itype == 'vlan' or (itype == 'wifi' and mode == 'ap'):
             IP = iface['ipaddrWithPrefix']
             internalIntf = iface['internalIntf']
             externalIntf = iface['externalIntf']
@@ -637,7 +637,7 @@ def setup_net_interfaces(chute):
             cmd = ['ip', 'link', 'set', internalIntf, 'up']
             call_in_netns(chute, env, cmd)
 
-        elif mode == 'monitor':
+        elif itype == 'wifi' and mode == 'monitor':
             internalIntf = iface['internalIntf']
             externalIntf = iface['externalIntf']
             phyname = iface['phy']
@@ -656,6 +656,24 @@ def setup_net_interfaces(chute):
                 'internal': internalIntf,
                 'external': externalIntf,
                 'phy': phyname
+            })
+
+        elif itype == '_lan':
+            # Not currently supported, this mode would allow chutes to take
+            # control of the physical LAN interface directly, rather than the
+            # virtual macvlan interface created above.
+            internalIntf = iface['internalIntf']
+            externalIntf = iface['externalIntf']
+
+            cmd = ['ip', 'link', 'set', 'dev', externalIntf, 'up', 'netns',
+                    str(pid), 'name', internalIntf]
+            call_retry(cmd, env, tries=1)
+
+            borrowedInterfaces.append({
+                'type': 'lan',
+                'pid': pid,
+                'internal': internalIntf,
+                'external': externalIntf
             })
 
     chute.setCache('borrowedInterfaces', borrowedInterfaces)
@@ -690,6 +708,11 @@ def cleanup_net_interfaces(chute):
             call_in_netns(chute, env, cmd, onerror="ignore", pid=iface['pid'])
 
             resetWirelessDevice(iface['phy'], iface['external'])
+
+        elif iface['type'] == 'lan':
+            cmd = ['ip', 'link', 'set', 'dev', iface['internal'], 'down',
+                    'netns', '1', 'name', iface['external']]
+            call_in_netns(chute, env, cmd, onerror="ignore", pid=iface['pid'])
 
 
 def call_in_netns(chute, env, command, onerror="raise", pid=None):
