@@ -642,28 +642,19 @@ def call_in_netns(chute, env, command):
     container = ChuteContainer(chute.name)
     pid = container.getPID()
 
-    # Set up netns directory and link so that 'ip netns' command works.
-    pdosq.makedirs('/var/run/netns')
-    netns_link = '/var/run/netns/{}'.format(pid)
-    cmd = ['ln', '-s', '/proc/{}/ns/net'.format(pid), netns_link]
-    call_retry(cmd, env, tries=1)
-
-    # Try first with `ip netns exec`.  This is preferred because it works using
+    # Try first with `nsenter`.  This is preferred because it works using
     # commands in the host.  We cannot be sure the `docker exec` version will
     # work with all chute images.
-    cmd = ['ip', 'netns', 'exec', str(pid)] + command
+    cmd = ['nsenter', '--target', str(pid), '--net', '--no-fork'] + command
     try:
         code = call_retry(cmd, env, tries=1)
     except:
         code = -1
-    finally:
-        # Clean up the link.
-        pdos.remove(netns_link)
 
     # We fall back to `docker exec` which relies on the container image having
     # an `ip` command available to configure interfaces from within.
     if code != 0:
-        out.warn("ip netns exec command failed, resorting to docker exec\n")
+        out.warn("nsenter command failed, resorting to docker exec\n")
 
         client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
         status = client.exec_create(chute.name, command, user='root')
