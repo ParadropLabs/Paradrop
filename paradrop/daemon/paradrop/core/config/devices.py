@@ -302,6 +302,43 @@ def listSystemDevices():
     return devices
 
 
+def resetWirelessDevice(phy, primary_interface):
+    """
+    Reset a wireless device's interfaces to clean state.
+
+    This will rename, delete, or add an interface as necessary to make sure
+    only the primary interface exists, e.g. "wlan0" for a wireless device, e.g.
+    phy0.
+    """
+    primaryExists = False
+    renameOrRemove = list()
+
+    for ifname in pdos.listdir(SYS_DIR):
+        if ifname in EXCLUDE_IFACES:
+            continue
+
+        if getWirelessPhyName(ifname) == phy:
+            if ifname == primary_interface:
+                primaryExists = True
+            else:
+                renameOrRemove.append(ifname)
+
+    for ifname in renameOrRemove:
+        if primaryExists:
+            cmd = ['iw', 'dev', ifname, 'del']
+            subprocess.call(cmd)
+        else:
+            cmd = ['ip', 'link', 'set', 'dev', ifname, 'down', 'name',
+                    primary_interface]
+            subprocess.call(cmd)
+            primaryExists = True
+
+    if not primaryExists:
+        cmd = ['iw', 'phy', phy, 'interface', 'add', primary_interface, 'type',
+                'managed']
+        subprocess.call(cmd)
+
+
 def flushWirelessInterfaces(phy):
     """
     Remove all virtual interfaces associated with a wireless device.
@@ -344,10 +381,21 @@ def getSystemDevices(update):
     """
     Detect devices on the system.
 
-    Store device information in cache key "networkDevices".
+    Store device information in cache key "networkDevices" as well as
+    "networkDevicesByName".
     """
     devices = detectSystemDevices()
+
+    devicesByName = dict()
+    for dtype, dlist in devices.iteritems():
+        for dev in dlist:
+            name = dev['name']
+            if name in devicesByName:
+                out.warn("Multiple network devices named {}".format(name))
+            devicesByName[name] = dev
+
     update.new.setCache('networkDevices', devices)
+    update.new.setCache('networkDevicesByName', devicesByName)
 
 
 def readHostconfigWifi(wifi, networkDevices, builder):

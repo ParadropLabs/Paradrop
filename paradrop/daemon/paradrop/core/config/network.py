@@ -8,7 +8,6 @@ from paradrop.lib.utils import addresses, datastruct, uci
 from paradrop.lib.misc import resources
 
 from . import configservice, uciutils
-from .devices import flushWirelessInterfaces
 
 # TODO: Instead of being a constant, look at device capabilities.
 MAX_AP_INTERFACES = 8
@@ -99,32 +98,48 @@ def chooseSubnet(update, iface):
 
 
 def chooseExternalIntf(update, iface):
-    # Generate initial portion (prefix) of interface name.
-    #
-    # NOTE: We add a "v" in front of the interface name to avoid triggering
-    # the udev persistent net naming rules, which are hard-coded to certain
-    # typical strings such as "eth*" and "wlan*" but not "veth*" or
-    # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
-    prefix = "vwlan"
+    if iface['mode'] == "ap":
+        # Generate initial portion (prefix) of interface name.
+        #
+        # NOTE: We add a "v" in front of the interface name to avoid triggering
+        # the udev persistent net naming rules, which are hard-coded to certain
+        # typical strings such as "eth*" and "wlan*" but not "veth*" or
+        # "vwlan*".  We do NOT want udev renaming our virtual interfaces.
+        prefix = "vwlan"
 
-    # This name should be unique on the system, so the hash is very unlikely to
-    # collide with anything.  It still can collide, but this will be our first
-    # choice for an interface number.
-    name = "{}:{}".format(update.new.name, iface['internalIntf'])
-    base = hash(name)
+        # This name should be unique on the system, so the hash is very unlikely to
+        # collide with anything.  It still can collide, but this will be our first
+        # choice for an interface number.
+        name = "{}:{}".format(update.new.name, iface['internalIntf'])
+        base = hash(name)
 
-    reservations = resources.getInterfaceReservations()
+        reservations = resources.getInterfaceReservations()
 
-    for i in range(MAX_INTERFACE_NUMBERS):
-        number = (base + i) % MAX_INTERFACE_NUMBERS
-        intf = "{}{:04x}".format(prefix, number)
-        if intf not in reservations:
-            return intf
+        for i in range(MAX_INTERFACE_NUMBERS):
+            number = (base + i) % MAX_INTERFACE_NUMBERS
+            intf = "{}{:04x}".format(prefix, number)
+            if intf not in reservations:
+                return intf
 
-    raise Exception("Could not find an available interface name")
+        raise Exception("Could not find an available interface name")
+
+    else:
+        # For monitor and managed mode, use the existing primary interface.
+        devices = update.new.getCache('networkDevicesByName')
+        if iface['device'] not in devices:
+            raise Exception("Could not find device {}".format(iface['device']))
+
+        device = devices[iface['device']]
+        if 'primary_interface' not in device:
+            raise Exception("Primary interface for {} not detected".format(
+                device['name']))
+
+        return device['primary_interface']
 
 
 def getNetworkConfigWifi(update, name, cfg, iface):
+    iface['mode'] = cfg.get("mode", "ap")
+
     # Make a dictionary of old interfaces.  Any new interfaces that are
     # identical to an old one do not need to be changed.
     oldInterfaces = getInterfaceDict(update.old)
@@ -161,10 +176,6 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     # convenience of other code that expect that format (e.g. pipework).
     iface['ipaddrWithPrefix'] = "{}/{}".format(
             iface['internalIpaddr'], subnet.prefixlen)
-
-    # AP mode is the default, but we are adding support for monitor and sta
-    # mode.
-    iface['mode'] = cfg.get("mode", "ap")
 
     if iface['mode'] in ["ap", "sta"]:
         # Check for required fields.
@@ -250,9 +261,6 @@ def fulfillDeviceRequest(cfg, devices):
         if dtype == "wifi" and mode in ["monitor", "sta", "airshark"]:
             if reservations[dname].count() > 0:
                 continue
-
-            # Remove virtual interfaces attached to this device.
-            flushWirelessInterfaces(device['phy'])
 
             # Choose the first one that matches.
             bestDevice = device
@@ -365,8 +373,10 @@ def getNetworkConfig(update):
                 # to allocate any resources for it.
                 device = fulfillDeviceRequest(cfg, devices)
                 iface['device'] = device['name']
+                iface['phy'] = device['phy']
             else:
                 iface['device'] = oldIface['device']
+                iface['phy'] = oldIface['phy']
 
             getNetworkConfigWifi(update, name, cfg, iface)
 

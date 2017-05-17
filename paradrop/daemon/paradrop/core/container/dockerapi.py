@@ -22,7 +22,7 @@ from paradrop.base import nexus, settings
 from paradrop.lib.misc import resopt
 from paradrop.lib.utils import pdos, pdosq
 from paradrop.core.chute.chute_storage import ChuteStorage
-from paradrop.core.config.devices import getWirelessPhyName
+from paradrop.core.config.devices import getWirelessPhyName, resetWirelessDevice
 
 from .chutecontainer import ChuteContainer
 from .dockerfile import Dockerfile
@@ -359,6 +359,8 @@ def removeNewContainer(update):
     name = update.new.name
     out.info("Removing container {}\n".format(name))
 
+    cleanup_net_interfaces(update.new)
+
     try:
         client = docker.Client(base_url="unix://var/run/docker.sock",
                 version='auto')
@@ -385,6 +387,8 @@ def removeChute(update):
     repo = getImageName(update.old)
     name = update.name
 
+    cleanup_net_interfaces(update.old)
+
     try:
         c.remove_container(container=name, force=True)
     except Exception as e:
@@ -405,8 +409,10 @@ def removeOldContainer(update):
     :returns: None
     """
     out.info('Attempting to remove chute %s\n' % (update.name))
-    client = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
 
+    cleanup_net_interfaces(update.old)
+
+    client = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     try:
         client.remove_container(container=update.old.name, force=True)
     except Exception as e:
@@ -422,8 +428,12 @@ def stopChute(update):
     :returns: None
     """
     out.info('Attempting to stop chute %s\n' % (update.name))
+
+    cleanup_net_interfaces(update.old)
+
     c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
     c.stop(container=update.name)
+
 
 def restartChute(update):
     """
@@ -532,20 +542,24 @@ def build_host_config(chute, client=None):
 
 
 def call_retry(cmd, env, delay=3, tries=3):
+    # Make sure each component of the command is a string.  Otherwisew we will
+    # get errors.
+    clean_cmd = [str(v) for v in cmd]
+
     while tries >= 0:
         tries -= 1
 
-        out.info("Calling: {}\n".format(" ".join(cmd)))
+        out.info("Calling: {}\n".format(" ".join(clean_cmd)))
         try:
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+            proc = subprocess.Popen(clean_cmd, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, env=env)
             for line in proc.stdout:
-                out.info("{}: {}\n".format(cmd[0], line.strip()))
+                out.info("{}: {}\n".format(clean_cmd[0], line.strip()))
             for line in proc.stderr:
-                out.warn("{}: {}\n".format(cmd[0], line.strip()))
+                out.warn("{}: {}\n".format(clean_cmd[0], line.strip()))
             return proc.returncode
         except OSError as e:
-            out.warn('Command "{}" failed\n'.format(" ".join(cmd)))
+            out.warn('Command "{}" failed\n'.format(" ".join(clean_cmd)))
             if tries <= 0:
                 out.exception(e, True)
                 raise e
@@ -577,6 +591,12 @@ def setup_net_interfaces(chute):
     # We need the chute's PID in order to work with Linux namespaces.
     container = ChuteContainer(chute.name)
     pid = container.getPID()
+
+    # Keep list of interfaces that assign to the Docker container that we will
+    # need to recover when stopping the chute, for example monitor mode
+    # interfaces.  They will not automatically return to the default namespace,
+    # so we need to keep track of them.
+    borrowedInterfaces = []
 
     for iface in interfaces:
         mode = iface.get('mode', 'ap')
@@ -620,8 +640,7 @@ def setup_net_interfaces(chute):
         elif mode == 'monitor':
             internalIntf = iface['internalIntf']
             externalIntf = iface['externalIntf']
-
-            phyname = getWirelessPhyName(externalIntf)
+            phyname = iface['phy']
 
             cmd = ['iw', 'phy', phyname, 'set', 'netns', str(pid)]
             call_retry(cmd, env, tries=1)
@@ -631,16 +650,59 @@ def setup_net_interfaces(chute):
                     internalIntf]
             call_in_netns(chute, env, cmd)
 
+            borrowedInterfaces.append({
+                'type': 'wifi',
+                'pid': pid,
+                'internal': internalIntf,
+                'external': externalIntf,
+                'phy': phyname
+            })
 
-def call_in_netns(chute, env, command):
+    chute.setCache('borrowedInterfaces', borrowedInterfaces)
+
+
+def cleanup_net_interfaces(chute):
+    """
+    Cleanup special interfaces when bringing down a container.
+
+    This applies to monitor mode interfaces, which need to be renamed before
+    they come back to the host network, e.g. "mon0" inside the container should
+    be renamed to the appropriate "wlanX" before the container exits.
+    """
+    borrowedInterfaces = chute.getCache('borrowedInterfaces')
+    if borrowedInterfaces is None:
+        return
+
+    # Construct environment for subprocess calls.
+    env = {
+        "PATH": os.environ.get("PATH", "/bin")
+    }
+    if settings.DOCKER_BIN_DIR not in env['PATH']:
+        env['PATH'] += ":" + settings.DOCKER_BIN_DIR
+
+    for iface in borrowedInterfaces:
+        if iface['type'] == 'wifi':
+            cmd = ['ip', 'link', 'set', 'dev', iface['internal'], 'down',
+                    'name', iface['external']]
+            call_in_netns(chute, env, cmd, onerror="ignore", pid=iface['pid'])
+
+            cmd = ['iw', 'phy', iface['phy'], 'set', 'netns', '1']
+            call_in_netns(chute, env, cmd, onerror="ignore", pid=iface['pid'])
+
+            resetWirelessDevice(iface['phy'], iface['external'])
+
+
+def call_in_netns(chute, env, command, onerror="raise", pid=None):
     """
     Call command within a chute's namespace.
 
     command: should be a list of strings.
+    onerror: should be "raise" or "ignore"
     """
-    # We need the chute's PID in order to work with Linux namespaces.
-    container = ChuteContainer(chute.name)
-    pid = container.getPID()
+    if pid is None:
+        # We need the chute's PID in order to work with Linux namespaces.
+        container = ChuteContainer(chute.name)
+        pid = container.getPID()
 
     # Try first with `nsenter`.  This is preferred because it works using
     # commands in the host.  We cannot be sure the `docker exec` version will
@@ -656,9 +718,13 @@ def call_in_netns(chute, env, command):
     if code != 0:
         out.warn("nsenter command failed, resorting to docker exec\n")
 
-        client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-        status = client.exec_create(chute.name, command, user='root')
-        client.exec_start(status['Id'])
+        try:
+            client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+            status = client.exec_create(chute.name, command, user='root')
+            client.exec_start(status['Id'])
+        except Exception as error:
+            if onerror == "raise":
+                raise
 
 
 def prepare_environment(chute):
