@@ -12,6 +12,7 @@ Usage:
     pdcli local <router_addr> chute <chute> info
     pdcli local <router_addr> chute <chute> cache
     pdcli local <router_addr> hostconfig
+    pdcli local <router_addr> hostconfig edit
     pdcli local <router_addr> hostconfig change <option> <value>
     pdcli local <router_addr> sshkeys
     pdcli local <router_addr> sshkeys add <path>
@@ -41,6 +42,8 @@ import base64
 import getpass
 import operator
 import os
+import tempfile
+import yaml
 from pprint import pprint
 
 import builtins
@@ -224,6 +227,36 @@ def hostconfig_tree(router_addr, arguments):
             'config': config
         }
         router_request("PUT", url, json=data)
+
+    elif arguments['edit']:
+        req = router_request("GET", url, dump=False)
+        config = req.json()
+
+        fd, path = tempfile.mkstemp()
+        os.close(fd)
+
+        with open(path, 'w') as output:
+            output.write(yaml.safe_dump(config, default_flow_style=False))
+
+        # Get modified time before calling editor.
+        orig_mtime = os.path.getmtime(path)
+
+        editor = os.environ.get("EDITOR", "vim")
+        os.spawnvpe(os.P_WAIT, editor, [editor, path], os.environ)
+
+        with open(path, 'r') as source:
+            data = source.read()
+            config = yaml.safe_load(data)
+
+        # Check if the file has been modified, and if it has, send the update.
+        new_mtime = os.path.getmtime(path)
+        if new_mtime != orig_mtime:
+            data = {
+                'config': config
+            }
+            router_request("PUT", url, json=data)
+
+        os.remove(path)
 
     else:
         router_request("GET", url)
