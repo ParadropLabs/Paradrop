@@ -287,7 +287,7 @@ class ConfigZone(ConfigObject):
                 cmd = [iptables, "--wait", IPTABLES_WAIT,
                         "--table", "filter",
                         action, "delegate_forward",
-                        "--out-interface", interface.config_ifname,
+                        "--in-interface", interface.config_ifname,
                         "--jump", chain]
                 commands.append((prio, Command(cmd, self)))
 
@@ -295,7 +295,7 @@ class ConfigZone(ConfigObject):
                 cmd = [iptables, "--wait", IPTABLES_WAIT,
                         "--table", "filter",
                         action, "forward_rule",
-                        "--out-interface", interface.config_ifname,
+                        "--in-interface", interface.config_ifname,
                         "--match", "comment", "--comment", comment,
                         "--jump", self.forward]
                 commands.append((prio, Command(cmd, self)))
@@ -430,13 +430,13 @@ class ConfigForwarding(ConfigObject):
     def __commands(self, allConfigs, action, prio):
         commands = list()
 
-        chain = "zone_{}_forward".format(self.dest)
-        for src_iface in self.src_interfaces:
-            comment = "{} to {}".format(self.src, self.dest)
+        chain = "zone_{}_forward".format(self.src)
+        for dest_iface in self.dest_interfaces:
+            comment = "forwarding {} -> {}".format(self.src, self.dest)
             cmd = ["iptables", "--wait", IPTABLES_WAIT,
                     "--table", "filter",
                     action, chain,
-                    "--in-interface", src_iface.config_ifname,
+                    "--out-interface", dest_iface.config_ifname,
                     "--match", "comment", "--comment", comment,
                     "--jump", "ACCEPT"]
             commands.append((prio, Command(cmd, self)))
@@ -444,15 +444,15 @@ class ConfigForwarding(ConfigObject):
         return commands
 
     def apply(self, allConfigs):
-        self.src_zone = self.lookup(allConfigs, "firewall", "zone", self.src)
+        self.dest_zone = self.lookup(allConfigs, "firewall", "zone", self.dest)
 
         # Initialize the list of network:interface sections.
-        self.src_interfaces = list()
-        if self.src_zone.network is not None:
-            for networkName in self.src_zone.network:
+        self.dest_interfaces = list()
+        if self.dest_zone.network is not None:
+            for networkName in self.dest_zone.network:
                 # Look up the interface - may fail.
                 interface = self.lookup(allConfigs, "network", "interface", networkName)
-                self.src_interfaces.append(interface)
+                self.dest_interfaces.append(interface)
 
         return self.__commands(allConfigs, "--append", self.PRIO_IPTABLES_RULE)
 
@@ -578,6 +578,7 @@ class ConfigRule(ConfigObject):
     typename = "rule"
 
     options = [
+        ConfigOption(name="name", required=False),
         ConfigOption(name="src"),
         ConfigOption(name="src_ip"),
         ConfigOption(name="src_port"),
@@ -665,6 +666,9 @@ class ConfigRule(ConfigObject):
                 cmd.append(self.extra)
 
             cmd.extend(["--jump", self.target])
+
+            if self.name:
+                cmd.extend(["--match", "comment", "--comment", self.name])
 
             commands.append((prio, Command(cmd, self)))
 

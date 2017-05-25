@@ -109,17 +109,17 @@ def test_ConfigZone():
 
 
 def test_ConfigForwarding():
-    lanInterface = MagicMock()
-
-    wanZone = MagicMock()
+    wanInterface = MagicMock()
 
     lanZone = MagicMock()
-    lanZone.network = ["lan"]
+
+    wanZone = MagicMock()
+    wanZone.network = ["wan"]
 
     allConfigs = {
         ("firewall", "zone", "wan"): wanZone,
         ("firewall", "zone", "lan"): lanZone,
-        ("network", "interface", "lan"): lanInterface
+        ("network", "interface", "wan"): wanInterface
     }
 
     config = firewall.ConfigForwarding()
