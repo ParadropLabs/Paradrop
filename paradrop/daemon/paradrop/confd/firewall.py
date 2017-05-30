@@ -209,6 +209,8 @@ class ConfigZone(ConfigObject):
         ConfigOption(name="name", required=True),
         ConfigOption(name="network", type=list),
         ConfigOption(name="masq", type=bool, default=False),
+        ConfigOption(name="masq_src", type=list, default=["0.0.0.0/0"]),
+        ConfigOption(name="masq_dest", type=list, default=["0.0.0.0/0"]),
         ConfigOption(name="conntrack", type=bool, default=False),
         ConfigOption(name="input", default="RETURN"),
         ConfigOption(name="forward", default="RETURN"),
@@ -319,14 +321,18 @@ class ConfigZone(ConfigObject):
                 commands.append((prio, Command(cmd, self)))
 
                 if self.masq:
-                    comment = "zone {} masq".format(self.name)
-                    cmd = [iptables, "--wait", IPTABLES_WAIT,
-                            "--table", "nat",
-                           action, "POSTROUTING",
-                           "--out-interface", interface.config_ifname,
-                            "--match", "comment", "--comment", comment,
-                           "--jump", "MASQUERADE"]
-                    commands.append((prio, Command(cmd, self)))
+                    for src in self.masq_src:
+                        for dest in self.masq_dest:
+                            comment = "zone {} masq".format(self.name)
+                            cmd = [iptables, "--wait", IPTABLES_WAIT,
+                                    "--table", "nat",
+                                   action, "POSTROUTING",
+                                   "--out-interface", interface.config_ifname,
+                                   "--source", src,
+                                   "--destination", dest,
+                                   "--match", "comment", "--comment", comment,
+                                   "--jump", "MASQUERADE"]
+                            commands.append((prio, Command(cmd, self)))
 
         return commands
 
