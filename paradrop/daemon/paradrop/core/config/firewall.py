@@ -37,9 +37,9 @@ def getOSFirewallRules(update):
             'conntrack': True,
             'input': 'REJECT',
             'forward': 'ACCEPT',
-            'output': 'ACCEPT'
+            'output': 'ACCEPT',
+            'network': [iface['externalIntf']]
         }
-        uciutils.setList(options, 'network', [iface['externalIntf']])
 
         if iface['netType'] == 'wan':
             options['masq'] = 1

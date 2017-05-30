@@ -51,9 +51,9 @@ def getVirtDHCPSettings(update):
         # will be handling all DHCP and DNS needs.
         config = {'type': 'dnsmasq'}
         options = {
-            'leasefile': leasefile
+            'leasefile': leasefile,
+            'interface': [iface['externalIntf']]
         }
-        uciutils.setList(options, 'interface', [iface['externalIntf']])
 
         # Optional: developer can pass in a list of DNS nameservers to use
         # instead of the system default.
@@ -62,7 +62,7 @@ def getVirtDHCPSettings(update):
         # specified nameservers and caches the results.
         if DNSMASQ_CACHE_ENABLED and 'dns' in dhcp:
             options['noresolv'] = '1'
-            uciutils.setList(options, 'server', dhcp['dns'])
+            options['server'] = dhcp['dns']
 
         dhcpSettings.append((config, options))
 
@@ -72,12 +72,12 @@ def getVirtDHCPSettings(update):
             'start': dhcp['start'],
             'limit': dhcp['limit'],
             'leasetime': dhcp['lease'],
+            'dhcp_option': []
         }
 
         # This option tells clients that the router is the interface inside the
         # chute not the one in the host.
-        uciutils.setList(options, 'dhcp_option', ["option:router,{}".format(
-                                                    iface['internalIpaddr'])])
+        options['dhcp_option'].append("option:router,{}".format(iface['internalIpaddr']))
 
         # Optional: developer can pass in a list of DNS nameservers to use
         # instead of the system default.
@@ -85,8 +85,7 @@ def getVirtDHCPSettings(update):
         # This path -> clients receive the list of DNS servers and query them
         # directly.
         if not DNSMASQ_CACHE_ENABLED and 'dns' in dhcp:
-            uciutils.appendListItem(options, 'dhcp_option',
-                    ",".join(["option:dns-server"] + dhcp['dns']))
+            options['dhcp_option'].append(",".join(["option:dns-server"] + dhcp['dns']))
 
         dhcpSettings.append((config, options))
 

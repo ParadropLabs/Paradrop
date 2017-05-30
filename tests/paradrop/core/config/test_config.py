@@ -513,23 +513,6 @@ def test_revert_config():
     pdos.remove(settings.UCI_CONFIG_DIR)
     pdos.remove(settings.UCI_BACKUP_DIR)
 
-def test_uciutils():
-    """
-    Test UCI utility functions
-    """
-    from paradrop.core.config import uciutils
-
-    # Test appendListItem function
-    options = dict()
-    uciutils.appendListItem(options, "name", "value1")
-    uciutils.appendListItem(options, "name", "value2")
-    assert options['list']['name'] == ["value1", "value2"]
-
-    # Test setList function
-    options = dict()
-    uciutils.setList(options, "name", ["value1", "value2"])
-    assert options['list']['name'] == ["value1", "value2"]
-
 
 def test_config_wifi():
     """

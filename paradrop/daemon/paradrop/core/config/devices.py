@@ -537,7 +537,7 @@ def readHostconfigVlan(vlanInterfaces, builder):
 
         # TODO: Support VLANs on interfaces other than the lan bridge.
         ifname = "br-lan.{}".format(interface['id'])
-        uciutils.setList(options, 'ifname', [ifname])
+        options['ifname'] = [ifname]
 
         builder.add("network", "interface", options, name=name)
 
@@ -545,7 +545,7 @@ def readHostconfigVlan(vlanInterfaces, builder):
             dhcp = interface['dhcp']
 
             options = {}
-            uciutils.setList(options, 'interface', [name])
+            options['interface'] = [name]
             builder.add("dhcp", "dnsmasq", options)
 
             options = {
@@ -578,7 +578,7 @@ def readHostconfigVlan(vlanInterfaces, builder):
         options = datastruct.getValue(interface,
                 "firewall.defaults", {}).copy()
         options['name'] = name
-        uciutils.setList(options, 'network', [name])
+        options['network'] = [name]
         builder.add("firewall", "zone", options)
 
         # Add forwarding entries.
@@ -653,7 +653,7 @@ def setSystemDevices(update):
         options = datastruct.getValue(hostConfig,
                 name+".firewall.defaults", {}).copy()
         options['name'] = name
-        uciutils.setList(options, 'network', [name])
+        options['network'] = [name]
         builder.add("firewall", "zone", options)
 
         # Add forwarding entries (rules that allow traffic to move from one
@@ -682,7 +682,7 @@ def setSystemDevices(update):
         options['proto'] = 'static'
         options['ipaddr'] = hostConfig['lan']['ipaddr']
         options['netmask'] = hostConfig['lan']['netmask']
-        uciutils.setList(options, 'ifname', hostConfig['lan']['interfaces'])
+        options['ifname'] = hostConfig['lan']['interfaces']
         builder.add("network", "interface", options, name="lan")
 
         if 'dhcp' in hostConfig['lan']:
@@ -719,12 +719,11 @@ def setSystemDevices(update):
     # configure for loopback, but we could add support to the host
     # configuration.
     options = {
-        'ifname': 'lo',
+        'ifname': ['lo'],
         'proto': 'static',
         'ipaddr': '127.0.0.1',
         'netmask': '255.0.0.0'
     }
-    uciutils.setList(options, 'ifname', ['lo'])
     builder.add("network", "interface", options, name="loopback")
 
     options = {
@@ -733,9 +732,9 @@ def setSystemDevices(update):
         'conntrack': '1',
         'input': 'ACCEPT',
         'forward': 'ACCEPT',
-        'output': 'ACCEPT'
+        'output': 'ACCEPT',
+        'network': ['loopback']
     }
-    uciutils.setList(options, 'network', ['loopback'])
     builder.add("firewall", "zone", options)
 
     wifi = hostConfig.get('wifi', [])

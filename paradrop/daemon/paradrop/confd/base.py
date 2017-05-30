@@ -306,20 +306,19 @@ class ConfigObject(object):
             found = False
 
             if opdef.type == list:
-                if "list" in options and opdef.name in options['list']:
-                    value = options['list'][opdef.name]
-                    found = True
-                elif opdef.name in options:
-                    # Sometimes we expect a list but get a single value instead.
-                    # Example:
-                    #   ...
-                    #   option network 'lan'
-                    #   ...
-                    # instead of
-                    #   ...
-                    #   list network 'lan'
-                    #   ...
-                    value = [options[opdef.name]]
+                if opdef.name in options:
+                    value = options[opdef.name]
+                    if not isinstance(value, list):
+                        # Sometimes we expect a list but get a single value instead.
+                        # Example:
+                        #   ...
+                        #   option network 'lan'
+                        #   ...
+                        # instead of
+                        #   ...
+                        #   list network 'lan'
+                        #   ...
+                        value = [value]
                     found = True
             elif opdef.type == bool:
                 if opdef.name in options:
