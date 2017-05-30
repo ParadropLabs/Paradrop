@@ -232,8 +232,8 @@ class ConfigZone(ConfigObject):
     def __commands_iptables(self, allConfigs, action, prio):
         commands = list()
 
-        for iptables in self.get_iptables():
-            for interface in self.interfaces:
+        for interface in self.interfaces:
+            for iptables in self.get_iptables():
                 # Jump to zone input chain.
                 chain = "zone_{}_input".format(self.name)
                 cmd = [iptables, "--wait", IPTABLES_WAIT,
@@ -320,19 +320,21 @@ class ConfigZone(ConfigObject):
                         "--jump", chain]
                 commands.append((prio, Command(cmd, self)))
 
-                if self.masq:
-                    for src in self.masq_src:
-                        for dest in self.masq_dest:
-                            comment = "zone {} masq".format(self.name)
-                            cmd = [iptables, "--wait", IPTABLES_WAIT,
-                                    "--table", "nat",
-                                   action, "POSTROUTING",
-                                   "--out-interface", interface.config_ifname,
-                                   "--source", src,
-                                   "--destination", dest,
-                                   "--match", "comment", "--comment", comment,
-                                   "--jump", "MASQUERADE"]
-                            commands.append((prio, Command(cmd, self)))
+            # Masquerade rules are for IPv4 only, so add them outside the
+            # iptables loop above.
+            if self.masq:
+                for src in self.masq_src:
+                    for dest in self.masq_dest:
+                        comment = "zone {} masq".format(self.name)
+                        cmd = ["iptables", "--wait", IPTABLES_WAIT,
+                                "--table", "nat",
+                               action, "POSTROUTING",
+                               "--out-interface", interface.config_ifname,
+                               "--source", src,
+                               "--destination", dest,
+                               "--match", "comment", "--comment", comment,
+                               "--jump", "MASQUERADE"]
+                        commands.append((prio, Command(cmd, self)))
 
         return commands
 

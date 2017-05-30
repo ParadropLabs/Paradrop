@@ -124,7 +124,11 @@ def generateHostConfig(devices):
                     'masq': '1',
                     'input': 'ACCEPT',
                     'output': 'ACCEPT',
-                    'forward': 'ACCEPT'
+                    'forward': 'ACCEPT',
+                    'masq_src': [
+                        '192.168.1.0/24',
+                        settings.DYNAMIC_NETWORK_POOL
+                    ]
                 }
             }
         }
