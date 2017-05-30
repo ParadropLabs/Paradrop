@@ -170,7 +170,7 @@ class ConfigDefaults(ConfigObject):
     def updateApply(self, new, allConfigs):
         commands = list()
 
-        for iptables in self.get_iptables():
+        for iptables in new.get_iptables():
             for path in ["input", "output", "forward"]:
                 if getattr(self, path) == getattr(new, path):
                     # Skip if no change.
@@ -179,8 +179,8 @@ class ConfigDefaults(ConfigObject):
                 # Add the new default rule.
                 cmd = [iptables, "--wait", IPTABLES_WAIT, "--table",
                         "filter", "--append", path.upper(), "--jump",
-                        getattr(self, path)]
-                commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
+                        getattr(new, path)]
+                commands.append((new.PRIO_IPTABLES_TOP, Command(cmd, new)))
 
         return commands
 
