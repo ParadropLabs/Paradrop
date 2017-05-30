@@ -123,7 +123,7 @@ def getWirelessPhyName(ifname):
 
 class SysReader(object):
     PCI_BUS_ID = re.compile(r"\d+:\d+:\d+\.\d+")
-    USB_BUS_ID = re.compile(r"\d+\-\d+:\d+\.\d+")
+    USB_BUS_ID = re.compile(r"\d+\-\d+(\.\d+)?:\d+\.\d+")
 
     def __init__(self, phy):
         self.phy = phy
@@ -155,6 +155,7 @@ class SysReader(object):
                 return "pci/" + fname
 
             match = SysReader.USB_BUS_ID.match(fname)
+
             if match is not None:
                 return "usb/" + fname
 
