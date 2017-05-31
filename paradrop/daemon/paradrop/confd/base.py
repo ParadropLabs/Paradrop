@@ -271,7 +271,7 @@ class ConfigObject(object):
 
         Returns a list of (priority, Command) tuples.
         """
-        return self.apply(allConfigs)
+        return new.apply(allConfigs)
 
     def updateRevert(self, new, allConfigs):
         """
@@ -337,6 +337,11 @@ class ConfigObject(object):
                     value = opdef.default
 
             setattr(obj, opdef.name, value)
+
+        # If this section specifies name as an option rather than in the header
+        # line, update the name that will be used for comparison.
+        if getattr(obj, "name", None) is not None and name is None:
+            obj.internalName = obj.name
 
         obj.setup()
 
