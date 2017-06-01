@@ -24,7 +24,7 @@ printhelp() {
 
 version() {
     if [ -n "$1" ]; then
-        majmin=$(echo $1 | grep -oE "[0-9]+.[0-9]+")
+        majmin=$(echo $1 | grep -oE "[0-9]+\.[0-9]+")
         sed -i "s/^version:.*/version: $1/" -i paradrop/snap/snapcraft.yaml
         sed -i "s/version=.*,/version='$1',/" -i paradrop/daemon/setup.py
         sed -i "s/version =.*/version = \"$majmin\"/" -i docs/conf.py
