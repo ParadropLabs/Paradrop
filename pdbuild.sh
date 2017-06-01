@@ -106,7 +106,7 @@ test() {
 docs() {
     activate_virtual_env
     rm docs/requirements.txt
-    pip install -e ./paradrop/src
+    pip install -e ./paradrop/daemon
     pip freeze | grep -v 'paradrop' > docs/requirements.txt
     deactivate_virtual_env
 }
