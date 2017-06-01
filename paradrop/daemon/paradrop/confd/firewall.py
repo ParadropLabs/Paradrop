@@ -229,10 +229,13 @@ class ConfigZone(ConfigObject):
         else:
             return ["iptables", "ip6tables"]
 
+    def setup(self):
+        self._interfaces = list()
+
     def __commands_iptables(self, allConfigs, action, prio):
         commands = list()
 
-        for interface in self.interfaces:
+        for interface in self._interfaces:
             for iptables in self.get_iptables():
                 # Jump to zone input chain.
                 chain = "zone_{}_input".format(self.name)
@@ -340,12 +343,12 @@ class ConfigZone(ConfigObject):
 
     def apply(self, allConfigs):
         # Initialize the list of network:interface sections.
-        self.interfaces = list()
+        self._interfaces = list()
         if self.network is not None:
             for networkName in self.network:
                 # Look up the interface - may fail.
                 interface = self.lookup(allConfigs, "network", "interface", networkName)
-                self.interfaces.append(interface)
+                self._interfaces.append(interface)
 
         commands = list()
 
@@ -405,24 +408,32 @@ class ConfigZone(ConfigObject):
                 commands.append((-self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
 
         for iptables in self.get_iptables():
-            for path in ["input", "output", "forward"]:
-                # Create the zone_NAME_X chain.
+            pairs = [
+                ("filter", "input"),
+                ("filter", "output"),
+                ("filter", "forward"),
+                ("nat", "prerouting"),
+                ("nat", "postrouting")
+            ]
+
+            for table, path in pairs:
                 chain = "zone_{}_{}".format(self.name, path)
+
+                # Flush the zone_NAME_X chain, so that we do not get an error
+                # with the delete command.
                 cmd = [iptables, "--wait", IPTABLES_WAIT,
-                        "--table", "filter",
+                        "--table", table,
+                        "--flush", chain]
+                commands.append((-self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
+
+                # Delete the zone_NAME_X chain.
+                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                        "--table", table,
                         "--delete-chain", chain]
                 commands.append((-self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
 
-            for path in ["prerouting", "postrouting"]:
-                # Create the zone_NAME_X chain.
-                chain = "zone_{}_{}".format(self.name, path)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
-                        "--table", "nat",
-                        "--delete-chain", chain]
-                commands.append((self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
-
         # Reset the list of network:interface sections.
-        self.interfaces = list()
+        self._interfaces = list()
 
         return commands
 
@@ -452,6 +463,10 @@ class ConfigForwarding(ConfigObject):
         return commands
 
     def apply(self, allConfigs):
+        # Look up src_zone in order to indicate dependency.  If the source zone
+        # changes, we need to reapply this forwarding section as well.
+        self.src_zone = self.lookup(allConfigs, "firewall", "zone", self.src)
+
         self.dest_zone = self.lookup(allConfigs, "firewall", "zone", self.dest)
 
         # Initialize the list of network:interface sections.
