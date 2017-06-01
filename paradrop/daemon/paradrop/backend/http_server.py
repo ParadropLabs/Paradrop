@@ -16,6 +16,7 @@ from txsockjs.factory import SockJSResource
 from paradrop.base.exceptions import ParadropException
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.system.system_status import SystemStatus
+from paradrop.airshark.airshark import AirsharkManager
 
 from .auth import requires_auth
 from .information_api import InformationApi
@@ -24,8 +25,8 @@ from .chute_api import ChuteApi
 from .password_api import PasswordApi
 from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
+from .password_manager import PasswordManager
 from . import cors
-from . import password_manager
 
 class HttpServer(object):
     app = Klein()
@@ -34,7 +35,8 @@ class HttpServer(object):
         self.update_manager = update_manager
         self.update_fetcher = update_fetcher
         self.system_status = SystemStatus()
-        self.password_manager = password_manager.PasswordManager()
+        self.password_manager = PasswordManager()
+        self.airshark_manager = AirsharkManager()
 
         if portal_dir:
             self.portal_dir = portal_dir
@@ -66,6 +68,12 @@ class HttpServer(object):
     @requires_auth
     def api_password(self, request):
         return PasswordApi(self.password_manager).routes.resource()
+
+
+    @app.route('/api/v1/airshark', branch=True)
+    @requires_auth
+    def api_airshark(self, request):
+        return AirsharkApi().routes.resource()
 
 
     '''
@@ -102,6 +110,18 @@ class HttpServer(object):
             'timeout': 2,
         }
         return SockJSResource(StatusSockJSFactory(self.system_status), options)
+
+
+    @app.route('/sockjs/airshark', branch=True)
+    @requires_auth
+    def status(self, request):
+        # cors.config_cors(request)
+        options = {
+            'websocket': True,
+            'heartbeat': 5,
+            'timeout': 2,
+        }
+        return SockJSResource(AirsharkSockJSFactory(self.airshark_manager), options)
 
 
     @app.route('/', branch=True)
