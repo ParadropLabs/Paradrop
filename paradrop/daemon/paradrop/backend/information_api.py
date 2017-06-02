@@ -27,6 +27,7 @@ class InformationApi:
         devices = detectSystemDevices()
         for wifiDev in devices['wifi']:
             self.wifi.append({
+                'id': wifiDev['id'],
                 'macAddr': wifiDev['mac'],
                 'vendorId': wifiDev['vendor'],
                 'deviceId': wifiDev['device'],
