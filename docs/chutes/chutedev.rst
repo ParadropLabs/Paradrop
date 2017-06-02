@@ -1,9 +1,9 @@
-Apps on Paradrop
+Chutes on ParaDrop
 ====================================
 
-This section of the documentation is devoted to describing the apps that run on Paradrop.
+This section of the documentation is devoted to describing the apps that run on ParaDrop.
 
-If this is your first time seeing Paradrop, please start with the :doc:`gettingstarted` page.
+If this is your first time seeing ParaDrop, please start with the :doc:`gettingstarted` page.
 
 Contents:
 
@@ -20,5 +20,3 @@ Contents:
    configuration
    installation
    provisioning
-
-
