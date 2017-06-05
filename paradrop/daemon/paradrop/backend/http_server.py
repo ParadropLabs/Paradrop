@@ -25,6 +25,7 @@ from .chute_api import ChuteApi
 from .password_api import PasswordApi
 from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
+from .airshark_sockjs import AirsharkSockJSFactory
 from .password_manager import PasswordManager
 from . import cors
 
@@ -114,7 +115,7 @@ class HttpServer(object):
 
     @app.route('/sockjs/airshark', branch=True)
     @requires_auth
-    def status(self, request):
+    def airshark(self, request):
         # cors.config_cors(request)
         options = {
             'websocket': True,
