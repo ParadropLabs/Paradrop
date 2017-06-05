@@ -15,7 +15,7 @@ These steps wil download our router image and launch it a virtual machine.
 
     sudo apt-get install qemu-kvm
 
-2. Download the latest build of the Paradrop disk image.  https://paradrop.org/release/|version|/paradrop-amd64.img.xz
+2. Download the latest build of the Paradrop disk image. `<https://paradrop.org/release/latest/paradrop-amd64.img.xz>`_
 3. Extract the image::
 
     xz -d paradrop-amd64.img.xz
