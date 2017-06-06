@@ -50,7 +50,6 @@ parts:
     stage-packages:
       - dnsmasq
       - haproxy
-      - hostapd
     organize:
       usr/sbin: bin
       usr/lib: lib
@@ -58,8 +57,6 @@ parts:
       binaries:
         - bin/dnsmasq
         - bin/haproxy
-        - bin/hostapd
-        - bin/hostapd_cli
       libraries:
         - lib/x86_64-linux-gnu/liblua5.3.so.*
     stage:
@@ -68,3 +65,19 @@ parts:
     prime:
       - $binaries
       - $libraries
+
+  hostapd:
+    plugin: dump
+    source: https://paradrop.org/release/packages/hostapd-2.6.tar.bz2
+    source-type: tar
+    organize:
+      hostapd: bin/hostapd
+      hostapd_cli: bin/hostapd_cli
+    filesets:
+      binaries:
+        - bin/hostapd
+        - bin/hostapd_cli
+    stage:
+      - $binaries
+    prime:
+      - $binaries
