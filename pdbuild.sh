@@ -89,6 +89,7 @@ image() {
         --extra-snaps bluez \
         --extra-snaps pulseaudio \
         --extra-snaps zerotier-one \
+        --extra-snaps paradrop-snmpd \
         --extra-snaps $pdsnap \
         --image-size 4G \
         assertions/pc-amd64.model
