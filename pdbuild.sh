@@ -77,6 +77,12 @@ build() {
 image() {
     image="paradrop-amd64.img"
 
+    if [ -e "$image" ]; then
+        echo "Output file $image already exists."
+        echo "Remove it before building a new image."
+        exit 1
+    fi
+
     echo "Select the paradrop-daemon snap to use:"
     select pdsnap in paradrop/*.snap;
     do
