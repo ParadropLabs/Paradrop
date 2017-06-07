@@ -245,14 +245,12 @@ class ConfigApi(object):
     @inlineCallbacks
     def factory_reset(self, request):
         cors.config_cors(request)
-        out.info('Initiating factory reset...')
-
         update = dict(updateClass='ROUTER',
                       updateType='factoryreset',
                       name='PARADROP',
                       tok=timeint())
-        result = yield self.update_manager.add_update(**update)
-        returnValue(json.dumps(result))
+        update = yield self.update_manager.add_update(**update)
+        returnValue(json.dumps(update.result))
 
     @routes.route('/pdconf', methods=['GET'])
     def pdconf(self, request):
