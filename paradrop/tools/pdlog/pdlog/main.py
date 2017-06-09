@@ -3,6 +3,7 @@ import argparse
 import json
 import urllib
 import subprocess
+from time import sleep
 
 LOG_FILE = "/var/snap/paradrop-daemon/common/logs/log"
 
@@ -17,16 +18,21 @@ def parseLine(line):
 
 def runTail(logFile):
     cmd = ['tail', '-n', '100', '-f', LOG_FILE]
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE, universal_newlines=True)
-    for line in iter(proc.stdout.readline, ''):
-        yield line
+    while (True):
+        try:
+            proc = subprocess.Popen(cmd, \
+                                    stdout=subprocess.PIPE, \
+                                    universal_newlines=True)
 
-    proc.stdout.close()
-    return_code = proc.wait()
-    if return_code:
-        raise subprocess.CalledProcessError(return_code, cmd)
+            for line in iter(proc.stdout.readline, ''):
+                yield line
 
+            proc.stdout.close()
+            proc.wait()
+        except subprocess.CalledProcessError:
+            print 'Failed to open the log file, will try again...'
+            sleep(2)
+            continue
 
 def main():
     p = argparse.ArgumentParser(description='Paradrop log tool')
