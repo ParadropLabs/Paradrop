@@ -15,6 +15,7 @@ from paradrop.core.agent.reporting import sendStateReport
 from paradrop.core.agent.wamp_session import WampSession
 from paradrop.core.update.update_fetcher import UpdateFetcher
 from paradrop.core.update.update_manager import UpdateManager
+from paradrop.airshark.airshark import AirsharkManager
 from paradrop.backend.http_server import HttpServer, setup_http_server
 from paradrop import confd
 
@@ -79,9 +80,11 @@ def main():
     # Start the configuration service as a thread
     confd.main.run_thread(execute=args.execute)
 
+    airshark_manager = AirsharkManager()
+
     # Globally assign the nexus object so anyone else can access it.
     nexus.core = Nexus(update_fetcher)
-    http_server = HttpServer(update_manager, update_fetcher, args.portal)
+    http_server = HttpServer(update_manager, update_fetcher, airshark_manager, args.portal)
     setup_http_server(http_server, '0.0.0.0', settings.PORTAL_SERVER_PORT)
 
     reactor.run()

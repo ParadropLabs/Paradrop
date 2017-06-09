@@ -5,23 +5,24 @@ import json
 from klein import Klein
 
 from paradrop.lib.utils import pdos
+
 from . import cors
 
 
-class InformationApi:
+class AirsharkApi:
     routes = Klein()
 
-    def __init__(self):
+    def __init__(self, airshark_manager):
+        self.airshark_manager = airshark_manager
 
     @routes.route('/status')
     def status(self, request):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
+        hardware_ready, software_ready, scanner_running \
+            = self.airshark_manager.status()
         data = dict()
-        #
-        # "not available"
-        # "error"
-        # "running"
-        #
-        data['status'] = 'not available'
+        data['hardware_ready'] = hardware_ready
+        data['software_ready'] = software_ready
+        data['scanner_running'] = scanner_running
         return json.dumps(data)

@@ -16,13 +16,13 @@ from txsockjs.factory import SockJSResource
 from paradrop.base.exceptions import ParadropException
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.system.system_status import SystemStatus
-from paradrop.airshark.airshark import AirsharkManager
 
 from .auth import requires_auth
 from .information_api import InformationApi
 from .config_api import ConfigApi
 from .chute_api import ChuteApi
 from .password_api import PasswordApi
+from .airshark_api import AirsharkApi
 from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
 from .airshark_sockjs import AirsharkSockJSFactory
@@ -32,12 +32,12 @@ from . import cors
 class HttpServer(object):
     app = Klein()
 
-    def __init__(self, update_manager, update_fetcher, portal_dir=None):
+    def __init__(self, update_manager, update_fetcher, airshark_manager, portal_dir=None):
         self.update_manager = update_manager
         self.update_fetcher = update_fetcher
         self.system_status = SystemStatus()
         self.password_manager = PasswordManager()
-        self.airshark_manager = AirsharkManager()
+        self.airshark_manager = airshark_manager
 
         if portal_dir:
             self.portal_dir = portal_dir
@@ -74,7 +74,7 @@ class HttpServer(object):
     @app.route('/api/v1/airshark', branch=True)
     @requires_auth
     def api_airshark(self, request):
-        return AirsharkApi().routes.resource()
+        return AirsharkApi(self.airshark_manager).routes.resource()
 
 
     '''
