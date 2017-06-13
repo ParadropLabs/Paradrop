@@ -41,11 +41,11 @@ class SpectrumReader(object):
         /drivers/net/wireless/ath/ath9k/common-spectral.c
         """
         pos = 0
-        while pos < len(data) - SpectrumFileReader.hdrsize + 1:
+        while pos < len(data) - SpectrumReader.hdrsize + 1:
 
             (stype, slen) = struct.unpack_from(">BH", data, pos)
 
-            if not (stype == 1 and slen == SpectrumFileReader.pktsize):
+            if not (stype == 1 and slen == SpectrumReader.pktsize):
                 print "skip malformed packet"
                 break  # header malformed, discard data. This event is very unlikely (once in ~3h)
                 # On the other hand, if we buffer the sample in a primitive way, we consume to much cpu
@@ -53,9 +53,9 @@ class SpectrumReader(object):
 
             # We only support 20 MHz
             if stype == 1:
-                if pos >= len(data) - SpectrumFileReader.hdrsize - SpectrumFileReader.pktsize + 1:
+                if pos >= len(data) - SpectrumReader.hdrsize - SpectrumReader.pktsize + 1:
                     break
-                pos += SpectrumFileReader.hdrsize
+                pos += SpectrumReader.hdrsize
                 (max_exp, freq, rssi, noise, max_mag, max_index, hweight, tsf) = \
                     struct.unpack_from(">BHbbHBBQ", data, pos)
                 pos += 17
@@ -80,16 +80,16 @@ class SpectrumReader(object):
 
                 sc_total = 56  # HT20: 56 OFDM subcarriers
 
-                first_sc = freq - SpectrumFileReader.sc_wide * (sc_total/2 + 0.5)
+                first_sc = freq - SpectrumReader.sc_wide * (sc_total/2 + 0.5)
                 pwr = {}
                 for i, sample in enumerate(samples):
                     subcarrier_freq = 0
                     if i < 28:
-                        subcarrier_freq = freq - SpectrumFileReader.sc_wide * (28 - i)
+                        subcarrier_freq = freq - SpectrumReader.sc_wide * (28 - i)
                     else:
-                        subcarrier_freq = freq + SpectrumFileReader.sc_wide * (i - 27)
+                        subcarrier_freq = freq + SpectrumReader.sc_wide * (i - 27)
 
-                    #subcarrier_freq = first_sc + i*SpectrumFileReader.sc_wide
+                    #subcarrier_freq = first_sc + i*SpectrumReader.sc_wide
 
                     sigval = noise + rssi + 20 * math.log10(sample) - sumsq_sample
                     pwr[subcarrier_freq] = sigval

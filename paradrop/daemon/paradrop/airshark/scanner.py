@@ -1,6 +1,9 @@
 from multiprocessing import Process, Value
+from ctypes import c_bool
 import os
 import time
+
+from .spectrum_reader import SpectrumReader
 
 class Scanner(object):
     interface = None
@@ -42,13 +45,16 @@ class Scanner(object):
                     return dirname
         return None
 
-    def _scan(self):
+    def _scan(self, scanning):
         while True:
+            if (scanning.value == False):
+                break
+
             cmd = 'iw dev %s scan trigger' % self.interface
             if self.freqlist:
                 cmd = '%s freq %s' % (cmd, ' '.join(self.freqlist))
             os.system('%s >/dev/null 2>/dev/null' % cmd)
-            time.sleep(0.01)
+            time.sleep(0.1)
 
     def set_freqs(self, minf, maxf, spacing):
         self.freqlist = ['%s' % x for x in range(minf, maxf + spacing, spacing)]
@@ -76,14 +82,14 @@ class Scanner(object):
 
     def start(self):
         if self.process is None:
-            self.process = Process(target=self._scan, args=())
+            self.scanning = Value(c_bool, True)
+            self.process = Process(target=self._scan, args=(self.scanning,))
             self.process.start()
 
     def stop(self):
-        self.cmd_set_samplecount(8)
         self.cmd_disable()
         if self.process is not None:
-            self.process.terminate()
+            self.scanning.value = False
             self.process.join()
             self.process = None
             self.spectrum_reader.flush()

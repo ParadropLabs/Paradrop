@@ -20,18 +20,22 @@ class AirsharkInterfaceManager(object):
             self.observers.remove(observer)
 
     def set_interface(self, interface):
-        if (self.interface is not None):
-            for observer in self.observers:
-                observer.on_interface_down(self.interface)
+        self.reset_interface()
+
+        os.system("ip link set %s down" % interface)
+        os.system("iw dev %s set type managed" % interface)
+        os.system("ip link set %s up" % interface)
 
         self.interface = interface
         for observer in self.observers:
             observer.on_interface_up(self.interface)
 
-        os.system("ip link set %s down" % self.interface)
-        os.system("iw dev %s set type managed" % self.interface)
-        os.system("ip link set %s up" % self.interface)
+    def reset_interface(self):
+        if (self.interface is not None):
+            for observer in self.observers:
+                observer.on_interface_down(self.interface)
 
+            self.interface = None
 
 airshark_interface_manager = AirsharkInterfaceManager()
 
@@ -58,3 +62,5 @@ def configure(update):
     elif len(airshark_interfaces) == 1:
         airshark_interface = airshark_interfaces[0]
         airshark_interface_manager.set_interface(airshark_interface)
+    else:
+        airshark_interface_manager.reset_interface()

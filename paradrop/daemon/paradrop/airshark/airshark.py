@@ -8,7 +8,7 @@ from spectrum_reader import SpectrumReader
 
 class AirsharkManager(object):
     def __init__(self):
-        self.loop = LoopingCall(self.check_result)
+        self.loop = LoopingCall(self.check_spectrum)
         self.wifi_interface = None
         self.scanner = None
         self.observers = []
@@ -43,6 +43,7 @@ class AirsharkManager(object):
         if (self.wifi_interface):
             if (self.scanner is None):
                 self.scanner = Scanner(self.wifi_interface)
+                self.scanner.cmd_chanscan()
                 self.scanner.start()
                 self.loop.start(0.1)
             return True
@@ -55,7 +56,7 @@ class AirsharkManager(object):
             self.scanner = None
             self.loop.stop()
 
-    def check_result(self):
+    def check_spectrum(self):
         ts, data = self.scanner.spectrum_reader.read_samples()
         if (data is not None):
             for (tsf, freq, noise, rssi, pwr) in SpectrumReader.decode(data):
