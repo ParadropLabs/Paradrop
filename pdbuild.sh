@@ -119,12 +119,13 @@ image() {
 
     sudo ubuntu-image -o $image \
         --channel stable \
-        --extra-snaps docker \
+        --extra-snaps airshark \
         --extra-snaps bluez \
-        --extra-snaps pulseaudio \
-        --extra-snaps zerotier-one \
+        --extra-snaps docker \
         --extra-snaps paradrop-snmpd \
         --extra-snaps $pdsnap \
+        --extra-snaps pulseaudio \
+        --extra-snaps zerotier-one \
         --image-size 4G \
         assertions/pc-amd64.model
 
