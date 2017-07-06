@@ -10,7 +10,7 @@ only need to do a subset of the operations.
 """
 
 from paradrop.base.output import out
-from paradrop.core.config import airshark, devices, haproxy, network, configservice, hostconfig, osconfig, zerotier
+from paradrop.core.config import airshark, devices, haproxy, network, configservice, hostconfig, osconfig, services, zerotier
 
 from . import plangraph
 
@@ -56,6 +56,10 @@ def generatePlans(update):
     # Apply Airshark configuration.
     update.plans.addPlans(plangraph.AIRSHARK_CONFIGURE,
                           (airshark.configure, ))
+
+    # Configure telemetry service.
+    update.plans.addPlans(plangraph.TELEMETRY_SERVICE,
+                          (services.configure_telemetry, ))
 
     # Reload configuration files
     todoPlan = (configservice.reloadAll, )

@@ -45,8 +45,6 @@ class StateReport(object):
 
 
 class StateReportBuilder(object):
-    report = StateReport()
-
     def prepare(self):
         report = StateReport()
 
@@ -96,7 +94,7 @@ class StateReportBuilder(object):
         status_source = SystemStatus()
         report.status = status_source.getStatus(max_age=None)
 
-        return report
+        return report.__dict__
 
 
 class TelemetryReportBuilder(object):
@@ -167,7 +165,7 @@ class ReportSender(object):
 
     def send(self, report):
         request = PDServerRequest('/api/routers/{router_id}/' + self.model)
-        d = request.post(**report.__dict__)
+        d = request.post(**report)
 
         # Check for error code and retry.
         def cbresponse(response):
