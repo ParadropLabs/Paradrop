@@ -7,7 +7,6 @@ import json
 from twisted.internet import reactor, task
 from twisted.internet.defer import Deferred, inlineCallbacks
 
-from paradrop.core.agent.reporting import sendStateReport
 from paradrop.core.agent.http import PDServerRequest
 from paradrop.base import settings
 from paradrop.base.output import out

@@ -99,8 +99,64 @@ class StateReportBuilder(object):
         return report
 
 
+class TelemetryReportBuilder(object):
+    def prepare(self):
+        chuteStore = ChuteStorage()
+        chutes = chuteStore.getChuteList()
+
+        # All network interfaces: we will divide these into chute-specific
+        # interfaces and system-wide interfaces.
+        network = SystemStatus.getNetworkInfo()
+        system_interfaces = set(network.keys())
+
+        report = {
+            'chutes': [],
+            'network': [],
+            'system': SystemStatus.getSystemInfo(),
+            'time': time.time()
+        }
+
+        for chute in chutes:
+            container = ChuteContainer(chute.name)
+
+            chute_info = {
+                'name': chute.name,
+                'state': container.getStatus(),
+                'network': []
+            }
+
+            try:
+                pid = container.getPID()
+                chute_info['process'] = SystemStatus.getProcessInfo(pid)
+            except Exception as error:
+                chute_info['process'] = None
+
+            interfaces = chute.getCache('networkInterfaces')
+            for iface in interfaces:
+                ifname = iface['externalIntf']
+                if ifname in network:
+                    ifinfo = network[ifname]
+                    ifinfo['name'] = ifname
+                    ifinfo['type'] = iface.get('type', 'wifi')
+                    chute_info['network'].append(ifinfo)
+                    system_interfaces.remove(ifname)
+
+            report['chutes'].append(chute_info)
+
+        for ifname in system_interfaces:
+            ifinfo = network[ifname]
+            ifinfo['name'] = ifname
+            ifinfo['type'] = None
+            report['network'].append(ifinfo)
+
+        return report
+
+
 class ReportSender(object):
-    def __init__(self):
+    def __init__(self, model="states", max_retries=None):
+        self.max_retries = max_retries
+        self.model = model
+        self.retries = 0
         self.retryDelay = 1
         self.maxRetryDelay = 300
 
@@ -110,7 +166,7 @@ class ReportSender(object):
             self.retryDelay = self.maxRetryDelay
 
     def send(self, report):
-        request = PDServerRequest('/api/routers/{router_id}/states')
+        request = PDServerRequest('/api/routers/{router_id}/' + self.model)
         d = request.post(**report.__dict__)
 
         # Check for error code and retry.
@@ -118,8 +174,10 @@ class ReportSender(object):
             if not response.success:
                 out.warn('{} to {} returned code {}'.format(request.method,
                     request.url, response.code))
-                reactor.callLater(self.retryDelay, self.send, report)
-                self.increaseDelay()
+                if self.max_retries is None or self.retries < self.max_retries:
+                    reactor.callLater(self.retryDelay, self.send, report)
+                    self.retries += 1
+                    self.increaseDelay()
                 nexus.core.jwt_valid = False
             else:
                 nexus.core.jwt_valid = True
@@ -127,8 +185,10 @@ class ReportSender(object):
         # Check for connection failures and retry.
         def cberror(ignored):
             out.warn('{} to {} failed'.format(request.method, request.url))
-            reactor.callLater(self.retryDelay, self.send, report)
-            self.increaseDelay()
+            if self.max_retries is None or self.retries < self.max_retries:
+                reactor.callLater(self.retryDelay, self.send, report)
+                self.retries += 1
+                self.increaseDelay()
             nexus.core.jwt_valid = False
 
         d.addCallback(cbresponse)
@@ -141,4 +201,12 @@ def sendStateReport():
     report = builder.prepare()
 
     sender = ReportSender()
+    return sender.send(report)
+
+
+def sendTelemetryReport():
+    builder = TelemetryReportBuilder()
+    report = builder.prepare()
+
+    sender = ReportSender(model="telemetry", max_retries=0)
     return sender.send(report)
