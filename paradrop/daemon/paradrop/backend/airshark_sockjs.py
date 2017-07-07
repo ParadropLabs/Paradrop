@@ -16,7 +16,7 @@ class AirsharkSockJSProtocol(Protocol):
         self.factory.airshark_manager.add_observer(self)
 
     def on_spectrum_data(self, tsf, freq, noise, rssi, pwr):
-        self.transport.write(json.dumps({tsf, freq, noise, rssi, pwr}))
+        self.transport.write(json.dumps({'tsf': tsf, 'freq': freq, 'noise': noise, 'rssi': rssi, 'pwr': pwr}))
 
     def connectionLost(self, reason):
         self.factory.transports.remove(self.transport)

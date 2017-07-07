@@ -61,7 +61,7 @@ class AirsharkManager(object):
         if (data is not None):
             for (tsf, freq, noise, rssi, pwr) in SpectrumReader.decode(data):
                 for observer in self.observers:
-                    observer.on_new_samples(tsf, freq, noise, rssi, pwr)
+                    observer.on_spectrum_data(tsf, freq, noise, rssi, pwr)
 
     # TODO: Not sure we need it or not
     def read_raw_samples(self):

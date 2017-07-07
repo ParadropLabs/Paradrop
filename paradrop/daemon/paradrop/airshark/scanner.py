@@ -46,10 +46,7 @@ class Scanner(object):
         return None
 
     def _scan(self, scanning):
-        while True:
-            if (scanning.value == False):
-                break
-
+        while scanning.value:
             cmd = 'iw dev %s scan trigger' % self.interface
             if self.freqlist:
                 cmd = '%s freq %s' % (cmd, ' '.join(self.freqlist))
