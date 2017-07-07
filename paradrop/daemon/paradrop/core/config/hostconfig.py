@@ -106,7 +106,7 @@ def generateHostConfig(devices):
     }
     config['telemetry'] = {
         'enabled': True,
-        'interval': 5
+        'interval': 60
     }
     config['zerotier'] = {
         'enabled': False,
