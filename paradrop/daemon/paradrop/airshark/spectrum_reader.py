@@ -56,13 +56,15 @@ class SpectrumReader(object):
                 if pos >= len(data) - SpectrumReader.hdrsize - SpectrumReader.pktsize + 1:
                     break
                 pos += SpectrumReader.hdrsize
-                (max_exp, freq, rssi, noise, max_mag, max_index, hweight, tsf) = \
+                (max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, tsf) = \
                     struct.unpack_from(">BHbbHBBQ", data, pos)
                 pos += 17
 
                 sdata = struct.unpack_from("56B", data, pos)
                 pos += 56
 
+                yield (tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata)
+                '''
                 # calculate power in dBm
                 sumsq_sample = 0
                 samples = []
@@ -95,3 +97,4 @@ class SpectrumReader(object):
                     pwr[subcarrier_freq] = sigval
 
                 yield (tsf, freq, noise, rssi, pwr)
+                '''
