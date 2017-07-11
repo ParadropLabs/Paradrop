@@ -1,6 +1,11 @@
 import json
+import os
 import re
+import shutil
 import subprocess
+import tarfile
+import tempfile
+import yaml
 
 from klein import Klein
 from twisted.internet import reactor
@@ -39,13 +44,29 @@ class UpdateEncoder(json.JSONEncoder):
         return result
 
 
+def tarfile_is_safe(tar):
+    """
+    Check the names of files in the archive for safety.
+
+    Returns True if all paths are relative and safe or False if
+    any of the paths are absolute (leading slash) or try to access
+    parent directories (leading ..).
+    """
+    for path in tar.getnames():
+        # normpath is useful here because it correctly normalizes "a/../../c"
+        # to "../c".
+        if os.path.isabs(path) or os.path.normpath(path).startswith("../"):
+            return False
+    return True
+
+
 class ChuteApi(object):
     routes = Klein()
 
     def __init__(self, update_manager):
         self.update_manager = update_manager
 
-    @routes.route('/get')
+    @routes.route('/', methods=['GET'])
     def get_chutes(self, request):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
@@ -69,88 +90,49 @@ class ChuteApi(object):
 
         return json.dumps(result)
 
-    @routes.route('/create', methods=['POST'])
+    @routes.route('/', methods=['POST'])
     @inlineCallbacks
     def create_chute(self, request):
         cors.config_cors(request)
-        body = json.loads(request.content.read())
-        config = body['config']
 
-        update = dict(updateClass='CHUTE',
-                      updateType='create',
-                      tok=pdutils.timeint())
-        update.update(config)
+        ctype = request.requestHeaders.getRawHeaders('Content-Type',
+                default=[None])[0]
+        if ctype == "application/x-tar":
+            tar = tarfile.TarFile(fileobj=request.content)
+            if not tarfile_is_safe(tar):
+                raise Exception("Tarfile contains unsafe paths")
+
+            tempdir = tempfile.mkdtemp()
+            tar.extractall(tempdir)
+
+            configfile = os.path.join(tempdir, "paradrop.yaml")
+            if not os.path.isfile(configfile):
+                raise Exception("No paradrop.yaml file found in chute source")
+
+            with open(configfile, "r") as source:
+                full_config = yaml.safe_load(source)
+                config = full_config.get("config", {})
+
+            update = dict(updateClass='CHUTE',
+                          updateType='create',
+                          tok=pdutils.timeint())
+            update['workdir'] = tempdir
+            update.update(config)
+
+        else:
+            body = json.loads(request.content.read())
+            config = body['config']
+
+            update = dict(updateClass='CHUTE',
+                          updateType='create',
+                          tok=pdutils.timeint())
+            update.update(config)
+
         result = yield self.update_manager.add_update(**update)
 
         request.setHeader('Content-Type', 'application/json')
         returnValue(json.dumps(result, cls=UpdateEncoder))
 
-    @routes.route('/update', methods=['PUT'])
-    @inlineCallbacks
-    def update_chute(self, request):
-        cors.config_cors(request)
-        body = json.loads(request.content.read())
-        config = body['config']
-
-        update = dict(updateClass='CHUTE',
-                      updateType='udpate',
-                      tok=pdutils.timeint())
-        update.update(config)
-        result = yield self.update_manager.add_update(**update)
-
-        request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
-
-    @routes.route('/delete', methods=['DELETE'])
-    @inlineCallbacks
-    def delete_chute(self, request):
-        cors.config_cors(request)
-        body = json.loads(request.content.read())
-        config = body['config']
-
-        update = dict(updateClass='CHUTE',
-                      updateType='delete',
-                      tok=pdutils.timeint())
-        update.update(config)
-        result = yield self.update_manager.add_update(**update)
-
-        request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
-
-    @routes.route('/stop', methods=['PUT'])
-    @inlineCallbacks
-    def stop_chute(self, request):
-        cors.config_cors(request)
-        body = json.loads(request.content.read())
-        config = body['config']
-
-        update = dict(updateClass='CHUTE',
-                      updateType='stop',
-                      tok=pdutils.timeint())
-        update.update(config)
-        result = yield self.update_manager.add_update(**update)
-
-        request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
-
-    @routes.route('/start', methods=['PUT'])
-    @inlineCallbacks
-    def start_chute(self, request):
-        cors.config_cors(request)
-        body = json.loads(request.content.read())
-        config = body['config']
-
-        update = dict(updateClass='CHUTE',
-                      updateType='start',
-                      tok=pdutils.timeint())
-        update.update(config)
-        result = yield self.update_manager.add_update(**update)
-
-        request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
-
-    # TODO: move the index endpoint from "/get" to "/" to resolve
-    # the conflict when a chute chute is named "get".
     @routes.route('/<chute>', methods=['GET'])
     def get_chute(self, request, chute):
         cors.config_cors(request)
@@ -174,6 +156,64 @@ class ChuteApi(object):
         }
 
         return json.dumps(result)
+
+    @routes.route('/<chute>', methods=['PUT'])
+    @inlineCallbacks
+    def update_chute(self, request, chute):
+        cors.config_cors(request)
+        body = json.loads(request.content.read())
+        config = body['config']
+
+        update = dict(updateClass='CHUTE',
+                      updateType='update',
+                      tok=pdutils.timeint())
+        update.update(config)
+        result = yield self.update_manager.add_update(**update)
+
+        request.setHeader('Content-Type', 'application/json')
+        returnValue(json.dumps(result, cls=UpdateEncoder))
+
+    @routes.route('/<chute>', methods=['DELETE'])
+    @inlineCallbacks
+    def delete_chute(self, request, chute):
+        cors.config_cors(request)
+
+        update = dict(updateClass='CHUTE',
+                      updateType='delete',
+                      tok=pdutils.timeint(),
+                      name=chute)
+        result = yield self.update_manager.add_update(**update)
+
+        request.setHeader('Content-Type', 'application/json')
+        returnValue(json.dumps(result, cls=UpdateEncoder))
+
+    @routes.route('/<chute>/stop', methods=['POST'])
+    @inlineCallbacks
+    def stop_chute(self, request, chute):
+        cors.config_cors(request)
+
+        update = dict(updateClass='CHUTE',
+                      updateType='stop',
+                      tok=pdutils.timeint(),
+                      name=chute)
+        result = yield self.update_manager.add_update(**update)
+
+        request.setHeader('Content-Type', 'application/json')
+        returnValue(json.dumps(result, cls=UpdateEncoder))
+
+    @routes.route('/<chute>/start', methods=['POST'])
+    @inlineCallbacks
+    def start_chute(self, request, chute):
+        cors.config_cors(request)
+
+        update = dict(updateClass='CHUTE',
+                      updateType='start',
+                      tok=pdutils.timeint(),
+                      name=chute)
+        result = yield self.update_manager.add_update(**update)
+
+        request.setHeader('Content-Type', 'application/json')
+        returnValue(json.dumps(result, cls=UpdateEncoder))
 
     @routes.route('/<chute>/cache', methods=['GET'])
     def get_chute_cache(self, request, chute):

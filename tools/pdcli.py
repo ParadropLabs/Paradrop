@@ -172,29 +172,32 @@ def chute_tree(router_addr, arguments):
     Handle functions related to chutes.
     """
     if arguments['list']:
-        url = "http://{}/api/v1/chutes/get".format(router_addr)
+        url = "http://{}/api/v1/chutes/".format(router_addr)
         router_request("GET", url)
 
     elif arguments['start']:
-        url = "http://{}/api/v1/chutes/start".format(router_addr)
+        name = arguments['<chute>']
+        url = "http://{}/api/v1/chutes/{}/start".format(router_addr, name)
         data = {
             'config': {
                 'name': arguments['<chute>']
             }
         }
-        router_request("PUT", url, json=data)
+        router_request("POST", url, json=data)
 
     elif arguments['stop']:
-        url = "http://{}/api/v1/chutes/stop".format(router_addr)
+        name = arguments['<chute>']
+        url = "http://{}/api/v1/chutes/{}/stop".format(router_addr, name)
         data = {
             'config': {
                 'name': arguments['<chute>']
             }
         }
-        router_request("PUT", url, json=data)
+        router_request("POST", url, json=data)
 
     elif arguments['delete']:
-        url = "http://{}/api/v1/chutes/delete".format(router_addr)
+        name = arguments['<chute>']
+        url = "http://{}/api/v1/chutes/{}".format(router_addr, name)
         data = {
             'config': {
                 'name': arguments['<chute>']

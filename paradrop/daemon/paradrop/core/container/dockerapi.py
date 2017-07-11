@@ -160,6 +160,9 @@ def buildImage(update):
             workDir, meta = dl.fetch()
             buildSuccess = _buildImage(update, client, False,
                     rm=True, tag=repo, path=workDir)
+    elif hasattr(update, 'workdir'):
+        buildSuccess = _buildImage(update, client, False, rm=True, tag=repo,
+                path=update.workdir)
     else:
         raise Exception("No Dockerfile or download location supplied.")
 

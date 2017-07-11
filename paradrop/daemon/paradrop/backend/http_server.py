@@ -56,7 +56,7 @@ class HttpServer(object):
         return ConfigApi(self.update_manager, self.update_fetcher).routes.resource()
 
 
-    @app.route('/api/v1/chutes', branch=True)
+    @app.route('/api/v1/chutes/', branch=True)
     @requires_auth
     def api_chute(self, request):
         return ChuteApi(self.update_manager).routes.resource()
