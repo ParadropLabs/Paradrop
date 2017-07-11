@@ -52,10 +52,11 @@ def tarfile_is_safe(tar):
     any of the paths are absolute (leading slash) or try to access
     parent directories (leading ..).
     """
-    for path in tar.getnames():
+    for member in tar:
         # normpath is useful here because it correctly normalizes "a/../../c"
         # to "../c".
-        if os.path.isabs(path) or os.path.normpath(path).startswith("../"):
+        path = os.path.normpath(member.name)
+        if os.path.isabs(path) or path.startswith(".."):
             return False
     return True
 
@@ -95,6 +96,10 @@ class ChuteApi(object):
     def create_chute(self, request):
         cors.config_cors(request)
 
+        update = dict(updateClass='CHUTE',
+                      updateType='create',
+                      tok=pdutils.timeint())
+
         ctype = request.requestHeaders.getRawHeaders('Content-Type',
                 default=[None])[0]
         if ctype == "application/x-tar":
@@ -113,23 +118,19 @@ class ChuteApi(object):
                 full_config = yaml.safe_load(source)
                 config = full_config.get("config", {})
 
-            update = dict(updateClass='CHUTE',
-                          updateType='create',
-                          tok=pdutils.timeint())
             update['workdir'] = tempdir
             update.update(config)
 
         else:
             body = json.loads(request.content.read())
             config = body['config']
-
-            update = dict(updateClass='CHUTE',
-                          updateType='create',
-                          tok=pdutils.timeint())
             update.update(config)
 
-        result = yield self.update_manager.add_update(**update)
+        # Set a time-based version number for side-loaded chutes because we do
+        # not expect the to receive it from the config file.
+        update['version'] = "x{}".format(update['tok'])
 
+        result = yield self.update_manager.add_update(**update)
         request.setHeader('Content-Type', 'application/json')
         returnValue(json.dumps(result, cls=UpdateEncoder))
 
@@ -161,15 +162,44 @@ class ChuteApi(object):
     @inlineCallbacks
     def update_chute(self, request, chute):
         cors.config_cors(request)
-        body = json.loads(request.content.read())
-        config = body['config']
 
         update = dict(updateClass='CHUTE',
                       updateType='update',
-                      tok=pdutils.timeint())
-        update.update(config)
-        result = yield self.update_manager.add_update(**update)
+                      tok=pdutils.timeint(),
+                      name=chute)
 
+        ctype = request.requestHeaders.getRawHeaders('Content-Type',
+                default=[None])[0]
+        if ctype == "application/x-tar":
+            tar = tarfile.TarFile(fileobj=request.content)
+            if not tarfile_is_safe(tar):
+                raise Exception("Tarfile contains unsafe paths")
+
+            tempdir = tempfile.mkdtemp()
+            tar.extractall(tempdir)
+
+            configfile = os.path.join(tempdir, "paradrop.yaml")
+            if not os.path.isfile(configfile):
+                raise Exception("No paradrop.yaml file found in chute source")
+
+            with open(configfile, "r") as source:
+                full_config = yaml.safe_load(source)
+                config = full_config.get("config", {})
+
+            update['workdir'] = tempdir
+            update.update(config)
+
+        else:
+            body = json.loads(request.content.read())
+            config = body['config']
+
+            update.update(config)
+
+        # Set a time-based version number for side-loaded chutes because we do
+        # not expect the to receive it from the config file.
+        update['version'] = "x{}".format(update['tok'])
+
+        result = yield self.update_manager.add_update(**update)
         request.setHeader('Content-Type', 'application/json')
         returnValue(json.dumps(result, cls=UpdateEncoder))
 

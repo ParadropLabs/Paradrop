@@ -2,26 +2,28 @@
 Paradrop command line utility.
 
 Usage:
-    pdcli routers list
-    pdcli routers create <name> [--orphaned] [--claim=<ct>]
-    pdcli routers delete <router_id>
-    pdcli local <router_addr> chute list
-    pdcli local <router_addr> chute <chute> start
-    pdcli local <router_addr> chute <chute> stop
-    pdcli local <router_addr> chute <chute> delete
-    pdcli local <router_addr> chute <chute> info
-    pdcli local <router_addr> chute <chute> cache
-    pdcli local <router_addr> hostconfig
-    pdcli local <router_addr> hostconfig edit
-    pdcli local <router_addr> hostconfig change <option> <value>
-    pdcli local <router_addr> sshkeys
-    pdcli local <router_addr> sshkeys add <path>
-    pdcli local <router_addr> pdconf
-    pdcli local <router_addr> pdconf reload
-    pdcli local <router_addr> password
-    pdcli local <router_addr> provision <router_id> <router_password> [--server=<server>] [--wamp=<wamp>]
-    pdcli local <router_addr> networks <chute>
-    pdcli local <router_addr> stations <chute> <network>
+    pdtools routers list
+    pdtools routers create <name> [--orphaned] [--claim=<ct>]
+    pdtools routers delete <router_id>
+    pdtools local <router_addr> chute list
+    pdtools local <router_addr> chute <chute> start
+    pdtools local <router_addr> chute <chute> stop
+    pdtools local <router_addr> chute <chute> delete
+    pdtools local <router_addr> chute <chute> info
+    pdtools local <router_addr> chute <chute> cache
+    pdtools local <router_addr> chute <chute> create
+    pdtools local <router_addr> chute <chute> update
+    pdtools local <router_addr> hostconfig
+    pdtools local <router_addr> hostconfig edit
+    pdtools local <router_addr> hostconfig change <option> <value>
+    pdtools local <router_addr> sshkeys
+    pdtools local <router_addr> sshkeys add <path>
+    pdtools local <router_addr> pdconf
+    pdtools local <router_addr> pdconf reload
+    pdtools local <router_addr> password
+    pdtools local <router_addr> provision <router_id> <router_password> [--server=<server>] [--wamp=<wamp>]
+    pdtools local <router_addr> networks <chute>
+    pdtools local <router_addr> stations <chute> <network>
 
 Options:
     router_addr         Router address and optional port (e.g. 10.42.0.150:80).
@@ -42,6 +44,7 @@ import base64
 import getpass
 import operator
 import os
+import tarfile
 import tempfile
 import yaml
 from pprint import pprint
@@ -101,14 +104,14 @@ def pdserver_request(method, url, json=None, headers=None):
     return res
 
 
-def router_request(method, url, json=None, headers=None, dump=True):
+def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
     """
     Issue a router API request.
 
     This will prompt for a username and password if necessary.
     """
     session = requests.Session()
-    request = requests.Request(method, url, json=json, headers=headers)
+    request = requests.Request(method, url, json=json, headers=headers, **kwargs)
 
     # First try with the default username and password.
     # If that fails, prompt user and try again.
@@ -214,6 +217,46 @@ def chute_tree(router_addr, arguments):
         chute = arguments['<chute>']
         url = "http://{}/api/v1/chutes/{}/cache".format(router_addr, chute)
         router_request("GET", url)
+
+    elif arguments['create']:
+        chute = arguments['<chute>']
+        url = "http://{}/api/v1/chutes/".format(router_addr)
+        headers = {'Content-Type': 'application/x-tar'}
+
+        if not os.path.exists("paradrop.yaml"):
+            raise Exception("No paradrop.yaml file found in working directory.")
+
+        with tempfile.TemporaryFile() as temp:
+            tar = tarfile.open(fileobj=temp, mode="w")
+            for dirName, subdirList, fileList in os.walk('.'):
+                for fname in fileList:
+                    path = os.path.join(dirName, fname)
+                    arcname = os.path.normpath(path)
+                    tar.add(path, arcname=arcname)
+            tar.close()
+
+            temp.seek(0)
+            router_request("POST", url, headers=headers, data=temp)
+
+    elif arguments['update']:
+        chute = arguments['<chute>']
+        url = "http://{}/api/v1/chutes/{}".format(router_addr, chute)
+        headers = {'Content-Type': 'application/x-tar'}
+
+        if not os.path.exists("paradrop.yaml"):
+            raise Exception("No paradrop.yaml file found in working directory.")
+
+        with tempfile.TemporaryFile() as temp:
+            tar = tarfile.open(fileobj=temp, mode="w")
+            for dirName, subdirList, fileList in os.walk('.'):
+                for fname in fileList:
+                    path = os.path.join(dirName, fname)
+                    arcname = os.path.normpath(path)
+                    tar.add(path, arcname=arcname)
+            tar.close()
+
+            temp.seek(0)
+            router_request("PUT", url, headers=headers, data=temp)
 
 
 def hostconfig_tree(router_addr, arguments):
@@ -388,7 +431,7 @@ def local_tree(arguments):
 
 def main():
     """
-    pdcli main function.
+    pdtools main function.
     """
     arguments = docopt(__doc__)
     if arguments['routers']:
