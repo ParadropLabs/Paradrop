@@ -70,6 +70,7 @@ def test_buildImage(Client, _buildImage, _pullImage, downloader):
 
     # Test with neither dockerfile nor download.
     del update.dockerfile
+    del update.workdir
     assert_raises(Exception, dockerapi.buildImage, update)
 
     # Test where build worker function fails.
