@@ -69,7 +69,8 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
     # First try with the default username and password.
     # If that fails, prompt user and try again.
     userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
-    encoded = base64.b64encode(userpass).decode('ascii')
+
+    encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
     session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
 
     prepped = session.prepare_request(request)
@@ -81,7 +82,7 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
             username = builtins.input("Username: ")
             password = getpass.getpass("Password: ")
             userpass = "{}:{}".format(username, password).encode('utf-8')
-            encoded = base64.b64encode(userpass).decode('ascii')
+            encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
 
             session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
             prepped = session.prepare_request(request)
