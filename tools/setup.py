@@ -6,7 +6,7 @@ setup(
     author="Paradrop Labs",
     description="Paradrop deployment and build tools",
     install_requires=[
-        'docopt>=0.6.2',
+        'click>=6.7',
         'future>=0.16.0',
         'PyYAML>=3.12',
         'requests>=2.18.1'
