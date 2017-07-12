@@ -184,6 +184,35 @@ def stations(ctx):
     router_request("GET", url)
 
 
+@network.group()
+@click.pass_context
+@click.argument('station')
+def station(ctx, station):
+    """
+    Sub-tree for accessing network stations.
+    """
+    ctx.obj['station'] = station
+    ctx.obj['station_url'] = ctx.obj['network_url'] + "/stations/" + station
+
+
+@station.command()
+@click.pass_context
+def show(ctx):
+    """
+    Show station information.
+    """
+    router_request("GET", ctx.obj['station_url'])
+
+
+@station.command()
+@click.pass_context
+def delete(ctx):
+    """
+    Kick a station off the network.
+    """
+    router_request("DELETE", ctx.obj['station_url'])
+
+
 @device.group(invoke_without_command=True)
 @click.pass_context
 def hostconfig(ctx):
