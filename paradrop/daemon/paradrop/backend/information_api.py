@@ -9,6 +9,7 @@ from klein import Klein
 
 from paradrop.core.config.devices import detectSystemDevices
 from paradrop.core.system.system_info import getOSVersion, getPackageVersion
+from paradrop.core.agent.reporting import TelemetryReportBuilder
 from paradrop.lib.utils import pdos
 from . import cors
 
@@ -67,3 +68,18 @@ class InformationApi:
         data['pdVersion'] = self.pdVersion
         data['uptime'] = self.uptime
         return json.dumps(data)
+
+    @routes.route('/telemetry')
+    def get_telemetry(self, request):
+        """
+        Get a telemetry report.
+
+        This contains information about resource utilization by chute and
+        system totals.  This endpoint returns the same data that we
+        periodically send to the controller if telemetry is enabled.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+        builder = TelemetryReportBuilder()
+        report = builder.prepare()
+        return json.dumps(report)

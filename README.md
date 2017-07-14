@@ -16,19 +16,10 @@ Visit our [website](http://www.paradrop.io) to learn more!
 Since Wi-Fi routers are the central nervous system for all Internet based services in the home, the possibilities are quite endless. We have implemented many example applications, you can see the source code [here](https://github.com/ParadropLabs/Example-Apps). We encourage you to test out Paradrop by cloning our repo and checking out our [getting started](http://paradrop.readthedocs.org/en/latest/#getting-started) page.
 
 
+## Preparing a new release
 
-## Building the Paradrop disk image
-
-The following commands build a disk image starting from a clean installation
-of Ubuntu 16.04.
-
-Setup environment
-```
-./pdbuild.sh setup
-```
-
-Build paradrop-daemon_*.snap
-```
-./pdbuild.sh build
-```
+1. Merge changes into the master branch.
+2. Run `./pdbuild.sh release <version>` to update version number and tag the release.
+3. Run `./pdbuild.sh build` to build a new snap.
+4. Run `./pdbuild.sh image` to build a new disk image.
 

@@ -2,9 +2,11 @@
 Get system running status including CPU load, memory usage, network traffic.
 '''
 import psutil
+import socket
 import time
 
 class SystemStatus(object):
+    INCLUDED_PARTITIONS = set(['/', '/writable'])
 
     def __init__(self):
         self.timestamp = time.time()
@@ -17,15 +19,14 @@ class SystemStatus(object):
         self.disk_partitions = {}
         self.network = {}
 
-        included_partitions = set(['/', '/writable'])
         partitions = psutil.disk_partitions()
         for p in partitions:
-            if p.fstype == 'ext4' and p.mountpoint in included_partitions:
+            if p.mountpoint in self.INCLUDED_PARTITIONS:
                 usage = psutil.disk_usage(p.mountpoint)
                 self.disk_partitions[p.mountpoint] = {
                     'total': usage.total,
                     'used': usage.used
-                }        
+                }
 
 
     def getStatus(self, max_age=0.8):
@@ -126,3 +127,70 @@ class SystemStatus(object):
             interfaces[key]['dropout'] = value.dropout
 
         self.network = interfaces
+
+    @classmethod
+    def getNetworkInfo(cls):
+        interfaces = {}
+
+        stats = psutil.net_if_stats()
+        for key, value in stats.iteritems():
+            interfaces[key] = value.__dict__
+            interfaces[key]['addresses'] = []
+            interfaces[key]['io_counters'] = None
+
+        addresses = psutil.net_if_addrs()
+        for key, value in addresses.iteritems():
+            if key not in interfaces:
+                continue
+
+            for addr in value:
+                interfaces[key]['addresses'].append(addr.__dict__)
+
+        traffic = psutil.net_io_counters(pernic=True)
+        for key, value in traffic.iteritems():
+            if key not in interfaces:
+                continue
+
+            interfaces[key]['io_counters'] = value.__dict__
+
+        return interfaces
+
+    @classmethod
+    def getProcessInfo(cls, pid):
+        proc = psutil.Process(pid=pid)
+        with proc.oneshot():
+            proc_info = {
+                'cpu_num': proc.cpu_num(),
+                'cpu_times': proc.cpu_times().__dict__,
+                'create_time': proc.create_time(),
+                'memory_info': proc.memory_info().__dict__,
+                'num_ctx_switches': proc.num_ctx_switches().__dict__,
+                'num_threads': proc.num_threads()
+            }
+        return proc_info
+
+    @classmethod
+    def getSystemInfo(cls):
+        system = {
+            'boot_time': psutil.boot_time(),
+            'cpu_count': psutil.cpu_count(),
+            'cpu_stats': psutil.cpu_stats().__dict__,
+            'cpu_times': [k.__dict__ for k in psutil.cpu_times(percpu=True)],
+            'disk_io_counters': psutil.disk_io_counters().__dict__,
+            'disk_usage': [],
+            'net_io_counters': psutil.net_io_counters().__dict__,
+            'swap_memory': psutil.swap_memory().__dict__,
+            'virtual_memory': psutil.virtual_memory().__dict__
+        }
+
+        partitions = psutil.disk_partitions()
+        for p in partitions:
+            if p.mountpoint in cls.INCLUDED_PARTITIONS:
+                usage = psutil.disk_usage(p.mountpoint)
+                system['disk_usage'].append({
+                    'mountpoint': p.mountpoint,
+                    'total': usage.total,
+                    'used': usage.used
+                })
+
+        return system

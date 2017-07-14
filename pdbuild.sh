@@ -19,6 +19,7 @@ printhelp() {
     echo -e "  test\t\t run unit tests"
     echo -e "  docs\t\t rebuilds sphinx docs for readthedocs"
     echo -e "  version [version]\t\t get or set Paradrop version"
+    echo -e "  release <version>\t\t prepare a version for release"
     exit
 }
 
@@ -32,6 +33,33 @@ version() {
     else
         grep -oP "(?<=version: )\d+\.\d+\.\d+" paradrop/snap/snapcraft.yaml
     fi
+}
+
+release() {
+    if [ -z "$1" ]; then
+        printhelp
+        exit 1
+    fi
+
+    git diff-index --quiet HEAD --
+    if [ $? -ne 0 ]; then
+        echo "The working tree is not clean."
+        echo "You should commit your changes or clean up before releasing."
+        exit 1
+    fi
+
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    if [ "$branch" != "master" ]; then
+        echo "Not on the master branch."
+        exit 1
+    fi
+
+    version $1
+
+    git add paradrop/snap/snapcraft.yaml paradrop/daemon/setup.py docs/conf.py
+    git commit -m "Set version $1"
+
+    git tag -a "v$1" -m "Release version $1"
 }
 
 activate_virtual_env() {
@@ -77,6 +105,12 @@ build() {
 image() {
     image="paradrop-amd64.img"
 
+    if [ -e "$image" ]; then
+        echo "Output file $image already exists."
+        echo "Remove it before building a new image."
+        exit 1
+    fi
+
     echo "Select the paradrop-daemon snap to use:"
     select pdsnap in paradrop/*.snap;
     do
@@ -85,12 +119,13 @@ image() {
 
     sudo ubuntu-image -o $image \
         --channel stable \
-        --extra-snaps docker \
+        --extra-snaps airshark \
         --extra-snaps bluez \
-        --extra-snaps pulseaudio \
-        --extra-snaps zerotier-one \
+        --extra-snaps docker \
         --extra-snaps paradrop-snmpd \
         --extra-snaps $pdsnap \
+        --extra-snaps pulseaudio \
+        --extra-snaps zerotier-one \
         --image-size 4G \
         assertions/pc-amd64.model
 
@@ -146,6 +181,7 @@ case "$1" in
     "run") run;;
     "docs") docs;;
     "version") version $2;;
+    "release") release $2;;
     *) echo "Unknown input $1"
    ;;
 esac
