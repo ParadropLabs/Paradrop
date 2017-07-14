@@ -82,7 +82,7 @@ class SpectrumReader(object):
 
                 sc_total = 56  # HT20: 56 OFDM subcarriers
 
-                first_sc = freq - SpectrumReader.sc_wide * (sc_total/2 + 0.5)
+                #first_sc = freq - SpectrumReader.sc_wide * (sc_total/2 + 0.5)
                 pwr = {}
                 for i, sample in enumerate(samples):
                     subcarrier_freq = 0
