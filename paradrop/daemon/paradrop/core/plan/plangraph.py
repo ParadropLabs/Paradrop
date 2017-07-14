@@ -70,6 +70,7 @@ STATE_CALL_CFG                  = 70
 FILES_COPY_FROM_OS              = 71
 ZEROTIER_CONFIGURE              = 72
 AIRSHARK_CONFIGURE              = 73
+TELEMETRY_SERVICE               = 74
 STATE_FILES_STOP                = 75
 FILES_COPY_USER                 = 76
 FILES_COPY_TO_MNT               = 77

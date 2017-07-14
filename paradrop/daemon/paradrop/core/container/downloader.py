@@ -77,10 +77,10 @@ class Downloader(object):
         # Look for a Dockerfile and also check for dangerous paths (.. or /).
         runPath = None
         for member in tar:
-            path = member.name
+            path = os.path.normpath(member.name)
             if path.startswith(".."):
                 raise Exception("Archive contains a forbidden path: {}".format(path))
-            elif path.startswith("/"):
+            elif os.path.isabs(path):
                 raise Exception("Archive contains an absolute path: {}".format(path))
             elif path.endswith(settings.CHUTE_CONFIG_FILE):
                 runPath = path

@@ -104,6 +104,10 @@ def generateHostConfig(devices):
         'chutePrefixSize': 24,
         'onMissingWiFi': None
     }
+    config['telemetry'] = {
+        'enabled': True,
+        'interval': 60
+    }
     config['zerotier'] = {
         'enabled': False,
         'networks': []
