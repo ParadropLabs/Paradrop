@@ -273,8 +273,8 @@ class ConfigApi(object):
         request.setHeader('Content-Type', 'application/json')
         return pdconf_client.reloadAll()
 
-    @routes.route('/sshKeys', methods=['GET', 'POST'])
-    def sshKeys(self, request):
+    @routes.route('/sshKeys/<user>', methods=['GET', 'POST'])
+    def sshKeys(self, request, user):
         """
         Manage list of authorized keys for SSH access.
         """
@@ -282,12 +282,11 @@ class ConfigApi(object):
         request.setHeader('Content-Type', 'application/json')
 
         if request.method == "GET":
-            keys = ssh_keys.getAuthorizedKeys()
+            keys = ssh_keys.getAuthorizedKeys(user)
             return json.dumps(keys)
-
         else:
             body = str2json(request.content.read())
             key = body['key'].strip()
 
-            ssh_keys.addAuthorizedKey(key)
+            ssh_keys.addAuthorizedKey(key, user)
             return json.dumps(body)
