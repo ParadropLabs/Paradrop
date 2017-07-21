@@ -162,6 +162,20 @@ def networks(ctx):
     router_request("GET", url)
 
 
+@chute.command()
+@click.pass_context
+def shell(ctx):
+    """
+    Open a shell inside a chute.
+
+    This requires you to have enabled SSH access to the device and installed
+    bash inside your chute.
+    """
+    cmd = ["ssh", "-t", "paradrop@{}".format(ctx.obj['address']), "sudo", "docker",
+            "exec", "-it", ctx.obj['chute'], "/bin/bash"]
+    os.spawnvpe(os.P_WAIT, "ssh", cmd, os.environ)
+
+
 @chute.group()
 @click.pass_context
 @click.argument('network')
