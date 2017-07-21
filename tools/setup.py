@@ -16,7 +16,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'pdtools=pdtools.main:main',
+            'pdtools = pdtools.__main__:main',
         ],
     },
 )

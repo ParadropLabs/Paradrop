@@ -33,5 +33,12 @@ root.add_command(device.device)
 root.add_command(routers.routers)
 
 
-if __name__ == "__main__":
+def main():
+    """
+    Entry point for the pdtools Python package.
+    """
     root()
+
+
+if __name__ == "__main__":
+    main()
