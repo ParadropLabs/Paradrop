@@ -24,6 +24,7 @@ from .chute_api import ChuteApi
 from .password_api import PasswordApi
 from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
+from .snapd_resource import SnapdResource
 from . import cors
 from . import password_manager
 
@@ -102,6 +103,12 @@ class HttpServer(object):
             'timeout': 2,
         }
         return SockJSResource(StatusSockJSFactory(self.system_status), options)
+
+
+    @app.route('/snapd/', branch=True)
+    @requires_auth
+    def snapd(self, request):
+        return SnapdResource()
 
 
     @app.route('/', branch=True)
