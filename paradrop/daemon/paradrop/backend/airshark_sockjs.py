@@ -9,8 +9,6 @@ class AirsharkSockJSProtocol(Protocol):
         self.factory = factory
 
     def connectionMade(self):
-        if not hasattr(self.factory, "transports"):
-            self.factory.transports = set()
         self.factory.transports.add(self.transport)
         out.info('sockjs /airshark connected')
         self.factory.airshark_manager.add_observer(self)

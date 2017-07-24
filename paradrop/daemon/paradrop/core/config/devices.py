@@ -123,7 +123,7 @@ def getWirelessPhyName(ifname):
 
 class SysReader(object):
     PCI_BUS_ID = re.compile(r"\d+:\d+:\d+\.\d+")
-    USB_BUS_ID = re.compile(r"\d+\-\d+(\.\d+)?:\d+\.\d+")
+    USB_BUS_ID = re.compile(r"\d+\-\d+(\.\d+)*:\d+\.\d+")
 
     def __init__(self, phy):
         self.phy = phy
@@ -142,7 +142,7 @@ class SysReader(object):
             device = default
         return device
 
-    def getSlotName(self, default=None):
+    def getSlotName(self, default="????"):
         """
         Return the PCI/USB slot name for the device.
 
@@ -158,6 +158,8 @@ class SysReader(object):
 
             if match is not None:
                 return "usb/" + fname
+
+        return default
 
     def getVendorId(self, default="????"):
         """
@@ -203,6 +205,7 @@ def listWiFiDevices():
                 'device': reader.getDeviceId(),
                 'slot': reader.getSlotName()
             }
+
     except OSError:
         # If we get an error here, it probably just means there are no WiFi
         # devices.

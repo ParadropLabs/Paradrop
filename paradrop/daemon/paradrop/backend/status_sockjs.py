@@ -10,8 +10,6 @@ class StatusSockJSProtocol(Protocol):
 
 
     def connectionMade(self):
-        if not hasattr(self.factory, "transports"):
-            self.factory.transports = set()
         self.factory.transports.add(self.transport)
         out.info('sockjs /status connected')
 

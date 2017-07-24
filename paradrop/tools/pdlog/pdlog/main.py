@@ -31,8 +31,10 @@ def runTail(logFile):
             proc.wait()
         except subprocess.CalledProcessError:
             print 'Failed to open the log file, will try again...'
-            sleep(2)
+            sleep(1)
             continue
+
+        sleep(2)
 
 def main():
     p = argparse.ArgumentParser(description='Paradrop log tool')

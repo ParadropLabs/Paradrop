@@ -4,6 +4,7 @@ from twisted.internet import reactor
 from twisted.internet.defer import DeferredList, inlineCallbacks, returnValue
 
 from paradrop.base import nexus, settings
+from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.core.config import hostconfig
 from paradrop.core.agent.http import PDServerRequest
@@ -273,8 +274,8 @@ class ConfigApi(object):
         request.setHeader('Content-Type', 'application/json')
         return pdconf_client.reloadAll()
 
-    @routes.route('/sshKeys', methods=['GET', 'POST'])
-    def sshKeys(self, request):
+    @routes.route('/sshKeys/<user>', methods=['GET', 'POST'])
+    def sshKeys(self, request, user):
         """
         Manage list of authorized keys for SSH access.
         """
@@ -282,12 +283,18 @@ class ConfigApi(object):
         request.setHeader('Content-Type', 'application/json')
 
         if request.method == "GET":
-            keys = ssh_keys.getAuthorizedKeys()
+            keys = []
+            try:
+                keys = ssh_keys.getAuthorizedKeys(user)
+            except Exception as e:
+                out.warn(str(e))
             return json.dumps(keys)
-
         else:
             body = str2json(request.content.read())
             key = body['key'].strip()
 
-            ssh_keys.addAuthorizedKey(key)
+            try:
+                ssh_keys.addAuthorizedKey(key, user)
+            except Exception as e:
+                out.warn(str(e))
             return json.dumps(body)
