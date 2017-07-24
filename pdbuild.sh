@@ -129,7 +129,7 @@ image() {
         --image-size 4G \
         assertions/pc-amd64.model
 
-    xz --compress $image
+    xz --force --compress $image
     echo "Created image $image.xz"
 }
 
