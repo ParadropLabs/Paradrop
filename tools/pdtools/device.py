@@ -409,3 +409,27 @@ def reload(ctx):
     url = ctx.obj['base_url'] + "/config/pdconf"
     res = router_request("PUT", url, dump=False)
     print_pdconf(res)
+
+
+@device.group()
+@click.pass_context
+def snapd(ctx):
+    """
+    Access the snapd subsystem.
+    """
+    ctx.obj['snapd_url'] = "http://{}/snapd".format(ctx.obj['address'])
+
+
+@snapd.command()
+@click.pass_context
+@click.argument('email')
+def createUser(ctx, email):
+    """
+    Create user account.
+    """
+    url = ctx.obj['snapd_url'] + "/v2/create-user"
+    data = {
+        'email': email,
+        'sudoer': True
+    }
+    router_request("POST", url, json=data)
