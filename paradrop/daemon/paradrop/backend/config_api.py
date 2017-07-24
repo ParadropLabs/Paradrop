@@ -283,18 +283,21 @@ class ConfigApi(object):
         request.setHeader('Content-Type', 'application/json')
 
         if request.method == "GET":
-            keys = []
             try:
                 keys = ssh_keys.getAuthorizedKeys(user)
+                return json.dumps(keys)
             except Exception as e:
                 out.warn(str(e))
-            return json.dumps(keys)
+                request.setResponseCode(404)
+                return json.dumps({'message': str(e)})
         else:
             body = str2json(request.content.read())
             key = body['key'].strip()
 
             try:
                 ssh_keys.addAuthorizedKey(key, user)
+                return json.dumps(body)
             except Exception as e:
                 out.warn(str(e))
-            return json.dumps(body)
+                request.setResponseCode(404)
+                return json.dumps({'message': str(e)})
