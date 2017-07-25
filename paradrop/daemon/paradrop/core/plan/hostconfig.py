@@ -15,6 +15,14 @@ from paradrop.core.config import airshark, devices, haproxy, network, configserv
 from . import plangraph
 
 
+# Update types that apply changes from host configuration.
+CONFIG_CHANGING_TYPES = set([
+    "inithostconfig",
+    "sethostconfig",
+    "patchhostconfig"
+])
+
+
 def generatePlans(update):
     out.verbose("%r\n" % (update))
 
@@ -35,41 +43,47 @@ def generatePlans(update):
                           (network.abortNetworkConfig, ))
     update.plans.addPlans(plangraph.CHECK_SYSTEM_DEVICES,
                           (devices.checkSystemDevices, ))
-    update.plans.addPlans(plangraph.STRUCT_SET_SYSTEM_DEVICES,
-                          (devices.setSystemDevices, ),
-                          (configservice.reloadAll, ))
 
     update.plans.addPlans(plangraph.STRUCT_GET_HOST_CONFIG,
                           (hostconfig.getHostConfig, ))
-    update.plans.addPlans(plangraph.STRUCT_SET_HOST_CONFIG,
-                          (hostconfig.setHostConfig, ),
-                          (hostconfig.revertHostConfig, ))
 
     # Save current network configuration into chute cache (key: 'networkInterfaces')
     update.plans.addPlans(plangraph.STRUCT_GET_INT_NETWORK,
                           (network.getNetworkConfig, ))
 
-    # Apply zerotier configuration.
-    update.plans.addPlans(plangraph.ZEROTIER_CONFIGURE,
-                          (zerotier.configure, ))
-
-    # Apply Airshark configuration.
-    update.plans.addPlans(plangraph.AIRSHARK_CONFIGURE,
-                          (airshark.configure, ))
-
-    # Configure telemetry service.
-    update.plans.addPlans(plangraph.TELEMETRY_SERVICE,
-                          (services.configure_telemetry, ))
-
-    # Reload configuration files
-    todoPlan = (configservice.reloadAll, )
-    abtPlan = [(osconfig.revertConfig, "dhcp"),
-               (osconfig.revertConfig, "firewall"),
-               (osconfig.revertConfig, "network"),
-               (osconfig.revertConfig, "wireless"),
-               (configservice.reloadAll, )]
-    update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)
-
-    # Start haproxy.
+    # Start haproxy.  This does not depend on the host config, and we want
+    # it setup even in cases where applying the host config failed.
     update.plans.addPlans(plangraph.RECONFIGURE_PROXY,
-            (haproxy.reconfigureProxy, ))
+                          (haproxy.reconfigureProxy, ))
+
+    if update.updateType in CONFIG_CHANGING_TYPES:
+        # Save current host configuration to disk.
+        update.plans.addPlans(plangraph.STRUCT_SET_HOST_CONFIG,
+                              (hostconfig.setHostConfig, ),
+                              (hostconfig.revertHostConfig, ))
+
+        # Apply host configuration to system configuration.
+        update.plans.addPlans(plangraph.STRUCT_SET_SYSTEM_DEVICES,
+                              (devices.setSystemDevices, ),
+                              (configservice.reloadAll, ))
+
+        # Apply zerotier configuration.
+        update.plans.addPlans(plangraph.ZEROTIER_CONFIGURE,
+                              (zerotier.configure, ))
+
+        # Apply Airshark configuration.
+        update.plans.addPlans(plangraph.AIRSHARK_CONFIGURE,
+                              (airshark.configure, ))
+
+        # Configure telemetry service.
+        update.plans.addPlans(plangraph.TELEMETRY_SERVICE,
+                              (services.configure_telemetry, ))
+
+        # Reload configuration files
+        todoPlan = (configservice.reloadAll, )
+        abtPlan = [(osconfig.revertConfig, "dhcp"),
+                   (osconfig.revertConfig, "firewall"),
+                   (osconfig.revertConfig, "network"),
+                   (osconfig.revertConfig, "wireless"),
+                   (configservice.reloadAll, )]
+        update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)
