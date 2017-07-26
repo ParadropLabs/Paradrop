@@ -5,7 +5,7 @@ description: |
   The ParaDrop deamon manages resources in the Wi-Fi routers and provides a virtualized environment for chutes.
   It also expose local environment information for chutes.
 
-grade: devel
+grade: stable
 confinement: devmode
 
 apps:
