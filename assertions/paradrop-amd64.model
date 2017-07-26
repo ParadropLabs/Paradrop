@@ -7,18 +7,23 @@ architecture: amd64
 gadget: pc
 kernel: pc-kernel
 required-snaps:
+  - airshark
+  - bluez
   - docker
   - paradrop-daemon
-timestamp: 2017-04-18T15:39:44+00:00
+  - paradrop-snmpd
+  - pulseaudio
+  - zerotier-one
+timestamp: 2017-07-26T21:21:48+00:00
 sign-key-sha3-384: iUMCtK2MzvBVgtbG_U-Ro2Up0L6ebWbuNdE8Z3cfTseJ3ofs3pdCOdB2Qwc3hxYV
 
-AcLBXAQAAQoABgUCWPYzagAKCRBUnqzo0CNkCT4HEACe3lFOG7t1re2hRsIHYouSmxJWs9n+hYzU
-S0qLDLzFlRsmlwrsDzhzsfvmnGiXM4xX/prmwE2Otf3DMeScbrZe6vaKeiyO1Tv+bUkokxedXhby
-ls+2UVhnTNLcj8+1D5ZX0nwLy6baIAhakVkqdEzhSsa08+XBP3aUVBfWkrrLP1hZGPfn7hWEeIwr
-p9fv3mAwVps1OCFlGruYRpdocCYKBoe5MJMwNScQrU050mQZlnr0gg55WwNtLRPESmLGT3SJ1geX
-hULiQBb34o18DJwAGg3LRrQG3e0i7YLOc/9t7OjLmjhZhlIH3I+PHG0JcSNtE/qMxv6zkh6ClDHE
-4zRy874PkWQUKwUChnDQQxt5tNZCwwMqGLkEdwXgkXinuscTND7BcGi7uHaiDBFWSAmhqjN65/Bd
-FLzaATAvtHhib+mt4i4PyMyxtp0zU3q5lJScvWDVzA2vBDkIDEvSo+B7lXAgr2OmQ+mN/HqhAMQv
-++BDSfJ3Dha+uhFBVOg2MQ6fsoVGQm51vh30KlHsiHXWHIP9y+bOUKaVULxfSQ1xi8+pBMBcgZuO
-f5+K3l4tSKO7XP+Zpw/6FmV81I5VOjOZM404eAZCTvwWqWp7S7EJaODw5E/qlxXSUwtbjpIxgd4k
-opRAGz2F+JwXcW/oxSicONBs5isbVs0WJUrKj1gVow==
+AcLBXAQAAQoABgUCWXkICgAKCRBUnqzo0CNkCRsGD/94UiURorl+pICjMqenMgm99ThiFGmHi+6B
+LTdZyfed4uIY685ZzW6XF8RTCvvetycHYanikEvYB4NLxFaILYqM1HRqgluf6wvqEYjBPMAQtxNP
+EYrTJpWvFcw0y8i8ZZ2R0K3QvmU8lLVk9927jk1r9F7kbDDqOD1PPm5U1hYcCT0FehGNRCsDi37H
+aFfA15hkgXiV7hmijbXEsIA8YJbQBdTMdhbNuQlUxr3vsEDI40XsqRjwuvYUDAuasEAwfSO18xyG
+1/1fYRai+FW0vL0QuiU3xS9QEHr+IAo791+l9Pthc8NbnmynXhMf6hTSj62/mUqUFN2yYlBMcYQe
+WTTdM8yv84Rpaz5+0LmEb8UVYhUfVeMn+jae8RqMYGjld45VVBWRj8VTKPw0WdFKvUIzeoL8Sa3r
+fBUXjmmc1RlitkURN19aC1TF2Y6Fnkx8VOr0VtjHlSBIk3plMBo6XouwyJil0EDHy1624RrYlFQ3
+jpOv/RsXva5QjN1hlXD/BfL/hMwsH4zNE9YkJ9vHNPXP6oMHnUzxDYTeU7sgYokXzItvC+1h7CCt
+hJl6KwKxvht1BlH8gsJQhLcQyw9GJzHbEYpRjncb4GeKcTzemSDeg+zFFL9C5PGY7jRoVSILkOto
+OVsMdCWR95z5QSKHzo/JBnGsl55o07YT4PJ3vcdgwg==

@@ -7,8 +7,16 @@
     "architecture": "amd64",
     "gadget": "pc",
     "kernel": "pc-kernel",
-    "required-snaps": ["docker", "paradrop-daemon"],
-    "timestamp": "2017-04-18T15:39:44+00:00"
+    "required-snaps": [
+        "airshark",
+        "bluez",
+        "docker",
+        "paradrop-daemon",
+        "paradrop-snmpd",
+        "pulseaudio",
+        "zerotier-one"
+    ],
+    "timestamp": "2017-07-26T21:21:48+00:00"
 }
 
 
