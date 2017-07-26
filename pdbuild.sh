@@ -112,7 +112,7 @@ image() {
     fi
 
     echo "Select the paradrop-daemon snap to use:"
-    select pdsnap in paradrop/*.snap;
+    select pdsnap in paradrop-daemon paradrop/*.snap;
     do
         break
     done
