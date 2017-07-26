@@ -13,13 +13,16 @@ apps:
     command: paradrop
     daemon: simple
     plugs:
+      - docker
+      - firewall-control
+      - hardware-observe
       - network
       - network-bind
       - network-control
-      - hardware-observe
+      - process-control
+      - snapd-control
+      - shutdown
       - system-observe
-      - firewall-control
-      - docker
 
   pdlog:
     command: pdlog
