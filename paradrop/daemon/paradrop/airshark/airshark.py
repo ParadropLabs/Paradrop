@@ -5,14 +5,16 @@ from paradrop.lib.utils import pdos
 from paradrop.core.config.airshark import airshark_interface_manager
 from scanner import Scanner
 from spectrum_reader import SpectrumReader
+from analyzer import AnalyzerProtocol
 
 class AirsharkManager(object):
     def __init__(self):
         self.loop = LoopingCall(self.check_spectrum)
         self.wifi_interface = None
         self.scanner = None
+        self.analyzer_protocol = AnalyzerProtocol()
+        self.analyzer_process = None
         self.observers = []
-
         airshark_interface_manager.add_observer(self)
 
     def status(self):
@@ -45,7 +47,15 @@ class AirsharkManager(object):
                 self.scanner = Scanner(self.wifi_interface)
                 self.scanner.cmd_chanscan()
                 self.scanner.start()
-                self.loop.start(0.1)
+
+            if (self.analyzer_process is None):
+                cmd = ["airshark.analyzer", "specfile", "--spectrum-fd=3", "--output-fd=4"]
+                self.analyzer_process \
+                    = reactor.spawnProcess(self,analyzer_protocol,\
+                                           cmd[0], cmd, env=None,
+                                           childFDs={0:"w", 1:"r", 2:2, 3:"w", 4:"r"})
+
+            self.loop.start(0.2)
             return True
         else:
             return False
