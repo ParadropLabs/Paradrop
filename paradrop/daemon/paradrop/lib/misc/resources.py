@@ -84,7 +84,12 @@ def getDeviceReservations():
 
     for chute in ChuteStorage.chuteList.values():
         for iface in chute.getCache('networkInterfaces'):
-            dev = iface['device']
+            dev = iface.get('device', None)
+
+            # Device is not set in cases such as vlan interfaces.
+            if dev is None:
+                continue
+
             reservations[dev].add(chute.name, iface['netType'],
                     iface.get('mode', None))
 

@@ -216,6 +216,12 @@ def getNetworkConfigVlan(update, name, cfg, iface):
         # Generate a name for the new interface in the host.
         iface['externalIntf'] = "br-lan.{}".format(cfg['vlan_id'])
 
+        # Prevent multiple chutes from using the same VLAN.
+        reservations = resources.getInterfaceReservations()
+        if iface['externalIntf'] in reservations:
+            raise Exception("Interface {} already in use".format(
+                iface['externalIntf']))
+
     # Generate internal (in the chute) and external (in the host)
     # addresses.
     #
@@ -420,9 +426,8 @@ def getNetworkConfig(update):
             getNetworkConfigWifi(update, name, cfg, iface)
 
         elif cfg['type'] == "vlan":
-            # TODO: Check that the chute is able to claim this VLAN, ie.  no
-            # other chute or host configuration setting has already claimed it.
             getNetworkConfigVlan(update, name, cfg, iface)
+
 
         elif cfg['type'] == "lan":
             oldIface = oldInterfaces.get(name, None)
