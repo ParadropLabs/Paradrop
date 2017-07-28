@@ -74,7 +74,22 @@ def getWifiKeySettings(cfg, iface):
             raise Exception("No key field defined for WiFi encryption")
 
 
-def chooseSubnet(update, iface):
+def chooseSubnet(update, cfg, iface):
+    reservations = resources.getSubnetReservations()
+
+    # Check if the chute configuration requests a specific network.
+    #
+    # TODO: Implement a mode where a chute can request a preferred network, but
+    # do not fail if it is unavailable.
+    requested = cfg.get('ipv4_network', None)
+    if requested is not None:
+        network = ipaddress.ip_network(unicode(requested))
+        if reservations.isAvailable(network):
+            return network
+        else:
+            raise Exception("Could not assign network {}, network already in use".format(
+                requested))
+
     # Get subnet configuration settings from host configuration.
     host_config = update.new.getCache('hostConfig')
     network_pool = datastruct.getValue(host_config,
@@ -87,11 +102,9 @@ def chooseSubnet(update, iface):
         raise Exception("Router misconfigured: prefix size {} is invalid for network {}".format(
             prefix_size, network))
 
-    reservations = resources.getSubnetReservations()
-
     subnets = network.subnets(new_prefix=prefix_size)
     for subnet in subnets:
-        if subnet not in reservations:
+        if reservations.isAvailable(subnet):
             return subnet
 
     raise Exception("Could not find an available subnet")
@@ -150,7 +163,7 @@ def getNetworkConfigWifi(update, name, cfg, iface):
 
     else:
         # Claim a subnet for this interface from the pool.
-        subnet = chooseSubnet(update, iface)
+        subnet = chooseSubnet(update, cfg, iface)
 
         # Generate a name for the new interface in the host.
         iface['externalIntf'] = chooseExternalIntf(update, iface)
@@ -211,7 +224,7 @@ def getNetworkConfigVlan(update, name, cfg, iface):
 
     else:
         # Claim a subnet for this interface from the pool.
-        subnet = chooseSubnet(update, iface)
+        subnet = chooseSubnet(update, cfg, iface)
 
         # Generate a name for the new interface in the host.
         iface['externalIntf'] = "br-lan.{}".format(cfg['vlan_id'])
@@ -253,7 +266,7 @@ def getNetworkConfigLan(update, name, cfg, iface):
 
     else:
         # Claim a subnet for this interface from the pool.
-        subnet = chooseSubnet(update, iface)
+        subnet = chooseSubnet(update, cfg, iface)
         iface['externalIntf'] = iface['device']
 
     # Generate internal (in the chute) and external (in the host)

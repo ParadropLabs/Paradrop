@@ -119,8 +119,25 @@ def getInterfaceReservations():
     return reservations
 
 
+class SubnetReservationSet(object):
+    def __init__(self, reservations=[]):
+        self.reservations = []
+
+    def __len__(self):
+        return len(self.reservations)
+
+    def add(self, subnet):
+        self.reservations.append(subnet)
+
+    def isAvailable(self, subnet):
+        for res in self.reservations:
+            if res.overlaps(subnet):
+                return False
+        return True
+
+
 def getSubnetReservations():
-    reservations = set()
+    reservations = SubnetReservationSet()
 
     for chute in ChuteStorage.chuteList.values():
         for iface in chute.getCache('networkInterfaces'):
