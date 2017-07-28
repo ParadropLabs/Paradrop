@@ -92,7 +92,7 @@ class HttpServer(object):
     @app.route('/sockjs/logs/<string:name>', branch=True)
     @requires_auth
     def logs(self, request, name):
-        cors.config_cors(request)
+        #cors.config_cors(request)
         options = {
             'websocket': True,
             'heartbeat': 5,
@@ -104,7 +104,7 @@ class HttpServer(object):
     @app.route('/sockjs/status', branch=True)
     @requires_auth
     def status(self, request):
-        cors.config_cors(request)
+        #cors.config_cors(request)
         options = {
             'websocket': True,
             'heartbeat': 5,
@@ -116,7 +116,7 @@ class HttpServer(object):
     @app.route('/sockjs/airshark_spectrum', branch=True)
     @requires_auth
     def airshark(self, request):
-        cors.config_cors(request)
+        #cors.config_cors(request)
         options = {
             'websocket': True,
             'heartbeat': 5,
@@ -128,7 +128,7 @@ class HttpServer(object):
     @app.route('/sockjs/airshark_analyzer', branch=True)
     @requires_auth
     def airshark(self, request):
-        cors.config_cors(request)
+        #cors.config_cors(request)
         options = {
             'websocket': True,
             'heartbeat': 5,
