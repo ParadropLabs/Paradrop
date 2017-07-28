@@ -57,7 +57,7 @@ release() {
 
     version $1
 
-    git add paradrop/snap/snapcraft.yaml paradrop/daemon/setup.py docs/conf.py
+    git add --update
     git commit -m "Set version $1"
 
     git tag -a "v$1" -m "Release version $1"
