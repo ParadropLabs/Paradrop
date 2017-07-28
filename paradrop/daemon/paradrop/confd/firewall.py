@@ -165,7 +165,7 @@ class ConfigDefaults(ConfigObject):
                         getattr(self, path)]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
-            return commands
+        return commands
 
     def updateApply(self, new, allConfigs):
         commands = list()
