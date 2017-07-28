@@ -86,7 +86,7 @@ LOCAL_DOMAIN = "home.paradrop.org"
 #
 # hostconfig
 #
-HOST_CONFIG_FILE = "/etc/paradrop/paradrop_host_config.yaml"
+HOST_CONFIG_FILE = "/etc/paradrop/hostconfig.yaml"
 DEFAULT_HOST_CONFIG_FILE = "/etc/paradrop/hostconfig.default.yaml"
 HOST_DATA_PARTITION = "/"
 

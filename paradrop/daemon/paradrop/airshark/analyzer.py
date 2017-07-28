@@ -14,7 +14,7 @@ class AnalyzerProcessProtocol(ProcessProtocol):
         out.info('Airshark analyzer process starts')
 
     def childDataReceived(self, childFd, data):
-        pass
+        out.info(data)
 
     def processEnded(self, status):
         self.ready = False
