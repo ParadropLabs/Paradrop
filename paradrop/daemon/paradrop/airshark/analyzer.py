@@ -1,24 +1,26 @@
+from twisted.internet.protocol import ProcessProtocol
 from paradrop.base.output import out
 
-from twisted.internet.protocol import ProcessProtocol
-
 class AnalyzerProcessProtocol(ProcessProtocol):
-    def __init__(self):
+    def __init__(self, airshark_manager):
         self.ready = False
+        self.airshark_manager = airshark_manager
 
     def isRunning(self):
         return self.ready
 
     def connectionMade(self):
-        self.ready = True
         out.info('Airshark analyzer process starts')
+        self.ready = True
 
     def childDataReceived(self, childFd, data):
-        out.info(data)
+        if (childFd == 4):
+            out.info(data)
 
     def processEnded(self, status):
-        self.ready = False
         out.info('Airshark analyzer process exits')
+        self.ready = False
+        self.airshark_manager.remove_raw_data_observer(self)
 
     def feedSpectrumData(self, data):
         self.transport.writeToChild(3, data)

@@ -14,8 +14,9 @@ class AirsharkManager(object):
         self.loop = LoopingCall(self.check_spectrum)
         self.wifi_interface = None
         self.scanner = None
-        self.analyzer_process = AnalyzerProcessProtocol()
-        self.observers = []
+        self.analyzer_process = AnalyzerProcessProtocol(self)
+        self.spectrum_observers = []
+
         airshark_interface_manager.add_observer(self)
 
     def status(self):
@@ -70,10 +71,14 @@ class AirsharkManager(object):
 
     def check_spectrum(self):
         ts, data = self.scanner.spectrum_reader.read_samples()
-        if (data is not None):
-            for (tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata) in SpectrumReader.decode(data):
-                for observer in self.observers:
-                    observer.on_spectrum_data(tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata)
+        if ((data is not None) and (len(self.spectrum_observers) > 0 or self.analyzer_process.isRunning())):
+            if len(self.spectrum_observers) > 0:
+                for (tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata) in SpectrumReader.decode(data):
+                    for observer in self.spectrum_observers:
+                        observer.on_spectrum_data(tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata)
+            if self.analyzer_process.isRunning():
+                # Forward spectrum data to the airshark analyzer
+                self.analyzer_process.feedSpectrumData(data)
 
     # TODO: Not sure we need it or not
     def read_raw_samples(self):
@@ -82,10 +87,10 @@ class AirsharkManager(object):
         else:
             return None, None
 
-    def add_observer(self, observer):
-        if (self.observers.count(observer) == 0):
-            self.observers.append(observer)
+    def add_spectrum_observer(self, observer):
+        if (self.spectrum_observers.count(observer) == 0):
+            self.spectrum_observers.append(observer)
 
-    def remove_observer(self, observer):
-        if (self.observers.count(observer) == 1):
-            self.observers.remove(observer)
+    def remove_spectrum_observer(self, observer):
+        if (self.spectrum_observers.count(observer) == 1):
+            self.spectrum_observers.remove(observer)
