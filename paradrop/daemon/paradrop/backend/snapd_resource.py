@@ -7,7 +7,7 @@ from twisted.web.server import NOT_DONE_YET
 from paradrop.base import settings
 from paradrop.base.output import out
 from paradrop.lib.utils.uhttp import UHTTPConnection
-
+from . import cors
 
 class SnapdResource(Resource):
     """
@@ -53,5 +53,6 @@ class SnapdResource(Resource):
         We use a synchronous implementation of HTTP over Unix sockets, so we do
         the request in a worker thread and have it call request.finish.
         """
+        cors.config_cors(request)
         reactor.callInThread(self.do_snapd_request, request)
         return NOT_DONE_YET
