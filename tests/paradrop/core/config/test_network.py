@@ -2,6 +2,7 @@ from nose.tools import assert_raises
 from mock import MagicMock, Mock, patch
 
 from paradrop.core.config import network
+from paradrop.core.update.update_object import UpdateObject
 
 
 def test_getInterfaceDict():
@@ -34,16 +35,18 @@ def test_getNetworkConfigWifi():
 
 
 def test_getNetworkConfig():
-    update = MagicMock()
+    update = UpdateObject({'name': 'test'})
     update.old = None
-
-    update.new.getCache.return_value = {}
 
     update.new.net = {
         'wifi': {
             'dhcp': {}
         }
     }
+
+    update.new.setCache('deviceReservations', {})
+    update.new.setCache('interfaceReservations', set())
+    update.new.setCache('subnetReservations', set())
 
     # Exception: Interafce definition missing field(s)
     assert_raises(Exception, network.getNetworkConfig, update)
@@ -60,9 +63,7 @@ def test_getNetworkConfig():
     network.getNetworkConfig(update)
 
     # Should have called setCache with a list containing one interface.
-    args, kwargs = update.new.setCache.call_args
-    key, value = args
-    assert key == 'networkInterfaces'
+    value = update.new.getCache('networkInterfaces')
     assert isinstance(value, list) and len(value) == 1
 
     # Should have passed through the dhcp section.

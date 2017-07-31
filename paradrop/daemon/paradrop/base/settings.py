@@ -199,6 +199,7 @@ def updatePaths(configHomeDir, runtimeHomeDir="/var/run/paradrop"):
     mod.RUNTIME_HOME_DIR = runtimeHomeDir
     mod.FC_CHUTESTORAGE_FILE = os.path.join(mod.CONFIG_HOME_DIR, "chutes")
     mod.EXTERNAL_DATA_DIR = os.path.join(mod.CONFIG_HOME_DIR, "chute-data/{chute}/")
+    mod.EXTERNAL_SYSTEM_DIR = os.path.join(runtimeHomeDir, "system", "{chute}")
     mod.LOG_DIR = os.path.join(mod.CONFIG_HOME_DIR, "logs/")
     mod.KEY_DIR = os.path.join(mod.CONFIG_HOME_DIR, "keys/")
     mod.MISC_DIR = os.path.join(mod.CONFIG_HOME_DIR, "misc/")
@@ -228,6 +229,7 @@ def loadSettings(mode="local", slist=[]):
 
     # Adjust default paths if we are running under ubuntu snappy
     snapCommonPath = os.environ.get("SNAP_COMMON", None)
+    snapDataPath = os.environ.get("SNAP_DATA", None)
 
     if mode == "local":
         updatePaths(os.path.join(os.path.expanduser("~"), ".paradrop/"),
@@ -237,7 +239,7 @@ def loadSettings(mode="local", slist=[]):
         updatePaths("/tmp/.paradrop-test/", "/tmp/.paradrop-test/")
         mod.HOST_DATA_PARTITION = mod.CONFIG_HOME_DIR
     elif snapCommonPath is not None:
-        updatePaths(snapCommonPath)
+        updatePaths(snapCommonPath, snapDataPath)
         mod.HOST_DATA_PARTITION = "/writable"
         mod.DOCKER_BIN_DIR = "/snap/bin"
 

@@ -5,7 +5,6 @@ import itertools
 from paradrop.base.output import out
 from paradrop.base import pdutils, settings
 from paradrop.lib.utils import addresses, datastruct, uci
-from paradrop.lib.misc import resources
 
 from . import configservice, uciutils
 
@@ -74,7 +73,23 @@ def getWifiKeySettings(cfg, iface):
             raise Exception("No key field defined for WiFi encryption")
 
 
-def chooseSubnet(update, iface):
+def chooseSubnet(update, cfg, iface):
+    reservations = update.new.getCache('subnetReservations')
+
+    # Check if the chute configuration requests a specific network.
+    #
+    # TODO: Implement a mode where a chute can request a preferred network, but
+    # do not fail if it is unavailable.
+    requested = cfg.get('ipv4_network', None)
+    if requested is not None:
+        network = ipaddress.ip_network(unicode(requested))
+        if network in reservations:
+            raise Exception("Could not assign network {}, network already in use".format(
+                requested))
+        else:
+            reservations.add(network)
+            return network
+
     # Get subnet configuration settings from host configuration.
     host_config = update.new.getCache('hostConfig')
     network_pool = datastruct.getValue(host_config,
@@ -87,11 +102,10 @@ def chooseSubnet(update, iface):
         raise Exception("Router misconfigured: prefix size {} is invalid for network {}".format(
             prefix_size, network))
 
-    reservations = resources.getSubnetReservations()
-
     subnets = network.subnets(new_prefix=prefix_size)
     for subnet in subnets:
         if subnet not in reservations:
+            reservations.add(subnet)
             return subnet
 
     raise Exception("Could not find an available subnet")
@@ -113,12 +127,13 @@ def chooseExternalIntf(update, iface):
         name = "{}:{}".format(update.new.name, iface['internalIntf'])
         base = hash(name)
 
-        reservations = resources.getInterfaceReservations()
+        reservations = update.new.getCache('interfaceReservations')
 
         for i in range(MAX_INTERFACE_NUMBERS):
             number = (base + i) % MAX_INTERFACE_NUMBERS
             intf = "{}{:04x}".format(prefix, number)
             if intf not in reservations:
+                reservations.add(intf)
                 return intf
 
         raise Exception("Could not find an available interface name")
@@ -143,20 +158,15 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     # Make a dictionary of old interfaces.  Any new interfaces that are
     # identical to an old one do not need to be changed.
     oldInterfaces = getInterfaceDict(update.old)
-    if name in oldInterfaces:
-        oldIface = oldInterfaces[iface['name']]
-        subnet = oldIface['subnet']
-        iface['externalIntf'] = oldIface['externalIntf']
 
-    else:
-        # Claim a subnet for this interface from the pool.
-        subnet = chooseSubnet(update, iface)
+    # Claim a subnet for this interface from the pool.
+    subnet = chooseSubnet(update, cfg, iface)
 
-        # Generate a name for the new interface in the host.
-        iface['externalIntf'] = chooseExternalIntf(update, iface)
-        if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
-            out.warn("Interface name ({}) is too long\n".format(iface['externalIntf']))
-            raise Exception("Interface name is too long")
+    # Generate a name for the new interface in the host.
+    iface['externalIntf'] = chooseExternalIntf(update, iface)
+    if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
+        out.warn("Interface name ({}) is too long\n".format(iface['externalIntf']))
+        raise Exception("Interface name is too long")
 
     # Generate internal (in the chute) and external (in the host)
     # addresses.
@@ -201,20 +211,18 @@ def getNetworkConfigVlan(update, name, cfg, iface):
     if res:
         raise Exception("Interface definition missing field(s)")
 
-    # Make a dictionary of old interfaces.  Any new interfaces that are
-    # identical to an old one do not need to be changed.
-    oldInterfaces = getInterfaceDict(update.old)
-    if name in oldInterfaces:
-        oldIface = oldInterfaces[iface['name']]
-        subnet = oldIface['subnet']
-        iface['externalIntf'] = oldIface['externalIntf']
+    # Claim a subnet for this interface from the pool.
+    subnet = chooseSubnet(update, cfg, iface)
 
-    else:
-        # Claim a subnet for this interface from the pool.
-        subnet = chooseSubnet(update, iface)
+    # Generate a name for the new interface in the host.
+    iface['externalIntf'] = "br-lan.{}".format(cfg['vlan_id'])
 
-        # Generate a name for the new interface in the host.
-        iface['externalIntf'] = "br-lan.{}".format(cfg['vlan_id'])
+    # Prevent multiple chutes from using the same VLAN.
+    reservations = update.new.getCache('interfaceReservations')
+    if iface['externalIntf'] in reservations:
+        raise Exception("Interface {} already in use".format(
+            iface['externalIntf']))
+    reservations.add(iface['externalIntf'])
 
     # Generate internal (in the chute) and external (in the host)
     # addresses.
@@ -237,18 +245,9 @@ def getNetworkConfigVlan(update, name, cfg, iface):
 
 
 def getNetworkConfigLan(update, name, cfg, iface):
-    # Make a dictionary of old interfaces.  Any new interfaces that are
-    # identical to an old one do not need to be changed.
-    oldInterfaces = getInterfaceDict(update.old)
-    if name in oldInterfaces:
-        oldIface = oldInterfaces[iface['name']]
-        subnet = oldIface['subnet']
-        iface['externalIntf'] = oldIface['externalIntf']
-
-    else:
-        # Claim a subnet for this interface from the pool.
-        subnet = chooseSubnet(update, iface)
-        iface['externalIntf'] = iface['device']
+    # Claim a subnet for this interface from the pool.
+    subnet = chooseSubnet(update, cfg, iface)
+    iface['externalIntf'] = iface['device']
 
     # Generate internal (in the chute) and external (in the host)
     # addresses.
@@ -270,7 +269,7 @@ def getNetworkConfigLan(update, name, cfg, iface):
             iface['internalIpaddr'], subnet.prefixlen)
 
 
-def fulfillDeviceRequest(cfg, devices):
+def fulfillDeviceRequest(update, cfg, devices):
     """
     Find a physical device that matches the requested device type.
 
@@ -282,7 +281,7 @@ def fulfillDeviceRequest(cfg, devices):
     # Get list of devices by requested type.
     devlist = devices.get(dtype, [])
 
-    reservations = resources.getDeviceReservations()
+    reservations = update.new.getCache('deviceReservations')
 
     bestDevice = None
     bestScore = -1
@@ -332,6 +331,7 @@ def fulfillDeviceRequest(cfg, devices):
 
     if bestDevice is not None:
         out.info("Assign device {} for requested type {}".format(bestDevice['name'], dtype))
+        reservations[bestDevice['name']].add(update.new.name, dtype, mode)
         return bestDevice
 
     raise Exception("Could not satisfy requirement for device of type {}.".format(dtype))
@@ -404,33 +404,22 @@ def getNetworkConfig(update):
         }
 
         if cfg['type'] == "wifi":
-            oldIface = oldInterfaces.get(name, None)
-            if oldIface is None or oldIface['netType'] != iface['netType']:
-                # Try to find a physical device of the requested type.
-                #
-                # Note: we try this first because it can fail, and then we will not try
-                # to allocate any resources for it.
-                device = fulfillDeviceRequest(cfg, devices)
-                iface['device'] = device['name']
-                iface['phy'] = device['phy']
-            else:
-                iface['device'] = oldIface['device']
-                iface['phy'] = oldIface['phy']
+            # Try to find a physical device of the requested type.
+            #
+            # Note: we try this first because it can fail, and then we will not try
+            # to allocate any resources for it.
+            device = fulfillDeviceRequest(update, cfg, devices)
+            iface['device'] = device['name']
+            iface['phy'] = device['phy']
 
             getNetworkConfigWifi(update, name, cfg, iface)
 
         elif cfg['type'] == "vlan":
-            # TODO: Check that the chute is able to claim this VLAN, ie.  no
-            # other chute or host configuration setting has already claimed it.
             getNetworkConfigVlan(update, name, cfg, iface)
 
         elif cfg['type'] == "lan":
-            oldIface = oldInterfaces.get(name, None)
-            if oldIface is None or oldIface['netType'] != iface['netType']:
-                device = fulfillDeviceRequest(cfg, devices)
-                iface['device'] = device['name']
-            else:
-                iface['device'] = oldIface['device']
+            device = fulfillDeviceRequest(update, cfg, devices)
+            iface['device'] = device['name']
 
             getNetworkConfigLan(update, name, cfg, iface)
 
@@ -494,6 +483,8 @@ def getOSNetworkConfig(update):
             }
 
         else:
+            # TODO: Check if configured IP addresses conflict with reservations
+            # by chutes and fail a sethostconfig operation in that case.
             options = {
                 'proto': 'static',
                 'ipaddr': iface['externalIpaddr'],

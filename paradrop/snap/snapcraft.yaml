@@ -5,7 +5,7 @@ description: |
   The ParaDrop deamon manages resources in the Wi-Fi routers and provides a virtualized environment for chutes.
   It also expose local environment information for chutes.
 
-grade: devel
+grade: stable
 confinement: devmode
 
 apps:
@@ -13,13 +13,16 @@ apps:
     command: paradrop
     daemon: simple
     plugs:
+      - docker
+      - firewall-control
+      - hardware-observe
       - network
       - network-bind
       - network-control
-      - hardware-observe
+      - process-control
+      - snapd-control
+      - shutdown
       - system-observe
-      - firewall-control
-      - docker
 
   pdlog:
     command: pdlog

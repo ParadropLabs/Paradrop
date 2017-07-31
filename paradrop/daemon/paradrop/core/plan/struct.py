@@ -4,7 +4,7 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.core.config import devices, network, hostconfig, osconfig, wifi
+from paradrop.core.config import devices, network, hostconfig, osconfig, reservations, wifi
 
 from . import plangraph
 
@@ -28,6 +28,9 @@ def generatePlans(update):
     update.plans.addPlans(plangraph.STRUCT_GET_SYSTEM_DEVICES,
                           (devices.getSystemDevices, ),
                           (network.abortNetworkConfig, ))
+
+    update.plans.addPlans(plangraph.STRUCT_GET_RESERVATIONS,
+                          (reservations.getReservations, ))
 
     update.plans.addPlans(plangraph.STRUCT_GET_HOST_CONFIG,
                           (hostconfig.getHostConfig, ))

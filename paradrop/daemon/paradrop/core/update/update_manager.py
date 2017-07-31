@@ -79,12 +79,12 @@ class UpdateManager:
 
         return d
 
-    def _make_hostconfig_update(self):
+    def _make_router_update(self, updateType):
         """
-        Makes an update object for initializing hostconfig.
+        Make a ROUTER class update object.
         """
         return dict(updateClass='ROUTER',
-                    updateType='inithostconfig',
+                    updateType=updateType,
                     name=settings.RESERVED_CHUTE,
                     tok=timeint())
 
@@ -118,9 +118,8 @@ class UpdateManager:
         # chutes restart before new ones are processed
         for updateObj in startQueue:
             self.updateQueue.insert(0, updateObj)
-        # Finally, insert an update that initializes the hostconfig.
-        # This should happen before everything else.
-        self.updateQueue.insert(0, self._make_hostconfig_update())
+        self.updateQueue.insert(0, self._make_router_update("inithostconfig"))
+        self.updateQueue.insert(0, self._make_router_update("prehostconfig"))
         self.updateLock.release()
 
         # Always perform this work

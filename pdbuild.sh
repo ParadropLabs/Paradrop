@@ -28,6 +28,7 @@ version() {
         majmin=$(echo $1 | grep -oE "[0-9]+\.[0-9]+")
         sed -i "s/^version:.*/version: $1/" -i paradrop/snap/snapcraft.yaml
         sed -i "s/version=.*,/version='$1',/" -i paradrop/daemon/setup.py
+        sed -i "s/version=.*,/version='$1',/" -i tools/setup.py
         sed -i "s/version =.*/version = \"$majmin\"/" -i docs/conf.py
         sed -i "s/release =.*/release = \"$1\"/" -i docs/conf.py
     else
@@ -56,7 +57,7 @@ release() {
 
     version $1
 
-    git add paradrop/snap/snapcraft.yaml paradrop/daemon/setup.py docs/conf.py
+    git add --update
     git commit -m "Set version $1"
 
     git tag -a "v$1" -m "Release version $1"
@@ -110,25 +111,36 @@ image() {
         exit 1
     fi
 
-    echo "Select the paradrop-daemon snap to use:"
-    select pdsnap in paradrop/*.snap;
+    echo "Select the paradrop-daemon snap to use (1 for snap store):"
+    select pdsnap in paradrop-daemon paradrop/*.snap;
+    do
+        break
+    done
+
+    # Recommend stable if using local paradrop-daemon snap file.  Recommend
+    # beta if using the snap store because we are not able to release
+    # paradrop-daemon to stable channel with devmode set.  If ubuntu-image
+    # offers a way to install some snaps from the stable channel and others
+    # from beta, we can revise this process.  As of right now, it fetches all
+    # store snaps from the one specified channel.
+    recommended="stable"
+    if [ "$pdsnap" = "paradrop-daemon" ]; then
+        recommended="beta"
+    fi
+
+    echo "Select the channel to use from snap store (Recommended: $recommended):"
+    select channel in stable candidate beta edge;
     do
         break
     done
 
     sudo ubuntu-image -o $image \
-        --channel stable \
-        --extra-snaps airshark \
-        --extra-snaps bluez \
-        --extra-snaps docker \
-        --extra-snaps paradrop-snmpd \
-        --extra-snaps $pdsnap \
-        --extra-snaps pulseaudio \
-        --extra-snaps zerotier-one \
+        --channel $channel \
+        --extra-snaps "$pdsnap" \
         --image-size 4G \
-        assertions/pc-amd64.model
+        assertions/paradrop-amd64.model
 
-    xz --compress $image
+    xz --force --compress $image
     echo "Created image $image.xz"
 }
 

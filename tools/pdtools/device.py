@@ -162,6 +162,20 @@ def networks(ctx):
     router_request("GET", url)
 
 
+@chute.command()
+@click.pass_context
+def shell(ctx):
+    """
+    Open a shell inside a chute.
+
+    This requires you to have enabled SSH access to the device and installed
+    bash inside your chute.
+    """
+    cmd = ["ssh", "-t", "paradrop@{}".format(ctx.obj['address']), "sudo", "docker",
+            "exec", "-it", ctx.obj['chute'], "/bin/bash"]
+    os.spawnvpe(os.P_WAIT, "ssh", cmd, os.environ)
+
+
 @chute.group()
 @click.pass_context
 @click.argument('network')
@@ -395,3 +409,27 @@ def reload(ctx):
     url = ctx.obj['base_url'] + "/config/pdconf"
     res = router_request("PUT", url, dump=False)
     print_pdconf(res)
+
+
+@device.group()
+@click.pass_context
+def snapd(ctx):
+    """
+    Access the snapd subsystem.
+    """
+    ctx.obj['snapd_url'] = "http://{}/snapd".format(ctx.obj['address'])
+
+
+@snapd.command()
+@click.pass_context
+@click.argument('email')
+def createUser(ctx, email):
+    """
+    Create user account.
+    """
+    url = ctx.obj['snapd_url'] + "/v2/create-user"
+    data = {
+        'email': email,
+        'sudoer': True
+    }
+    router_request("POST", url, json=data)

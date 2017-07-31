@@ -203,6 +203,13 @@ def sendStateReport():
 
 
 def sendTelemetryReport():
+    # Do not try to send telemetry report if not provisioned.
+    if not nexus.core.provisioned():
+        if not getattr(sendTelemetryReport, 'provisionWarningShown', False):
+            out.warn("Unable to send telemetry report: not provisioned")
+            sendTelemetryReport.provisionWarningShown = True
+        return None
+
     builder = TelemetryReportBuilder()
     report = builder.prepare()
 

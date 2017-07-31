@@ -27,6 +27,7 @@ from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
 from .airshark_sockjs import AirsharkSpectrumSockJSFactory, AirsharkAnalyzerSockJSFactory
 from .password_manager import PasswordManager
+from .snapd_resource import SnapdResource
 from . import cors
 
 class HttpServer(object):
@@ -75,6 +76,12 @@ class HttpServer(object):
     @requires_auth
     def api_airshark(self, request):
         return AirsharkApi(self.airshark_manager).routes.resource()
+
+
+    @app.route('/snapd/', branch=True)
+    @requires_auth
+    def snapd(self, request):
+        return SnapdResource()
 
 
     '''
