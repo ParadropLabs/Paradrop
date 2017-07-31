@@ -9,6 +9,7 @@ from pdmock import MockChute, MockUpdate
 
 from paradrop.base import settings
 from paradrop.lib.utils import pdos
+from paradrop.core.update.update_object import UpdateObject
 
 
 def fake_interface_list():
@@ -366,9 +367,11 @@ def test_get_network_config_wifi():
     from paradrop.core.config.network import getNetworkConfigWifi
 
     # Set up enough fake data to make call.
-    update = MagicMock()
+    update = UpdateObject({'name': 'test'})
     update.old = None
-    update.new.getCache.return_value = {}
+
+    update.new.setCache('interfaceReservations', set())
+    update.new.setCache('subnetReservations', set())
 
     cfg = dict()
     cfg['type'] = "wifi"
@@ -390,6 +393,7 @@ def test_get_network_config():
     Test generating network configuration for a chute update.
     """
     from paradrop.core.config import network
+    from paradrop.core.config.reservations import DeviceReservations
 
     # Test normal case where key is defined and encryption is implied.
     iface = dict()
@@ -431,6 +435,11 @@ def test_get_network_config():
         'wifi': [{'name': 'wlan0', 'mac': '00:11:22:33:44:55', 'phy': 'phy0'}]
     }
     update.new.setCache("networkDevices", devices)
+    update.new.setCache("deviceReservations", {
+        "wlan0": DeviceReservations()
+    })
+    update.new.setCache("subnetReservations", set())
+    update.new.setCache("interfaceReservations", set())
 
     # Missing 'ssid' field should raise exception.
     assert_raises(Exception, network.getNetworkConfig, update)

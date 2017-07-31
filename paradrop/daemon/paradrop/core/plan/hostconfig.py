@@ -10,7 +10,7 @@ only need to do a subset of the operations.
 """
 
 from paradrop.base.output import out
-from paradrop.core.config import airshark, devices, haproxy, network, configservice, hostconfig, osconfig, services, zerotier
+from paradrop.core.config import airshark, devices, haproxy, network, configservice, hostconfig, osconfig, reservations, services, zerotier
 
 from . import plangraph
 
@@ -43,6 +43,9 @@ def generatePlans(update):
                           (network.abortNetworkConfig, ))
     update.plans.addPlans(plangraph.CHECK_SYSTEM_DEVICES,
                           (devices.checkSystemDevices, ))
+
+    update.plans.addPlans(plangraph.STRUCT_GET_RESERVATIONS,
+                          (reservations.getReservations, ))
 
     update.plans.addPlans(plangraph.STRUCT_GET_HOST_CONFIG,
                           (hostconfig.getHostConfig, ))
