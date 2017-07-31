@@ -16,6 +16,7 @@ class AirsharkManager(object):
         self.scanner = None
         self.analyzer_process = AnalyzerProcessProtocol(self)
         self.spectrum_observers = []
+        self.analyzer_observers = []
 
         airshark_interface_manager.add_observer(self)
 
@@ -50,7 +51,7 @@ class AirsharkManager(object):
         self.scanner.start()
 
         if not self.analyzer_process.isRunning():
-            out.info("Launch airshark analyzer")
+            out.info("Launching airshark analyzer")
             cmd = [settings.AIRSHARK_INSTALL_DIR + "/analyzer", settings.AIRSHARK_INSTALL_DIR + "/specshape/specshape_v1_722N_5m.txt", "--spectrum-fd=3", "--output-fd=4"]
             spawnProcess(self.analyzer_process,\
                          cmd[0], cmd, env=None, \
@@ -87,6 +88,10 @@ class AirsharkManager(object):
         else:
             return None, None
 
+    def on_analyzer_message(self, message):
+        for observer in self.analyzer_observers:
+            observer.on_analyzer_message(message)
+
     def add_spectrum_observer(self, observer):
         if (self.spectrum_observers.count(observer) == 0):
             self.spectrum_observers.append(observer)
@@ -94,3 +99,11 @@ class AirsharkManager(object):
     def remove_spectrum_observer(self, observer):
         if (self.spectrum_observers.count(observer) == 1):
             self.spectrum_observers.remove(observer)
+
+    def add_analyzer_observer(self, observer):
+        if (self.analyzer_observers.count(observer) == 0):
+            self.analyzer_observers.append(observer)
+
+    def remove_analyzer_observer(self, observer):
+        if (self.analyzer_observers.count(observer) == 1):
+            self.analyzer_observers.remove(observer)

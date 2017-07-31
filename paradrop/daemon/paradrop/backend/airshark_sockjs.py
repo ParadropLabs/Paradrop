@@ -12,7 +12,7 @@ class AirsharkSpectrumSockJSProtocol(Protocol):
         if not hasattr(self.factory, "transports"):
             self.factory.transports = set()
         self.factory.transports.add(self.transport)
-        out.info('sockjs /airshark_spectrum connected')
+        out.info('sockjs /airshark/spectrum connected')
         self.factory.airshark_manager.add_spectrum_observer(self)
 
     def on_spectrum_data(self, tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, data):
@@ -30,7 +30,7 @@ class AirsharkSpectrumSockJSProtocol(Protocol):
 
     def connectionLost(self, reason):
         self.factory.transports.remove(self.transport)
-        out.info('sockjs /airshark_spectrum disconnected')
+        out.info('sockjs /airshark/spectrum disconnected')
         self.factory.airshark_manager.remove_spectrum_observer(self)
 
 
@@ -51,18 +51,17 @@ class AirsharkAnalyzerSockJSProtocol(Protocol):
         if not hasattr(self.factory, "transports"):
             self.factory.transports = set()
         self.factory.transports.add(self.transport)
-        out.info('sockjs /airshark_analyzer connected')
-        self.factory.airshark_manager.add_spectrum_observer(self)
+        out.info('sockjs /airshark/analyzer connected')
+        self.factory.airshark_manager.add_analyzer_observer(self)
 
-    def on_airshark_data(self, data):
-        self.transport.write(json.dumps({
-            'data': data
-            }))
+    def on_analyzer_message(self, message):
+        # The message is in json format
+        self.transport.write(message)
 
     def connectionLost(self, reason):
         self.factory.transports.remove(self.transport)
-        out.info('sockjs /airshark_analyzer disconnected')
-        self.factory.airshark_manager.remove_spectrum_observer(self)
+        out.info('sockjs /airshark/analyzer disconnected')
+        self.factory.airshark_manager.remove_analyzer_observer(self)
 
 
 class AirsharkAnalyzerSockJSFactory(Factory):

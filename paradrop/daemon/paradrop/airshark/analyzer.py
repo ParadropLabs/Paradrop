@@ -15,7 +15,12 @@ class AnalyzerProcessProtocol(ProcessProtocol):
 
     def childDataReceived(self, childFd, data):
         if (childFd == 4):
+            # Detection result of airshark analyzer
             out.info(data)
+            self.airshark_manager.on_analyzer_message(data)
+        elif (childFd == 1 or childFd == 2):
+            # stdout/stderr of airshark analyzer
+            out.info('Airshark: ========\n%s==================' % data)
 
     def processEnded(self, status):
         out.info('Airshark analyzer process exits')

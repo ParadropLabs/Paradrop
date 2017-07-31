@@ -113,21 +113,9 @@ class HttpServer(object):
         return SockJSResource(StatusSockJSFactory(self.system_status), options)
 
 
-    @app.route('/sockjs/airshark_spectrum', branch=True)
+    @app.route('/sockjs/airshark/analyzer', branch=True)
     @requires_auth
-    def airshark(self, request):
-        #cors.config_cors(request)
-        options = {
-            'websocket': True,
-            'heartbeat': 5,
-            'timeout': 2,
-        }
-        return SockJSResource(AirsharkSpectrumSockJSFactory(self.airshark_manager), options)
-
-
-    @app.route('/sockjs/airshark_analyzer', branch=True)
-    @requires_auth
-    def airshark(self, request):
+    def airshark_analyzer(self, request):
         #cors.config_cors(request)
         options = {
             'websocket': True,
@@ -135,6 +123,18 @@ class HttpServer(object):
             'timeout': 2,
         }
         return SockJSResource(AirsharkAnalyzerSockJSFactory(self.airshark_manager), options)
+
+
+    @app.route('/sockjs/airshark/spectrum', branch=True)
+    @requires_auth
+    def airshark_spectrum(self, request):
+        #cors.config_cors(request)
+        options = {
+            'websocket': True,
+            'heartbeat': 5,
+            'timeout': 2,
+        }
+        return SockJSResource(AirsharkSpectrumSockJSFactory(self.airshark_manager), options)
 
 
     @app.route('/', branch=True)
