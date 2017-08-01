@@ -6532,6 +6532,21 @@ pre {
 .airshark-waterfall-axis-label {
   fill: white;
   font-size: 14px; }
+.airshark-event {
+  word-break: break-all;
+  word-wrap: break-word;
+  background: #111;
+  color: #fff;
+  font-family: "Menlo", "Liberation Mono", "Consolas", "DejaVu Sans Mono", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: auto;
+  overflow-y: hidden;
+  font-size: 12px; }
+
+.event-list {
+  padding-left: 0;
+  border-top: thin solid lightgrey; }
 .jumbotron {
   text-align: center;
   border-bottom: 1px solid #e5e5e5;
