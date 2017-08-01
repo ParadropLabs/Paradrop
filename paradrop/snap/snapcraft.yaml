@@ -20,7 +20,6 @@ apps:
       - network-bind
       - network-control
       - process-control
-      - snapd-control
       - shutdown
       - system-observe
 
