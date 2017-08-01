@@ -139,7 +139,7 @@ image() {
     # The ubuntu-image command only takes a single channel argument and applies
     # it to all snaps.  If we we want to use a different channel for
     # paradrop-daemon, we can mount the image and modify seed.yaml.
-    if [ "$channel" != "$other_channel"]; then
+    if [ "$channel" != "$other_channel" ]; then
         sudo mkdir -p /mnt/paradrop-amd64
         sudo mount -o loop,offset=$((106496*512)) $image /mnt/paradrop-amd64
         sudo python utils/set_seed_channel.py /mnt/paradrop-amd64/system-data/var/lib/snapd/seed/seed.yaml paradrop-daemon $channel
