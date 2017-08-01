@@ -118,31 +118,37 @@ image() {
         break
     done
 
-    # Recommend stable if using local paradrop-daemon snap file.  Recommend
-    # beta if using the snap store because we are not able to release
-    # paradrop-daemon to stable channel with devmode set.  If ubuntu-image
-    # offers a way to install some snaps from the stable channel and others
-    # from beta, we can revise this process.  As of right now, it fetches all
-    # store snaps from the one specified channel.
-    recommended="stable"
-    if [ "$pdsnap" = "paradrop-daemon" ]; then
-        recommended="beta"
-    fi
-
-    echo "Select the channel to use from snap store (Recommended: $recommended):"
+    echo "Select the channel to track for paradrop-daemon:"
     select channel in stable candidate beta edge;
     do
         break
     done
 
+    echo "Select the channel to track for all other snaps (recommended: stable):"
+    select other_channel in stable candidate beta edge;
+    do
+        break
+    done
+
     sudo ubuntu-image -o $image \
-        --channel $channel \
+        --channel "$other_channel" \
         --extra-snaps "$pdsnap" \
         --image-size 4G \
         assertions/paradrop-amd64.model
 
-    xz --force --compress $image
-    echo "Created image $image.xz"
+    # The ubuntu-image command only takes a single channel argument and applies
+    # it to all snaps.  If we we want to use a different channel for
+    # paradrop-daemon, we can mount the image and modify seed.yaml.
+    if [ "$channel" != "$other_channel"]; then
+        sudo mkdir -p /mnt/paradrop-amd64
+        sudo mount -o loop,offset=$((106496*512)) $image /mnt/paradrop-amd64
+        sudo python utils/set_seed_channel.py /mnt/paradrop-amd64/system-data/var/lib/snapd/seed/seed.yaml paradrop-daemon $channel
+        sudo umount /mnt/paradrop-amd64
+        sudo rmdir /mnt/paradrop-amd64
+    fi
+
+    echo "Created image $image, compressing..."
+    xz --force --keep --compress $image
 }
 
 test() {
