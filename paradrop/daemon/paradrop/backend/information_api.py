@@ -3,6 +3,7 @@ Provide information of the router, e.g. board version, CPU information,
 memory size, disk size.
 '''
 import json
+import os
 import platform
 from psutil import virtual_memory
 from klein import Klein
@@ -68,6 +69,18 @@ class InformationApi:
         data['pdVersion'] = self.pdVersion
         data['uptime'] = self.uptime
         return json.dumps(data)
+
+    @routes.route('/environment')
+    def get_environment(self, request):
+        """
+        Get environment variables.
+
+        This is useful for development and debugging purposes (e.g. see how
+        PATH is set on Paradrop when running in different contexts).
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+        return json.dumps(os.environ.data)
 
     @routes.route('/telemetry')
     def get_telemetry(self, request):
