@@ -53,10 +53,6 @@ def oscall(cmd, get=False):
         return None
 
 
-def syncFS():
-    oscall('sync')
-
-
 def getFileType(f):
     if not exists(f):
         return None

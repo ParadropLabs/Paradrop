@@ -16,11 +16,14 @@ apps:
       - docker
       - firewall-control
       - hardware-observe
+      - kernel-module-control
       - network
       - network-bind
       - network-control
+      - ppp
       - process-control
       - shutdown
+      - snapd-control
       - system-observe
 
   pdlog:
@@ -52,15 +55,19 @@ parts:
     stage-packages:
       - dnsmasq
       - haproxy
-    organize:
-      usr/sbin: bin
-      usr/lib: lib
+      - iw
+      - kmod
+      - systemd
     filesets:
       binaries:
-        - bin/dnsmasq
-        - bin/haproxy
+        - bin/kmod
+        - bin/systemctl
+        - sbin/iw
+        - sbin/modprobe
+        - usr/sbin/dnsmasq
+        - usr/sbin/haproxy
       libraries:
-        - lib/x86_64-linux-gnu/liblua5.3.so.*
+        - usr/lib/x86_64-linux-gnu/liblua5.3.so.*
     stage:
       - $binaries
       - $libraries

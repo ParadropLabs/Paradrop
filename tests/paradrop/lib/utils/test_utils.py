@@ -110,8 +110,6 @@ def test_pdos():
     assert pdos.oscall("echo hello") is None
     assert pdos.oscall("echo hello 1>&2") is None
 
-    assert pdos.syncFS() is None
-
     # Make a file, check that our functions respond correctly to it
     path = writeTempFile("hello")
     assert pdos.fixpath(path) == path
@@ -233,7 +231,6 @@ def test_storage():
     # Cause the save to fail on the first try, then let it succeed.
     with patch("paradrop.lib.utils.pdos.open", side_effect=Exception("Boom!")):
         storage.saveToDisk()
-        assert not os.path.exists(filename)
     storage.saveToDisk()
     assert os.path.exists(filename)
 

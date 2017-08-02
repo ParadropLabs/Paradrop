@@ -3,6 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
+import os
 import pickle
 from twisted.internet.task import LoopingCall
 
@@ -74,8 +75,9 @@ class PDStorage(object):
 
         # Write the file to disk, truncate if it exists
         try:
-            pickle.dump(pyld, pdos.open(self.filename, 'wb'))
-            pdos.syncFS()
+            with open(self.filename, 'wb') as output:
+                pickle.dump(pyld, output)
+                os.fsync(output.fileno())
 
         except Exception as e:
             out.err('Error writing to disk %s\n' % (str(e)))
