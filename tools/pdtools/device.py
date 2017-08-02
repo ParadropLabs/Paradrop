@@ -433,3 +433,33 @@ def createUser(ctx, email):
         'sudoer': True
     }
     router_request("POST", url, json=data)
+
+
+@snapd.command()
+@click.pass_context
+def connectAll(ctx):
+    """
+    Connect all interfaces.
+    """
+    url = ctx.obj['snapd_url'] + "/v2/interfaces"
+    res = router_request("GET", url, dump=False)
+    data = res.json()
+    for item in data['result']['plugs']:
+        connections = item.get('connections', [])
+        if len(connections) > 0:
+            continue
+
+        if item['interface'] == 'docker':
+            # The docker slot needs to be treated differently from core slots.
+            slot = {'snap': 'docker'}
+        else:
+            # Most slots are provided by the core snap and specified this way.
+            slot = {'slot': item['interface']}
+
+        req = {
+            'action': 'connect',
+            'slots': [slot],
+            'plugs': [{'snap': item['snap'], 'plug': item['plug']}]
+        }
+        print("snap connect {snap}:{plug} {interface}".format(**item))
+        router_request("POST", url, json=req, dump=False)
