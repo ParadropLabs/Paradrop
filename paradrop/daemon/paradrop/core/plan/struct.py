@@ -48,9 +48,6 @@ def generatePlans(update):
     # Setup changes to push into OS config files (key: 'osWirelessConfig')
     update.plans.addPlans(plangraph.STRUCT_GET_OS_WIRELESS, (wifi.getOSWirelessConfig, ))
 
-    # Setup changes into virt configuration file (key: 'virtNetworkConfig')
-    update.plans.addPlans(plangraph.STRUCT_GET_VIRT_NETWORK, (network.getVirtNetworkConfig, ))
-
     # Changes for networking
     todoPlan = (network.setOSNetworkConfig, )
     abtPlan = (osconfig.revertConfig, 'network')

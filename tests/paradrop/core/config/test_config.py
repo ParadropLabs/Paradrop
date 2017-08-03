@@ -453,7 +453,6 @@ def test_get_network_config():
     # Try the normal sequence of steps for installing a new chute.
     network.getNetworkConfig(update)
     network.getOSNetworkConfig(update)
-    network.getVirtNetworkConfig(update)
     network.setOSNetworkConfig(update)
     network.abortNetworkConfig(update)
 

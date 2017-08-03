@@ -518,11 +518,3 @@ def setOSNetworkConfig(update):
     changed = uciutils.setConfig(update.new, update.old,
                                  cacheKeys=['osNetworkConfig'],
                                  filepath=uci.getSystemPath("network"))
-
-
-def getVirtNetworkConfig(update):
-    out.warn('TODO implement me\n')
-    # old code under lib.internal.chs.chutelxc same function name
-    # Takes any network specific config and sets up the cache:virtNetworkConfig
-    # this would be the place to put anything into HostConfig or the dockerfile
-    # we need
