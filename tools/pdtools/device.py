@@ -449,9 +449,11 @@ def connectAll(ctx):
         if len(connections) > 0:
             continue
 
-        if item['interface'] == 'docker':
+        if item['plug'] == 'docker':
             # The docker slot needs to be treated differently from core slots.
             slot = {'snap': 'docker'}
+        elif item['plug'] == 'zerotier-control':
+            slot = {'snap': 'zerotier-one'}
         else:
             # Most slots are provided by the core snap and specified this way.
             slot = {'slot': item['interface']}

@@ -8,11 +8,17 @@ description: |
 grade: stable
 confinement: devmode
 
+plugs:
+  zerotier-control:
+    interface: content
+    target: $SNAP_COMMON
+
 apps:
   paradrop:
     command: paradrop
     daemon: simple
     plugs:
+      - account-control
       - docker
       - firewall-control
       - hardware-observe

@@ -1,5 +1,5 @@
 name: zerotier-one
-version: '1.1.12'
+version: '1.2.4'
 summary: ZeroTier is a software-based managed Ethernet switch for planet Earth.
 description: |
   ZeroTier is a software-based managed Ethernet switch for planet Earth.
@@ -13,6 +13,12 @@ description: |
 confinement: strict
 grade: stable
 
+slots:
+  zerotier-control:
+    interface: content
+    read:
+      - $SNAP_COMMON
+
 apps:
   zerotier-one:
     command: zerotier-one
@@ -25,7 +31,7 @@ apps:
 parts:
   zerotier-one:
     plugin: make
-    source: https://github.com/zerotier/ZeroTierOne/archive/1.1.12.tar.gz
+    source: https://github.com/zerotier/ZeroTierOne/archive/1.2.4.tar.gz
     source-type: tar
     build-packages:
       - build-essential
