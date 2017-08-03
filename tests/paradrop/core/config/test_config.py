@@ -466,7 +466,6 @@ def test_get_network_config():
     network.reclaimNetworkResources(update.old)
     network.getNetworkConfig(update)
     network.getOSNetworkConfig(update)
-    network.getVirtNetworkConfig(update)
     network.setOSNetworkConfig(update)
 
     # Try asking for a new chute without any interfaces.
@@ -476,7 +475,6 @@ def test_get_network_config():
     # not in new.
     network.getNetworkConfig(update)
     network.getOSNetworkConfig(update)
-    network.getVirtNetworkConfig(update)
     network.setOSNetworkConfig(update)
     network.abortNetworkConfig(update)
 
