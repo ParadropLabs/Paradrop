@@ -15,6 +15,8 @@ def configure(update):
 
     enabled = datastruct.getValue(hostConfig, "zerotier.enabled", False)
     if enabled:
+        # TODO: Fix race conditions!  installSnap, updateSnap, and connect are
+        # all asynchronous, so they need to be chained properly.
         if not os.path.exists("/snap/zerotier-one"):
             snapd.installSnap('zerotier-one')
 
@@ -65,4 +67,4 @@ def join_network(nwid):
     conn.request("POST", path, body, headers)
     res = conn.getresponse()
     data = json.loads(res.read())
-    return data['result']
+    return data
