@@ -1,41 +1,38 @@
+import httplib
+import json
 import os
 import subprocess
 
 from paradrop.base.output import out
+from paradrop.lib.misc.snapd import SnapdClient
 from paradrop.lib.utils import datastruct
-
-
-def execute(*args):
-    result = subprocess.call(args)
-    out.info("Command '{}' returned {}".format(" ".join(args), result))
-    return result
 
 
 def configure(update):
     hostConfig = update.new.getCache('hostConfig')
 
+    snapd = SnapdClient()
+
     enabled = datastruct.getValue(hostConfig, "zerotier.enabled", False)
     if enabled:
         if not os.path.exists("/snap/zerotier-one"):
-            execute("snap", "install", "zerotier-one")
+            snapd.installSnap('zerotier-one')
 
-        # Make sure the service is running.
-        execute("systemctl", "enable", "snap.zerotier-one.zerotier-one.service")
-        execute("systemctl", "start", "snap.zerotier-one.zerotier-one.service")
+        snapd.updateSnap('zerotier-one', {'action': 'enable'})
 
-        # The network-control interface is not automatically connected, so take
-        # care of that.
-        execute("snap", "connect", "zerotier-one:network-control")
+        # These interfaces are not automatically connected, so take care of that.
+        snapd.connect('zerotier-one', 'network-control', 'core',
+                'network-control')
+        snapd.connect('paradrop-daemon', 'zerotier-control', 'zerotier-one',
+                'zerotier-control')
 
         networks = datastruct.getValue(hostConfig, "zerotier.networks", [])
         for network in set(networks):
-            execute("/snap/zerotier-one/current/usr/sbin/zerotier-cli",
-                    "join", network)
+            join_network(network)
 
     else:
         # Disable the zerotier service.
-        execute("systemctl", "disable", "snap.zerotier-one.zerotier-one.service")
-        execute("systemctl", "stop", "snap.zerotier-one.zerotier-one.service")
+        snapd.updateSnap('zerotier-one', {'action': 'disable'})
 
 
 def getAddress():
@@ -47,3 +44,25 @@ def getAddress():
             return source.read().strip()
     except:
         return None
+
+
+def get_auth_token():
+    """
+    Return the zerotier auth token for accessing its API.
+    """
+    with open("/var/snap/zerotier-one/common/authtoken.secret", "r") as source:
+        return source.read().strip()
+
+
+def join_network(nwid):
+    conn = httplib.HTTPConnection("localhost", 9993)
+    path = "/network/{}".format(nwid)
+    body = "{}"
+    headers = {
+        "Content-Type": "application/json",
+        "X-ZT1-Auth": get_auth_token()
+    }
+    conn.request("POST", path, body, headers)
+    res = conn.getresponse()
+    data = json.loads(res.read())
+    return data['result']
