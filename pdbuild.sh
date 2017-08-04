@@ -173,7 +173,7 @@ clean() {
 run() {
     echo -e "${COLOR}Starting Paradrop" && tput sgr0
     activate_virtual_env
-    pip install -e ./paradrop/src
+    pip install -e ./paradrop/daemon
     sudo buildenv/env/bin/paradrop -m local -p $PWD/paradrop/localweb/www
     deactivate_virtual_env
 }
