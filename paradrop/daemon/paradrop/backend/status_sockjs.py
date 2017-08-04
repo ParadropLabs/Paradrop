@@ -8,20 +8,18 @@ class StatusSockJSProtocol(Protocol):
     def __init__(self, factory):
         self.factory = factory
 
-
     def connectionMade(self):
         self.factory.transports.add(self.transport)
         out.info('sockjs /status connected')
-
 
     def dataReceived(self, data):
         if (data == 'refresh'):
             status = self.factory.system_status.getStatus()
             self.transport.write(json.dumps(status))
 
-
     def connectionLost(self, reason):
-        self.factory.transports.remove(self.transport)
+        if self.transport in self.factory.transports:
+            self.factory.transports.remove(self.transport)
         out.info('sockjs /status disconnected')
 
 
