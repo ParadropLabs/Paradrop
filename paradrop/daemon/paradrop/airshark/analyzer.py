@@ -25,7 +25,6 @@ class AnalyzerProcessProtocol(ProcessProtocol):
     def processEnded(self, status):
         out.info('Airshark analyzer process exits')
         self.ready = False
-        self.airshark_manager.remove_raw_data_observer(self)
 
     def feedSpectrumData(self, data):
         self.transport.writeToChild(3, data)
