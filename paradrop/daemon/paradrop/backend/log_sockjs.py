@@ -25,7 +25,8 @@ class LogSockJSProtocol(Protocol):
             self.transport.write(json.dumps(log))
 
     def connectionLost(self, reason):
-        self.factory.transports.remove(self.transport)
+        if self.transport in self.factory.transports:
+            self.factory.transports.remove(self.transport)
         out.info('sockjs /logs disconnected')
 
         self.loop.stop()

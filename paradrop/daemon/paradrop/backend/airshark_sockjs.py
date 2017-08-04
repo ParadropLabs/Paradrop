@@ -9,8 +9,6 @@ class AirsharkSpectrumSockJSProtocol(Protocol):
         self.factory = factory
 
     def connectionMade(self):
-        if not hasattr(self.factory, "transports"):
-            self.factory.transports = set()
         self.factory.transports.add(self.transport)
         out.info('sockjs /airshark/spectrum connected')
         self.factory.airshark_manager.add_spectrum_observer(self)
@@ -29,7 +27,8 @@ class AirsharkSpectrumSockJSProtocol(Protocol):
             'data': data}))
 
     def connectionLost(self, reason):
-        self.factory.transports.remove(self.transport)
+        if self.transport in self.factory.transports:
+            self.factory.transports.remove(self.transport)
         out.info('sockjs /airshark/spectrum disconnected')
         self.factory.airshark_manager.remove_spectrum_observer(self)
 
@@ -48,8 +47,6 @@ class AirsharkAnalyzerSockJSProtocol(Protocol):
         self.factory = factory
 
     def connectionMade(self):
-        if not hasattr(self.factory, "transports"):
-            self.factory.transports = set()
         self.factory.transports.add(self.transport)
         out.info('sockjs /airshark/analyzer connected')
         self.factory.airshark_manager.add_analyzer_observer(self)
@@ -59,7 +56,8 @@ class AirsharkAnalyzerSockJSProtocol(Protocol):
         self.transport.write(message)
 
     def connectionLost(self, reason):
-        self.factory.transports.remove(self.transport)
+        if self.transport in self.factory.transports:
+            self.factory.transports.remove(self.transport)
         out.info('sockjs /airshark/analyzer disconnected')
         self.factory.airshark_manager.remove_analyzer_observer(self)
 
