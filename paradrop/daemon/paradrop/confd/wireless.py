@@ -263,6 +263,20 @@ class ConfigWifiDevice(ConfigObject):
     def apply(self, allConfigs):
         commands = []
 
+        # On some systems the primary interface (e.g. wlan0) starts in the UP
+        # state and in managed mode.  This would normally be fine, but for some
+        # devices, notably the WLE600VX, the driver/firmare throws a "Device or
+        # resource busy" error if both a managed mode and an __ap mode
+        # interface are UP.
+        #
+        # To make everyone happy, put the primary interface DOWN while we
+        # initialize the device, and if any wifi-iface sections are using it,
+        # they will bring it back UP.
+        primary = self.detectPrimaryInterface()
+        if primary is not None:
+            cmd = ["ip", "link", "set", "dev", primary, "down"]
+            commands.append((self.PRIO_CREATE_IFACE, Command(cmd, self)))
+
         if self.txpower is not None:
             # txpower is in dBm, iw takes mBm.
             power = self.txpower * 100
@@ -282,6 +296,12 @@ class ConfigWifiDevice(ConfigObject):
         if self.txpower is not None:
             cmd = ["iw", "phy", self._phy, "set", "txpower", "auto"]
             commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
+
+        # Bring primary interface back UP - see comment in apply function.
+        primary = self.detectPrimaryInterface()
+        if primary is not None:
+            cmd = ["ip", "link", "set", "dev", primary, "up"]
+            commands.append((-self.PRIO_CREATE_IFACE, Command(cmd, self)))
 
         return commands
 
