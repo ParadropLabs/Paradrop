@@ -26,9 +26,18 @@ def configure(update):
         snapd.connect('paradrop-daemon', 'zerotier-control', 'zerotier-one',
                 'zerotier-control')
 
-        networks = datastruct.getValue(hostConfig, "zerotier.networks", [])
-        for network in set(networks):
-            join_network(network)
+        old_networks = set()
+        for network in get_networks():
+            old_networks.add(network['id'])
+
+        new_networks = set(datastruct.getValue(hostConfig,
+                "zerotier.networks", []))
+
+        # Leave old networks and join new networks.
+        for net in (old_networks - new_networks):
+            manage_network(net, action="leave")
+        for net in (new_networks - old_networks):
+            manage_network(net, action="join")
 
     else:
         # Disable the zerotier service.
@@ -54,7 +63,41 @@ def get_auth_token():
         return source.read().strip()
 
 
-def join_network(nwid):
+def get_networks():
+    """
+    Get list of active ZeroTier networks.
+    """
+    conn = httplib.HTTPConnection("localhost", 9993)
+    path = "/network"
+    headers = {
+        "X-ZT1-Auth": get_auth_token()
+    }
+    conn.request("GET", path, "", headers)
+    res = conn.getresponse()
+    data = json.loads(res.read())
+
+    # nwid field is deprecated, so make sure id field exists.
+    for network in data:
+        if 'id' not in network and 'nwid' in network:
+            network['id'] = network['nwid']
+
+    return data
+
+
+def manage_network(nwid, action="join"):
+    """
+    Join or leave a ZeroTier network.
+
+    nwid: ZeroTier network ID, e.g. "e5cd7a9e1c8a5e83"
+    action: either "join" or "leave"
+    """
+    if action == "join":
+        method = "POST"
+    elif action == "leave":
+        method = "DELETE"
+    else:
+        raise Exception("Unsupported action: {}".format(action))
+
     conn = httplib.HTTPConnection("localhost", 9993)
     path = "/network/{}".format(nwid)
     body = "{}"
@@ -62,7 +105,7 @@ def join_network(nwid):
         "Content-Type": "application/json",
         "X-ZT1-Auth": get_auth_token()
     }
-    conn.request("POST", path, body, headers)
+    conn.request(method, path, body, headers)
     res = conn.getresponse()
     data = json.loads(res.read())
     return data
