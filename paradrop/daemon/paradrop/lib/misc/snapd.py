@@ -1,6 +1,8 @@
 import json
+import time
 
 from paradrop.base import settings
+from paradrop.base.output import out
 from paradrop.lib.utils.uhttp import UHTTPConnection
 
 
@@ -8,6 +10,37 @@ class SnapdClient(object):
     """
     Client for interacting with the snapd API to manage installed snaps.
     """
+    def __init__(self, logging=True, wait_async=False):
+        """
+        Initialize client for interacting with snapd API.
+
+        logging: whether to log results
+        wait_async: whether SnapdClient should wait for async calls to finish
+        """
+        self.logging = True
+        self.wait_async = wait_async
+
+    def _maybeWait(self, result):
+        """
+        Wait for completed result if configured to wait on async calls.
+        """
+        if result['type'] == 'sync' or not self.wait_async:
+            return result['result']
+
+        if result['type'] == 'error':
+            result = result['result']
+            if self.logging:
+                out.warn("snapd error: {}".format(result['message']))
+            return result
+
+        while True:
+            change = self.get_change(result['change'])
+            if change['ready']:
+                if self.logging:
+                    out.info("{}: {}".format(change['summary'], change['status']))
+                return change
+            time.sleep(1)
+
     def connect(self, plug_snap="paradrop-daemon", plug=None, slot_snap="core", slot=None):
         """
         Connect an interface.
@@ -23,7 +56,18 @@ class SnapdClient(object):
         conn.request("POST", path, body, headers)
         res = conn.getresponse()
         data = json.loads(res.read())
-        return data['result']
+        return self._maybeWait(data)
+
+    def get_change(self, change_id):
+        """
+        Get the current status of a change.
+        """
+        conn = UHTTPConnection(settings.SNAPD_INTERFACE)
+        path = "/v2/changes/{}".format(change_id)
+        conn.request("GET", path)
+        res = conn.getresponse()
+        data = json.loads(res.read())
+        return self._maybeWait(data)
 
     def installSnap(self, snapName):
         """
@@ -39,7 +83,7 @@ class SnapdClient(object):
         conn.request("POST", path, body, headers)
         res = conn.getresponse()
         data = json.loads(res.read())
-        return data['result']
+        return self._maybeWait(data)
 
     def listSnaps(self):
         """
@@ -49,7 +93,7 @@ class SnapdClient(object):
         conn.request("GET", "/v2/snaps")
         res = conn.getresponse()
         data = json.loads(res.read())
-        return data['result']
+        return self._maybeWait(data)
 
     def updateSnap(self, snapName, data):
         """
@@ -67,4 +111,4 @@ class SnapdClient(object):
         conn.request("POST", path, body, headers)
         res = conn.getresponse()
         data = json.loads(res.read())
-        return data['result']
+        return self._maybeWait(data)

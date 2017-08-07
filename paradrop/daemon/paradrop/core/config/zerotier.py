@@ -11,12 +11,10 @@ from paradrop.lib.utils import datastruct
 def configure(update):
     hostConfig = update.new.getCache('hostConfig')
 
-    snapd = SnapdClient()
+    snapd = SnapdClient(logging=True, wait_async=True)
 
     enabled = datastruct.getValue(hostConfig, "zerotier.enabled", False)
     if enabled:
-        # TODO: Fix race conditions!  installSnap, updateSnap, and connect are
-        # all asynchronous, so they need to be chained properly.
         if not os.path.exists("/snap/zerotier-one"):
             snapd.installSnap('zerotier-one')
 
