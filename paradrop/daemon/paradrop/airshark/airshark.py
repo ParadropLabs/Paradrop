@@ -71,12 +71,18 @@ class AirsharkManager(object):
             self.loop.stop()
 
     def check_spectrum(self):
+        # The bandwidth of the data is about 160k Bytes per second
         ts, data = self.scanner.spectrum_reader.read_samples()
         if ((data is not None) and (len(self.spectrum_observers) > 0 or self.analyzer_process.isRunning())):
             if len(self.spectrum_observers) > 0:
-                for (tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata) in SpectrumReader.decode(data):
-                    for observer in self.spectrum_observers:
-                        observer.on_spectrum_data(tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata)
+                #for (tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata) in SpectrumReader.decode(data):
+                #    for observer in self.spectrum_observers:
+                #        observer.on_spectrum_data(tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata)
+
+                # Due to performance issue, we have to delegate the packet decoding task to clients
+                for observer in self.spectrum_observers:
+                    observer.on_spectrum_data(data)
+
             if self.analyzer_process.isRunning():
                 # Forward spectrum data to the airshark analyzer
                 self.analyzer_process.feedSpectrumData(data)

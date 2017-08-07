@@ -5,6 +5,7 @@ import math
 from Queue import Queue
 from datetime import datetime
 
+from twisted.internet.fdesc import setNonBlocking
 
 class SpectrumReader(object):
 
@@ -19,6 +20,8 @@ class SpectrumReader(object):
         self.fp = file(path)
         if not self.fp:
             raise Exception("Cant open file '%s'" % path)
+
+        setNonBlocking(self.fp.fileno())
 
     def read_samples(self):
         data = self.fp.read()
