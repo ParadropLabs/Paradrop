@@ -80,8 +80,9 @@ class AirsharkManager(object):
                 #        observer.on_spectrum_data(tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata)
 
                 # Due to performance issue, we have to delegate the packet decoding task to clients
-                for observer in self.spectrum_observers:
-                    observer.on_spectrum_data(data)
+                for packet in SpectrumReader.decode(data):
+                    for observer in self.spectrum_observers:
+                        observer.on_spectrum_data(packet)
 
             if self.analyzer_process.isRunning():
                 # Forward spectrum data to the airshark analyzer

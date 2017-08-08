@@ -51,14 +51,21 @@ class SpectrumReader(object):
             if not (stype == 1 and slen == SpectrumReader.pktsize):
                 print "skip malformed packet"
                 break  # header malformed, discard data. This event is very unlikely (once in ~3h)
-                # On the other hand, if we buffer the sample in a primitive way, we consume to much cpu
-                # for only one or too "rescued" samples every 2-3 hours
+                # On the other hand, if we buffer the sample in a primitive way, we consume too much cpu
+                # for only one or two "rescued" samples every 2-3 hours
 
             # We only support 20 MHz
             if stype == 1:
                 if pos >= len(data) - SpectrumReader.hdrsize - SpectrumReader.pktsize + 1:
                     break
                 pos += SpectrumReader.hdrsize
+
+                packet = data[pos: pos + SpectrumReader.pktsize]
+                pos += SpectrumReader.pktsize
+
+                yield packet
+
+                '''
                 (max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, tsf) = \
                     struct.unpack_from(">BHbbHBBQ", data, pos)
                 pos += 17
@@ -67,7 +74,7 @@ class SpectrumReader(object):
                 pos += 56
 
                 yield (tsf, max_exp, freq, rssi, noise, max_mag, max_index, bitmap_weight, sdata)
-                '''
+
                 # calculate power in dBm
                 sumsq_sample = 0
                 samples = []
