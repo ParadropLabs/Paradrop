@@ -39,7 +39,7 @@ def getVirtDHCPSettings(update):
             out.warn('DHCP server definition {}\n'.format(res))
             raise Exception("DHCP server definition missing field(s)")
 
-        # Contstruct a path for the lease file that will be visible inside the
+        # Construct a path for the lease file that will be visible inside the
         # chute.
         leasefile = os.path.join(
             update.new.getCache('externalSystemDir'),
