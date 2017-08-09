@@ -17,7 +17,7 @@ class AnalyzerProcessProtocol(ProcessProtocol):
         if (childFd == 4):
             # Output of airshark analyzer
             #out.info(data)
-            self.airshark_manager.on_airshark_message(data)
+            self.airshark_manager.on_analyzer_message(data)
         elif (childFd == 1 or childFd == 2):
             # stdout/stderr of airshark analyzer
             out.info('Airshark: ========\n%s==================' % data)
