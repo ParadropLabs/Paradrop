@@ -12,6 +12,7 @@ from twisted.internet.endpoints import serverFromString
 from twisted.internet.protocol import Factory
 from klein import Klein
 from txsockjs.factory import SockJSResource
+from autobahn.twisted.resource import WebSocketResource
 
 from paradrop.base.exceptions import ParadropException
 from paradrop.core.container.chutecontainer import ChuteContainer
@@ -25,7 +26,7 @@ from .password_api import PasswordApi
 from .airshark_api import AirsharkApi
 from .log_sockjs import LogSockJSFactory
 from .status_sockjs import StatusSockJSFactory
-from .airshark_sockjs import AirsharkSpectrumSockJSFactory, AirsharkAnalyzerSockJSFactory
+from .airshark_ws import AirsharkSpectrumFactory, AirsharkAnalyzerFactory
 from .password_manager import PasswordManager
 from .snapd_resource import SnapdResource
 from . import cors
@@ -120,28 +121,22 @@ class HttpServer(object):
         return SockJSResource(StatusSockJSFactory(self.system_status), options)
 
 
-    @app.route('/sockjs/airshark/analyzer', branch=True)
+    @app.route('/ws/airshark/analyzer', branch=True)
     @requires_auth
     def airshark_analyzer(self, request):
         #cors.config_cors(request)
-        options = {
-            'websocket': True,
-            'heartbeat': 5,
-            'timeout': 2,
-        }
-        return SockJSResource(AirsharkAnalyzerSockJSFactory(self.airshark_manager), options)
+        factory = AirsharkAnalyzerFactory(self.airshark_manager)
+        factory.setProtocolOptions(autoPingInterval=10, autoPingTimeout=5)
+        return WebSocketResource(factory)
 
 
-    @app.route('/sockjs/airshark/spectrum', branch=True)
+    @app.route('/ws/airshark/spectrum', branch=True)
     @requires_auth
     def airshark_spectrum(self, request):
         #cors.config_cors(request)
-        options = {
-            'websocket': True,
-            'heartbeat': 5,
-            'timeout': 2,
-        }
-        return SockJSResource(AirsharkSpectrumSockJSFactory(self.airshark_manager), options)
+        factory = AirsharkSpectrumFactory(self.airshark_manager)
+        factory.setProtocolOptions(autoPingInterval=10, autoPingTimeout=5)
+        return WebSocketResource(factory)
 
 
     @app.route('/', branch=True)
