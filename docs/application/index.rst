@@ -1,4 +1,4 @@
-ParaDrop Application Development
+Develop Applications for ParaDrop
 =======================================
 
 This section of the documentation is devoted to describing the apps that run on ParaDrop.

@@ -1,6 +1,12 @@
 Chute Development
 =============================
 
+ParaDrop is a software platform that enables apps to run on Wi-Fi routers.
+We call these apps "chutes" like a parachute.
+
+ParaDrop runs on top of `Snappy Ubuntu <https://developer.ubuntu.com/en/snappy/>`_, a trimmed-down and secured operating system that can run on ARM and x86.
+We also enable our apps through containerization by leveraging `Docker <https://www.docker.com/>`_.
+
 Minimally, a chute has a Dockerfile, which contains instructions for
 building and preparing the application to run on Paradrop.  A chute
 will usually also require scripts, binaries, configuration files, and

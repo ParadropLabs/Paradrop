@@ -17,50 +17,31 @@
    faq
 
 
-ParaDrop
-====================================
+ParaDrop - An Edge Computing at the Extreme Edge
+=================================================
 
-ParaDrop is a software platform that enables apps to run on Wi-Fi routers.
-We call these apps "chutes" like a parachute.
-The name ParaDrop comes from the fact that we are enabling the ability to "drop" supplies and resources ("apps") into a difficult and not well-travelled environment - the home.
+ParaDrop is an open source edge computing platform developed by the `WiNGS Lab <http://www.cs.wisc.edu/content/wings-lab-uw>`_
+at University of Wisconsin-Madison.
+We built the ParaDrop platform with WiFi routers, so that we can "paradrop" services from the cloud
+to the extreme wireless edge - just one hop from user's mobile devices, data sources, and actuators in IoT applications.
+The name "ParaDrop" comes from the fact that we are enabling the ability
+to "drop" supplies and resources ("services") into the network edge.
 
-ParaDrop runs on top of `Snappy Ubuntu <https://developer.ubuntu.com/en/snappy/>`_, a trimmed-down and secured operating system that can run on ARM and x86.
-We also enable our apps through containerization by leveraging `Docker <https://www.docker.com/>`_.
+.. image:: images/paradrop_overview.png
+   :align: center
 
-
-The ParaDrop workflow
-====================================
-
-There are two components to the ParaDrop platform:
-
-* The `build tools <https://pypi.python.org/pypi/pdtools>`_ - our CLI that enables registration, login, and control.  With version 0.2 and up, ParaDrop routers can be managed through our `cloud management <https://paradrop.org>`_ service instead of the CLI.
-* The `instance tools <https://github.com/ParadropLabs/Paradrop>`_ - our configuration daemons and tools to launch apps on hardware.
-
-.. image:: images/dev_tools_map.png
-   :align:  center
-
-As you can see from the image above, we will refer to *Build Tools* when we talk about the CLI program running on your development computer that controls and communicates with the rest of the ParaDrop platform.
-Treat this tool as your window into the rest of the ParaDrop world.
-Our *Instance Tools* leverage programs like Docker to allow ParaDrop apps to run on router hardware.
-This "hardware" could be a Raspberry Pi, or even a virtual machine on your computer that acts as a router (which is why we call it an Instance sometimes).
-Using ParaDrop, you can actually plug in a USB Wi-Fi adapter and turn a virtual machine on your computer into a real router with our platform!
+The above figure give a high level overview of ParaDrop, including the ParaDrop platform and two example applications.
+With the ParaDrop API, third-party applications can deploy services into the network edge - the WiFi APs.
+More information about the design and evolution of ParaDrop can be found in the `paper <http://pages.cs.wisc.edu/~suman/courses/707/papers/paradrop-sec2016.pdf>`_.
 
 Getting Started
 ====================================
 
-Please visit the :doc:`chutes/chutedev` page for a quick introduction to ParaDrop.
+Please visit the :doc:`manual/index` page for a quick introduction about the ParaDrop routers setup.
 
 
 Where to go from here?
 ====================================
 
-We have advanced app examples found under :doc:`chutes/chutedev`.
-If you are interested in working on the instance side of ParaDrop (our github code) than check out: :doc:`pd/paradropdev`.
-
-
-.. _no_ubuntu:
-
-What if I don't have Ubuntu?
-====================================
-
-With version 0.2 and up, all of ParaDrop's capabilities can be managed through our web-based service at `paradrop.org <https://paradrop.org>`_.
+We have document about ParaDrop application development found under :doc:`application/index`.
+If you are interested in working on the development of the ParaDrop platform (our github code) then check out: :doc:`development/index`.
