@@ -6483,7 +6483,8 @@ pre {
   font-size: 12px; }
 
 .key-list {
-  padding-left: 0; }
+  padding-left: 0;
+  list-style-type: none; }
 .airshark-status {
   margin-bottom: 10px; }
 
@@ -6491,15 +6492,12 @@ pre {
   font-weight: bold;
   margin-bottom: 5px; }
 
-.graph-selection {
-  margin-top: 10px; }
+.result-display {
+  border-top: thin solid lightgrey; }
 
-.graph-selection h5 {
+.result-display h5 {
   font-weight: bold;
   margin-bottom: 5px; }
-
-.graph-selection label {
-  font-weight: normal; }
 .airshark-heatmap {
   background-color: black;
   margin-bottom: 10px; }
@@ -6546,7 +6544,7 @@ pre {
 
 .event-list {
   padding-left: 0;
-  border-top: thin solid lightgrey; }
+  list-style-type: none; }
 .jumbotron {
   text-align: center;
   border-bottom: 1px solid #e5e5e5;
