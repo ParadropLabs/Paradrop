@@ -1,5 +1,5 @@
 ParaDrop Devices
-================
+==================
 
 This section describes various hardware platforms that we support
 for running ParaDrop.

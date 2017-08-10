@@ -7,10 +7,12 @@
    :maxdepth: 2
    :hidden:
 
+   overview/index
+   architecture/index
    device/index
-   chutes/chutedev
-   pd/paradropdev
-   arch/architecture
+   manual/index
+   development/index
+   application/index
    issues
    faq
 

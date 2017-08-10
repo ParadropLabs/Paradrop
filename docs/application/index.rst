@@ -1,5 +1,5 @@
-Chutes on ParaDrop
-====================================
+ParaDrop Application Development
+=======================================
 
 This section of the documentation is devoted to describing the apps that run on ParaDrop.
 
