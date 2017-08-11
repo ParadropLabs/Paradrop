@@ -37,7 +37,7 @@ More information about the design and evolution of ParaDrop can be found in the 
 Getting Started
 ====================================
 
-Please visit the :doc:`manual/index` page for a quick introduction about the ParaDrop routers setup.
+Please visit the :doc:`manual/index` page for a quick introduction about how to use ParaDrop.
 
 
 Where to go from here?

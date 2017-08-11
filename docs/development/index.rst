@@ -1,4 +1,4 @@
-Development
+How to Contribute
 ====================================
 
 This section focuses on the *ParaDrop Daemon*. This is the set of daemons and tools required to allow the Paradrop platform to function on virtual machines and real hardware.

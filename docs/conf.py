@@ -66,8 +66,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'paradrop'
-copyright = u'2016, Paradrop Labs'
-author = u'Paradrop Labs'
+copyright = u'2017, ParaDrop Labs'
+author = u'ParaDrop Labs'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

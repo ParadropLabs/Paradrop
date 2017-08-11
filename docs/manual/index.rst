@@ -1,2 +1,2 @@
-User's Manual
+Get Started
 ========================
