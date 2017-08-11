@@ -54,5 +54,3 @@ the message below indicates that the router has IP address 10.42.0.162. ::
     The next step is to log into the device via ssh:
 
     ssh paradrop@10.42.0.162
-
-Continue to :doc:`activating`.

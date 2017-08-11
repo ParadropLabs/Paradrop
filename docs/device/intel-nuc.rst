@@ -57,5 +57,3 @@ First boot
 
     ssh paradrop@10.42.0.162
     ...
-
-Continue to :doc:`activating`.
