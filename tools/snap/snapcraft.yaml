@@ -5,11 +5,13 @@ description: |
   The ParaDrop tools provide the command line utilities to work with ParaDrop routers
 
 grade: stable
-confinement: devmode
+confinement: strict
 
 apps:
   pdtools:
     command: pdtools
+    plugs:
+      - network
 
 parts:
   pdtools:
