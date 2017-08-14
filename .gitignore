@@ -90,3 +90,5 @@ third-party/
 # snapcraft
 paradrop/prime
 paradrop/stage
+tools/stage
+tools/prime
