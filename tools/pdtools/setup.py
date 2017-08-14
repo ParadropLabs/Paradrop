@@ -3,8 +3,8 @@ from setuptools import setup, find_packages
 setup(
     name="pdtools",
     version='0.8.0',
-    author="Paradrop Labs",
-    description="Paradrop deployment and build tools",
+    author="ParaDrop Labs",
+    description="ParaDrop development tools",
     install_requires=[
         'click>=6.7',
         'future>=0.16.0',
