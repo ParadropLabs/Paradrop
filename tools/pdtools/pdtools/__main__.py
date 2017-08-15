@@ -8,6 +8,7 @@ import os
 
 import click
 
+from . import chute
 from . import device
 from . import routers
 
@@ -29,6 +30,7 @@ def root(ctx):
     }
 
 
+root.add_command(chute.chute)
 root.add_command(device.device)
 root.add_command(routers.routers)
 
