@@ -15,6 +15,7 @@
    application/index
    issues
    faq
+   reference
 
 
 ParaDrop - An Edge Computing at the Extreme Edge

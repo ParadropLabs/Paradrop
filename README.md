@@ -8,7 +8,7 @@
 
 Paradrop is a software platform that brings the *cloud into the home* by enabling apps to exist on Wi-Fi routers. The Wi-Fi router is the last always-on, always-connected, ubiquitous device in the home today. At Paradrop Labs, we believe that some (if not most) cloud or smart-hub services should actually exist on Wi-Fi routers.
 
-Visit our [website](http://www.paradrop.io) to learn more!
+Visit our [website](https://www.paradrop.org) to learn more!
 
 
 ## What can I do with Paradrop?

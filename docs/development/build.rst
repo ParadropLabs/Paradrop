@@ -1,66 +1,89 @@
-Build System
+ParaDrop daemon development
 ====================================
 
-Paradrop includes a set of build tools to make development as easy
-as possible.
+ParaDrop repository includes a set of tools to make development as easy as possible.
 
 Currently this system takes the form of a bash script that automates
-installation and execution, but in time this may evolve into a published
-python package. This page outlines the steps required to manually build
-the components required to develop with paradrop.
+installation and execution. This page outlines the steps required to manually install
+the dependencies, build the package and install the package into hardware/VMs.
 
-Components in the build process:
-- `Building paradrop daemon`_
-- `Installing paradrop into hardware/VM`_
-- `Building pdtools`_
-- `Configuring paradrop router through web portal`_
+- `Building ParaDrop daemon`_
 
-We recommend using Ubuntu 14.04 as the build environment for this version
-of Paradrop.  Ubuntu 16.04 will not work because the snappy development
-tools have changed.  The next release of Paradrop will use the new tools.
+- `Installing ParaDrop into hardware/VMs`_
 
-You will only need to follow these instructions if you will be making
-changes to the Paradrop instance tools.  Otherwise, you can
-use our pre-built Paradrop disk image.  Please visit the
-:doc:`../chutes/gettingstarted` page.
+- `Checking logs of ParaDrop daemon`_
 
-Building paradrop daemon
+- `Building ParaDrop tools`_
+
+- `ParaDrop daemon design`_
+
+We recommend using Ubuntu 16.04 LTS as the development environment for this version
+of ParaDrop. Because we use `snapcraft <https://snapcraft.io/>`_ to package and distribute the ParaDrop daemon
+and development tools (pdtools).
+
+You will only need to follow these instructions if you will be making changes to the ParaDrop daemon.
+Otherwise, you can use our pre-built ParaDrop snap or disk image from `ParaDrop release <https://www.paradrop.org/release/>`_.
+
+Building ParaDrop daemon
 ---------------------------
 
-Snappy is a closed system (by design!). Arbitrary program installation
-is not allowed, so to allow paradrop access to the wide world of ``pypi``
-the build system relies on two tools.
+pdbuild.sh is the script we work with during the development.
+It provides following commands:
 
-- ``virtualenv`` is a tool that creates encapsulated environments in
-  which python packages can be installed.
-- ``pex`` can compress python packages into a zip file that can be
-  executed by any python interpreter.
-- ``snappy`` is a tool for building snap packages.  *Note:* Ubuntu 16.04
-  uses snapcraft instead, which produces incompatible packages.
+- ``./pdbuild.sh setup`` installs development dependencies.
 
-First, set `DEV_MACHINE_IP=paradrop.org` in pdbuild.conf.  The build
-script will refuse to run if this variable is not set.
+- ``./pdbuild.sh run`` executes the ParaDrop daemon locally in the development machine. It is useful for debugging.
 
-Install the necessary development tools::
+- ``./pdbuild.sh build`` builds the snap package. Check `snapcraft documentation <https://snapcraft.io/docs/>`_ for detailed information about snap packages and snapcraft.
 
-    ./pdbuild.sh setup
+- ``./pdbuild.sh image`` builds the ubuntu core image that we can flash into SD card or SSD module of a ParaDrop router. It pre-install the dependent snaps for us automatically (docker, airshark).
 
-Build the Paradrop snap package::
-
-    ./pdbuild.sh build
-
-Installing paradrop into hardware/VM
+Installing ParaDrop into hardware/VMs
 ------------------------------------------
 
-Install dependencies on the virtual machine::
+After the ParaDrop daemon snap is ready (paradrop-daemon_<version>_amd64.snap), we can install it into a ParaDrop router. Check :doc:`../device/index` for information about preparing a ParaDrop router.
 
-    ./pdbuild.sh install_deps
+Copy the paradrop snap to the router with ParaDrop image installed::
 
-Install the newly created Paradrop snap package::
+    scp paradrop-daemon-<version>_amd64.snap paradrop@<router ip>:~/
 
-    ./pdbuild.sh install_dev
+Then we can login a ParaDrop router::
+
+    ssh paradrop@<router ip>
+
+Install the dependent snaps in a ParaDrop router::
+
+    snap install docker
+    snap install airshark
+
+Install the newly created ParaDrop daemon snap package::
+
+    snap install paradrop-daemon-<version>_amd64.snap --devmode
 
 
-Configuring paradrop router through web portal
-------------------------------------------------
+Checking logs of ParaDrop daemon
+----------------------------------
+
+After install the ParaDrop daemon, we can use 'pdlog' to check the log of ParaDrop daemon on the ParaDrop router::
+
+    paradrop-daemon.pdlog -f
+
+
+Building ParaDrop tools
+------------------------
+
+We have published the ParaDrop tools snap in Ubuntu snap store. On the development machine, we can install it with below command::
+
+    snap install paradrop-tools
+
+Get the manual of ParaDrop tools::
+
+    paradrop-tools.pdtools --help
+
+More detailed information about ParaDrop tools can be find in :doc:`../application/index`. The git repository of ParaDrop includes the source code of ParaDrop tools. Developers can build the latest version of ParaDrop tools by running below command in the folder 'tools'::
+
+    snapcraft
+
+ParaDrop daemon design
+---------------------------
 TODO

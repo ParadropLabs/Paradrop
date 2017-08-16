@@ -13,3 +13,4 @@ Contents:
 
    build
    doctests
+   configure
