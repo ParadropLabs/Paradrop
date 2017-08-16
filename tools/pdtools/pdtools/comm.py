@@ -2,9 +2,12 @@ import base64
 import getpass
 import os
 from pprint import pprint
+from urlparse import urlparse
 
 import builtins
 import requests
+
+from .config import PdtoolsConfig
 
 
 PDSERVER_URL = os.environ.get('PDSERVER_URL', 'https://paradrop.org')
@@ -34,27 +37,52 @@ def pdserver_request(method, url, json=None, headers=None):
     """
     session = requests.Session()
 
-    username = builtins.input('Username: ')
-    password = getpass.getpass('Password: ')
-    data = {
-        'email': username,
-        'password': password
-    }
+    # Extract just the hostname from the controller URL.  This will be the
+    # authentication domain.
+    parts = urlparse(PDSERVER_URL)
+    host = parts.hostname
 
-    auth_url = '{}/auth/local'.format(PDSERVER_URL)
-    request = requests.Request('POST', auth_url, json=data, headers=headers)
-    prepped = session.prepare_request(request)
-    res = session.send(prepped)
-    res_data = res.json()
-    token = res_data['token']
+    config = PdtoolsConfig.load()
+    token = config.getControllerToken(host)
 
-    session.headers.update({'Authorization': 'Bearer {}'.format(token)})
-    request = requests.Request(method, url, json=json, headers=headers)
-    prepped = session.prepare_request(request)
+    while True:
+        while token is None:
+            username = builtins.input("Username: ")
+            password = getpass.getpass("Password: ")
+            data = {
+                'email': username,
+                'password': password
+            }
 
-    res = session.send(prepped)
-    print("Server responded: {} {}".format(res.status_code, res.reason))
-    return res
+            auth_url = '{}/auth/local'.format(PDSERVER_URL)
+            request = requests.Request('POST', auth_url, json=data, headers=headers)
+            prepped = session.prepare_request(request)
+            res = session.send(prepped)
+            print("Server responded: {} {}".format(res.status_code, res.reason))
+
+            try:
+                res_data = res.json()
+                token = res_data['token']
+
+                config.addControllerToken(host, username, token)
+                config.save()
+            except:
+                pass
+
+        session.headers.update({'Authorization': 'Bearer {}'.format(token)})
+        request = requests.Request(method, url, json=json, headers=headers)
+        prepped = session.prepare_request(request)
+
+        res = session.send(prepped)
+        print("Server responded: {} {}".format(res.status_code, res.reason))
+        if res.status_code == 401:
+            # Token is probably expired.
+            config.removeControllerToken(token)
+            config.save()
+            token = None
+            continue
+        else:
+            return res
 
 
 def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
