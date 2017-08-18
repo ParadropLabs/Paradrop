@@ -9,7 +9,8 @@ setup(
         'click>=6.7',
         'future>=0.16.0',
         'PyYAML>=3.12',
-        'requests>=2.18.1'
+        'requests>=2.18.1',
+        'six>=1.10.0'
     ],
 
     packages=find_packages(),
