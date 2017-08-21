@@ -16,7 +16,7 @@ from .comm import change_json, router_request
 @click.pass_context
 def device(ctx, address):
     """
-    Sub-tree for configuring a device.
+    Commands to work with a ParaDrop device.
     """
     ctx.obj['address'] = address
     ctx.obj['base_url'] = "http://{}/api/v1".format(address)

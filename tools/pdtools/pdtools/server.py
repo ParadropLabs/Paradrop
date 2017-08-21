@@ -5,14 +5,14 @@ from .comm import pdserver_request
 
 @click.group()
 @click.pass_context
-def routers(ctx):
+def server(ctx):
     """
-    Access router information on the controller.
+    Commands to work with the ParaDrop server (controller).
     """
     ctx.obj['routers_url'] = ctx.obj['pdserver_url'] + "/api/routers"
 
 
-@routers.command()
+@server.command()
 @click.pass_context
 def list(ctx):
     """
@@ -26,7 +26,7 @@ def list(ctx):
         print("{} {} {}".format(router['_id'], router['name'], router['online']))
 
 
-@routers.command()
+@server.command()
 @click.pass_context
 @click.argument('name')
 @click.option('--orphaned/--not-orphaned', default=False)
@@ -45,7 +45,7 @@ def create(ctx, name, orphaned, claim):
     pdserver_request('POST', url, json=data)
 
 
-@routers.command()
+@server.command()
 @click.pass_context
 @click.argument('router_id')
 def delete(ctx, router_id):

@@ -10,7 +10,7 @@ import click
 
 from . import chute
 from . import device
-from . import routers
+from . import server
 
 
 PDSERVER_URL = os.environ.get("PDSERVER_URL", "https://paradrop.org")
@@ -32,7 +32,7 @@ def root(ctx):
 
 root.add_command(chute.chute)
 root.add_command(device.device)
-root.add_command(routers.routers)
+root.add_command(server.server)
 
 
 def main():

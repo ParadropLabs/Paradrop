@@ -15,7 +15,7 @@ from .helpers.chute import build_chute
 @click.pass_context
 def chute(ctx):
     """
-    Sub-tree for building chutes.
+    Chutes related commands.
     """
     pass
 
