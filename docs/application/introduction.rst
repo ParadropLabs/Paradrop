@@ -1,22 +1,23 @@
-Chute Development
+Introduction
 =============================
 
-ParaDrop is a software platform that enables apps to run on Wi-Fi routers.
+ParaDrop is a software platform that enables services/apps to run on Wi-Fi routers.
 We call these apps "chutes" like a parachute.
 
-ParaDrop runs on top of `Snappy Ubuntu <https://developer.ubuntu.com/en/snappy/>`_, a trimmed-down and secured operating system that can run on ARM and x86.
+ParaDrop runs on top of `Ubuntu Core <https://developer.ubuntu.com/core>`_,
+a lightweight, transactionally updated operating system designed for deployments on embedded and IoT devices, cloud and more.
+It runs a new breed of super-secure, remotely upgradeable Linux app packages known as snaps.
 We also enable our apps through containerization by leveraging `Docker <https://www.docker.com/>`_.
 
 Minimally, a chute has a Dockerfile, which contains instructions for
-building and preparing the application to run on Paradrop.  A chute
-will usually also require scripts, binaries, configuration files, and
-other assets.  For integration with the Paradrop toolset, we highly
+building and preparing the application to run on ParaDrop.
+A chute will usually also require scripts, binaries, configuration files, and
+other assets.  For integration with the ParaDrop toolset, we highly
 recommend developing a chute as a `GitHub <https://github.com>`_ project,
 but other organization methods are possible.
 
-We will examine the `hello-world
-<https://github.com/ParadropLabs/hello-world>`_ chute as an example of
-a complete Paradrop application.
+We will examine the `hello-world <https://github.com/ParadropLabs/hello-world>`_
+chute as an example of a complete ParaDrop application.
 
 Structure
 -----------------------
@@ -37,7 +38,7 @@ Dockerfile
 -----------------------
 
 The Dockerfile contains instructions for building and preparing an
-application to run on Paradrop.  Here is a minimal Dockerfile for our
+application to run on ParaDrop.  Here is a minimal Dockerfile for our
 hello-world chute::
 
     FROM nginx
@@ -52,7 +53,7 @@ the Docker public registry.  We recommend choosing from the `official
 repositories <https://hub.docker.com/explore/>`_.  Here we use "nginx"
 for a light-weight web server.
 
-**ADD chute/index.html index.html**
+**ADD <source> <destination>**
 
 The ADD instruction copies a file or directory from the source repository
 to the chute filesystem.  This is useful for installing scripts or
@@ -92,7 +93,7 @@ when uninstalling the chute.
 System Information
 -----------------------
 
-The Paradrop instance tools share system information with chutes through
+The ParaDrop daemon share system information with chutes through
 a read-only directory named "/paradrop".  Chutes that are configured
 with a WiFi access point will find a file in this directory that lists
 wireless clients.  In future versions there will also be information
@@ -101,7 +102,7 @@ about Bluetooth and other wireless devices.
 dnsmasq-wifi.leases
 """""""""""""""""""
 
-This file lists client devices that have connected to the WiFi AP
+This file lists client devices that have connected to the chute's WiFi network
 and received a DHCP lease.  This is a plain text file with one line
 for each device containing the following space-separated fields.
 
@@ -126,19 +127,19 @@ options to running chutes through an HTTP API.  This aspect of Paradrop
 is under rapid development, and new features will be added with
 every release.  The host API is available to chutes through the URL
 "http://home.paradrop.org/api/v1".  Paradrop automatically configure
-chutes to resolve "home.paradrop.org" to the Paradrop device itself,
-so these requests go to the Paradrop daemon running on the router and
+chutes to resolve "home.paradrop.org" to the ParaDrop device itself,
+so these requests go to the ParaDrop daemon running on the router and
 not to an outside server.
 
 Authorization
 """""""""""""
 
 In order to access the host API, chutes must pass a token with every request
-that proves the authenticity of the request.  When chutes are installed on
-Paradrop, they automatically receive a token through an environment variable
+that proves the authenticity of the request.  When chutes are installed on a
+ParaDrop router, they automatically receive a token through an environment variable
 named "PARADROP_API_TOKEN".  The chute should read this environment variable
-and pass the token as a Bearer token in an HTTP Authorization header.  Here
-is an example in Python using the `Requests library
+and pass the token as a Bearer token in an HTTP Authorization header.
+Here is an example in Python using the `Requests library
 <http://docs.python-requests.org/en/master/>`_.::
 
     import os
