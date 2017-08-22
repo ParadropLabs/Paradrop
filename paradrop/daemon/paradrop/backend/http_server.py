@@ -25,6 +25,7 @@ from .chute_api import ChuteApi
 from .password_api import PasswordApi
 from .airshark_api import AirsharkApi
 from .log_sockjs import LogSockJSFactory
+from .log_ws import LogWsFactory
 from .status_sockjs import StatusSockJSFactory
 from .airshark_ws import AirsharkSpectrumFactory, AirsharkAnalyzerFactory
 from .password_manager import PasswordManager
@@ -119,6 +120,15 @@ class HttpServer(object):
             'timeout': 2,
         }
         return SockJSResource(StatusSockJSFactory(self.system_status), options)
+
+
+    @app.route('/ws/logs/<string:name>', branch=True)
+    @requires_auth
+    def ws_logs(self, request, name):
+        #cors.config_cors(request)
+        factory = LogWsFactory(name)
+        factory.setProtocolOptions(autoPingInterval=10, autoPingTimeout=5)
+        return WebSocketResource(factory)
 
 
     @app.route('/ws/airshark/analyzer', branch=True)
