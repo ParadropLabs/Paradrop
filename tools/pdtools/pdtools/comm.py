@@ -2,15 +2,12 @@ import base64
 import getpass
 import os
 from pprint import pprint
+import json as JSON
 from urlparse import urlparse
-
 import builtins
 import requests
 
-from .config import PdtoolsConfig
-
-
-PDSERVER_URL = os.environ.get('PDSERVER_URL', 'https://paradrop.org')
+from .config import PdtoolsConfig, PDSERVER_URL
 
 LOCAL_DEFAULT_USERNAME = "paradrop"
 LOCAL_DEFAULT_PASSWORD = ""
@@ -118,5 +115,6 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
         else:
             if res.ok and dump:
                 data = res.json()
-                pprint(data)
+                # pprint(data)
+                print JSON.dumps(data, indent=4, sort_keys=True)
             return res

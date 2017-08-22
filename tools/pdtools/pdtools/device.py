@@ -3,16 +3,16 @@ import operator
 import os
 import tarfile
 import tempfile
-
 import builtins
 import click
 import yaml
+import json
 
 from .comm import change_json, router_request
 
 
 @click.group()
-@click.argument('address')
+@click.option('--address', default='192.168.1.1', help='IP address of the ParaDrop device (default=192.168.1.1)')
 @click.pass_context
 def device(ctx, address):
     """
@@ -26,7 +26,7 @@ def device(ctx, address):
 @click.pass_context
 def chutes(ctx):
     """
-    View or create chutes on the router.
+    View or install chutes on the router.
     """
     pass
 
@@ -43,7 +43,7 @@ def list(ctx):
 
 @chutes.command()
 @click.pass_context
-def create(ctx):
+def install(ctx):
     """
     Install a chute from the working directory.
     """
@@ -67,14 +67,14 @@ def create(ctx):
 
 
 @device.group()
-@click.argument('chute')
+@click.argument('chute_name')
 @click.pass_context
 def chute(ctx, chute):
     """
-    Sub-tree for configuring a chute.
+    Operations on a chute.
     """
-    ctx.obj['chute'] = chute
-    ctx.obj['chute_url'] = "{}/chutes/{}".format(ctx.obj['base_url'], chute)
+    ctx.obj['chute'] = chute_name
+    ctx.obj['chute_url'] = "{}/chutes/{}".format(ctx.obj['base_url'], chute_name)
 
 
 @chute.command()
@@ -181,7 +181,7 @@ def shell(ctx):
 @click.argument('network')
 def network(ctx, network):
     """
-    Sub-tree for accessing chute network.
+    Operations on a chute network.
     """
     ctx.obj['network'] = network
     ctx.obj['network_url'] = "{}/networks/{}".format(ctx.obj['chute_url'],
@@ -203,7 +203,7 @@ def stations(ctx):
 @click.argument('station')
 def station(ctx, station):
     """
-    Sub-tree for accessing network stations.
+    operations on a chute's network stations.
     """
     ctx.obj['station'] = station
     ctx.obj['station_url'] = ctx.obj['network_url'] + "/stations/" + station
@@ -227,15 +227,23 @@ def delete(ctx):
     router_request("DELETE", ctx.obj['station_url'])
 
 
-@device.group(invoke_without_command=True)
+@device.group(invoke_without_command=False)
 @click.pass_context
 def hostconfig(ctx):
     """
-    Sub-tree for the host configuration.
+    Commands to work with the hostconfig.
+    """
+    pass
+
+@hostconfig.command()
+@click.pass_context
+def show(ctx):
+    """
+    Get host configuration.
     """
     url = ctx.obj['base_url'] + "/config/hostconfig"
-    router_request("GET", url)
-
+    res = router_request("GET", url, dump=False)
+    click.echo(json.dumps(res.json(), indent=4, sort_keys=True))
 
 @hostconfig.command()
 @click.pass_context
@@ -293,15 +301,22 @@ def edit(ctx):
     os.remove(path)
 
 
-@device.group(invoke_without_command=True)
+@device.group(invoke_without_command=False)
 @click.pass_context
 def sshkeys(ctx):
     """
-    Sub-tree for accessing SSH authorized keys.
+    Commands to work with the SSH authorized keys.
+    """
+    pass
+
+@sshkeys.command()
+@click.pass_context
+def show(ctx):
+    """
+    Get SSH authorized keys.
     """
     url = ctx.obj['base_url'] + "/config/sshKeys"
     router_request("GET", url)
-
 
 @sshkeys.command()
 @click.pass_context

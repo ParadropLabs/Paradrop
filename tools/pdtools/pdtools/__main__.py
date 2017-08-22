@@ -11,9 +11,7 @@ import click
 from . import chute
 from . import device
 from . import server
-
-
-PDSERVER_URL = os.environ.get("PDSERVER_URL", "https://paradrop.org")
+from .config import PDSERVER_URL
 
 
 @click.group()
@@ -23,7 +21,7 @@ def root(ctx):
     Paradrop command line utility.
 
     Environment Variables
-        PDSERVER_URL    Paradrop controller URL
+        PDSERVER_URL    ParaDrop controller URL [default: https://paradrop.org]
     """
     ctx.obj = {
         'pdserver_url': PDSERVER_URL

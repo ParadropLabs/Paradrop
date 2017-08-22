@@ -14,7 +14,7 @@ def server(ctx):
 
 @server.command()
 @click.pass_context
-def list(ctx):
+def list_routers(ctx):
     """
     List routers.
     """
@@ -31,7 +31,7 @@ def list(ctx):
 @click.argument('name')
 @click.option('--orphaned/--not-orphaned', default=False)
 @click.option('--claim', default=None)
-def create(ctx, name, orphaned, claim):
+def create_router(ctx, name, orphaned, claim):
     """
     Create a new router.
     """
@@ -48,7 +48,7 @@ def create(ctx, name, orphaned, claim):
 @server.command()
 @click.pass_context
 @click.argument('router_id')
-def delete(ctx, router_id):
+def delete_router(ctx, router_id):
     """
     Delete a router.
     """
