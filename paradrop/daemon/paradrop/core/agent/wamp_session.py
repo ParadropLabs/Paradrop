@@ -2,7 +2,6 @@
 The WAMP session of the paradrop daemon
 '''
 import six
-import smokesignal
 
 from twisted.internet.defer import inlineCallbacks
 from autobahn.wamp import auth
@@ -62,10 +61,6 @@ class WampSession(BaseSession):
 
         yield self.subscribe(self.updatesPending, self.uriPrefix + 'updatesPending')
         yield self.register(self.update, self.uriPrefix + 'update')
-
-        # route output to the logs call
-        smokesignal.on('logs', self.logs)
-
         yield BaseSession.onJoin(self, details)
 
 
@@ -77,27 +72,6 @@ class WampSession(BaseSession):
 
     def onDisconnect(self):
         out.info("Router session disconnected.")
-
-
-    @inlineCallbacks
-    def logs(self, logs):
-        ''' Called by the paradrop system when new logs come in '''
-
-        # If ANYTHING throws an exception here you enter recursive hell,
-        # since printing an exception will flood this method. No way out,
-        # have to throw the logs away
-        try:
-            # Temp fix- these will eventually be batched as a list, but not yet
-            logs = [logs]
-
-            # Naive implementation: step 1- send logs to server
-            yield self.call('pd', 'saveLogs', logs)
-
-            # Step 2- broadcast our logs under our pdid
-            yield self.publish(self.pdid, 'logs', logs)
-        except:
-            yield
-
 
     def update(self, pdid, data):
         print("Sending command {} to pdinstall".format(data['command']))

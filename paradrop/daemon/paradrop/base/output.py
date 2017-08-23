@@ -1,6 +1,6 @@
 ###################################################################
-# Copyright 2013-2015 All Rights Reserved
-# Authors: The Paradrop Team
+# Copyright 2013-2017 All Rights Reserved
+# Authors: The ParaDrop Team
 ###################################################################
 
 """
@@ -59,10 +59,10 @@ def silentLogPrefix(stepsUp):
     The single parameter reflects how far up the stack to go to find the caller and
     depends how deep the direct caller to this method is wrt to the target caller
 
-    NOTE: Some calls cannot be silently prefixed (getting into the twisted code is a 
+    NOTE: Some calls cannot be silently prefixed (getting into the twisted code is a
     great example)
 
-    :param steps: the number of steps to move up the stack for the caller
+    :param stepsUp: the number of steps to move up the stack for the caller
     :type steps: int.
     '''
 
@@ -78,7 +78,7 @@ def silentLogPrefix(stepsUp):
 
 def parseLogPrefix(tb):
     '''
-    Takes a traceback returned by 'extract_tb' and returns the package, module, 
+    Takes a traceback returned by 'extract_tb' and returns the package, module,
     and line number
     '''
     path = tb.split('/')
@@ -96,9 +96,9 @@ class PrintLogThread(threading.Thread):
     Receives information when its placed on the passed queue.
     Called from one location: Output.handlePrint.
 
-    Does not close the file: this happens in Output.endLogging. This 
+    Does not close the file: this happens in Output.endLogging. This
     simplifies the operation of this class, since it only has to concern
-    itself with the queue. 
+    itself with the queue.
 
     The path must exist before DailyLog runs for the first time.
     '''
@@ -163,9 +163,16 @@ class OutputRedirect(object):
 
         package, module, line = silentLogPrefix(2)
 
-        ret = {'message': str(contents.strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
-               'package': package, 'module': module, 'timestamp': time.time(),
-               'pdid': 'UNSET', 'line': line}
+        ret = { \
+            'message': str(contents.strip()), \
+            'type': self.type['name'], \
+            'extra': {'details': 'floating print statement'}, \
+            'package': package, \
+            'module': module, \
+            'timestamp': time.time(), \
+            'pdid': 'UNSET', \
+            'line': line \
+        }
 
         self.callback(ret)
 
@@ -216,9 +223,16 @@ class BaseOutput(object):
         if args[-1] == '\n':
             args = args.strip()
 
-        ret = {'message': str(args), 'type': self.type['name'], 'extra': extra,
-               'package': package, 'module': module, 'timestamp': time.time(),
-               'pdid': 'UNSET', 'line': line}
+        ret = { \
+            'message': str(args), \
+            'type': self.type['name'], \
+            'extra': extra, \
+            'package': package, \
+            'module': module, \
+            'timestamp': time.time(), \
+            'pdid': 'UNSET', \
+            'line': line \
+        }
 
         return ret
 
@@ -227,8 +241,14 @@ class BaseOutput(object):
         Convert a logdict into a custom formatted, human readable version suitable for
         printing to console.
         '''
-        trace = '[%s.%s#%s @ %s] ' % (logDict['package'], logDict['module'], logDict['line'], pdutils.stimestr(logDict['timestamp']))
-        return self.type['color'] + 'PARADROP ' + self.type['glyph'] + ' ' + trace + logDict['message'] + colorama.Style.RESET_ALL
+        trace = '[%s.%s#%s @ %s] ' % ( \
+            logDict['package'], \
+            logDict['module'], \
+            logDict['line'], \
+            pdutils.stimestr(logDict['timestamp']) \
+        )
+        return self.type['color'] + 'PARADROP ' + self.type['glyph'] + ' ' \
+            + trace + logDict['message'] + colorama.Style.RESET_ALL
 
     def __repr__(self):
         return "REPR"
@@ -251,7 +271,7 @@ class TwistedOutput(BaseOutput):
         Ignore exceptions (those get their own handler)
 
         Twisted will always pass a dict and guarantees [message, isError, and printed]
-        will be in there. 
+        will be in there.
         '''
 
         # there is another class responsible for handling error messages. Ignore these.
@@ -271,9 +291,16 @@ class TwistedOutput(BaseOutput):
             if x in message:
                 return None
 
-        ret = {'message': message, 'type': self.type['name'], 'extra': {},
-               'package': 'twisted', 'module': 'internal', 'timestamp': time.time(),
-               'pdid': 'UNSET', 'line': '??'}
+        ret = { \
+            'message': message, \
+            'type': self.type['name'], \
+            'extra': {}, \
+            'package': 'twisted', \
+            'module': 'internal', \
+            'timestamp': time.time(), \
+            'pdid': 'UNSET', \
+            'line': '??' \
+        }
 
         return ret
 
@@ -287,7 +314,7 @@ class TwistedException(BaseOutput):
         Only catch errors.
 
         Twisted will always pass a dict and guarantees [message, isError, and printed]
-        will be in there. 
+        will be in there.
         '''
 
         if args['isError'] == 0:
@@ -303,9 +330,16 @@ class TwistedException(BaseOutput):
         except Exception:
             package, module, line = "uknown", 'unknown', '??'
 
-        ret = {'message': str(args['failure'].getTraceback().strip()), 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
-               'package': package, 'module': module, 'timestamp': time.time(),
-               'pdid': 'UNSET', 'line': line}
+        ret = { \
+            'message': str(args['failure'].getTraceback().strip()), \
+            'type': self.type['name'], \
+            'extra': {'details': 'floating print statement'}, \
+            'package': package, \
+            'module': module, \
+            'timestamp': time.time(), \
+            'pdid': 'UNSET', \
+            'line': line \
+        }
 
         return ret
 
@@ -334,9 +368,16 @@ class ExceptionOutput(BaseOutput):
         for x in trace:
             message += '  File "%s", line %d, in %s\n\t%s\n' % (x[0], x[1], x[2], x[3])
 
-        ret = {'message': message, 'type': self.type['name'], 'extra': {'details': 'floating print statement'},
-               'package': package, 'module': module, 'timestamp': time.time(),
-               'pdid': 'UNSET', 'line': line}
+        ret = { \
+            'message': message, \
+            'type': self.type['name'], \
+            'extra': {'details': 'floating print statement'}, \
+            'package': package, \
+            'module': module, \
+            'timestamp': time.time(), \
+            'pdid': 'UNSET', \
+            'line': line \
+        }
 
         return ret
 
@@ -358,8 +399,8 @@ class Output():
 
     This way we can easily support different levels of verbosity without
     the need to use some kind of bitmask or anything else. On-the-fly output
-    creation is no longer supported due to the metadata and special processing 
-    added. It is still possible, but not implemented. 
+    creation is no longer supported due to the metadata and special processing
+    added. It is still possible, but not implemented.
 
     This is done by the __getattr__ function below, basically in __init__ we set
     any attributes you pass as args, and anything else not defined gets sent to __getattr__
@@ -417,7 +458,7 @@ class Output():
         to prevent mere imports from stealing stdio or console logging to vanish
         these must be manually turned on.
 
-        :param filePath: if provided, begin logging to the given directory. If 
+        :param filePath: if provided, begin logging to the given directory. If
             not provided, do not write out logs.
         :type filePath: str
         :param stealStdio: choose to intercept stdio (including vanilla print
@@ -463,7 +504,7 @@ class Output():
         All printing objects return their messages. These messages are routed
         to this method for handling.
 
-        Send the messages to the printer. Optionally display the messages. 
+        Send the messages to the printer. Optionally display the messages.
         Decorate the print messages with metadata.
 
         :param logDict: a dictionary representing this log item. Must contain keys
@@ -491,12 +532,12 @@ class Output():
 
     def messageToString(self, message):
         '''
-        Converts message dicts to a format suitable for printing based on 
+        Converts message dicts to a format suitable for printing based on
         the conversion rules laid out in in that class's implementation.
 
         :param message: the dict to convert to string
         :type message: dict.
-        :returns: str 
+        :returns: str
         '''
 
         level = Level(message['type'])
@@ -505,14 +546,14 @@ class Output():
 
     def getLogsSince(self, target, purge=False):
         '''
-        Reads all logs and returns their contents. The current log file is not touched. 
+        Reads all logs and returns their contents. The current log file is not touched.
         Removes old log files if 'purge' is set (though this is a topic for debate...)
 
-        The server will be most interested in this call, but it needs to register for 
-        new logs first, else there's a good chance to see duplicates. 
+        The server will be most interested in this call, but it needs to register for
+        new logs first, else there's a good chance to see duplicates.
 
         NOTE: don't open all log files, check to open only the ones that might be relevant.
-        This is certainly a bug and can cause memory issues. 
+        This is certainly a bug and can cause memory issues.
 
         :param target: seconds since the GMT epoch. Method returns logs that have timestamps later than this.
         :type target: float.
@@ -553,6 +594,7 @@ class Output():
         ret = filter(lambda x: x['timestamp'] > target, ret)
 
         return ret
+
 
     ###############################################################################
     # Reconfiguration
