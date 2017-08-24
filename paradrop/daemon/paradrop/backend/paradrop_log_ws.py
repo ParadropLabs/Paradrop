@@ -14,7 +14,7 @@ class ParadropLogWsProtocol(WebSocketServerProtocol):
         self.factory.addParadropLogObserver(self)
 
     def onParadropLog(self, logDict):
-        pass
+        self.sendMessage(logDict['message'])
 
     def onClose(self, wasClean, code, reason):
         out.info('ws /paradrop_logs disconnected: {}'.format(reason))
