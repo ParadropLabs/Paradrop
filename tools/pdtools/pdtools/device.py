@@ -1,14 +1,17 @@
 import getpass
 import operator
 import os
+import sys
 import tarfile
 import tempfile
 import builtins
 import click
 import yaml
 import json
+import websocket
+import base64
 
-from .comm import change_json, router_request
+from .comm import change_json, router_request, LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD
 
 
 @click.group()
@@ -20,6 +23,7 @@ def device(ctx, address):
     """
     ctx.obj['address'] = address
     ctx.obj['base_url'] = "http://{}/api/v1".format(address)
+    ctx.obj['ws_url'] = "ws://{}//ws".format(address)
 
 
 @device.group()
@@ -480,3 +484,42 @@ def connectAll(ctx):
         }
         print("snap connect {snap}:{plug} {interface}".format(**item))
         router_request("POST", url, json=req, dump=False)
+
+
+@device.command()
+@click.pass_context
+def log(ctx):
+    """
+    Monitor the logs of the router.
+    """
+    url = ctx.obj['ws_url'] + "/paradrop_logs"
+
+    # First try with the default username and password.
+    # If that fails, prompt user and try again.
+    userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
+    encoded_creds = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
+
+    # websocket.enableTrace(True)
+    count = 3
+    ws = websocket.WebSocket()
+    while count > 0:
+        try:
+            ws.connect(url, header=['Authorization: Basic %s' %  encoded_creds])
+            click.echo('ParaDrop log server connected!')
+        except:
+            click.echo('Failed to connect! Are you username and password correct?')
+            count -= 1
+            username = builtins.input('Username: ')
+            password = getpass.getpass('Password: ')
+            userpass = "{}:{}".format(username, password)
+            encoded_creds = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
+            continue
+
+        while True:
+            try:
+                message = ws.recv()
+                click.echo(message)
+            except:
+                ws.close()
+                click.echo('ParaDrop log server disconnected')
+                sys.exit(0)
