@@ -1,0 +1,9 @@
+name: hello-world
+version: 0.1.0
+summary: Hello world chute
+description: |
+  A simple chute to demonstrate the basic structure of a ParaDrop chute.
+
+config:
+  web:
+    port: 80
