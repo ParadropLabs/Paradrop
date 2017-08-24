@@ -116,19 +116,25 @@ class ChuteApi(object):
 
             with open(configfile, "r") as source:
                 full_config = yaml.safe_load(source)
+                # TODO: chute_name must be valid
+                chute_name = full_config.get("name", None)
+                chute_version = full_config.get("version", None)
+                if chute_name is None or chute_version is None:
+                    raise Exception("paradrop.yaml should have name and version fields")
                 config = full_config.get("config", {})
 
             update['workdir'] = tempdir
+            update['version'] = "{}_x{}".format(chute_version, update['tok'])
+            update['name'] = chute_name
             update.update(config)
-
         else:
+            # TODO: this case is not tested
             body = json.loads(request.content.read())
             config = body['config']
             update.update(config)
-
-        # Set a time-based version number for side-loaded chutes because we do
-        # not expect the to receive it from the config file.
-        update['version'] = "x{}".format(update['tok'])
+            # Set a time-based version number for side-loaded chutes because we do
+            # not expect they to receive it from the config file.
+            update['version'] = "x{}".format(update['tok'])
 
         result = yield self.update_manager.add_update(**update)
         request.setHeader('Content-Type', 'application/json')
