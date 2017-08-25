@@ -73,7 +73,7 @@ def install(ctx):
 @device.group()
 @click.argument('chute_name')
 @click.pass_context
-def chute(ctx, chute):
+def chute(ctx, chute_name):
     """
     Operations on a chute.
     """
