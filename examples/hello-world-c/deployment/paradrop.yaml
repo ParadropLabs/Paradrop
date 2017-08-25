@@ -1,0 +1,9 @@
+name: hello-world-c
+version: 0.1.0
+summary: Hello world chute written with C language
+description: |
+  A simple chute to demonstrate the basic structure of a ParaDrop chute that need to build source code to binary.
+
+config:
+  web:
+    port: 80
