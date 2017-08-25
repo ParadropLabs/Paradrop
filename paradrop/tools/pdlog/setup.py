@@ -4,7 +4,7 @@ setup(
     name="pdlog",
     version="0.1.0",
     author="ParaDrop Lab",
-    license="GPL",
+    license="Apache 2",
     packages=find_packages(),
     install_requires=[
     ],
