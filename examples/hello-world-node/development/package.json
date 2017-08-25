@@ -1,0 +1,13 @@
+{
+  "name": "hello-world-node",
+  "version": "0.1.0",
+  "description": "Node.js on ParaDrop",
+  "author": "ParaDrop Labs",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.15.4"
+  }
+}

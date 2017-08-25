@@ -14,7 +14,7 @@ docker run -t -i -p 8080:80 -v $PWD:/opt/paradrop paradrop/hello-world-c /bin/ba
 
 In the container
 ```
-cd /opt/paradrop/chute
+cd /opt/paradrop/development
 make
 ```
 
@@ -25,5 +25,5 @@ Deployment
 On host
 ```
 cd deployment
-pdtools device --address=<router_ip> chutes install ./deployment
+pdtools device --address=<router_ip> chutes install
 ```
