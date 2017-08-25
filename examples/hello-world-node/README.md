@@ -19,9 +19,6 @@ npm install
 npm start
 ```
 
-Test the project to make sure it works, then run
-
-
 Deployment
 -----------
 On host

@@ -1,0 +1,9 @@
+name: hello-world-python2
+version: 0.1.0
+summary: Hello world chute written with Python2
+description: |
+  A simple chute to demonstrate the basic structure of a ParaDrop chute written with Python v2.
+
+config:
+  web:
+    port: 80
