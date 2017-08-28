@@ -7,6 +7,8 @@ from pprint import pprint
 import builtins
 import requests
 
+from .devices.camera import Camera
+
 
 LOCAL_DEFAULT_USERNAME = "paradrop"
 LOCAL_DEFAULT_PASSWORD = ""
@@ -18,6 +20,13 @@ PARADROP_CHUTE_NAME = os.environ.get("PARADROP_CHUTE_NAME", None)
 class ParadropClient(object):
     """
     Client for interacting with a Paradrop daemon instance.
+
+    Here is a motivating example that is intended to be valid chute code:
+
+    from pdtools import ParadropClient
+    client = ParadropClient()
+    for camera in client.get_cameras():
+        img = camera.get_image()
     """
     def __init__(self, host=None):
         if host is None:
@@ -31,7 +40,7 @@ class ParadropClient(object):
         List cameras connected to a chute's network.
 
         Note: This only detects the subset of D-Link cameras that we currently
-        support.
+        support. We will add more devices as we test them.
 
         chute_name: if not specified, will be read from PARADROP_CHUTE_NAME
         network_name: if not specified, will include all of the chute's networks
@@ -42,12 +51,13 @@ class ParadropClient(object):
         cameras = []
         devices = self.get_devices(chute_name, network_name)
 
-        cam_re = re.compile("(28:10:7b|b0:c5:54|01:b0:c5):.*")
-
+        dlink_re = re.compile("(28:10:7b|b0:c5:54|01:b0:c5):.*")
         for dev in devices:
-            match = cam_re.match(dev['mac_addr'])
+            match = dlink_re.match(dev['mac_addr'])
             if match is not None:
-                cameras.append(dev)
+                # TODO: ip_addr should not be missing; this is a work in progress.
+                ip_addr = dev.get('ip_addr', None)
+                cameras.append(Camera(host=ip_addr))
 
         return cameras
 
@@ -70,6 +80,8 @@ class ParadropClient(object):
             networks = [x['name'] for x in self.get_networks(chute_name)]
 
         for net in networks:
+            # TODO: Use a different endpoint that lists devices with IP address
+            # and MAC address, sourced from DHCP lease records.
             url = self.base_url + "/chutes/{}/networks/{}/stations".format(
                     chute_name, net)
             result = self.request("GET", url)
@@ -100,6 +112,11 @@ class ParadropClient(object):
         """
         session = requests.Session()
         request = requests.Request(method, url, json=json, headers=headers, **kwargs)
+
+        # TODO: Implement selectable auth methods including:
+        # - API token from environment variable
+        # - Default username and password
+        # - Prompt for username and password
 
         # First try with the default username and password.
         # If that fails, prompt user and try again.
