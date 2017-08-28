@@ -1,7 +1,7 @@
 import base64
-import cStringIO
 
 import requests
+import six
 
 
 class Camera(object):
@@ -12,7 +12,7 @@ class Camera(object):
         """
         Get an image from the camera.
 
-        Returns image data as a StringIO object.
+        Returns image data as a BytesIO/StringIO object.
         """
         url = "http://{}/image.jpg".format(self.host)
 
@@ -24,7 +24,7 @@ class Camera(object):
 
         result = requests.get(url, headers=headers)
         if result.ok:
-            return cStringIO.StringIO(result.content)
+            return six.BytesIO(result.content)
 
         else:
             return None
