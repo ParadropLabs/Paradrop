@@ -49,21 +49,19 @@ class ParadropClient(object):
             raise Exception("chute_name was not specified")
 
         cameras = []
-        devices = self.get_devices(chute_name, network_name)
+        leases = self.get_leases(chute_name, network_name)
 
         dlink_re = re.compile("(28:10:7b|b0:c5:54|01:b0:c5):.*")
-        for dev in devices:
-            match = dlink_re.match(dev['mac_addr'])
+        for lease in leases:
+            match = dlink_re.match(lease['mac_addr'])
             if match is not None:
-                # TODO: ip_addr should not be missing; this is a work in progress.
-                ip_addr = dev.get('ip_addr', None)
-                cameras.append(Camera(host=ip_addr))
+                cameras.append(Camera(host=lease['ip_addr']))
 
         return cameras
 
-    def get_devices(self, chute_name=PARADROP_CHUTE_NAME, network_name=None):
+    def get_leases(self, chute_name=PARADROP_CHUTE_NAME, network_name=None):
         """
-        List devices connected to a chute's network.
+        List DHCP lease records for a chute's network.
 
         chute_name: if not specified, will be read from PARADROP_CHUTE_NAME
         network_name: if not specified, will include all of the chute's networks
@@ -80,9 +78,7 @@ class ParadropClient(object):
             networks = [x['name'] for x in self.get_networks(chute_name)]
 
         for net in networks:
-            # TODO: Use a different endpoint that lists devices with IP address
-            # and MAC address, sourced from DHCP lease records.
-            url = self.base_url + "/chutes/{}/networks/{}/stations".format(
+            url = self.base_url + "/chutes/{}/networks/{}/leases".format(
                     chute_name, net)
             result = self.request("GET", url)
 

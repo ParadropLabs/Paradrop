@@ -304,6 +304,40 @@ class ChuteApi(object):
 
         return json.dumps(data)
 
+    @routes.route('/<chute>/networks/<network>/leases', methods=['GET'])
+    def get_leases(self, request, chute, network):
+        """
+        Get current list of DHCP leases for chute network.
+
+        Returns a list of DHCP lease records with the following fields:
+        expires: lease expiration time (seconds since Unix epoch)
+        mac_addr: device MAC address
+        ip_addr: device IP address
+        hostname: name that the device reported
+        client_id: optional identifier supplied by device
+        """
+        cors.config_cors(request)
+
+        request.setHeader('Content-Type', 'application/json')
+
+        chute_obj = ChuteStorage.chuteList[chute]
+        externalSystemDir = chute_obj.getCache('externalSystemDir')
+
+        leasefile = 'dnsmasq-{}.leases'.format(network)
+        path = os.path.join(externalSystemDir, leasefile)
+
+        # The format of the dnsmasq leases file is one entry per line with
+        # space-separated fields.
+        keys = ['expires', 'mac_addr', 'ip_addr', 'hostname', 'client_id']
+
+        leases = []
+        with open(path, 'r') as source:
+            for line in source:
+                parts = line.strip().split()
+                leases.append(dict(zip(keys, parts)))
+
+        return json.dumps(leases)
+
     @routes.route('/<chute>/networks/<network>/stations', methods=['GET'])
     def get_stations(self, request, chute, network):
         cors.config_cors(request)
