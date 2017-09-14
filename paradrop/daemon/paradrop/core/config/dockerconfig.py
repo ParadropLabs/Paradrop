@@ -43,7 +43,17 @@ def getVirtPreamble(update):
     update.new.setCache('externalDataDir', extDataDir)
     update.new.setCache('internalSystemDir', intSystemDir)
     update.new.setCache('externalSystemDir', extSystemDir)
-    update.new.setCache('apiToken', generateToken())
+
+    # Reuse previous token if it exists. This is not ideal but works for
+    # updates that do not recreate the container with updated environment
+    # variables. Stop then start is one such sequence where environment
+    # variables are not updated.
+    token = None
+    if update.old is not None:
+        token = update.old.getCache('apiToken')
+    if token is None:
+        token = generateToken()
+    update.new.setCache('apiToken', token)
 
     if not hasattr(update, 'dockerfile'):
         return
