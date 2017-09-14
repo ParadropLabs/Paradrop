@@ -769,6 +769,7 @@ def prepare_environment(chute):
     env['PARADROP_BASE_URL'] = "http://{}/api/v1/chutes/{}".format(
             settings.LOCAL_DOMAIN, chute.name)
     env['PARADROP_API_TOKEN'] = chute.getCache('apiToken')
+    env['PARADROP_WS_API_URL'] = "ws://{}/ws".format(settings.LOCAL_DOMAIN)
 
     if hasattr(chute, 'version'):
         env['PARADROP_CHUTE_VERSION'] = chute.version

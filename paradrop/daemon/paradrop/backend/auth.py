@@ -1,6 +1,7 @@
 import base64
 import functools
 
+from paradrop.base.output import out
 from paradrop.core.chute.chute_storage import ChuteStorage
 
 # TODO: Configurable username/password.
@@ -73,6 +74,7 @@ def requires_auth(func):
     def decorated(self, request, *args, **kwargs):
         auth_header = request.getHeader('Authorization')
         if not auth_header or not check_auth(self.password_manager, auth_header):
+            out.warn('Failed to authenticate')
             request.setResponseCode(401)
             request.setHeader("WWW-Authenticate", "Basic realm=\"Login Required\"")
             return
