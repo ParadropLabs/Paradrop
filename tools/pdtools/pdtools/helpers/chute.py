@@ -24,6 +24,21 @@ def get_name():
         return name
 
 
+def get_description():
+    print("")
+    print("Chute Description")
+    print("")
+    print("Enter a description for the chute. This will be displayed in")
+    print("the chute store.")
+    print("")
+    while True:
+        desc = input("description: ")
+        if len(desc) == 0:
+            continue
+
+        return desc
+
+
 def get_chute_type():
     print("")
     print("Chute Type")
@@ -116,6 +131,7 @@ def build_chute():
     }
 
     chute['config']['name'] = get_name()
+    chute['description'] = get_description()
     chute['type'] = get_chute_type()
 
     if chute['type'] == "light":
