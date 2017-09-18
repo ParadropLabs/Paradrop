@@ -197,7 +197,7 @@ def _buildImage(update, client, inline, **buildArgs):
         build_conf.update(update.build)
 
     # If this is a light chute, generate a Dockerfile.
-    chute_type = build_conf.get('type', 'heavy')
+    chute_type = build_conf.get('type', 'normal')
     if chute_type == 'light':
         buildArgs['pull'] = True
 

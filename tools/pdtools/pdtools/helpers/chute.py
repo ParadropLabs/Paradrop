@@ -46,18 +46,18 @@ def get_chute_type():
     print("Paradrop has two types of chutes. Light chutes are based on a base")
     print("image that is optimized for a particular language such as Python or")
     print("JavaScript and use the language-specific package manager (pip or npm)")
-    print("to install dependencies. Heavy chutes give you more flexibility to")
+    print("to install dependencies. Normal chutes give you more flexibility to")
     print("install dependencies but require that you write your own Dockerfile.")
     print("")
-    print("Valid types: light, heavy")
-    valid = set(["light", "heavy"])
+    print("Valid types: light, normal")
+    valid = set(["light", "normal"])
     while True:
-        ctype = input("type [light]: ").lower()
+        ctype = input("type [normal]: ").lower()
         if len(ctype) == 0:
-            ctype = "light"
+            ctype = "normal"
 
         if ctype not in valid:
-            print("Valid types: light, heavy")
+            print("Valid types: light, normal")
             continue
 
         return ctype
