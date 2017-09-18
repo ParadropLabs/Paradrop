@@ -1,11 +1,6 @@
-#import getpass
-#import operator
-#import os
-#import tarfile
-#import tempfile
-#
-#import builtins
 import click
+import json
+import os
 import yaml
 
 from .helpers.chute import build_chute
@@ -31,3 +26,15 @@ def init(ctx):
     chute = build_chute()
     with open("paradrop.yaml", "w") as output:
         yaml.dump(chute, output, default_flow_style=False)
+
+    # If this is a node.js chute, generate a package.json file from the
+    # information that the user provided.
+    if chute.get('use', None) == 'node':
+        if not os.path.isfile('package.json'):
+            data = {
+                'name': chute['config']['name'],
+                'version': '1.0.0',
+                'description': chute['description']
+            }
+            with open('package.json', 'w') as output:
+                json.dump(data, output, sort_keys=True, indent=2)
