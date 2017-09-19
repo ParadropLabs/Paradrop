@@ -13,6 +13,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import subprocess
 import time
 import yaml
@@ -229,6 +230,10 @@ def _buildImage(update, client, inline, **buildArgs):
                 msg = value.rstrip()
                 if len(msg) > 0 and suppress_re.match(msg) is None:
                     update.progress(msg)
+
+    # Clean up working directory after building.
+    if 'path' in buildArgs:
+        shutil.rmtree(buildArgs['path'])
 
     return buildSuccess
 
