@@ -118,6 +118,16 @@ class ChuteApi(object):
                 full_config = yaml.safe_load(source)
                 config = full_config.get("config", {})
 
+            # Try to read chute name from top level (preferred) or from config
+            # object (deprecated).
+            if 'name' in full_config:
+                update['name'] = full_config['name']
+            elif 'name' in config:
+                out.warn("Deprecated: move chute name to top level of config file.")
+                update['name'] = config['name']
+            else:
+                raise Exception("Chute name not found in configuration file.")
+
             update['workdir'] = tempdir
             update.update(config)
 
@@ -185,6 +195,16 @@ class ChuteApi(object):
             with open(configfile, "r") as source:
                 full_config = yaml.safe_load(source)
                 config = full_config.get("config", {})
+
+            # Try to read chute name from top level (preferred) or from config
+            # object (deprecated).
+            if 'name' in full_config:
+                update['name'] = full_config['name']
+            elif 'name' in config:
+                out.warn("Deprecated: move chute name to top level of config file.")
+                update['name'] = config['name']
+            else:
+                raise Exception("Chute name not found in configuration file.")
 
             update['workdir'] = tempdir
             update.update(config)
