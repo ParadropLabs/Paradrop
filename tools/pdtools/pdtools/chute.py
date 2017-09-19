@@ -71,7 +71,8 @@ def chute(ctx):
 @chute.command('create-wifi-interface')
 @click.pass_context
 @click.argument('essid')
-def create_wifi_interface(ctx, essid):
+@click.option('--password', default=None)
+def create_wifi_interface(ctx, essid, password):
     """
     Add a Wi-Fi interface (AP mode) to the chute configuration.
     """
@@ -101,6 +102,13 @@ def create_wifi_interface(ctx, essid):
             'hidden': False
         }
     }
+
+    # Minimum password length is part of the standard.
+    if password is not None:
+        if len(password) < 8:
+            print("Wi-Fi password must be at least 8 characters.")
+            return
+        net['wifi']['key'] = password
 
     with open('paradrop.yaml', 'w') as output:
         yaml.safe_dump(chute, output, default_flow_style=False)
