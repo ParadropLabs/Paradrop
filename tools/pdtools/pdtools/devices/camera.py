@@ -8,6 +8,9 @@ class Camera(object):
     def __init__(self, host):
         self.host = host
 
+    def __repr__(self):
+        return "Camera({})".format(self.host)
+
     def get_image(self):
         """
         Get an image from the camera.
