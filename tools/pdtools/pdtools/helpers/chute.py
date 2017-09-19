@@ -130,7 +130,7 @@ def build_chute():
         'config': {}
     }
 
-    chute['config']['name'] = get_name()
+    chute['name'] = get_name()
     chute['description'] = get_description()
     chute['type'] = get_chute_type()
 
