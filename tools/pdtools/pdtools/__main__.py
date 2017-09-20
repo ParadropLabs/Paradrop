@@ -26,6 +26,12 @@ def root(ctx):
     Environment Variables
         PDSERVER_URL    Paradrop controller URL
     """
+    # Options can be parsed from PDTOOLS_* environment variables.
+    ctx.auto_envvar_prefix = 'PDTOOLS'
+
+    # Respond to both -h and --help for all commands.
+    ctx.help_option_names = ['-h', '--help']
+
     ctx.obj = {
         'pdserver_url': PDSERVER_URL
     }

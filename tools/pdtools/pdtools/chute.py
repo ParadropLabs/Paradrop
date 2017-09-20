@@ -72,7 +72,8 @@ def chute(ctx):
 @click.pass_context
 @click.argument('essid')
 @click.option('--password', default=None)
-def create_wifi_interface(ctx, essid, password):
+@click.option('--force', default=False, is_flag=True)
+def create_wifi_interface(ctx, essid, password, force):
     """
     Add a Wi-Fi interface (AP mode) to the chute configuration.
     """
@@ -83,7 +84,7 @@ def create_wifi_interface(ctx, essid, password):
     net = update_object(chute, 'config.net')
 
     # Only support adding the first Wi-Fi interface for now.
-    if 'wifi' in net:
+    if 'wifi' in net and not force:
         print("Wi-Fi interface already exists in paradrop.yaml.")
         print("Please edit the file directly to make changes.")
         return
