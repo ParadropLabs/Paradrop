@@ -1,4 +1,6 @@
+import datetime
 import getpass
+import json
 import operator
 import os
 import tarfile
@@ -8,7 +10,7 @@ import builtins
 import click
 import yaml
 
-from .comm import change_json, router_request
+from .comm import change_json, router_request, router_ws_request
 
 
 @click.group()
@@ -20,6 +22,46 @@ def device(ctx, address):
     """
     ctx.obj['address'] = address
     ctx.obj['base_url'] = "http://{}/api/v1".format(address)
+
+
+@device.command()
+@click.pass_context
+def changes(ctx):
+    """
+    List changes in the working queue.
+    """
+    url = "{}/changes/".format(ctx.obj['base_url'])
+    router_request("GET", url)
+
+
+@device.command()
+@click.pass_context
+@click.argument('change_id')
+def watch(ctx, change_id):
+    """
+    Stream messages for a change in progress.
+    """
+    url = "ws://{}/ws/changes/{}/stream".format(ctx.obj['address'], change_id)
+
+    def on_error(ws, error):
+        print(error)
+    def on_message(ws, message):
+        data = json.loads(message)
+        time = datetime.datetime.fromtimestamp(data['time'])
+        msg = data['message'].rstrip()
+        print("{}: {}".format(time, msg))
+
+    router_ws_request(url, on_message=on_message, on_error=on_error)
+
+
+@device.command()
+@click.pass_context
+def changes(ctx):
+    """
+    List changes in the working queue.
+    """
+    url = "{}/changes/".format(ctx.obj['base_url'])
+    router_request("GET", url)
 
 
 @device.group()
@@ -63,7 +105,9 @@ def create(ctx):
         tar.close()
 
         temp.seek(0)
-        router_request("POST", url, headers=headers, data=temp)
+        res = router_request("POST", url, headers=headers, data=temp)
+        data = res.json()
+        ctx.invoke(watch, change_id=data['change_id'])
 
 
 @device.group()
@@ -104,7 +148,9 @@ def delete(ctx):
     Uninstall the chute.
     """
     url = ctx.obj['chute_url']
-    router_request("DELETE", url)
+    res = router_request("DELETE", url)
+    data = res.json()
+    ctx.invoke(watch, change_id=data['change_id'])
 
 
 @chute.command()
@@ -149,7 +195,9 @@ def update(ctx):
         tar.close()
 
         temp.seek(0)
-        router_request("PUT", url, headers=headers, data=temp)
+        res = router_request("PUT", url, headers=headers, data=temp)
+        data = res.json()
+        ctx.invoke(watch, change_id=data['change_id'])
 
 
 @chute.command()

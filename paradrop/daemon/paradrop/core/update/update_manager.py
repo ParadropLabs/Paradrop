@@ -33,12 +33,21 @@ class UpdateManager:
 
         self.updateLock = threading.Lock()
         self.updateQueue = []
+        self.active_change = None
+
+        # TODO: Ideally, load this from file so that change IDs are unique
+        # across system reboots.
+        self.next_change_id = 1
 
         ###########################################################################################
         # Launch the first update call, NOTE that you have to use callInThread!!
         # This happens because the perform_updates should run in its own thread,
         # it makes blocking calls and such... so if we *don't* use callInThread
         # then this function WILL BLOCK THE MAIN EVENT LOOP (ie. you cannot send any data)
+        #
+        # FIXME: It should be noted that calling updateLock.acquire(), e.g.
+        # from add_update, also blocks the main thread.  Synchronizing access
+        # to the work queue should be reworked.
         ###########################################################################################
         self.reactor.callInThread(self._perform_updates)
 
@@ -63,7 +72,7 @@ class UpdateManager:
         self.updateQueue = []
         self.updateLock.release()
 
-    def add_update(self, **updateObj):
+    def add_update(self, **update):
         """MUTEX: updateLock
             Take the list of Chutes and push the list into a queue object, this object will then call
             the real update function in another thread so the function that called us is not blocked.
@@ -71,7 +80,16 @@ class UpdateManager:
             We take a callable responseFunction to call, when we are done with this update we should call it.
         """
         d = defer.Deferred()
-        updateObj['deferred'] = d
+        update['deferred'] = d
+
+        # Make sure the update object has a change ID for message retrieval.  Some
+        # code paths (API code) will prefer to set the change ID before calling
+        # add_update so that they can return the change ID to the user.
+        if 'change_id' not in update:
+            update['change_id'] = self.assign_change_id()
+
+        # Convert to Update object before storing.
+        updateObj = update_object.parse(update)
 
         self.updateLock.acquire()
         self.updateQueue.append(updateObj)
@@ -79,14 +97,41 @@ class UpdateManager:
 
         return d
 
+    def assign_change_id(self):
+        """
+        Get a unique change ID for an update.
+
+        This should be used to set the change_id field in an update object.
+        """
+        x = self.next_change_id
+        self.next_change_id += 1
+        return x
+
+    def find_change(self, change_id):
+        """
+        Search active and queued changes for the requested change.
+
+        Returns an Update object or None.
+        """
+        if self.active_change is not None:
+            if self.active_change.change_id == change_id:
+                return self.active_change
+
+        for update in self.updateQueue:
+            if update.change_id == change_id:
+                return update
+
+        return None
+
     def _make_router_update(self, updateType):
         """
         Make a ROUTER class update object.
         """
-        return dict(updateClass='ROUTER',
+        update = dict(updateClass='ROUTER',
                     updateType=updateType,
                     name=settings.RESERVED_CHUTE,
                     tok=timeint())
+        return update_object.parse(update)
 
     def _perform_updates(self, checkDocker=True):
         """This is the main working function of the PDConfigurer class.
@@ -114,23 +159,21 @@ class UpdateManager:
         # update queue before processing any updates
         startQueue = reloadChutes()
         self.updateLock.acquire()
-        # insert the data into the front of our update queue so that all old
-        # chutes restart before new ones are processed
-        for updateObj in startQueue:
-            self.updateQueue.insert(0, updateObj)
-        self.updateQueue.insert(0, self._make_router_update("inithostconfig"))
-        self.updateQueue.insert(0, self._make_router_update("prehostconfig"))
+        self.updateQueue.append(self._make_router_update("prehostconfig"))
+        self.updateQueue.append(self._make_router_update("inithostconfig"))
+        self.updateQueue.extend(update_object.parse(u) for u in startQueue)
         self.updateLock.release()
 
         # Always perform this work
-        while(self.reactor.running):
+        while self.reactor.running:
             # Check for new updates
-            updateObj = self._get_next_update()
-            if(updateObj is None):
+            self.active_change = self._get_next_update()
+            if self.active_change is None:
                 time.sleep(1)
                 continue
 
-            self._perform_update(updateObj)
+            self._perform_update(self.active_change)
+            self.active_change = None
 
             # Apply a batch of updates and when the queue is empty, send a
             # state report.  We're not reacquiring the mutex here because the
@@ -139,16 +182,13 @@ class UpdateManager:
                 threads.blockingCallFromThread(self.reactor,
                         reporting.sendStateReport)
 
-    def _perform_update(self, updateObj):
+    def _perform_update(self, update):
         """
         Perform a single update, to be called by perform_updates.
 
         This is split from perform_updates for easier unit testing.
         """
         try:
-            # Take the object and identify the update type
-            update = update_object.parse(updateObj)
-
             # Mark update as having been started.
             update.started()
             out.info('Performing update %s\n' % (update))

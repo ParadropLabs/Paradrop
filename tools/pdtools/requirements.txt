@@ -11,3 +11,4 @@ requests==2.18.1
 six==1.10.0
 smmap2==2.0.3
 urllib3==1.21.1
+websocket-client==0.40.0

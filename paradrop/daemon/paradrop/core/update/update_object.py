@@ -65,6 +65,10 @@ class UpdateObject(object):
         # for reporting on the completion status of the update.
         self.delegated = False
 
+        # Store progress messages so that they can be retrieved by API.
+        self.messages = []
+        self.message_observers = []
+
     def __repr__(self):
         return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
 
@@ -132,6 +136,11 @@ class UpdateObject(object):
                 session.publish(session.uriPrefix + 'updateProgress', data)
             except Exception as error:
                 out.warn("Publish failed: {} {}".format(error.__class__, error))
+
+        # Send messages to internal consumers (e.g. open websocket connections)
+        self.messages.append(data)
+        for observer in self.message_observers:
+            observer.on_message(data)
 
     def complete(self, **kwargs):
         """
@@ -215,6 +224,12 @@ class UpdateObject(object):
         # Respond to the API server to let them know the result
         self.complete(success=True, message='Chute {} {} success'.format(
             self.name, self.updateType))
+
+    def add_message_observer(self, observer):
+        self.message_observers.append(observer)
+
+    def remove_message_observer(self, observer):
+        self.message_observers.remove(observer)
 
 
 # This gives the new chute state if an update of a given type succeeds.

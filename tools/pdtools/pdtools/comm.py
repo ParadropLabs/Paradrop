@@ -6,6 +6,7 @@ from urlparse import urlparse
 
 import builtins
 import requests
+import websocket
 
 from .config import PdtoolsConfig
 
@@ -120,3 +121,24 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
                 data = res.json()
                 pprint(data)
             return res
+
+
+def router_ws_request(url, headers=None, **kwargs):
+    """
+    Issue a router WS connection.
+
+    This will prompt for a username and password if necessary.
+    """
+    if headers is None:
+        headers = {}
+    else:
+        headers = headers.copy()
+
+    # First try with the default username and password.
+    # If that fails, prompt user and try again.
+    userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
+    encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
+    headers.update({'Authorization': 'Basic {}'.format(encoded)})
+
+    ws = websocket.WebSocketApp(url, header=headers, **kwargs)
+    ws.run_forever()

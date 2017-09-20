@@ -92,7 +92,6 @@ class ChuteApi(object):
         return json.dumps(result)
 
     @routes.route('/', methods=['POST'])
-    @inlineCallbacks
     def create_chute(self, request):
         cors.config_cors(request)
 
@@ -140,9 +139,17 @@ class ChuteApi(object):
         # not expect the to receive it from the config file.
         update['version'] = "x{}".format(update['tok'])
 
-        result = yield self.update_manager.add_update(**update)
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
         request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
+        return json.dumps(result)
 
     @routes.route('/<chute>', methods=['GET'])
     def get_chute(self, request, chute):
@@ -169,7 +176,6 @@ class ChuteApi(object):
         return json.dumps(result)
 
     @routes.route('/<chute>', methods=['PUT'])
-    @inlineCallbacks
     def update_chute(self, request, chute):
         cors.config_cors(request)
 
@@ -219,12 +225,19 @@ class ChuteApi(object):
         # not expect the to receive it from the config file.
         update['version'] = "x{}".format(update['tok'])
 
-        result = yield self.update_manager.add_update(**update)
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
         request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
+        return json.dumps(result)
 
     @routes.route('/<chute>', methods=['DELETE'])
-    @inlineCallbacks
     def delete_chute(self, request, chute):
         cors.config_cors(request)
 
@@ -232,10 +245,18 @@ class ChuteApi(object):
                       updateType='delete',
                       tok=pdutils.timeint(),
                       name=chute)
-        result = yield self.update_manager.add_update(**update)
 
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
         request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
+        return json.dumps(result)
 
     @routes.route('/<chute>/stop', methods=['POST'])
     @inlineCallbacks
