@@ -7,6 +7,7 @@ setup(
     description="ParaDrop development tools",
     install_requires=[
         'appdirs~=1.4.3',
+        'arrow~=0.10.0',
         'click~=6.7',
         'future~=0.16.0',
         'GitPython~=2.1.5',

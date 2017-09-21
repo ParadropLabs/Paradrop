@@ -6,6 +6,7 @@ import os
 import tarfile
 import tempfile
 
+import arrow
 import builtins
 import click
 import yaml
@@ -171,6 +172,25 @@ def cache(ctx):
     """
     url = ctx.obj['chute_url'] + "/cache"
     router_request("GET", url)
+
+
+@chute.command()
+@click.pass_context
+def logs(ctx):
+    """
+    Watch log messages from a chute.
+    """
+    url = "ws://{}/sockjs/logs/{}/websocket".format(ctx.obj['address'], ctx.obj['chute'])
+
+    def on_error(ws, error):
+        print(error)
+    def on_message(ws, message):
+        data = json.loads(message)
+        time = arrow.get(data['timestamp']).to('local').datetime
+        msg = data['message'].rstrip()
+        print("{}: {}".format(time, msg))
+
+    router_ws_request(url, on_message=on_message, on_error=on_error)
 
 
 @chute.command()
