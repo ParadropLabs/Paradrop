@@ -13,8 +13,9 @@ class ChangeStreamProtocol(WebSocketServerProtocol):
 
     def onOpen(self):
         self.factory.update.add_message_observer(self)
-        for msg in self.factory.update.messages:
-            self.sendMessage(json.dumps(msg))
+
+    def on_complete(self):
+        self.sendClose()
 
     def on_message(self, data):
         self.sendMessage(json.dumps(data))
