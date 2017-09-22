@@ -55,7 +55,7 @@ class ParadropClient(object):
         for lease in leases:
             match = dlink_re.match(lease['mac_addr'])
             if match is not None:
-                cameras.append(Camera(host=lease['ip_addr']))
+                cameras.append(Camera(lease['mac_addr'], lease['ip_addr']))
 
         return cameras
 

@@ -5,11 +5,18 @@ import six
 
 
 class Camera(object):
-    def __init__(self, host):
+    def __init__(self, device_id, host):
+        """
+        Initialize Camera device object.
+
+        device_id: string that uniquely identifies the device (e.g. MAC address)
+        host: host name or IP address
+        """
+        self.device_id = device_id
         self.host = host
 
     def __repr__(self):
-        return "Camera({})".format(self.host)
+        return "Camera({})".format(self.device_id)
 
     def get_image(self):
         """
