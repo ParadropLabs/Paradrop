@@ -2,7 +2,7 @@ import base64
 import getpass
 import os
 from pprint import pprint
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 import builtins
 import requests
