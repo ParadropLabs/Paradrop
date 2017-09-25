@@ -125,7 +125,8 @@ def list(ctx):
 
 @store.command()
 @click.pass_context
-def register(ctx):
+@click.option('--public/--not-public', default=False)
+def register(ctx, public):
     """
     Register a chute with the store.
     """
@@ -139,7 +140,6 @@ def register(ctx):
 
     name = chute_find_field(chute, 'name')
     description = chute_find_field(chute, 'description')
-    public = chute_find_field(chute, 'public', False)
 
     print("Name: {}".format(name))
     print("Description: {}".format(description))
