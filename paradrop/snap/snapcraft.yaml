@@ -22,14 +22,18 @@ apps:
       - docker
       - firewall-control
       - hardware-observe
-      - kernel-module-control
+        # I think we added kernel-module-control, not because we load kernel
+        # modules but because of some other capability that is bundled with it.
+        # However, it triggers manual review.
+        # - kernel-module-control
       - network
       - network-bind
       - network-control
       - ppp
       - process-control
       - shutdown
-      - snapd-control
+        # Desired, but triggers manual review...
+        #      - snapd-control
       - system-observe
 
   pdlog:
