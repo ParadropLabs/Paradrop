@@ -28,6 +28,26 @@ def list(ctx):
 
 @routers.command()
 @click.pass_context
+@click.argument('token')
+def claim(ctx, token):
+    """
+    Claim an existing router.
+    """
+    url = ctx.obj['routers_url'] + '/claim'
+    data = {
+        'claim_token': token
+    }
+    result = pdserver_request('POST', url, json=data)
+    if result.ok:
+        router = result.json()
+        print("Claimed router: {}".format(router['name']))
+    else:
+        print("There was an error claiming the router.")
+        print("Please check that your claim token is correct.")
+
+
+@routers.command()
+@click.pass_context
 @click.argument('name')
 @click.option('--orphaned/--not-orphaned', default=False)
 @click.option('--claim', default=None)
