@@ -361,14 +361,15 @@ def edit(ctx):
     os.remove(path)
 
 
-@device.group(invoke_without_command=True)
+@device.group()
 @click.pass_context
-def sshkeys(ctx):
+@click.option('--user', default='paradrop')
+def sshkeys(ctx, user):
     """
     Sub-tree for accessing SSH authorized keys.
     """
-    url = ctx.obj['base_url'] + "/config/sshKeys"
-    router_request("GET", url)
+    ctx.obj['sshkeys_user'] = user
+    ctx.obj['sshkeys_url'] = ctx.obj['base_url'] + '/config/sshKeys'
 
 
 @sshkeys.command()
@@ -378,13 +379,31 @@ def add(ctx, path):
     """
     Add an authorized key from a file.
     """
-    url = ctx.obj['base_url'] + "/config/sshKeys"
+    url = '{sshkeys_url}/{sshkeys_user}'.format(**ctx.obj)
     with open(path, 'r') as source:
         key_string = source.read().strip()
         data = {
             'key': key_string
         }
-        router_request("POST", url, json=data)
+
+        result = router_request("POST", url, json=data, dump=False)
+        if result.ok:
+            data = result.json()
+            print("Added: " + data.get('key', ''))
+
+
+@sshkeys.command()
+@click.pass_context
+def list(ctx):
+    """
+    List authorized keys.
+    """
+    url = '{sshkeys_url}/{sshkeys_user}'.format(**ctx.obj)
+    result = router_request("GET", url, dump=False)
+    if result.ok:
+        keys = result.json()
+        for key in keys:
+            print(key)
 
 
 @device.command()
