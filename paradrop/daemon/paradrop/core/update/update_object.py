@@ -65,6 +65,11 @@ class UpdateObject(object):
         # for reporting on the completion status of the update.
         self.delegated = False
 
+        # Store progress messages so that they can be retrieved by API.
+        self.messages = []
+        self.message_observers = []
+        self.completed = False
+
     def __repr__(self):
         return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
 
@@ -133,6 +138,11 @@ class UpdateObject(object):
             except Exception as error:
                 out.warn("Publish failed: {} {}".format(error.__class__, error))
 
+        # Send messages to internal consumers (e.g. open websocket connections)
+        self.messages.append(data)
+        for observer in self.message_observers:
+            observer.on_message(data)
+
     def complete(self, **kwargs):
         """
             Signal to the API server that any action we need to perform is
@@ -164,6 +174,20 @@ class UpdateObject(object):
             out.exception(e, True)
             if d:
                 reactor.callFromThread(d.errback, Failure(e))
+
+        # Last message to send to observers.
+        msg = {
+            'time': self.endTime,
+            'message': message
+        }
+        self.messages.append(msg)
+
+        # Mark the update as complete and notify any observers. Observers
+        # should call remove_message_observer in their on_complete handler.
+        self.completed = True
+        for observer in self.message_observers:
+            observer.on_message(msg)
+            observer.on_complete()
 
         if 'message' in kwargs:
             self.progress(kwargs['message'])
@@ -215,6 +239,20 @@ class UpdateObject(object):
         # Respond to the API server to let them know the result
         self.complete(success=True, message='Chute {} {} success'.format(
             self.name, self.updateType))
+
+    def add_message_observer(self, observer):
+        for msg in self.messages:
+            observer.on_message(msg)
+
+        self.message_observers.append(observer)
+
+        # If the update is already complete, send the complete event. Other
+        # observers would have already received this.
+        if self.completed:
+            observer.on_complete()
+
+    def remove_message_observer(self, observer):
+        self.message_observers.remove(observer)
 
 
 # This gives the new chute state if an update of a given type succeeds.

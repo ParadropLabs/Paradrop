@@ -13,6 +13,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import subprocess
 import time
 import yaml
@@ -197,7 +198,7 @@ def _buildImage(update, client, inline, **buildArgs):
         build_conf.update(update.build)
 
     # If this is a light chute, generate a Dockerfile.
-    chute_type = build_conf.get('type', 'heavy')
+    chute_type = build_conf.get('type', 'normal')
     if chute_type == 'light':
         buildArgs['pull'] = True
 
@@ -229,6 +230,10 @@ def _buildImage(update, client, inline, **buildArgs):
                 msg = value.rstrip()
                 if len(msg) > 0 and suppress_re.match(msg) is None:
                     update.progress(msg)
+
+    # Clean up working directory after building.
+    if 'path' in buildArgs:
+        shutil.rmtree(buildArgs['path'])
 
     return buildSuccess
 

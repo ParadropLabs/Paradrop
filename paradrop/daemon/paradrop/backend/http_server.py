@@ -20,6 +20,8 @@ from paradrop.core.system.system_status import SystemStatus
 
 from .auth import requires_auth
 from .information_api import InformationApi
+from .change_api import ChangeApi
+from .change_ws import ChangeStreamFactory
 from .config_api import ConfigApi
 from .chute_api import ChuteApi
 from .password_api import PasswordApi
@@ -55,6 +57,12 @@ class HttpServer(object):
     @requires_auth
     def api_information(self, request):
         return InformationApi().routes.resource()
+
+
+    @app.route('/api/v1/changes/', branch=True)
+    @requires_auth
+    def api_changes(self, request):
+        return ChangeApi(self.update_manager).routes.resource()
 
 
     @app.route('/api/v1/config', branch=True)
@@ -156,6 +164,19 @@ class HttpServer(object):
         factory = ParadropLogWsFactory()
         factory.setProtocolOptions(autoPingInterval=10, autoPingTimeout=5)
         return WebSocketResource(factory)
+
+    @app.route('/ws/changes/<int:change_id>/stream', branch=True)
+    @requires_auth
+    def change_stream(self, request, change_id):
+        change = self.update_manager.find_change(change_id)
+        if change is not None:
+            factory = ChangeStreamFactory(change)
+            factory.setProtocolOptions(autoPingInterval=10, autoPingTimeout=5)
+            return WebSocketResource(factory)
+        else:
+            request.setResponseCode(404)
+            return "{}"
+
 
     @app.route('/', branch=True)
     @requires_auth

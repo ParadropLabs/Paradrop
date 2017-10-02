@@ -5,7 +5,7 @@ Light chutes build and install the same way as normal chutes and can do
 many of the same things.  However, they make use of prebuilt base images
 that are optimized for different programming languages.
 
-Light chutes offer these advantages over normal, *heavy* chutes.
+Light chutes offer these advantages over normal chutes.
 
 * **Safety:** Light chutes have stronger confinement properties, so
   you can feel safer installing a light chute written by a third party

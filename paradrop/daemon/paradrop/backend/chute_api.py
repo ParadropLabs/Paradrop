@@ -92,7 +92,6 @@ class ChuteApi(object):
         return json.dumps(result)
 
     @routes.route('/', methods=['POST'])
-    @inlineCallbacks
     def create_chute(self, request):
         cors.config_cors(request)
 
@@ -116,16 +115,21 @@ class ChuteApi(object):
 
             with open(configfile, "r") as source:
                 full_config = yaml.safe_load(source)
-                # TODO: chute_name must be valid
-                chute_name = full_config.get("name", None)
-                chute_version = full_config.get("version", None)
-                if chute_name is None or chute_version is None:
-                    raise Exception("paradrop.yaml should have name and version fields")
                 config = full_config.get("config", {})
 
+            # Try to read chute name from top level (preferred) or from config
+            # object (deprecated).
+            if 'name' in full_config:
+                update['name'] = full_config['name']
+            elif 'name' in config:
+                out.warn("Deprecated: move chute name to top level of config file.")
+                update['name'] = config['name']
+            else:
+                raise Exception("Chute name not found in configuration file.")
+
             update['workdir'] = tempdir
+            chute_version = full_config.get("version", None)
             update['version'] = "{}_x{}".format(chute_version, update['tok'])
-            update['name'] = chute_name
             update.update(config)
         else:
             # TODO: this case is not tested
@@ -136,9 +140,17 @@ class ChuteApi(object):
             # not expect they to receive it from the config file.
             update['version'] = "x{}".format(update['tok'])
 
-        result = yield self.update_manager.add_update(**update)
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
         request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
+        return json.dumps(result)
 
     @routes.route('/<chute>', methods=['GET'])
     def get_chute(self, request, chute):
@@ -165,7 +177,6 @@ class ChuteApi(object):
         return json.dumps(result)
 
     @routes.route('/<chute>', methods=['PUT'])
-    @inlineCallbacks
     def update_chute(self, request, chute):
         cors.config_cors(request)
 
@@ -192,9 +203,20 @@ class ChuteApi(object):
                 full_config = yaml.safe_load(source)
                 config = full_config.get("config", {})
 
-            update['workdir'] = tempdir
-            update.update(config)
+            # Try to read chute name from top level (preferred) or from config
+            # object (deprecated).
+            if 'name' in full_config:
+                update['name'] = full_config['name']
+            elif 'name' in config:
+                out.warn("Deprecated: move chute name to top level of config file.")
+                update['name'] = config['name']
+            else:
+                raise Exception("Chute name not found in configuration file.")
 
+            update['workdir'] = tempdir
+            chute_version = full_config.get("version", None)
+            update['version'] = "{}_x{}".format(chute_version, update['tok'])
+            update.update(config)
         else:
             body = json.loads(request.content.read())
             config = body['config']
@@ -205,12 +227,19 @@ class ChuteApi(object):
         # not expect the to receive it from the config file.
         update['version'] = "x{}".format(update['tok'])
 
-        result = yield self.update_manager.add_update(**update)
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
         request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
+        return json.dumps(result)
 
     @routes.route('/<chute>', methods=['DELETE'])
-    @inlineCallbacks
     def delete_chute(self, request, chute):
         cors.config_cors(request)
 
@@ -218,10 +247,18 @@ class ChuteApi(object):
                       updateType='delete',
                       tok=pdutils.timeint(),
                       name=chute)
-        result = yield self.update_manager.add_update(**update)
 
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
         request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
+        return json.dumps(result)
 
     @routes.route('/<chute>/stop', methods=['POST'])
     @inlineCallbacks
@@ -309,6 +346,40 @@ class ChuteApi(object):
             }
 
         return json.dumps(data)
+
+    @routes.route('/<chute>/networks/<network>/leases', methods=['GET'])
+    def get_leases(self, request, chute, network):
+        """
+        Get current list of DHCP leases for chute network.
+
+        Returns a list of DHCP lease records with the following fields:
+        expires: lease expiration time (seconds since Unix epoch)
+        mac_addr: device MAC address
+        ip_addr: device IP address
+        hostname: name that the device reported
+        client_id: optional identifier supplied by device
+        """
+        cors.config_cors(request)
+
+        request.setHeader('Content-Type', 'application/json')
+
+        chute_obj = ChuteStorage.chuteList[chute]
+        externalSystemDir = chute_obj.getCache('externalSystemDir')
+
+        leasefile = 'dnsmasq-{}.leases'.format(network)
+        path = os.path.join(externalSystemDir, leasefile)
+
+        # The format of the dnsmasq leases file is one entry per line with
+        # space-separated fields.
+        keys = ['expires', 'mac_addr', 'ip_addr', 'hostname', 'client_id']
+
+        leases = []
+        with open(path, 'r') as source:
+            for line in source:
+                parts = line.strip().split()
+                leases.append(dict(zip(keys, parts)))
+
+        return json.dumps(leases)
 
     @routes.route('/<chute>/networks/<network>/stations', methods=['GET'])
     def get_stations(self, request, chute, network):
