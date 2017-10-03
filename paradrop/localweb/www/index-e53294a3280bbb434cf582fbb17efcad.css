@@ -6381,9 +6381,9 @@ button.close {
     -ms-flex-align: center;
     align-items: center; }
 
-.chute-item:hover {
-  background-color: #1f83ab;
-  color: white; }
+.chute-log:hover {
+  color: red;
+  text-decoration: underline; }
 .uib-position-measure {
   display: block !important;
   visibility: hidden !important;
