@@ -5,6 +5,7 @@ import operator
 import os
 import tarfile
 import tempfile
+from six.moves.urllib.parse import urlparse
 
 import arrow
 import builtins
@@ -21,8 +22,29 @@ def device(ctx, address):
     """
     Sub-tree for configuring a device.
     """
-    ctx.obj['address'] = address
-    ctx.obj['base_url'] = "http://{}/api/v1".format(address)
+    if address.startswith("http"):
+        parts = urlparse(address)
+        ctx.obj['address'] = parts.hostname
+
+        if parts.scheme != 'http':
+            print("Warning: when specifying the Paradrop device address, "
+                  "using a scheme ({}) other than http may result in errors."
+                  .format(parts.scheme))
+
+        if not parts.path:
+            path = "/api/v1"
+        else:
+            print("Warning: when specifying the Paradrop device address, "
+                  "using a path ({}) other than /api/v1 may result in errors."
+                  .format(parts.scheme))
+            path = parts.path
+
+        ctx.obj['base_url'] = "{}://{}{}".format(parts.scheme, parts.hostname, path)
+        print(ctx.obj['base_url'])
+
+    else:
+        ctx.obj['address'] = address
+        ctx.obj['base_url'] = "http://{}/api/v1".format(address)
 
 
 @device.command()
