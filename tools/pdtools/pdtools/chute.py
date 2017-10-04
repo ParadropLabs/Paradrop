@@ -63,7 +63,7 @@ def update_object(obj, path, callback=None):
 @click.pass_context
 def chute(ctx):
     """
-    Chutes related commands.
+    Sub-tree for building chutes.
     """
     pass
 

@@ -8,7 +8,10 @@ import builtins
 import requests
 import websocket
 
-from .config import PdtoolsConfig, PDSERVER_URL
+from .config import PdtoolsConfig
+
+
+PDSERVER_URL = os.environ.get('PDSERVER_URL', 'https://paradrop.org')
 
 LOCAL_DEFAULT_USERNAME = "paradrop"
 LOCAL_DEFAULT_PASSWORD = ""
@@ -116,8 +119,7 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
         else:
             if res.ok and dump:
                 data = res.json()
-                # pprint(data)
-                print JSON.dumps(data, indent=4, sort_keys=True)
+                pprint(data)
             return res
 
 

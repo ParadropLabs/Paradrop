@@ -3,27 +3,24 @@ import getpass
 import json
 import operator
 import os
-import sys
 import tarfile
 import tempfile
 from six.moves.urllib.parse import urlparse
+
 import arrow
 import builtins
 import click
 import yaml
-import json
-import websocket
-import base64
 
-from .comm import change_json, router_request, LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD
+from .comm import change_json, router_request, router_ws_request
 
 
 @click.group()
-@click.option('--address', default='192.168.1.1', help='IP address of the ParaDrop device (default=192.168.1.1)')
+@click.argument('address')
 @click.pass_context
 def device(ctx, address):
     """
-    Commands to work with a ParaDrop device.
+    Sub-tree for configuring a device.
     """
     if address.startswith("http"):
         parts = urlparse(address)
@@ -94,7 +91,7 @@ def changes(ctx):
 @click.pass_context
 def chutes(ctx):
     """
-    View or install chutes on the router.
+    View or create chutes on the router.
     """
     pass
 
@@ -111,7 +108,7 @@ def list(ctx):
 
 @chutes.command()
 @click.pass_context
-def install(ctx):
+def create(ctx):
     """
     Install a chute from the working directory.
     """
@@ -137,14 +134,14 @@ def install(ctx):
 
 
 @device.group()
-@click.argument('chute_name')
+@click.argument('chute')
 @click.pass_context
-def chute(ctx, chute_name):
+def chute(ctx, chute):
     """
-    Operations on a chute.
+    Sub-tree for configuring a chute.
     """
-    ctx.obj['chute'] = chute_name
-    ctx.obj['chute_url'] = "{}/chutes/{}".format(ctx.obj['base_url'], chute_name)
+    ctx.obj['chute'] = chute
+    ctx.obj['chute_url'] = "{}/chutes/{}".format(ctx.obj['base_url'], chute)
 
 
 @chute.command()
@@ -274,7 +271,7 @@ def shell(ctx):
 @click.argument('network')
 def network(ctx, network):
     """
-    Operations on a chute network.
+    Sub-tree for accessing chute network.
     """
     ctx.obj['network'] = network
     ctx.obj['network_url'] = "{}/networks/{}".format(ctx.obj['chute_url'],
@@ -296,7 +293,7 @@ def stations(ctx):
 @click.argument('station')
 def station(ctx, station):
     """
-    operations on a chute's network stations.
+    Sub-tree for accessing network stations.
     """
     ctx.obj['station'] = station
     ctx.obj['station_url'] = ctx.obj['network_url'] + "/stations/" + station
@@ -320,23 +317,15 @@ def delete(ctx):
     router_request("DELETE", ctx.obj['station_url'])
 
 
-@device.group(invoke_without_command=False)
+@device.group(invoke_without_command=True)
 @click.pass_context
 def hostconfig(ctx):
     """
-    Commands to work with the hostconfig.
-    """
-    pass
-
-@hostconfig.command()
-@click.pass_context
-def show(ctx):
-    """
-    Get host configuration.
+    Sub-tree for the host configuration.
     """
     url = ctx.obj['base_url'] + "/config/hostconfig"
-    res = router_request("GET", url, dump=False)
-    click.echo(json.dumps(res.json(), indent=4, sort_keys=True))
+    router_request("GET", url)
+
 
 @hostconfig.command()
 @click.pass_context
@@ -399,18 +388,11 @@ def edit(ctx):
 @click.option('--user', default='paradrop')
 def sshkeys(ctx, user):
     """
-    Commands to work with the SSH authorized keys.
-    """
-    pass
-
-@sshkeys.command()
-@click.pass_context
-def show(ctx):
-    """
-    Get SSH authorized keys.
+    Sub-tree for accessing SSH authorized keys.
     """
     ctx.obj['sshkeys_user'] = user
     ctx.obj['sshkeys_url'] = ctx.obj['base_url'] + '/config/sshKeys'
+
 
 @sshkeys.command()
 @click.pass_context
@@ -592,42 +574,3 @@ def connectAll(ctx):
         }
         print("snap connect {snap}:{plug} {interface}".format(**item))
         router_request("POST", url, json=req, dump=False)
-
-
-@device.command()
-@click.pass_context
-def log(ctx):
-    """
-    Monitor the logs of the router.
-    """
-    url = ctx.obj['ws_url'] + "/paradrop_logs"
-
-    # First try with the default username and password.
-    # If that fails, prompt user and try again.
-    userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
-    encoded_creds = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
-
-    # websocket.enableTrace(True)
-    count = 3
-    ws = websocket.WebSocket()
-    while count > 0:
-        try:
-            ws.connect(url, header=['Authorization: Basic %s' %  encoded_creds])
-            click.echo('ParaDrop log server connected!')
-        except:
-            click.echo('Failed to connect! Are you username and password correct?')
-            count -= 1
-            username = builtins.input('Username: ')
-            password = getpass.getpass('Password: ')
-            userpass = "{}:{}".format(username, password)
-            encoded_creds = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
-            continue
-
-        while True:
-            try:
-                message = ws.recv()
-                click.echo(message)
-            except:
-                ws.close()
-                click.echo('ParaDrop log server disconnected')
-                sys.exit(0)

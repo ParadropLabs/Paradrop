@@ -1,8 +1,7 @@
 import os
+
 import appdirs
 import yaml
-
-PDSERVER_URL = os.environ.get('PDSERVER_URL', 'https://paradrop.org')
 
 
 class PdtoolsConfig(object):
