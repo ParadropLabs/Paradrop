@@ -4,6 +4,7 @@ import os
 import yaml
 
 from .helpers.chute import build_chute
+from .store import chute_resolve_source
 
 
 def update_object(obj, path, callback=None):
@@ -113,6 +114,40 @@ def create_wifi_interface(ctx, essid, password, force):
 
     with open('paradrop.yaml', 'w') as output:
         yaml.safe_dump(chute, output, default_flow_style=False)
+
+
+@chute.command('cloud-config')
+@click.pass_context
+def cloud_config(ctx):
+    """
+    Produce a JSON config object that can be used with cloud API.
+
+    The configuration format used by the cloud API is slightly different
+    from the paradrop.yaml file. This command dumps a JSON object in
+    a form suitable for installing the chute through the cloud API.
+
+    The config object will usually be used in an envelope like the following:
+    {
+      "updateClass": "CHUTE",
+      "updateType": "update",
+      "config": { config-object }
+    }
+    """
+    with open('paradrop.yaml', 'r') as source:
+        chute = yaml.safe_load(source)
+
+    if 'source' not in chute:
+        print("Error: source section missing in paradrop.yaml")
+        return
+
+    config = chute.get('config', {})
+
+    config['name'] = chute['name']
+    config['version'] = chute.get('version', 1)
+
+    chute_resolve_source(chute['source'], config)
+
+    print(json.dumps(config, sort_keys=True, indent=2))
 
 
 @chute.command()
