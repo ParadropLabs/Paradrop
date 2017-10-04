@@ -283,6 +283,38 @@ class ChuteApi(object):
                       updateType='start',
                       tok=pdutils.timeint(),
                       name=chute)
+
+        try:
+            body = json.loads(request.content.read())
+
+            # Chute environment variables can be replaced during the operation.
+            update['environment'] = body['environment']
+        except Exception as error:
+            pass
+
+        result = yield self.update_manager.add_update(**update)
+
+        request.setHeader('Content-Type', 'application/json')
+        returnValue(json.dumps(result, cls=UpdateEncoder))
+
+    @routes.route('/<chute>/restart', methods=['POST'])
+    @inlineCallbacks
+    def restart_chute(self, request, chute):
+        cors.config_cors(request)
+
+        update = dict(updateClass='CHUTE',
+                      updateType='restart',
+                      tok=pdutils.timeint(),
+                      name=chute)
+
+        try:
+            body = json.loads(request.content.read())
+
+            # Chute environment variables can be replaced during the operation.
+            update['environment'] = body['environment']
+        except Exception as error:
+            pass
+
         result = yield self.update_manager.add_update(**update)
 
         request.setHeader('Content-Type', 'application/json')

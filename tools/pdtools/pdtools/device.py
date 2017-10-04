@@ -166,6 +166,67 @@ def stop(ctx):
 
 @chute.command()
 @click.pass_context
+def restart(ctx):
+    """
+    Restart the chute.
+    """
+    url = ctx.obj['chute_url'] + "/restart"
+    router_request("POST", url)
+
+
+@chute.command('edit-environment')
+@click.pass_context
+def edit_environment(ctx):
+    """
+    Interactively edit the chute environment vairables.
+    """
+    req = router_request("GET", ctx.obj['chute_url'], dump=False)
+    info = req.json()
+    old_environ = info.get('environment', None)
+    if old_environ is None:
+        old_environ = {}
+
+    fd, path = tempfile.mkstemp()
+    os.close(fd)
+
+    with open(path, 'w') as output:
+        if len(old_environ) > 0:
+            output.write(yaml.safe_dump(old_environ, default_flow_style=False))
+        output.write("\n")
+        output.write("# You are editing the environment variables for the chute {}.\n"
+                .format(ctx.obj['chute']))
+        output.write("# Blank lines and lines starting with '#' will be ignored.\n")
+        output.write("# Put each variable on a line with a colon separator, e.g. 'VARIABLE: VALUE'\n")
+        output.write("# Save and exit to apply changes; exit without saving to discard.\n")
+
+    # Get modified time before calling editor.
+    orig_mtime = os.path.getmtime(path)
+
+    editor = os.environ.get("EDITOR", "vim")
+    os.spawnvpe(os.P_WAIT, editor, [editor, path], os.environ)
+
+    with open(path, 'r') as source:
+        data = source.read()
+        new_environ = yaml.safe_load(data)
+
+    # If result is null, convert to an empty dict before sending to router.
+    if new_environ is None:
+        new_environ = {}
+
+    # Check if the file has been modified, and if it has, send the update.
+    new_mtime = os.path.getmtime(path)
+    if new_mtime != orig_mtime:
+        data = {
+            'environment': new_environ
+        }
+        url = ctx.obj['chute_url'] + "/restart"
+        router_request("POST", url, json=data)
+
+    os.remove(path)
+
+
+@chute.command()
+@click.pass_context
 def delete(ctx):
     """
     Uninstall the chute.
