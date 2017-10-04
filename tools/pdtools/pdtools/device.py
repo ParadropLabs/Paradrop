@@ -6,6 +6,7 @@ import os
 import sys
 import tarfile
 import tempfile
+from six.moves.urllib.parse import urlparse
 import arrow
 import builtins
 import click
@@ -24,9 +25,29 @@ def device(ctx, address):
     """
     Commands to work with a ParaDrop device.
     """
-    ctx.obj['address'] = address
-    ctx.obj['base_url'] = "http://{}/api/v1".format(address)
-    ctx.obj['ws_url'] = "ws://{}//ws".format(address)
+    if address.startswith("http"):
+        parts = urlparse(address)
+        ctx.obj['address'] = parts.hostname
+
+        if parts.scheme != 'http':
+            print("Warning: when specifying the Paradrop device address, "
+                  "using a scheme ({}) other than http may result in errors."
+                  .format(parts.scheme))
+
+        if not parts.path:
+            path = "/api/v1"
+        else:
+            print("Warning: when specifying the Paradrop device address, "
+                  "using a path ({}) other than /api/v1 may result in errors."
+                  .format(parts.scheme))
+            path = parts.path
+
+        ctx.obj['base_url'] = "{}://{}{}".format(parts.scheme, parts.hostname, path)
+        print(ctx.obj['base_url'])
+
+    else:
+        ctx.obj['address'] = address
+        ctx.obj['base_url'] = "http://{}/api/v1".format(address)
 
 
 @device.command()
@@ -373,9 +394,10 @@ def edit(ctx):
     os.remove(path)
 
 
-@device.group(invoke_without_command=False)
+@device.group()
 @click.pass_context
-def sshkeys(ctx):
+@click.option('--user', default='paradrop')
+def sshkeys(ctx, user):
     """
     Commands to work with the SSH authorized keys.
     """
@@ -387,8 +409,8 @@ def show(ctx):
     """
     Get SSH authorized keys.
     """
-    url = ctx.obj['base_url'] + "/config/sshKeys"
-    router_request("GET", url)
+    ctx.obj['sshkeys_user'] = user
+    ctx.obj['sshkeys_url'] = ctx.obj['base_url'] + '/config/sshKeys'
 
 @sshkeys.command()
 @click.pass_context
@@ -397,13 +419,31 @@ def add(ctx, path):
     """
     Add an authorized key from a file.
     """
-    url = ctx.obj['base_url'] + "/config/sshKeys"
+    url = '{sshkeys_url}/{sshkeys_user}'.format(**ctx.obj)
     with open(path, 'r') as source:
         key_string = source.read().strip()
         data = {
             'key': key_string
         }
-        router_request("POST", url, json=data)
+
+        result = router_request("POST", url, json=data, dump=False)
+        if result.ok:
+            data = result.json()
+            print("Added: " + data.get('key', ''))
+
+
+@sshkeys.command()
+@click.pass_context
+def list(ctx):
+    """
+    List authorized keys.
+    """
+    url = '{sshkeys_url}/{sshkeys_user}'.format(**ctx.obj)
+    result = router_request("GET", url, dump=False)
+    if result.ok:
+        keys = result.json()
+        for key in keys:
+            print(key)
 
 
 @device.command()

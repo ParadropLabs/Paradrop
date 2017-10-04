@@ -3,6 +3,15 @@ import re
 from six.moves import input
 
 
+SUPPORTED_BASE_IMAGES = set([
+    "go",
+    "gradle",
+    "maven",
+    "node",
+    "python2"
+])
+
+
 def get_name():
     print("")
     print("Chute Name")
@@ -70,58 +79,50 @@ def get_base_name():
     print("Enter the name of the base image to use. This depends on the")
     print("programming language that you intend to use.")
     print("")
-    print("Valid choices: node, python2")
-    valid = set(["node", "python2"])
+    print("Valid choices: " + ", ".join(SUPPORTED_BASE_IMAGES))
     while True:
         name = input("image [python2]: ").lower()
         if len(name) == 0:
             name = "python2"
 
-        if name not in valid:
-            print("Valid choices: node, python2")
+        if name not in SUPPORTED_BASE_IMAGES:
+            print("Valid choices: " + ", ".join(SUPPORTED_BASE_IMAGES))
             continue
 
         return name
 
 
-def get_command(use=None):
+def get_command(name="my-app", use=None):
     print("")
-    print("Entry Point")
+    print("Command")
     print("")
-    print("This is the entry point of your application. Paradrop will run this")
-    print("file when it starts your chute.")
-    print("")
+    print("This is the command to start your application.")
 
     default = None
-    if use == "node":
-        default = "index.js"
+    if use == "go":
+        print("For Go applications, it is highly recommended that you use the default.")
+        default = "app"
+    elif use == "gradle":
+        print("For Java applications, you can accept the default and update")
+        print("paradrop.yaml after you have decided on the structure of your project.")
+        default = "java -cp build/libs/gradle-{name}-1.0-SNAPSHOT.jar com.mycompany.{name}.Main".format(name=name)
+    elif use == "maven":
+        print("For Java applications, you can accept the default and update")
+        print("paradrop.yaml after you have decided on the structure of your project.")
+        default = "java -cp target/{name}-1.0-SNAPSHOT.jar com.mycompany.{name}.Main".format(name=name)
+    elif use == "node":
+        default = "node index.js"
     elif use == "python2":
-        default = "main.py"
+        default = "python2 -u main.py"
+    else:
+        default = ""
+    print("")
 
-    entry = input("entry point [{}]: ".format(default))
+    entry = input("command [{}]: ".format(default))
     if len(entry) == 0:
         entry = default
 
-    parts = []
-    if use == "node":
-        parts.append("node")
-
-    elif use == "python2":
-        parts.append("python2")
-
-        # Unbuffered output is preferred for streaming log messages.
-        parts.append("-u")
-
-    parts.append(entry)
-
-    # If the entrypoint contains a space, we will need to use the array form
-    # for specifying the command.
-    use_array = (" " in entry)
-
-    if use_array:
-        return parts
-    else:
-        return " ".join(parts)
+    return entry
 
 
 def build_chute():
@@ -136,6 +137,6 @@ def build_chute():
 
     if chute['type'] == "light":
         chute['use'] = get_base_name()
-        chute['command'] = get_command(use=chute['use'])
+        chute['command'] = get_command(name=chute['name'], use=chute['use'])
 
     return chute

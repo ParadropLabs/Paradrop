@@ -28,7 +28,7 @@ version() {
         majmin=$(echo $1 | grep -oE "[0-9]+\.[0-9]+")
         sed -i "s/^version:.*/version: $1/" -i paradrop/snap/snapcraft.yaml
         sed -i "s/version=.*,/version='$1',/" -i paradrop/daemon/setup.py
-        sed -i "s/version=.*,/version='$1',/" -i tools/setup.py
+        sed -i "s/version=.*,/version='$1',/" -i tools/pdtools/setup.py
         sed -i "s/version =.*/version = \"$majmin\"/" -i docs/conf.py
         sed -i "s/release =.*/release = \"$1\"/" -i docs/conf.py
     else
@@ -58,7 +58,7 @@ release() {
     version $1
 
     git add --update
-    git commit -m "Set version $1"
+    git commit -m "Release version $1"
 
     git tag -a "v$1" -m "Release version $1"
 }

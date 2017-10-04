@@ -132,7 +132,7 @@ def init(ctx):
     if chute.get('use', None) == 'node':
         if not os.path.isfile('package.json'):
             data = {
-                'name': chute['config']['name'],
+                'name': chute['name'],
                 'version': '1.0.0',
                 'description': chute['description']
             }
