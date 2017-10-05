@@ -30,7 +30,7 @@ CONTEXT_SETTINGS = dict(
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-def root(ctx):
+def root():
     """
     Paradrop command line utility.
 

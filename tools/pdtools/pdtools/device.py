@@ -151,7 +151,9 @@ def start(ctx):
     Start the chute.
     """
     url = ctx.obj['chute_url'] + "/start"
-    router_request("POST", url)
+    res = router_request("POST", url)
+    data = res.json()
+    ctx.invoke(watch, change_id=data['change_id'])
 
 
 @chute.command()
@@ -161,7 +163,9 @@ def stop(ctx):
     Stop the chute.
     """
     url = ctx.obj['chute_url'] + "/stop"
-    router_request("POST", url)
+    res = router_request("POST", url)
+    data = res.json()
+    ctx.invoke(watch, change_id=data['change_id'])
 
 
 @chute.command()
@@ -171,7 +175,9 @@ def restart(ctx):
     Restart the chute.
     """
     url = ctx.obj['chute_url'] + "/restart"
-    router_request("POST", url)
+    res = router_request("POST", url)
+    data = res.json()
+    ctx.invoke(watch, change_id=data['change_id'])
 
 
 @chute.command('edit-environment')
@@ -220,7 +226,9 @@ def edit_environment(ctx):
             'environment': new_environ
         }
         url = ctx.obj['chute_url'] + "/restart"
-        router_request("POST", url, json=data)
+        res = router_request("POST", url, json=data)
+        data = res.json()
+        ctx.invoke(watch, change_id=data['change_id'])
 
     os.remove(path)
 
