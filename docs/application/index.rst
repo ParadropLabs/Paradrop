@@ -13,6 +13,10 @@ Contents:
    introduction
    paradrop-tools
    lightchutes
+   getting-started-go
+   getting-started-java
+   getting-started-node
+   getting-started-python
    deployment
    tutorial-sticky-board
 
