@@ -261,7 +261,6 @@ class ChuteApi(object):
         return json.dumps(result)
 
     @routes.route('/<chute>/stop', methods=['POST'])
-    @inlineCallbacks
     def stop_chute(self, request, chute):
         cors.config_cors(request)
 
@@ -269,13 +268,20 @@ class ChuteApi(object):
                       updateType='stop',
                       tok=pdutils.timeint(),
                       name=chute)
-        result = yield self.update_manager.add_update(**update)
 
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
         request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
+        return json.dumps(result)
 
     @routes.route('/<chute>/start', methods=['POST'])
-    @inlineCallbacks
     def start_chute(self, request, chute):
         cors.config_cors(request)
 
@@ -283,10 +289,55 @@ class ChuteApi(object):
                       updateType='start',
                       tok=pdutils.timeint(),
                       name=chute)
-        result = yield self.update_manager.add_update(**update)
 
+        try:
+            body = json.loads(request.content.read())
+
+            # Chute environment variables can be replaced during the operation.
+            update['environment'] = body['environment']
+        except Exception as error:
+            pass
+
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
         request.setHeader('Content-Type', 'application/json')
-        returnValue(json.dumps(result, cls=UpdateEncoder))
+        return json.dumps(result)
+
+    @routes.route('/<chute>/restart', methods=['POST'])
+    def restart_chute(self, request, chute):
+        cors.config_cors(request)
+
+        update = dict(updateClass='CHUTE',
+                      updateType='restart',
+                      tok=pdutils.timeint(),
+                      name=chute)
+
+        try:
+            body = json.loads(request.content.read())
+
+            # Chute environment variables can be replaced during the operation.
+            update['environment'] = body['environment']
+        except Exception as error:
+            pass
+
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
+        request.setHeader('Content-Type', 'application/json')
+        return json.dumps(result)
 
     @routes.route('/<chute>/cache', methods=['GET'])
     def get_chute_cache(self, request, chute):

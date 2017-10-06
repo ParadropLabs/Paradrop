@@ -16,25 +16,28 @@ from . import store
 
 PDSERVER_URL = os.environ.get("PDSERVER_URL", "https://paradrop.org")
 
+CONTEXT_SETTINGS = dict(
+    # Options can be parsed from PDTOOLS_* environment variables.
+    auto_envvar_prefix = 'PDTOOLS',
 
-@click.group()
-@click.pass_context
-def root(ctx):
+    # Respond to both -h and --help for all commands.
+    help_option_names = ['-h', '--help'],
+
+    obj = {
+        'pdserver_url': PDSERVER_URL
+    }
+)
+
+
+@click.group(context_settings=CONTEXT_SETTINGS)
+def root():
     """
     Paradrop command line utility.
 
     Environment Variables
         PDSERVER_URL    ParaDrop controller URL [default: https://paradrop.org]
     """
-    # Options can be parsed from PDTOOLS_* environment variables.
-    ctx.auto_envvar_prefix = 'PDTOOLS'
-
-    # Respond to both -h and --help for all commands.
-    ctx.help_option_names = ['-h', '--help']
-
-    ctx.obj = {
-        'pdserver_url': PDSERVER_URL
-    }
+    pass
 
 
 root.add_command(chute.chute)
