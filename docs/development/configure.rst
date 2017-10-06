@@ -1,4 +1,0 @@
-Configure ParaDrop routers
-==============================
-
-TODO

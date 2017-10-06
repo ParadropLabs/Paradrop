@@ -18,8 +18,7 @@ the dependencies, build the package and install the package into hardware/VMs.
 - `ParaDrop daemon design`_
 
 We recommend using Ubuntu 16.04 LTS as the development environment for this version
-of ParaDrop. Because we use `snapcraft <https://snapcraft.io/>`_ to package and distribute the ParaDrop daemon
-and development tools (pdtools).
+of ParaDrop. Because we use `snapcraft <https://snapcraft.io/>`_ to package and distribute the ParaDrop daemon.
 
 You will only need to follow these instructions if you will be making changes to the ParaDrop daemon.
 Otherwise, you can use our pre-built ParaDrop snap or disk image from `ParaDrop release <https://www.paradrop.org/release/>`_.

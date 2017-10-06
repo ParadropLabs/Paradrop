@@ -9,7 +9,7 @@ ParaDrop router
 --------------------
 The ParaDrop router is the key part of the ParaDrop platform.
 In addition to a normal WiFi access point, it provides the substrate to deploy edge computing services on.
-We have built the reference ParaDrop routers based on PC Engines APU and APU2 single board computer.
+We have built the reference ParaDrop routers based on the `PC Engines APU <https://pcengines.ch/apu.htm>`_ and APU2 single board computer .
 The image below shows a router built with a PC Engines APU board.
 
 .. image:: ../images/paradrop_router.png
@@ -21,8 +21,8 @@ Please visit the :doc:`../device/index` page for more information about hardware
 
 ParaDrop controller
 ----------------------
-The ParaDrop controller is deployed in `paradrop.org <https://paradrop.org>`_.
-Users can sign up and create an account through the web page.
+The ParaDrop controller is deployed at `paradrop.org <https://paradrop.org>`_.
+Users can sign up to create an account through the web page.
 For end users, it provides a dashboard to configure and monitor the ParaDrop routers they have permissions.
 They can also manage the edge computing services (we call them chutes, in short of parachutes) running on the ParaDrop routers.
 For developers, it provides the interface that developers can register their applications and manage the chutes.

@@ -8,7 +8,7 @@ Create a ParaDrop account
 --------------------------
 With a ParaDrop account, users can manage the resources of ParaDrop through a web frontend.
 
-1. Signup at https://www.paradrop.org/signup. You will receive a confirmation email from paradrop.org after I finish the signup.
+1. Signup at https://www.paradrop.org/signup. You will receive a confirmation email from paradrop.org after you finish the signup.
 2. Confirm your registration in the email.
 
 Activate a ParaDrop router
@@ -30,4 +30,4 @@ Install a hello-world chute
 2. Go to the Chute Store tab on paradrop.org. There you will find some public chutes such as the hello-world chute.  You can also create your own chutes here.
 3. Click on the hello-world chute,  click Install, click your router's name to select it, and finally, click Install.
 4. That will take you to the router page again where you can click the update item to monitor its progress. When the installation is complete, an entry will appear under the Chutes list.
-5. The hello-world chute starts a webserver, which is accessible at http://<router-ip-address>:8000. Once the installation is complete, test it in a web browser.
+5. The hello-world chute starts a webserver, which is accessible at http://<router-ip-address>/chutes/hello-world. Once the installation is complete, test it in a web browser.
