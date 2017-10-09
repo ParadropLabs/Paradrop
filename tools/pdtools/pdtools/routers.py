@@ -62,7 +62,18 @@ def create(ctx, name, orphaned, claim):
     }
     if claim is not None:
         data['claim_token'] = claim
-    pdserver_request('POST', url, json=data)
+    result = pdserver_request('POST', url, json=data)
+    if result.ok:
+        router = result.json()
+
+        print("Name: {}".format(router['name']))
+        print("ID: {}".format(router['_id']))
+        print("Password: {}".format(router['password']))
+        print("Claim: {}".format(router['claim_token']))
+
+        print("")
+        print("You may use the following command to provision your router:")
+        print("pdtools device <address> provision {_id} {password}".format(**router))
 
 
 @routers.command()
