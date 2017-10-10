@@ -131,6 +131,32 @@ def isHexString(data):
     return all(c in string.hexdigits for c in data)
 
 
+def get_cipher_list(encryption_mode):
+    """
+    Get list of ciphers from encryption mode.
+
+    Example:
+    get_cipher_list("psk2+tkip+aes") -> ["TKIP", "CCMP"]
+    """
+    parts = encryption_mode.lower().split('+')
+    ciphers = []
+
+    if "tkip" in parts:
+        ciphers.append("TKIP")
+    if "ccmp" in parts or "aes" in parts:
+        ciphers.append("CCMP")
+
+    if len(ciphers) == 0:
+        # We need to enable at least one cipher. Most modes default to CCMP
+        # except for wpa.
+        if parts[0] == "wpa":
+            ciphers.append("TKIP")
+        else:
+            ciphers.append("CCMP")
+
+    return ciphers
+
+
 class ConfigWifiDevice(ConfigObject):
     typename = "wifi-device"
 
@@ -779,9 +805,19 @@ class HostapdConfGenerator(ConfGenerator):
             return options
 
         modes = self.wifiIface.encryption.split("+")
-        if modes[0] == "psk2":
-            options.append(("wpa", 1))
 
+        # Check for WPA, WPA2, or mixed mode.
+        if modes[0] in ["psk2", "wpa2"]:
+            options.append(("wpa", 2))
+        elif modes[0] in ["psk", "wpa"]:
+            options.append(("wpa", 1))
+        elif modes[0] in ["psk-mixed", "wpa-mixed"]:
+            options.append(("wpa", 3))
+        else:
+            raise Exception("Encryption mode ({}) not supported".format(modes[0]))
+
+        # Check for PSK vs Enterprise mode.
+        if modes[0] in ["psk2", "psk", "psk-mixed"]:
             # If key is a 64 character hex string, then treat it as the PSK
             # directly, else treat it as a passphrase.
             if len(self.wifiIface.key) == 64 and isHexString(self.wifiIface.key):
@@ -790,32 +826,22 @@ class HostapdConfGenerator(ConfGenerator):
                 options.append(("wpa_passphrase", self.wifiIface.key))
 
             options.append(("wpa_key_mgmt", "WPA-PSK"))
-
-            # Encryption for WPA
-            options.append(("wpa_pairwise", "TKIP CCMP"))
-
-            # Encryption for WPA2
-            options.append(("rsn_pairwise", "CCMP"))
-
-        elif modes[0] == "wpa2":
+        elif modes[0] in ["wpa2", "wpa", "wpa-mixed"]:
             if self.wifiIface.auth_server is None:
                 raise Exception("Must configure auth_server with wpa2")
 
-            options.append(("wpa", 2))
-
             options.append(("wpa_key_mgmt", "WPA-EAP"))
 
-            # Encryption for WPA
-            options.append(("wpa_pairwise", "TKIP CCMP"))
+        ciphers = get_cipher_list(self.wifiIface.encryption)
 
-            # Encryption for WPA2
-            options.append(("rsn_pairwise", "CCMP"))
+        # Ciphers to use for WPA:
+        options.append(("wpa_pairwise", " ".join(ciphers)))
 
-            # TODO: Separate section for 802.1X?
-            options.append(("ieee8021x", "1"))
-
-        else:
-            raise Exception("Encryption type not supported")
+        # Ciphers to use for WPA2:
+        # Technically, these can be different, e.g. wpa_pairwise=TKIP and
+        # rsn_pairwise=CCMP. I am not sure we need to expose those options.
+        # Defaulting to CCMP only is good because TKIP is no longer secure.
+        options.append(("rsn_pairwise", " ".join(ciphers)))
 
         return options
 

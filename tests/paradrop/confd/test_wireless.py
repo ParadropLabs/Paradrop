@@ -1,6 +1,51 @@
 from mock import MagicMock
 
+from paradrop.confd import wireless
 from paradrop.confd.wireless import ConfigWifiIface, HostapdConfGenerator
+
+
+def test_get_cipher_list():
+    assert wireless.get_cipher_list("psk2+tkip+ccmp") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("psk2+tkip+aes") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("psk2+tkip") == ["TKIP"]
+    assert wireless.get_cipher_list("psk2+ccmp") == ["CCMP"]
+    assert wireless.get_cipher_list("psk2+aes") == ["CCMP"]
+    assert wireless.get_cipher_list("psk2") == ["CCMP"]
+
+    assert wireless.get_cipher_list("psk+tkip+ccmp") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("psk+tkip+aes") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("psk+tkip") == ["TKIP"]
+    assert wireless.get_cipher_list("psk+ccmp") == ["CCMP"]
+    assert wireless.get_cipher_list("psk+aes") == ["CCMP"]
+    assert wireless.get_cipher_list("psk") == ["CCMP"]
+
+    assert wireless.get_cipher_list("psk-mixed+tkip+ccmp") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("psk-mixed+tkip+aes") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("psk-mixed+tkip") == ["TKIP"]
+    assert wireless.get_cipher_list("psk-mixed+ccmp") == ["CCMP"]
+    assert wireless.get_cipher_list("psk-mixed+aes") == ["CCMP"]
+    assert wireless.get_cipher_list("psk-mixed") == ["CCMP"]
+
+    assert wireless.get_cipher_list("wpa2+tkip+ccmp") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("wpa2+tkip+aes") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("wpa2+tkip") == ["TKIP"]
+    assert wireless.get_cipher_list("wpa2+ccmp") == ["CCMP"]
+    assert wireless.get_cipher_list("wpa2+aes") == ["CCMP"]
+    assert wireless.get_cipher_list("wpa2") == ["CCMP"]
+
+    assert wireless.get_cipher_list("wpa+tkip+ccmp") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("wpa+tkip+aes") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("wpa+tkip") == ["TKIP"]
+    assert wireless.get_cipher_list("wpa+ccmp") == ["CCMP"]
+    assert wireless.get_cipher_list("wpa+aes") == ["CCMP"]
+    assert wireless.get_cipher_list("wpa") == ["TKIP"]
+
+    assert wireless.get_cipher_list("wpa-mixed+tkip+ccmp") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("wpa-mixed+tkip+aes") == ["TKIP", "CCMP"]
+    assert wireless.get_cipher_list("wpa-mixed+tkip") == ["TKIP"]
+    assert wireless.get_cipher_list("wpa-mixed+ccmp") == ["CCMP"]
+    assert wireless.get_cipher_list("wpa-mixed+aes") == ["CCMP"]
+    assert wireless.get_cipher_list("wpa-mixed") == ["CCMP"]
 
 
 def test_ConfigWifiIface_apply():
