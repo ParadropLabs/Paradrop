@@ -447,7 +447,9 @@ def edit(ctx):
         data = {
             'config': config
         }
-        router_request("PUT", url, json=data)
+        res = router_request("PUT", url, json=data)
+        result = res.json()
+        ctx.invoke(watch, change_id=result['change_id'])
 
     os.remove(path)
 

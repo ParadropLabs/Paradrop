@@ -124,24 +124,28 @@ class ConfigApi(object):
         self.update_fetcher = update_fetcher
 
     @routes.route('/hostconfig', methods=['PUT'])
-    @inlineCallbacks
     def update_hostconfig(self, request):
         cors.config_cors(request)
         body = str2json(request.content.read())
         config = body['config']
-        if config:
-            update = dict(updateClass='ROUTER',
-                          updateType='sethostconfig',
-                          name=settings.RESERVED_CHUTE,
-                          tok=timeint(),
-                          hostconfig=config)
-            update = yield self.update_manager.add_update(**update)
-            request.setHeader('Content-Type', 'application/json')
-            returnValue(json.dumps(update.result))
-        else:
-            returnValue(json.dumps({'success': False,
-                                    'message': 'No config field in the input parameter'}))
 
+        update = dict(updateClass='ROUTER',
+                      updateType='sethostconfig',
+                      name=settings.RESERVED_CHUTE,
+                      tok=timeint(),
+                      hostconfig=config)
+
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
+        request.setHeader('Content-Type', 'application/json')
+        return json.dumps(result)
 
     @routes.route('/hostconfig')
     def get_hostconfig(self, request):
