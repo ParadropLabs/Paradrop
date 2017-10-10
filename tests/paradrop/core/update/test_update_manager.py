@@ -12,14 +12,14 @@ def test_update_manager(mReload, mUpdObj, mOut):
     #Test getNextUpdate & updateList & clearUpdateList
     assert c.updateQueue == []
     assert c._get_next_update() == None
-    update1 = dict(update='test1')
+    update1 = dict(name='test1', updateClass='CHUTE')
     c.add_update(**update1)
-    update2 = dict(update='test2')
+    update2 = dict(name='test2', updateClass='CHUTE')
     c.add_update(**update2)
     ret = c._get_next_update()
-    assert ret['update'] == 'test1'
+    assert ret.name == 'test1'
     ret = c._get_next_update()
-    assert ret['update'] == 'test2'
+    assert ret.name == 'test2'
     c.clear_update_list()
     assert c.updateQueue == []
 

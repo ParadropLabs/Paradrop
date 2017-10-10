@@ -293,13 +293,12 @@ class UpdateChute(UpdateObject):
         if self.old is None:
             return
 
-        # for start and restart updates we need to get the config info from the
-        # old config without overwriting new update info
-        if self.updateType == "start" or self.updateType == "restart":
-            missingKeys = set(self.old.__dict__.keys()) - \
-                          set(self.new.__dict__.keys())
-            for k in missingKeys:
-                setattr(self.new, k, getattr(self.old, k))
+        # Fill in any missing configuration (e.g. version number) from
+        # the old chute without overwriting any new information.
+        missingKeys = set(self.old.__dict__.keys()) - \
+                      set(self.new.__dict__.keys())
+        for k in missingKeys:
+            setattr(self.new, k, getattr(self.old, k))
 
         # For compatibility with old chutes, patch missing version numbers.
         if not hasattr(self.old, 'version'):
