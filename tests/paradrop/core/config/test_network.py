@@ -76,15 +76,15 @@ def test_getNetworkConfig():
 def test_get_current_phy_conf():
     hostConfig = {
         'wifi': [
-            {'id': 'wlan0'}
+            {'id': 'pci-wifi-0'}
         ]
     }
 
     update = MagicMock()
     update.new.getCache.return_value = hostConfig
 
-    result = network.get_current_phy_conf(update, 'wlan0')
-    assert result['id'] == 'wlan0'
+    result = network.get_current_phy_conf(update, 'pci-wifi-0')
+    assert result['id'] == 'pci-wifi-0'
 
     result = network.get_current_phy_conf(update, 'notfound')
     assert result == {}
@@ -215,8 +215,8 @@ def test_fulfillDeviceRequest_additional_requests():
 
     hostConfig = {
         'wifi': [
-            {'id': 'wlan0', 'hwmode': '11a'},
-            {'id': 'wlan1', 'hwmode': '11g'}
+            {'id': 'pci-wifi-0', 'hwmode': '11a'},
+            {'id': 'pci-wifi-1', 'hwmode': '11g'}
         ]
     }
 
@@ -244,12 +244,12 @@ def test_fulfillDeviceRequest_additional_requests():
 
     devices = {
         'wifi': [
-            {'name': 'wlan0'},
-            {'name': 'wlan1'}
+            {'id': 'pci-wifi-0', 'name': 'wlan0'},
+            {'id': 'pci-wifi-1', 'name': 'wlan1'}
         ]
     }
 
     result = network.fulfillDeviceRequest(update, config1, devices)
-    assert result['name'] == 'wlan0'
+    assert result['id'] == 'pci-wifi-0'
     result = network.fulfillDeviceRequest(update, config2, devices)
-    assert result['name'] == 'wlan1'
+    assert result['id'] == 'pci-wifi-1'

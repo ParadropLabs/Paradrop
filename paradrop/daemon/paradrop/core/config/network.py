@@ -269,7 +269,7 @@ def getNetworkConfigLan(update, name, cfg, iface):
             iface['internalIpaddr'], subnet.prefixlen)
 
 
-def get_current_phy_conf(update, device_name):
+def get_current_phy_conf(update, device_id):
     """
     Lookup current configuration for a network device.
 
@@ -280,7 +280,7 @@ def get_current_phy_conf(update, device_name):
     hostConfig = update.new.getCache('hostConfig')
 
     for dev in hostConfig.get('wifi', []):
-        if dev.get('id', None) == device_name:
+        if dev.get('id', None) == device_id:
             return dev
 
     return {}
@@ -327,7 +327,7 @@ def fulfillDeviceRequest(update, cfg, devices):
         # up configuration of the device and check additional constraints, e.g.
         # channel or hwmode.
         if 'requests' in cfg:
-            phyconf = get_current_phy_conf(update, dname)
+            phyconf = get_current_phy_conf(update, device['id'])
             if not satisfies_requirements(phyconf, cfg['requests']):
                 continue
 
