@@ -73,6 +73,40 @@ def test_getNetworkConfig():
     assert 'dhcp' in iface
 
 
+def test_get_current_phy_conf():
+    hostConfig = {
+        'wifi': [
+            {'id': 'wlan0'}
+        ]
+    }
+
+    update = MagicMock()
+    update.new.getCache.return_value = hostConfig
+
+    result = network.get_current_phy_conf(update, 'wlan0')
+    assert result['id'] == 'wlan0'
+
+    result = network.get_current_phy_conf(update, 'notfound')
+    assert result == {}
+
+
+def test_satisfies_requirements():
+    obj = {
+        'x': 1,
+        'y': 2,
+        'z': 3
+    }
+
+    assert network.satisfies_requirements(obj, {})
+    assert network.satisfies_requirements(obj, obj)
+
+    assert network.satisfies_requirements(obj, {'x': 1})
+    assert network.satisfies_requirements(obj, {'x': 1, 'y': 2})
+
+    assert network.satisfies_requirements(obj, {'a': 1}) is False
+    assert network.satisfies_requirements(obj, {'x': 2}) is False
+
+
 def test_fulfillDeviceRequest():
     update = MagicMock()
 
@@ -166,3 +200,56 @@ def test_fulfillDeviceRequest():
     result = network.fulfillDeviceRequest(update, config, devices)
     assert result['name'] == 'eth1'
     assert_raises(Exception, network.fulfillDeviceRequest, update, config, devices)
+
+
+def test_fulfillDeviceRequest_additional_requests():
+    """
+    Test additional requests passed with the configuration.
+
+    This test setup has two radios configured on different spectrum bands.
+    The first AP interface has no requests and is assigned to the first
+    device. The second AP requests a specific hardware (2.4 GHz) and is
+    assigned to the second device.
+    """
+    reservations = collections.defaultdict(DeviceReservations)
+
+    hostConfig = {
+        'wifi': [
+            {'id': 'wlan0', 'hwmode': '11a'},
+            {'id': 'wlan1', 'hwmode': '11g'}
+        ]
+    }
+
+    def getCache(key):
+        if key == "deviceReservations":
+            return reservations
+        elif key == "hostConfig":
+            return hostConfig
+
+    update = MagicMock()
+    update.new.getCache.side_effect = getCache
+
+    config1 = {
+        'type': 'wifi',
+        'mode': 'ap'
+    }
+
+    config2 = {
+        'type': 'wifi',
+        'mode': 'ap',
+        'requests': {
+            'hwmode': '11g'
+        }
+    }
+
+    devices = {
+        'wifi': [
+            {'name': 'wlan0'},
+            {'name': 'wlan1'}
+        ]
+    }
+
+    result = network.fulfillDeviceRequest(update, config1, devices)
+    assert result['name'] == 'wlan0'
+    result = network.fulfillDeviceRequest(update, config2, devices)
+    assert result['name'] == 'wlan1'

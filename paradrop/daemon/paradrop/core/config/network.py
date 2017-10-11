@@ -269,6 +269,40 @@ def getNetworkConfigLan(update, name, cfg, iface):
             iface['internalIpaddr'], subnet.prefixlen)
 
 
+def get_current_phy_conf(update, device_name):
+    """
+    Lookup current configuration for a network device.
+
+    This includes information such as the Wi-Fi channel.
+
+    Returns a dictionary, which may be empty if no configuration was found.
+    """
+    hostConfig = update.new.getCache('hostConfig')
+
+    for dev in hostConfig.get('wifi', []):
+        if dev.get('id', None) == device_name:
+            return dev
+
+    return {}
+
+
+def satisfies_requirements(obj, requirements):
+    """
+    Checks that an object satifies given requirements.
+
+    Every key-value pair in the requirements object must be present in the
+    target object for it to be considered satisfied.
+
+    Returns True/False.
+    """
+    for key, value in requirements.iteritems():
+        if key not in obj:
+            return False
+        if obj[key] != value:
+            return False
+    return True
+
+
 def fulfillDeviceRequest(update, cfg, devices):
     """
     Find a physical device that matches the requested device type.
@@ -288,6 +322,14 @@ def fulfillDeviceRequest(update, cfg, devices):
 
     for device in devlist:
         dname = device['name']
+
+        # If the configuration object includes a 'requests' object, then look
+        # up configuration of the device and check additional constraints, e.g.
+        # channel or hwmode.
+        if 'requests' in cfg:
+            phyconf = get_current_phy_conf(update, dname)
+            if not satisfies_requirements(phyconf, cfg['requests']):
+                continue
 
         # Monitor, station, and airshark mode interfaces require exclusive
         # access to the device.
