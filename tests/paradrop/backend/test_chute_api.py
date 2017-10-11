@@ -4,6 +4,7 @@ from mock import MagicMock, patch
 from nose.tools import assert_raises
 
 from paradrop.backend import chute_api
+from paradrop.core.chute.chute import Chute
 
 
 def test_ChuteCacheEncoder():
@@ -194,3 +195,85 @@ def test_ChuteApi_operations():
 
         result = json.loads(data)
         assert result['change_id'] == 1
+
+
+@patch("paradrop.backend.chute_api.ChuteStorage")
+def test_ChuteApi_get_chute_cache(ChuteStorage):
+    update_manager = MagicMock()
+    update_manager.assign_change_id.return_value = 1
+
+    api = chute_api.ChuteApi(update_manager)
+
+    chute = MagicMock()
+    chute.getCacheContents.return_value = {}
+
+    ChuteStorage.chuteList = {
+        "test": chute
+    }
+
+    request = MagicMock()
+
+    result = api.get_chute_cache(request, "test")
+    assert result == "{}"
+
+
+@patch("paradrop.backend.chute_api.ChuteStorage")
+def test_ChuteApi_get_networks(ChuteStorage):
+    update_manager = MagicMock()
+    update_manager.assign_change_id.return_value = 1
+
+    api = chute_api.ChuteApi(update_manager)
+
+    iface = {
+        'name': 'vwlan0',
+        'netType': 'wifi',
+        'internalIntf': 'wlan0'
+    }
+
+    chute = Chute(dict(name="test"))
+    chute.setCache("networkInterfaces", [iface])
+
+    ChuteStorage.chuteList = {
+        "test": chute
+    }
+
+    request = MagicMock()
+
+    result = api.get_networks(request, "test")
+    data = json.loads(result)
+    assert len(data) == 1
+    assert data[0]['name'] == iface['name']
+    assert data[0]['type'] == iface['netType']
+    assert data[0]['interface'] == iface['internalIntf']
+
+
+@patch("paradrop.backend.chute_api.ChuteStorage")
+def test_ChuteApi_get_network(ChuteStorage):
+    update_manager = MagicMock()
+    update_manager.assign_change_id.return_value = 1
+
+    api = chute_api.ChuteApi(update_manager)
+
+    iface = {
+        'name': 'vwlan0',
+        'netType': 'wifi',
+        'internalIntf': 'wlan0'
+    }
+
+    chute = Chute(dict(name="test"))
+    chute.setCache("networkInterfaces", [iface])
+
+    ChuteStorage.chuteList = {
+        "test": chute
+    }
+
+    request = MagicMock()
+
+    result = api.get_network(request, "test", "nomatch")
+    assert result == "{}"
+
+    result = api.get_network(request, "test", "vwlan0")
+    data = json.loads(result)
+    assert data['name'] == iface['name']
+    assert data['type'] == iface['netType']
+    assert data['interface'] == iface['internalIntf']
