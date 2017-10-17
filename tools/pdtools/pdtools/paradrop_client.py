@@ -2,7 +2,6 @@ import base64
 import getpass
 import os
 import re
-from pprint import pprint
 
 import builtins
 import requests
@@ -75,7 +74,13 @@ class ParadropClient(object):
         if network_name is not None:
             networks = [network_name]
         else:
-            networks = [x['name'] for x in self.get_networks(chute_name)]
+            netlist = self.get_networks(chute_name)
+
+            # In rare cases, get_networks returns None early in the chute
+            # lifetime. Instead of causing an exception, treat it as an empty
+            # list - no cameras detected yet.
+            if netlist is not None:
+                networks = [x['name'] for x in netlist]
 
         for net in networks:
             url = self.base_url + "/chutes/{}/networks/{}/leases".format(
