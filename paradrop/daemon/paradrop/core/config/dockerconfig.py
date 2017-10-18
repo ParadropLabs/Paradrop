@@ -12,6 +12,7 @@ from io import BytesIO
 
 from paradrop.base.output import out
 from paradrop.base import settings
+from paradrop.core.container import dockerapi
 from paradrop.lib.utils import pdos, pdosq
 
 
@@ -38,11 +39,16 @@ def getVirtPreamble(update):
         }
     }
 
+    # Prepare port bindings while there might still be an old version of the
+    # chute running so that we can inherit any dynamic port settings.
+    bindings = dockerapi.prepare_port_bindings(update.new)
+
     update.new.setCache('volumes', volumes)
     update.new.setCache('internalDataDir', intDataDir)
     update.new.setCache('externalDataDir', extDataDir)
     update.new.setCache('internalSystemDir', intSystemDir)
     update.new.setCache('externalSystemDir', extSystemDir)
+    update.new.setCache('portBindings', bindings)
 
     # Reuse previous token if it exists. This is not ideal but works for
     # updates that do not recreate the container with updated environment

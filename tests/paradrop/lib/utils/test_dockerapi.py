@@ -25,8 +25,9 @@ def fake_update():
     return update
 
 
+@patch('paradrop.core.container.dockerapi.ChuteContainer')
 @patch('paradrop.core.container.dockerapi.getBridgeGateway')
-def test_build_host_config(getBridgeGateway):
+def test_build_host_config(getBridgeGateway, ChuteContainer):
     """
     Test that the build_host_config function does it's job.
     """

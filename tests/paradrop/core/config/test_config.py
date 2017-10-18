@@ -258,13 +258,21 @@ def test_config_dhcp():
     assert_raises(Exception, dhcp.getVirtDHCPSettings, update)
 
 
-def test_config_dockerconfig():
+@patch("paradrop.core.container.chutecontainer.ChuteContainer")
+def test_config_dockerconfig(ChuteContainer):
     """
     Test the dockerconfig module.
     """
     from paradrop.core.config import dockerconfig
 
+    container = Mock()
+    container.inspect.return_value = {}
+    ChuteContainer.return_value = container
+
     update = Mock(updateType="create")
+    update.new.name = "test"
+    update.new.getHostConfig.return_value = {}
+    update.new.getWebPort.return_value = None
 
     # Test with missing attribute 'dockerfile'.
     del update.dockerfile

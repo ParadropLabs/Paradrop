@@ -18,6 +18,7 @@ import subprocess
 import time
 import yaml
 
+from paradrop.base.exceptions import ChuteNotFound
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
 from paradrop.lib.misc import resopt
@@ -493,6 +494,27 @@ def prepare_port_bindings(chute):
         if not any(k in bindings for k in keys):
             bindings["{}/tcp".format(web_port)] = None
 
+    # Check if there is an existing version of the chute installed, so we can
+    # potentially inherit old port bindings.
+    try:
+        container = ChuteContainer(chute.name)
+        data = container.inspect()
+        old_bindings = data['NetworkSettings']['Ports']
+    except ChuteNotFound as error:
+        old_bindings = {}
+
+    # If the current binding is unspecified (None), and there exists previous
+    # binding for the same port, we can inherit the previous binding rather
+    # than let Docker pick an arbitrary new one.
+    #
+    # The primary effect is that if a user followed a redirect to the web port
+    # of a chute, then updated the chute, the port should remain valid after
+    # the update.
+    for key, value in bindings.iteritems():
+        if value is None and key in old_bindings:
+            port = old_bindings[key][0]['HostPort']
+            bindings[key] = port
+
     return bindings
 
 
@@ -522,7 +544,7 @@ def build_host_config(chute, client=None):
     # If the chute has not configured a host binding for port 80, let Docker
     # assign a dynamic one.  We will use it to redirect HTTP requests to the
     # chute.
-    port_bindings = prepare_port_bindings(chute)
+    port_bindings = chute.getCache('portBindings')
 
     # restart_policy: set to 'no' to prevent Docker from starting containers
     # automatically on system boot.  Paradrop will set up the host environment

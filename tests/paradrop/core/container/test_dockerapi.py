@@ -1,6 +1,8 @@
-from paradrop.core.container import dockerapi
 from mock import call, patch, MagicMock
 from nose.tools import assert_raises
+
+from paradrop.base.exceptions import ChuteNotFound
+from paradrop.core.container import dockerapi
 
 
 def test_getImageName():
@@ -160,3 +162,32 @@ def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
     assert getPID.called
     assert call_in_netns.called
     assert call_retry.called
+
+
+@patch("paradrop.core.container.dockerapi.ChuteContainer")
+def test_prepare_port_bindings(ChuteContainer):
+    chute = MagicMock()
+    chute.getHostConfig.return_value = {}
+    chute.getWebPort.return_value = 80
+
+    container = MagicMock()
+    container.inspect.side_effect = ChuteNotFound()
+    ChuteContainer.return_value = container
+
+    bindings = dockerapi.prepare_port_bindings(chute)
+    assert bindings["80/tcp"] is None
+
+    container.inspect.side_effect = None
+    container.inspect.return_value = {
+        "NetworkSettings": {
+            "Ports": {
+                "80/tcp": [{
+                    "HostIp": "0.0.0.0",
+                    "HostPort": "32784"
+                }]
+            }
+        }
+    }
+
+    bindings = dockerapi.prepare_port_bindings(chute)
+    assert bindings["80/tcp"] == "32784"
