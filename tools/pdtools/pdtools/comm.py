@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import base64
 import getpass
 import os
@@ -48,6 +50,8 @@ def pdserver_request(method, url, json=None, headers=None):
 
     while True:
         while token is None:
+            print("Please enter your username and password for the cloud server, {}."
+                  .format(host))
             username = builtins.input("Username: ")
             password = getpass.getpass("Password: ")
             data = {
@@ -95,6 +99,10 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
     session = requests.Session()
     request = requests.Request(method, url, json=json, headers=headers, **kwargs)
 
+    # Extract just the hostname from the controller URL.  This will be the
+    # authentication domain.
+    url_parts = urlparse(url)
+
     # First try with the default username and password.
     # If that fails, prompt user and try again.
     userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
@@ -108,6 +116,8 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
         res = session.send(prepped)
         print("Router responded: {} {}".format(res.status_code, res.reason))
         if res.status_code == 401:
+            print("Please enter your username and password for the device {}."
+                  .format(url_parts.hostname))
             username = builtins.input("Username: ")
             password = getpass.getpass("Password: ")
             userpass = "{}:{}".format(username, password).encode('utf-8')
