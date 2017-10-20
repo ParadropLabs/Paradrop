@@ -19,9 +19,14 @@ RUN find / -perm +6000 -type f -exec chmod a-s {} \; || true
 
 WORKDIR /opt/paradrop/app
 
+# Copy paradrop.yaml and requirements.txt, the latter only if it exists.  Then
+# call init-app.sh to install dependencies. These layers will be cached as long
+# as the requirements do not change.
+ONBUILD COPY paradrop.yaml requirements.tx[t] /opt/paradrop/app/
+ONBUILD RUN init-app.sh
+
+# Now copy the rest of the files.
 ONBUILD COPY . /opt/paradrop/app/
 ONBUILD RUN chown paradrop:paradrop -R /opt/paradrop/app
 
-# Run init-app.sh as root to install python packages.
-ONBUILD RUN init-app.sh
 ONBUILD USER paradrop
