@@ -14,6 +14,10 @@ def generate_jwt_secret():
 
 
 class TokenManager(object):
+    # Inherit this exception class so that callers can use it without depending
+    # on the jwt library.
+    InvalidTokenError = jwt.exceptions.InvalidTokenError
+
     def __init__(self):
         self.secret = nexus.core.getKey('jwt-secret')
         if self.secret is None:
@@ -23,6 +27,8 @@ class TokenManager(object):
     def decode(self, token):
         """
         Decode a JWT that was issued by us.
+
+        Throws an InvalidTokenError on decoding failure or token expiration.
         """
         return jwt.decode(token, self.secret, algorithms=['HS256'])
 

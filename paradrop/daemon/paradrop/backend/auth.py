@@ -2,7 +2,6 @@ import base64
 import functools
 import json
 
-import jwt
 from klein import Klein
 
 from paradrop.base import nexus, settings
@@ -80,7 +79,7 @@ def check_auth(password_manager, token_manager, auth_header):
         try:
             decoded = token_manager.decode(token)
             return True
-        except jwt.exceptions.InvalidTokenError as error:
+        except token_manager.InvalidTokenError as error:
             pass
 
     return False
