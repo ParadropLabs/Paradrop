@@ -21,6 +21,7 @@ setup(
         'klein==16.12.0',
         'psutil',
         'pycurl',
+        'PyJWT>=1.5.3',
         'pyyaml',
         'requests==2.15.1', # Fix requests version until we can get idna>=2.5.
         'service_identity>=16.0.0',

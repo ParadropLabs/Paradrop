@@ -18,7 +18,7 @@ from paradrop.base.exceptions import ParadropException
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.system.system_status import SystemStatus
 
-from .auth import requires_auth
+from .auth import requires_auth, AuthApi
 from .information_api import InformationApi
 from .change_api import ChangeApi
 from .change_ws import ChangeStreamFactory
@@ -31,6 +31,7 @@ from .chute_log_ws import ChuteLogWsFactory
 from .status_sockjs import StatusSockJSFactory
 from .airshark_ws import AirsharkSpectrumFactory, AirsharkAnalyzerFactory
 from .password_manager import PasswordManager
+from .token_manager import TokenManager
 from .snapd_resource import SnapdResource
 from .paradrop_log_ws import ParadropLogWsFactory
 from . import cors
@@ -43,6 +44,7 @@ class HttpServer(object):
         self.update_fetcher = update_fetcher
         self.system_status = SystemStatus()
         self.password_manager = PasswordManager()
+        self.token_manager = TokenManager()
         self.airshark_manager = airshark_manager
 
         if portal_dir:
@@ -51,6 +53,11 @@ class HttpServer(object):
             self.portal_dir = os.environ['SNAP'] + '/www'
         else:
             self.portal_dir = resource_filename('paradrop', 'static')
+
+
+    @app.route('/api/v1/auth', branch=True)
+    def api_auth(self, request):
+        return AuthApi(self.password_manager, self.token_manager).routes.resource()
 
 
     @app.route('/api/v1/info', branch=True)

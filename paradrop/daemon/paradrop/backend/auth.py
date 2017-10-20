@@ -1,8 +1,14 @@
 import base64
 import functools
+import json
 
+import jwt
+from klein import Klein
+
+from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.core.chute.chute_storage import ChuteStorage
+from . import cors
 
 # TODO: Configurable username/password.
 # TODO: Segment permissions based on roles.
@@ -49,16 +55,33 @@ def get_allowed_bearer():
     return allowed
 
 
-def check_auth(password_manager, auth_header):
+def check_auth(password_manager, token_manager, auth_header):
     parts = auth_header.split()
     if parts[0] == "Basic":
         userpass = parts[1]
         return verify_password(password_manager, userpass)
     elif parts[0] == "Bearer":
-        # Consider using JWT to avoid needing to gather a list of tokens.
-        # However, then we need to generate and store a private key.
         token = parts[1]
-        return token in get_allowed_bearer()
+
+        # Chutes use non-expiring random tokens that are generated at container
+        # creation. This works well because we do not want to deal with
+        # expiration or revocation.
+        allowed_tokens = get_allowed_bearer()
+        if token in allowed_tokens:
+            return True
+
+        # Users (through the local portal or pdtools) can acquire expiring
+        # JWTs. If the JWT decodes using our secret, then the caller is
+        # authenticated.
+        #
+        # Later on, we may implement tokens issued by paradrop.org but
+        # allowing user access to the router, etc. In that case we will
+        # need to examine the subject, issuer, and audience claims.
+        try:
+            decoded = token_manager.decode(token)
+            return True
+        except jwt.exceptions.InvalidTokenError as error:
+            pass
 
     return False
 
@@ -73,10 +96,45 @@ def requires_auth(func):
     @functools.wraps(func)
     def decorated(self, request, *args, **kwargs):
         auth_header = request.getHeader('Authorization')
-        if not auth_header or not check_auth(self.password_manager, auth_header):
+        if not auth_header or not check_auth(self.password_manager,
+                self.token_manager, auth_header):
             out.warn('Failed to authenticate')
             request.setResponseCode(401)
             request.setHeader("WWW-Authenticate", "Basic realm=\"Login Required\"")
             return
         return func(self, request, *args, **kwargs)
     return decorated
+
+
+class AuthApi(object):
+    routes = Klein()
+
+    def __init__(self, password_manager, token_manager):
+        self.password_manager = password_manager
+        self.token_manager = token_manager
+
+    @routes.route('/local', methods=['POST'])
+    def local_login(self, request):
+        """
+        Login using local authentication (username+password).
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        body = json.loads(request.content.read())
+        username = body.get('username', self.password_manager.DEFAULT_USER_NAME)
+        password = body.get('password', self.password_manager.DEFAULT_PASSWORD)
+
+        success = self.password_manager.verify_password(username, password)
+        result = {
+            'username': username,
+            'success': success
+        }
+
+        if success:
+            token = self.token_manager.issue(username)
+            result['token'] = token
+        else:
+            request.setResponseCode(401)
+
+        return json.dumps(result)

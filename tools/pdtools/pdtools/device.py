@@ -66,15 +66,13 @@ def watch(ctx, change_id):
     """
     url = "ws://{}/ws/changes/{}/stream".format(ctx.obj['address'], change_id)
 
-    def on_error(ws, error):
-        print(error)
     def on_message(ws, message):
         data = json.loads(message)
         time = datetime.datetime.fromtimestamp(data['time'])
         msg = data['message'].rstrip()
         print("{}: {}".format(time, msg))
 
-    router_ws_request(url, on_message=on_message, on_error=on_error)
+    router_ws_request(url, on_message=on_message)
 
 
 @device.command()
@@ -273,15 +271,13 @@ def logs(ctx):
     """
     url = "ws://{}/sockjs/logs/{}/websocket".format(ctx.obj['address'], ctx.obj['chute'])
 
-    def on_error(ws, error):
-        print(error)
     def on_message(ws, message):
         data = json.loads(message)
         time = arrow.get(data['timestamp']).to('local').datetime
         msg = data['message'].rstrip()
         print("{}: {}".format(time, msg))
 
-    router_ws_request(url, on_message=on_message, on_error=on_error)
+    router_ws_request(url, on_message=on_message)
 
 
 @chute.command()

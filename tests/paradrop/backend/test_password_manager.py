@@ -69,7 +69,7 @@ def test_add_remove_user(mExists, mWrite):
     assert len(passwordManager.records) == 3
 
     mWrite.reset_mock()
-    passwordManager.remove_user(password_manager.DEFAULT_USER_NAME)
+    passwordManager.remove_user(passwordManager.DEFAULT_USER_NAME)
     mWrite.assert_called_once()
     assert len(passwordManager.records) == 2
 
@@ -84,7 +84,8 @@ def test_verify_password(mExists, mWrite):
     mExists.return_value = False
     passwordManager = password_manager.PasswordManager()
 
-    passwordManager.verify_password(password_manager.DEFAULT_USER_NAME, password_manager.DEFAULT_PASSWORD)
+    passwordManager.verify_password(passwordManager.DEFAULT_USER_NAME,
+            passwordManager.DEFAULT_PASSWORD)
 
     passwordManager.add_user('hello', 'password!!')
     passwordManager.verify_password('hello', 'password!!')
@@ -98,14 +99,16 @@ def test_change_password(mExists, mWrite):
     mExists.return_value = False
     passwordManager = password_manager.PasswordManager()
 
-    assert passwordManager.verify_password(password_manager.DEFAULT_USER_NAME, password_manager.DEFAULT_PASSWORD)
+    assert passwordManager.verify_password(passwordManager.DEFAULT_USER_NAME,
+            passwordManager.DEFAULT_PASSWORD)
 
     assert passwordManager.add_user('hello', 'password!!')
     assert passwordManager.verify_password('hello', 'password!!')
 
-    assert passwordManager.change_password(password_manager.DEFAULT_USER_NAME, 'haha')
-    assert not passwordManager.verify_password(password_manager.DEFAULT_USER_NAME, password_manager.DEFAULT_PASSWORD)
-    assert passwordManager.verify_password(password_manager.DEFAULT_USER_NAME, 'haha')
+    assert passwordManager.change_password(passwordManager.DEFAULT_USER_NAME, 'haha')
+    assert not passwordManager.verify_password(passwordManager.DEFAULT_USER_NAME,
+            passwordManager.DEFAULT_PASSWORD)
+    assert passwordManager.verify_password(passwordManager.DEFAULT_USER_NAME, 'haha')
 
     assert passwordManager.change_password('hello', 'heihei')
     assert passwordManager.verify_password('hello', 'heihei')
@@ -113,4 +116,5 @@ def test_change_password(mExists, mWrite):
     assert not passwordManager.change_password('notexists', 'heihei')
 
     passwordManager.reset()
-    assert passwordManager.verify_password(password_manager.DEFAULT_USER_NAME, password_manager.DEFAULT_PASSWORD)
+    assert passwordManager.verify_password(passwordManager.DEFAULT_USER_NAME,
+            passwordManager.DEFAULT_PASSWORD)

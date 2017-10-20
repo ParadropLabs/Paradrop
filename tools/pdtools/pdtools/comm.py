@@ -32,6 +32,60 @@ def change_json(data, path, value):
     head[parts[-1]] = value
 
 
+class LoginGatherer(object):
+    """
+    LoginGatherer is an iterator that produces username/password tuples.
+
+    On the first iteration, it returns a default username/password combination
+    for convenience. On subsequent iterations, it prompts the user for input.
+
+    The class method prompt() can be used directly in a loop for situations
+    where the default is not desired.
+
+    Usage examples:
+
+    for username, password in LoginGatherer(netloc):
+        ...
+
+    while True:
+        username, password = LoginGatherer.prompt(netloc)
+    """
+    def __init__(self, netloc):
+        self.first = True
+        self.netloc = netloc
+
+    def __iter__(self):
+        self.first = True
+        return self
+
+    def __next__(self):
+        if self.first:
+            self.first = False
+            return (LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
+        else:
+            return LoginGatherer.prompt(self.netloc)
+
+    def next(self):
+        """
+        Get the next username and password pair.
+        """
+        return self.__next__()
+
+    @classmethod
+    def prompt(cls, netloc):
+        """
+        Prompt the user to enter a username and password.
+
+        The netloc argument is presented in the prompt, so that the user knows
+        the relevant authentication domain.
+        """
+        print("Please enter your username and password for {}."
+              .format(netloc))
+        username = builtins.input("Username: ")
+        password = getpass.getpass("Password: ")
+        return (username, password)
+
+
 def pdserver_request(method, url, json=None, headers=None):
     """
     Issue a Paradrop controller API request.
@@ -43,17 +97,13 @@ def pdserver_request(method, url, json=None, headers=None):
     # Extract just the hostname from the controller URL.  This will be the
     # authentication domain.
     parts = urlparse(PDSERVER_URL)
-    host = parts.hostname
 
     config = PdtoolsConfig.load()
-    token = config.getControllerToken(host)
+    token = config.getAccessToken(parts.netloc)
 
     while True:
         while token is None:
-            print("Please enter your username and password for the cloud server, {}."
-                  .format(host))
-            username = builtins.input("Username: ")
-            password = getpass.getpass("Password: ")
+            username, password = LoginGatherer.prompt(parts.netloc)
             data = {
                 'email': username,
                 'password': password
@@ -69,7 +119,7 @@ def pdserver_request(method, url, json=None, headers=None):
                 res_data = res.json()
                 token = res_data['token']
 
-                config.addControllerToken(host, username, token)
+                config.addAccessToken(parts.netloc, username, token)
                 config.save()
             except:
                 pass
@@ -82,12 +132,35 @@ def pdserver_request(method, url, json=None, headers=None):
         print("Server responded: {} {}".format(res.status_code, res.reason))
         if res.status_code == 401:
             # Token is probably expired.
-            config.removeControllerToken(token)
+            config.removeAccessToken(token)
             config.save()
             token = None
             continue
         else:
             return res
+
+
+def router_login(request_url, username, password, session):
+    url_parts = urlparse(request_url)
+
+    auth_url = "{}://{}/api/v1/auth/local".format(url_parts.scheme, url_parts.netloc)
+    data = {
+        'username': username,
+        'password': password
+    }
+    request = requests.Request('POST', auth_url, json=data)
+    prepped = session.prepare_request(request)
+    res = session.send(prepped)
+    print("Server responded: {} {}".format(res.status_code, res.reason))
+
+    if res.ok:
+        data = res.json()
+        token = data['token']
+
+        return (res.status_code, token)
+
+    else:
+        return (res.status_code, None)
 
 
 def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
@@ -103,29 +176,46 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
     # authentication domain.
     url_parts = urlparse(url)
 
-    # First try with the default username and password.
-    # If that fails, prompt user and try again.
-    userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
+    config = PdtoolsConfig.load()
+    token = config.getAccessToken(url_parts.netloc)
 
-    encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
-    session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
+    if token is not None:
+        session.headers.update({'Authorization': 'Bearer {}'.format(token)})
+        request = requests.Request(method, url, json=json, headers=headers)
+        prepped = session.prepare_request(request)
 
-    prepped = session.prepare_request(request)
-
-    while True:
         res = session.send(prepped)
-        print("Router responded: {} {}".format(res.status_code, res.reason))
+        print("Server responded: {} {}".format(res.status_code, res.reason))
         if res.status_code == 401:
-            print("Please enter your username and password for the device {}."
-                  .format(url_parts.hostname))
-            username = builtins.input("Username: ")
-            password = getpass.getpass("Password: ")
-            userpass = "{}:{}".format(username, password).encode('utf-8')
-            encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
+            # Token has probably expired.
+            config.removeAccessToken(token)
+            config.save()
+            token = None
+        else:
+            # Not an auth error, so return the result.
+            if res.ok and dump:
+                data = res.json()
+                pprint(data)
+            return res
 
-            session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
-            prepped = session.prepare_request(request)
+    for username, password in LoginGatherer(url_parts.netloc):
+        # Try to get a token for later use. Prior to 1.10, paradrop-daemon
+        # does not not support tokens.
+        _, token = router_login(url, username, password, session)
+        if token is not None:
+            config.addAccessToken(url_parts.netloc, username, token)
+            config.save()
 
+        userpass = "{}:{}".format(username, password).encode('utf-8')
+        encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
+
+        session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
+        prepped = session.prepare_request(request)
+        res = session.send(prepped)
+        print("Server responded: {} {}".format(res.status_code, res.reason))
+        if res.status_code == 401:
+            # Probably incorrect username/password, so try again.
+            continue
         else:
             if res.ok and dump:
                 data = res.json()
@@ -144,11 +234,22 @@ def router_ws_request(url, headers=None, **kwargs):
     else:
         headers = headers.copy()
 
-    # First try with the default username and password.
-    # If that fails, prompt user and try again.
-    userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
-    encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
-    headers.update({'Authorization': 'Basic {}'.format(encoded)})
+    def on_error(ws, x):
+        print(x)
+
+    url_parts = urlparse(url)
+    config = PdtoolsConfig.load()
+    token = config.getAccessToken(url_parts.netloc)
+
+    if token is not None:
+        headers.update({'Authorization': 'Bearer {}'.format(token)})
+    else:
+        username, password = LoginGatherer.prompt(url_parts.netloc)
+
+        userpass = "{}:{}".format(username, password)
+        encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
+        headers.update({'Authorization': 'Basic {}'.format(encoded)})
 
     ws = websocket.WebSocketApp(url, header=headers, **kwargs)
+    ws.on_error = on_error
     ws.run_forever()

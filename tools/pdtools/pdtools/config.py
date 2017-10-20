@@ -11,34 +11,34 @@ class PdtoolsConfig(object):
         else:
             self.data = {}
 
-    def addControllerToken(self, host, username, token):
+    def addAccessToken(self, netloc, username, token):
         """
-        Add a new auth token for a controller.
+        Add a new auth token for a controller or device.
         """
-        if 'controllers' not in self.data:
-            self.data['controllers'] = []
+        if 'tokens' not in self.data:
+            self.data['tokens'] = []
 
-        self.data['controllers'].append({
-            'host': host,
+        self.data['tokens'].append({
+            'netloc': netloc,
             'token': token,
             'username': username
         })
 
-    def getControllerToken(self, host):
+    def getAccessToken(self, netloc):
         """
-        Get a saved auth token for a controller.
+        Get a saved auth token for a controller or device.
         """
-        for ctrl in self.data.get('controllers', []):
-            if ctrl['host'] == host:
-                return ctrl.get('token', None)
+        for entity in self.data.get('tokens', []):
+            if entity['netloc'] == netloc:
+                return entity.get('token', None)
         return None
 
-    def removeControllerToken(self, token):
+    def removeAccessToken(self, token):
         """
-        Remove a saved auth token for a controller.
+        Remove a saved auth token for a controller or device.
         """
-        old = self.data.get('controllers', [])
-        self.data['controllers'] = [x for x in old if not x['token'] == token]
+        old = self.data.get('tokens', [])
+        self.data['tokens'] = [x for x in old if not x['token'] == token]
 
     def save(self):
         """
