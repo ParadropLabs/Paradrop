@@ -2,6 +2,11 @@ FROM python:2.7
 
 ADD init-app.sh /usr/local/bin/
 
+# Install some useful tools and libraries.
+RUN apt-get update && \
+    apt-get install -y \
+        iptables
+
 # Set up an unprivileged user so that we can drop out of root.
 # Make /home/paradrop so that pip can drop some files in there.
 # Make /opt/paradrop/app for installing the app files.

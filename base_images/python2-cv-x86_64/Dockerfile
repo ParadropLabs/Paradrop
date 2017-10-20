@@ -7,6 +7,7 @@ ADD backports.list /etc/apt/sources.list.d/
 RUN apt-get update && \
     apt-get install -y \
         cmake \
+        iptables \
         libboost-python-dev \
         libopenblas-dev \
         liblapack-dev
