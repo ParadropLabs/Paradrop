@@ -63,6 +63,9 @@ class Dockerfile(object):
             # Drop back to user paradrop after installing packages.
             if not as_root:
                 dockerfile += "USER paradrop\n"
+        elif as_root:
+            # No packages to install but run as root.
+            dockerfile += "USER root\n"
 
         dockerfile += "CMD {}\n".format(cmd_string)
 
