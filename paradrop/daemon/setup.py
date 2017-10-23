@@ -13,7 +13,7 @@ setup(
         'autobahn>=0.15.0',
         'bcrypt>=2.0.0',
         'colorama>=0.3.3',
-        'docker-py==1.10.6',
+        'docker==2.5.1',
         'enum34',
         'idna>=2.0',
         'ipaddress',

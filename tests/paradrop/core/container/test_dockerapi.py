@@ -52,7 +52,7 @@ def test_getPortList():
 @patch('paradrop.core.container.downloader.downloader')
 @patch('paradrop.core.container.dockerapi._pullImage')
 @patch('paradrop.core.container.dockerapi._buildImage')
-@patch('docker.Client')
+@patch('docker.APIClient')
 def test_buildImage(Client, _buildImage, _pullImage, downloader):
     client = MagicMock()
     Client.return_value = client
@@ -98,7 +98,7 @@ def test_buildImage_worker():
     update.progress.assert_has_calls([call("Message1"), call("Message3")])
 
 
-@patch('docker.Client')
+@patch('docker.APIClient')
 def test_removeImage_worker(Client):
     client = MagicMock()
     Client.return_value = client

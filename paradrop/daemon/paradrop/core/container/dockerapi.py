@@ -135,7 +135,7 @@ def buildImage(update):
     """
     out.info('Building image for {}\n'.format(update.new))
 
-    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    client = docker.APIClient(base_url="unix://var/run/docker.sock", version='auto')
 
     repo = getImageName(update.new)
 
@@ -255,7 +255,8 @@ def _pullImage(update, client):
     layers = 0
     complete = 0
 
-    output = client.pull(update.new.external_image, auth_config=auth_config, stream=True)
+    output = client.pull(update.new.external_image,
+            auth_config=auth_config, stream=True)
     for line in output:
         data = json.loads(line)
 
@@ -301,9 +302,9 @@ def _removeImage(chute):
     out.info("Removing image {}\n".format(image))
 
     try:
-        client = docker.Client(base_url="unix://var/run/docker.sock",
+        client = docker.DockerClient(base_url="unix://var/run/docker.sock",
                 version='auto')
-        client.remove_image(image=image)
+        client.images.remove(image=image)
     except Exception as error:
         out.warn("Error removing image: {}".format(error))
 
@@ -331,30 +332,19 @@ def _startChute(chute):
     repo = getImageName(chute)
     name = chute.name
 
-    c = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    c = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
 
-    host_config = build_host_config(chute, c)
+    host_config = build_host_config(chute)
 
     # Set environment variables for the new container.
     # PARADROP_ROUTER_ID can be used to change application behavior based on
     # what router it is running on.
     environment = prepare_environment(chute)
 
-    # Passing a list of internal port numbers to create_container exposes the
-    # ports in case the Dockerfile is missing EXPOSE commands.
-    intPorts = getPortList(chute)
-
-    # create_container expects a list of the internal mount points.
-    volumes = chute.getCache('volumes')
-    intVolumes = [v['bind'] for v in volumes.values()]
-
     try:
-        container = c.create_container(
-            image=repo, name=name, host_config=host_config,
-            environment=environment, ports=intPorts, volumes=intVolumes
-        )
-        c.start(container.get('Id'))
-        out.info("Successfully started chute with Id: %s\n" % (str(container.get('Id'))))
+        container = c.containers.run(detach=True, image=repo, name=name,
+                environment=environment, **host_config)
+        out.info("Successfully started chute with Id: %s\n" % (str(container.id)))
     except Exception as e:
         raise e
 
@@ -371,14 +361,15 @@ def removeNewContainer(update):
     cleanup_net_interfaces(update.new)
 
     try:
-        client = docker.Client(base_url="unix://var/run/docker.sock",
+        client = docker.DockerClient(base_url="unix://var/run/docker.sock",
                 version='auto')
 
         # Grab the last 40 log messages to help with debugging.
-        logs = client.logs(name, stream=False, tail=40, timestamps=False)
+        container = client.containers.get(name)
+        logs = container.logs(name, stream=False, tail=40, timestamps=False)
         update.progress("{}: {}".format(name, logs.rstrip()))
 
-        client.remove_container(container=name, force=True)
+        container.remove(force=True)
     except Exception as error:
         out.warn("Error removing container: {}".format(error))
 
@@ -392,19 +383,20 @@ def removeChute(update):
     :returns: None
     """
     out.info('Attempting to remove chute %s\n' % (update.name))
-    c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
+    c = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
     repo = getImageName(update.old)
     name = update.name
 
     cleanup_net_interfaces(update.old)
 
     try:
-        c.remove_container(container=name, force=True)
+        container = c.containers.get(name)
+        container.remove(force=True)
     except Exception as e:
         update.progress(str(e))
 
     try:
-        c.remove_image(image=repo)
+        c.images.remove(repo)
     except Exception as e:
         update.progress(str(e))
 
@@ -421,9 +413,10 @@ def removeOldContainer(update):
 
     cleanup_net_interfaces(update.old)
 
-    client = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
     try:
-        client.remove_container(container=update.old.name, force=True)
+        container = client.containers.get(update.old.name)
+        container.remove(force=True)
     except Exception as e:
         update.progress(str(e))
 
@@ -440,8 +433,9 @@ def stopChute(update):
 
     cleanup_net_interfaces(update.old)
 
-    c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
-    c.stop(container=update.name)
+    c = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+    container = c.containers.get(update.name)
+    container.stop()
 
 
 def restartChute(update):
@@ -453,8 +447,9 @@ def restartChute(update):
     :returns: None
     """
     out.info('Attempting to restart chute %s\n' % (update.name))
-    c = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
-    c.start(container=update.name)
+    c = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
+    container = c.containers.get(update.name)
+    container.start()
 
     setup_net_interfaces(update.new)
 
@@ -466,9 +461,10 @@ def getBridgeGateway():
     This is the docker0 IP address; it is the IP address of the host from the
     chute's perspective.
     """
-    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-    info = client.inspect_network("bridge")
-    for config in info['IPAM']['Config']:
+    client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
+
+    network = client.networks.get("bridge")
+    for config in network.attrs['IPAM']['Config']:
         if 'Gateway' in config:
             return config['Gateway']
 
@@ -518,18 +514,14 @@ def prepare_port_bindings(chute):
     return bindings
 
 
-def build_host_config(chute, client=None):
+def build_host_config(chute):
     """
     Build the host_config dict for a docker container based on the passed in update.
 
     :param chute: The chute object containing information about the chute.
     :type chute: obj
-    :param client: Docker client object.
     :returns: (dict) The host_config dict which docker needs in order to create the container.
     """
-    if client is None:
-        client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-
     config = chute.getHostConfig()
 
     extra_hosts = {}
@@ -549,24 +541,20 @@ def build_host_config(chute, client=None):
     # restart_policy: set to 'no' to prevent Docker from starting containers
     # automatically on system boot.  Paradrop will set up the host environment
     # first, then restart the containers.
-    host_conf = client.create_host_config(
-        #TO support
-        port_bindings=port_bindings,
-        dns=config.get('dns'),
-        network_mode=network_mode,
-        extra_hosts=extra_hosts,
-        binds=volumes,
-        #links=config.get('links'),
-        #restart_policy={'MaximumRetryCount': 5, 'Name': 'on-failure'},
-        restart_policy={'Name': 'no'},
-        devices=config.get('devices', []),
-        lxc_conf={},
-        publish_all_ports=False,
-        privileged=config.get('privileged', False),
-        dns_search=[],
-        volumes_from=None,
+    # host_conf = client.create_host_config(
+    host_conf = dict(
         cap_add=['NET_ADMIN'],
-        cap_drop=[]
+        cap_drop=[],
+        devices=config.get('devices', []),
+        dns=config.get('dns'),
+        dns_search=[],
+        extra_hosts=extra_hosts,
+        network_mode=network_mode,
+        ports=port_bindings,
+        privileged=config.get('privileged', False),
+        publish_all_ports=False,
+        restart_policy={'Name': 'no'},
+        volumes=volumes
     )
     return host_conf
 
@@ -772,9 +760,9 @@ def call_in_netns(chute, env, command, onerror="raise", pid=None):
         out.warn("nsenter command failed, resorting to docker exec\n")
 
         try:
-            client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-            status = client.exec_create(chute.name, command, user='root')
-            client.exec_start(status['Id'])
+            client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
+            container = client.containers.get(chute.name)
+            container.exec_run(command, user='root')
         except Exception as error:
             if onerror == "raise":
                 raise
@@ -805,12 +793,12 @@ def prepare_environment(chute):
 
 
 def _setResourceAllocation(allocation):
-    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
+    client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
     for chutename, resources in allocation.iteritems():
         out.info("Update chute {} set cpu_shares={}\n".format(
             chutename, resources['cpu_shares']))
-        client.update_container(container=chutename,
-                cpu_shares=resources['cpu_shares'])
+        container = client.containers.get(chutename)
+        container.update(cpu_shares=resources['cpu_shares'])
 
         # Using class id 1:1 for prioritized, 1:3 for best effort.
         # Prioritization is implemented in confd/qos.py.  Class-ID is
@@ -848,10 +836,10 @@ def removeAllContainers(update):
 
     :returns: None
     """
-    client = docker.Client(base_url='unix://var/run/docker.sock', version='auto')
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
 
-    for container in client.containers(all=True):
+    for container in client.containers.list(all=True):
         try:
-            client.remove_container(container=container['Id'], force=True)
+            container.remove(force=True)
         except Exception as e:
             update.progress(str(e))

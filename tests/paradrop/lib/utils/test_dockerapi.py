@@ -40,7 +40,7 @@ def test_build_host_config(getBridgeGateway, ChuteContainer):
     #Check that an empty host_config gives us certain default settings
     chute = MagicMock()
     chute.getHostConfig.return_value = {}
-    res = dockerapi.build_host_config(chute, client)
+    res = dockerapi.build_host_config(chute)
     assert res['network_mode'] == 'bridge'
 
     #Check that passing things through host_config works
@@ -49,95 +49,106 @@ def test_build_host_config(getBridgeGateway, ChuteContainer):
         'port_bindings': { 80:9000},
         'dns': ['0.0.0.0', '8.8.8.8']
     }
-    res = dockerapi.build_host_config(chute, client)
+    res = dockerapi.build_host_config(chute)
     assert res['dns'] == ['0.0.0.0', '8.8.8.8']
 
 @patch('paradrop.core.container.dockerapi.setup_net_interfaces')
 @patch('paradrop.core.container.dockerapi.out')
-@patch('docker.Client')
+@patch('docker.DockerClient')
 def test_restartChute(mockDocker, mockOutput, mockInterfaces):
     """
     Test that the restartChute function does it's job.
     """
     update = MagicMock()
     update.name = 'test'
+
+    container = MagicMock()
     client = MagicMock()
+    client.containers.get.return_value = container
     mockDocker.return_value = client
+
     dockerapi.restartChute(update)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     mockInterfaces.assert_called_once_with(update.new)
-    client.start.assert_called_once_with(container=update.name)
+    container.start.assert_called_once()
 
 @patch('paradrop.core.container.dockerapi.out')
-@patch('docker.Client')
+@patch('docker.DockerClient')
 def test_stopChute(mockDocker, mockOutput):
     """
     Test that the stopChute function does it's job.
     """
     update = MagicMock()
     update.name = 'test'
+
+    container = MagicMock()
     client = MagicMock()
+    client.containers.get.return_value = container
     mockDocker.return_value = client
+
     dockerapi.stopChute(update)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
-    client.stop.assert_called_once_with(container=update.name)
+    container.stop.assert_called_once()
 
 @patch('paradrop.core.container.dockerapi.out')
-@patch('docker.Client')
+@patch('docker.DockerClient')
 def test_removeChute(mockDocker, mockOutput):
     """
     Test that the removeChute function does it's job.
     """
     update = MagicMock()
     update.name = 'test'
+
+    container = MagicMock()
     client = MagicMock()
+    client.containers.get.return_value = container
+
     mockDocker.return_value = client
     dockerapi.removeChute(update)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
-    client.remove_container.assert_called_once_with(container=update.name, force=True)
-    client.remove_image.assert_called_once()
+    container.remove.assert_called_once_with(force=True)
+    client.images.remove.assert_called_once()
     assert update.complete.call_count == 0
+
     client.reset_mock()
-    client.remove_container.side_effect = Exception('Test')
+    container.remove.side_effect = Exception('Test')
     try:
         dockerapi.removeChute(update)
     except Exception as e:
         assert e.message == 'Test'
-    client.remove_container.assert_called_once_with(container=update.name, force=True)
 
 @patch('paradrop.core.container.dockerapi.prepare_environment')
 @patch('paradrop.core.container.dockerapi.build_host_config')
 @patch('paradrop.core.container.dockerapi.setup_net_interfaces')
 @patch('paradrop.core.container.dockerapi.out')
-@patch('docker.Client')
+@patch('docker.DockerClient')
 def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, prepare_environment):
     """
     Test that the startChute function does it's job.
     """
-    #Test successful start attempt
-    mockConfig.return_value = 'ConfigDict'
+    # Test successful start attempt
     update = MagicMock()
     update.name = 'test'
     update.dockerfile = 'Dockerfile'
+    update.new.external_image = 'test'
+
+    container = MagicMock
+    container.id = "abcd"
     client = MagicMock()
-    client.images.return_value = 'images'
-    client.containers.return_value = 'containers'
-    client.build.return_value = ['{"stream": "test"}','{"value": {"test": "testing"}}','{"tests": "stuff"}']
-    client.create_container.return_value = {'Id': 123}
+    client.containers.run.return_value = container
     mockDocker.return_value = client
+
+    mockConfig.return_value = {}
     prepare_environment.return_value = {}
+
     dockerapi.startChute(update)
-    mockConfig.assert_called_once_with(update.new, client)
+    mockConfig.assert_called_once_with(update.new)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
-    client.create_container.assert_called_once()
-    client.start.assert_called_once_with(123)
+    client.containers.run.assert_called_once()
     mockInterfaces.assert_called_once_with(update.new)
 
     #Test when create or start throws exceptions
-    client.build.return_value = ['{"stream": "test"}','{"value": {"test": "testing"}}','{"tests": "stuff"}']
-    client.create_container.side_effect = Exception('create container exception')
-    assert_raises(Exception, dockerapi.startChute, update)
-    client.start.side_effect = Exception('start exception')
+    client.containers.run.side_effect = Exception('create container exception')
     assert_raises(Exception, dockerapi.startChute, update)
 
 @patch('__builtin__.open')

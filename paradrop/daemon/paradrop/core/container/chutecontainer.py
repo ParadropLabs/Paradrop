@@ -78,7 +78,7 @@ class ChuteContainer(object):
         """
         Return the full container status from Docker.
         """
-        client = docker.Client(base_url=self.docker_url, version='auto')
+        client = docker.APIClient(base_url=self.docker_url, version='auto')
         try:
             info = client.inspect_container(self.name)
             return info

@@ -16,10 +16,11 @@ def monitor_logs(chute_name, queue, tail=200):
     tail: number of lines to retrieve from log history; the string "all"
     is also valid, but highly discouraged for performance reasons.
     """
-    client = docker.Client(base_url="unix://var/run/docker.sock", version='auto')
-    output = client.logs(chute_name, stdout=True, stderr=True,
-                         stream=True, timestamps=True, follow=True,
-                         tail=tail)
+    client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
+    container = client.containers.get(chute_name)
+    output = container.logs(stdout=True, stderr=True,
+                            stream=True, timestamps=True, follow=True,
+                            tail=tail)
     for line in output:
         # I have grown to distrust Docker streaming functions.  It may
         # return a string; it may return an object.  If it is a string,
