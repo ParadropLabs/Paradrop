@@ -124,7 +124,7 @@ def writeConfigFile(output):
 
 def reconfigureProxy(update):
     confFile = os.path.join(settings.RUNTIME_HOME_DIR, "haproxy.conf")
-    pidFile = os.path.join(settings.RUNTIME_HOME_DIR, "haproxy.pid")
+    pidFile = os.path.join(settings.TMP_DIR, "haproxy.pid")
 
     with open(confFile, "w") as output:
         writeConfigFile(output)

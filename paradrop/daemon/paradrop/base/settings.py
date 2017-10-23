@@ -29,6 +29,7 @@ DEBUG_MODE = False
 
 CONFIG_HOME_DIR = '/etc/paradrop/'
 RUNTIME_HOME_DIR = '/var/run/paradrop/'
+TMP_DIR = '/tmp'
 
 #
 # paths to store daemon related information
