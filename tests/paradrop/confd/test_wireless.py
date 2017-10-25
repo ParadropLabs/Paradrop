@@ -1,4 +1,5 @@
 from mock import MagicMock
+from nose.tools import assert_raises
 
 from paradrop.confd import wireless
 from paradrop.confd.wireless import ConfigWifiIface, HostapdConfGenerator
@@ -220,3 +221,30 @@ def test_HostapdConfGenerator_getRadiusOptions():
 
     options = generator.getRadiusOptions()
     print(options)
+
+
+def test_HostapdConfGenerator_get11rOptions():
+    wifiIface = ConfigWifiIface()
+    wifiIface.r0kh = [
+        "02:01:02:03:04:05 r0kh-1.example.com 000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f",
+        "02:01:02:03:04:06 r0kh-2.example.com 00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+    ]
+    wifiIface.r1kh = [
+        "00:00:00:00:00:00 00:00:00:00:00:00 00112233445566778899aabbccddeeff"
+    ]
+
+    wifiDevice = MagicMock()
+    interface = MagicMock()
+
+    generator = HostapdConfGenerator(wifiIface, wifiDevice, interface)
+
+    # Should raise an exception because nasid is not set.
+    assert_raises(Exception, generator.get11rOptions)
+
+    wifiIface.nasid = "ap.example.com"
+
+    options = generator.get11rOptions()
+
+    # There should be two r0kh entries and one r1kh entry.
+    assert sum(k[0] == 'r0kh' for k in options) == 2
+    assert sum(k[0] == 'r1kh' for k in options) == 1

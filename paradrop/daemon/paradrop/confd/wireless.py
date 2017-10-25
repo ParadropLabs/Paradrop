@@ -3,6 +3,7 @@ import ipaddress
 import os
 import operator
 import random
+import re
 import string
 import subprocess
 from pprint import pprint
@@ -11,6 +12,7 @@ from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand
 
 
+CTRL_INTERFACE_DIR = "/tmp/hostapd"
 IEEE80211_DIR = "/sys/class/ieee80211"
 
 
@@ -365,6 +367,16 @@ class ConfigWifiIface(ConfigObject):
         ConfigOption(name="identity"),
         ConfigOption(name="password"),
 
+        # 802.11r - Fast BSS Transition
+        ConfigOption(name="ieee80211r", type=bool, default=False),
+        ConfigOption(name="mobility_domain", default="4f57"),
+        ConfigOption(name="r0_key_lifetime", type=int, default=10000),
+        ConfigOption(name="r1_key_holder", default="00004f577274"),
+        ConfigOption(name="reassociation_deadline", type=int, default=1000),
+        ConfigOption(name="r0kh", type=list, default=[]),
+        ConfigOption(name="r1kh", type=list, default=[]),
+        ConfigOption(name="pmk_r1_push", type=bool, default=False),
+
         # Nonstandard: interval (seconds) for sending interim updates.
         ConfigOption(name="acct_interval", type=int, default=300),
 
@@ -641,6 +653,10 @@ class HostapdConfGenerator(ConfGenerator):
             if len(options) > 0:
                 self.writeOptions(options, output, title="RADIUS Client")
 
+            if self.wifiIface.ieee80211r:
+                options = self.get11rOptions()
+                self.writeOptions(options, output, title="802.11r")
+
     def getMainOptions(self):
         options = list()
 
@@ -648,6 +664,8 @@ class HostapdConfGenerator(ConfGenerator):
 
         if self.interface.type == "bridge":
             options.append(("bridge", self.interface.config_ifname))
+
+        options.append(("ctrl_interface", CTRL_INTERFACE_DIR))
 
         options.append(("ssid", self.wifiIface.ssid))
 
@@ -868,6 +886,34 @@ class HostapdConfGenerator(ConfGenerator):
                 options.append(("acct_server_shared_secret",
                     self.wifiIface.acct_secret))
             options.append(("radius_acct_interim_interval", self.wifiIface.acct_interval))
+
+        return options
+
+    def get11rOptions(self):
+        """
+        Get options related to 802.11r (fast BSS transition).
+        """
+        options = list()
+
+        if self.wifiIface.nasid is None:
+            raise Exception("nasid is not defined but is required for 802.11r")
+
+        options.append(("mobility_domain", self.wifiIface.mobility_domain))
+        options.append(("r0_key_lifetime", self.wifiIface.r0_key_lifetime))
+        options.append(("r1_key_holder", self.wifiIface.r1_key_holder))
+        options.append(("reassociation_deadline", self.wifiIface.reassociation_deadline))
+
+        for item in self.wifiIface.r0kh:
+            # May be specified as either comma- or space-separated, but hostapd
+            # expects spaces.
+            parts = re.split("[, ]+", item)
+            options.append(("r0kh", " ".join(parts)))
+
+        for item in self.wifiIface.r1kh:
+            # May be specified as either comma- or space-separated, but hostapd
+            # expects spaces.
+            parts = re.split("[, ]+", item)
+            options.append(("r1kh", " ".join(parts)))
 
         return options
 
