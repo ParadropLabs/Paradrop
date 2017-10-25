@@ -15,7 +15,14 @@ class ConfigDhcp(ConfigObject):
         ConfigOption(name="leasetime", required=True),
         ConfigOption(name="limit", type=int, required=True),
         ConfigOption(name="start", type=int, required=True),
-        ConfigOption(name="dhcp_option", type=list)
+        ConfigOption(name="dhcp_option", type=list),
+
+        # Non-standard options:
+        #
+        # relay: comma-separated string, specifying a DHCP relay, as with
+        #        "<local address>,<server address>[,<interface>]".
+        #        Refer to --dhcp-relay in man dnsmasq.
+        ConfigOption(name="relay", type=list, default=[])
     ]
 
 
@@ -35,11 +42,18 @@ class ConfigDnsmasq(ConfigObject):
     typename = "dnsmasq"
 
     options = [
+        ConfigOption(name="authoritative", type=bool, default=True),
+        ConfigOption(name="cachesize", type=int, default=150),
+        ConfigOption(name="dhcp_boot"),
+        ConfigOption(name="dhcpleasemax", type=int, default=1000),
         ConfigOption(name="domain", type=str),
+        ConfigOption(name="enable_tftp", type=bool, default=False),
+        ConfigOption(name="expandhosts", type=bool, default=True),
         ConfigOption(name="interface", type=list),
         ConfigOption(name="leasefile", type=str),
         ConfigOption(name="noresolv", type=bool, default=False),
-        ConfigOption(name="server", type=list)
+        ConfigOption(name="server", type=list),
+        ConfigOption(name="tftp_root")
     ]
 
     def apply(self, allConfigs):
@@ -80,11 +94,22 @@ class ConfigDnsmasq(ConfigObject):
             outputFile.write("\n")
             outputFile.write("dhcp-leasefile={}\n".format(self.__leasefile))
 
+            if self.authoritative:
+                outputFile.write("dhcp-authoritative\n")
+            outputFile.write("cache-size={}\n".format(self.cachesize))
+            if self.dhcp_boot is not None:
+                outputFile.write("dhcp-boot={}\n".format(self.dhcp_boot))
+            outputFile.write("dhcp-lease-max={}\n".format(self.dhcpleasemax))
             if self.domain:
                 outputFile.write("domain={}\n".format(self.domain))
-
+            if self.enable_tftp:
+                outputFile.write("enable-tftp\n")
+            if self.expandhosts:
+                outputFile.write("expand-hosts\n")
             if self.noresolv:
                 outputFile.write("no-resolv\n")
+            if self.tftp_root is not None:
+                outputFile.write("tftp-root={}\n".format(self.tftp_root))
 
             if self.server:
                 for server in self.server:
@@ -119,15 +144,20 @@ class ConfigDnsmasq(ConfigObject):
                 outputFile.write("\n")
                 outputFile.write("# Options for section dhcp {}\n".
                                  format(interface.name))
-                outputFile.write("dhcp-range={},{},{}\n".format(
-                    str(firstAddress), str(lastAddress), dhcp.leasetime))
+                outputFile.write("dhcp-range={},{},{},{}\n".format(
+                    str(firstAddress), str(lastAddress), interface.netmask,
+                    dhcp.leasetime))
 
                 # Write options sections to the config file.
                 if dhcp.dhcp_option:
                     for option in dhcp.dhcp_option:
                         outputFile.write("dhcp-option={}\n".format(option))
 
+                for relay in dhcp.relay:
+                    outputFile.write("dhcp-relay={}\n".format(relay))
+
             outputFile.write("\n")
+
             for domain in self.findByType(allConfigs, "dhcp", "domain"):
                 outputFile.write("address=/{}/{}\n".format(domain.name, domain.ip))
 
