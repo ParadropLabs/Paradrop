@@ -25,6 +25,7 @@ psutil==4.3.0
 pyasn1==0.1.9
 pyasn1-modules==0.0.8
 pycparser==2.16
+PyJWT==1.5.3
 pyOpenSSL==16.0.0
 PyYAML==3.11
 requests==2.15.1
