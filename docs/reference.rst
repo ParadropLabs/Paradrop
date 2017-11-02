@@ -1,4 +1,10 @@
-ParaDrop package references
+ParaDrop Package References
 ============================
 
-:doc:`paradrop/modules`
+Contents:
+
+.. toctree::
+   :maxdepth: 2
+
+   paradrop/paradrop
+   paradrop/http-api

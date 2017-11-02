@@ -23,7 +23,7 @@ from mock import MagicMock
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 # path = os.path.abspath('../paradrop/paradrop')
 # print path
-sys.path.insert(0, os.path.abspath('../paradrop/daemon/paradrop'))
+sys.path.insert(0, os.path.abspath('../paradrop/daemon'))
 
 # -- General configuration ------------------------------------------------
 
@@ -48,6 +48,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
+    'sphinxcontrib.httpdomain'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
