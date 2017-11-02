@@ -10,6 +10,7 @@ import click
 
 from . import chute
 from . import device
+from . import groups
 from . import routers
 from . import store
 
@@ -44,6 +45,7 @@ root.add_command(chute.chute)
 root.add_command(device.device)
 root.add_command(routers.routers)
 root.add_command(store.store)
+groups.register_commands(root)
 
 
 def main():
