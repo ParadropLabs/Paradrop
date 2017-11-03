@@ -1,0 +1,25 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "description": "ParaDrop host configuration - firewall defaults object",
+    "type": "object",
+    "properties": {
+        "conntrack": {},
+        "forward": {
+            "enum": ["ACCEPT", "REJECT", "DROP"]
+        },
+        "input": {
+            "enum": ["ACCEPT", "REJECT", "DROP"]
+        },
+        "masq": {},
+        "masq_src": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "uniqueItems": true
+        },
+        "output": {
+            "enum": ["ACCEPT", "REJECT", "DROP"]
+        }
+    }
+}

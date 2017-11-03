@@ -48,7 +48,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.httpdomain',
+    'sphinxcontrib.jsonschema',
     'sphinxcontrib.autohttp.flask'
 ]
 

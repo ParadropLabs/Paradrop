@@ -8,3 +8,4 @@ Contents:
 
    paradrop/paradrop
    paradrop/http-api
+   paradrop/host-configuration

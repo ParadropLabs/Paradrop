@@ -1,0 +1,160 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "description": "ParaDrop host configuration",
+    "type": "object",
+    "properties": {
+        "firewall": {
+            "type": "object",
+            "description": "Firewall settings that apply to all network interfaces.",
+            "properties": {
+                "defaults": {
+                    "$ref": "host-config-firewall-defaults-schema",
+                    "description": "Refer to: firewall defaults object."
+                }
+            }
+        },
+        "lan": {
+            "type": "object",
+            "description": "Configuration for LAN interfaces (wired and wireless).",
+            "properties": {
+                "dhcp": {
+                    "$ref": "host-config-dhcp-schema",
+                    "description": "Refer to: dhcp object"
+                },
+                "firewall": {
+                    "type": "object",
+                    "description": "Firewall settings for the LAN interfaces.",
+                    "properties": {
+                        "defaults": {
+                            "$ref": "host-config-firewall-defaults-schema",
+                            "description": "Refer to: firewall defaults object."
+                        },
+                        "forwarding": {
+                            "type": "object",
+                            "description": "Settings for packet forwarding."
+                        }
+                    }
+                },
+                "interfaces": {
+                    "type": "array",
+                    "description": "List of wired interfaces to include in the LAN bridge, e.g. eth1.",
+                    "items": {
+                        "type": "string",
+                        "uniqueItems": true
+                    }
+                },
+                "ipaddr": {
+                    "type": "string",
+                    "description": "IP address to use on the LAN bridge."
+                },
+                "netmask": {
+                    "type": "string",
+                    "description": "Network mask for LAN."
+                },
+                "proto": {
+                    "enum": ["static"],
+                    "description": "Method for setting interface IP address."
+                }
+            }
+        },
+        "system": {
+            "type": "object",
+            "description": "Configure Paradrop system behaviors.",
+            "properties": {
+                "autoUpdate": {
+                    "type": "boolean",
+                    "description": "Enable automatically updating system software packages."
+                },
+                "chutePrefixSize": {
+                    "type": "integer",
+                    "description": "The IP network size to assign to each chute.",
+                    "minimum": 0,
+                    "maximum": 32
+                },
+                "chuteSubnetPool": {
+                    "type": "string",
+                    "description": "The IP range available for chutes in CIDR notation."
+                },
+                "onMissingWiFi": {
+                    "enum": ["ignore", "reboot", "warn"],
+                    "description": "Behavior if expected wireless devices are missing on boot."
+                }
+            }
+        },
+        "telemetry": {
+            "type": "object",
+            "description": "Configure telemetry function for collecting device measurements.",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable sending device measurements to cloud controller."
+                },
+                "interval": {
+                    "type": "integer",
+                    "description": "Reporting interval (in seconds).",
+                    "minimum": 1
+                }
+            }
+        },
+        "vlan-interfaces": {
+            "type": "array",
+            "description": "Configure handling of VLAN tags on wired interfaces."
+        },
+        "wan": {
+            "type": "object",
+            "description": "Configuration for WAN interface.",
+            "properties": {
+                "firewall": {
+                    "type": "object",
+                    "description": "Firewall settings for the WAN interface.",
+                    "properties": {
+                        "defaults": {
+                            "$ref": "host-config-firewall-defaults-schema",
+                            "description": "Refer to firewall defaults object."
+                        }
+                    }
+                },
+                "interface": {
+                    "type": "string",
+                    "description": "Name of interface to use for WAN."
+                },
+                "proto": {
+                    "enum": ["dhcp"],
+                    "description": "Method of acquiring interface IP address."
+                }
+            }
+        },
+        "wifi": {
+            "type": "array",
+            "description": "List of physical Wi-Fi devices and their configuration.",
+            "items": {
+                "$ref": "host-config-wifi-device-schema"
+            }
+        },
+        "wifi-interfaces": {
+            "type": "array",
+            "description": "List of virtual Wi-Fi interfaces and their configuration.",
+            "items": {
+                "$ref": "host-config-wifi-interface-schema"
+            }
+        },
+        "zerotier": {
+            "type": "object",
+            "description": "Configure ZeroTier service, which enables VPN-like functionality.",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable the ZeroTier service."
+                },
+                "networks": {
+                    "type": "array",
+                    "description": "List of ZeroTier networks to join, using their string IDs.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "uniqueItems": true
+                }
+            }
+        }
+    }
+}
