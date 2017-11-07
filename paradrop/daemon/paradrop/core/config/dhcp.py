@@ -87,6 +87,18 @@ def getVirtDHCPSettings(update):
         if not DNSMASQ_CACHE_ENABLED and 'dns' in dhcp:
             options['dhcp_option'].append(",".join(["option:dns-server"] + dhcp['dns']))
 
+        # Interpret the optional DHCP relay configuration.
+        # - string: interpret as the IP address of the relay server.
+        # - list: interpret as list of strings to pass to dnsmasq (--dhcp-relay options).
+        relay = dhcp.get('relay', None)
+        if isinstance(relay, basestring):
+            # TODO: Set the optional third argument (interface) to the name of
+            # the network interface on which we expect DHCP response. This
+            # could be the WAN interface or it could be VPN interface.
+            options['relay'] = ["{},{}".format(iface['internalIpaddr'], relay)]
+        elif isinstance(relay, list):
+            options['relay'] = relay
+
         dhcpSettings.append((config, options))
 
     update.new.setCache('virtDHCPSettings', dhcpSettings)
