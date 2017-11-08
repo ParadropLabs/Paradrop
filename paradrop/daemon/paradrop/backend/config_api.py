@@ -55,89 +55,7 @@ class ConfigApi(object):
                  "output": "ACCEPT"
                }
              },
-             "lan": {
-               "dhcp": {
-                 "leasetime": "12h",
-                 "limit": 100,
-                 "start": 100
-               },
-               "firewall": {
-                 "defaults": {
-                   "conntrack": "1",
-                   "forward": "ACCEPT",
-                   "input": "ACCEPT",
-                   "output": "ACCEPT"
-                 },
-                 "forwarding": [
-                   {
-                     "dest": "wan",
-                     "src": "lan"
-                   }
-                 ]
-               },
-               "interfaces": [
-                 "eth1",
-                 "eth2"
-               ],
-               "ipaddr": "192.168.1.1",
-               "netmask": "255.255.255.0",
-               "proto": "static"
-             },
-             "system": {
-               "autoUpdate": true,
-               "chutePrefixSize": 24,
-               "chuteSubnetPool": "192.168.128.0/17",
-               "onMissingWiFi": "warn"
-             },
-             "telemetry": {
-               "enabled": true,
-               "interval": 60
-             },
-             "wan": {
-               "firewall": {
-                 "defaults": {
-                   "conntrack": "1",
-                   "forward": "ACCEPT",
-                   "input": "ACCEPT",
-                   "masq": "1",
-                   "masq_src": [
-                     "192.168.1.0/24",
-                     "192.168.128.0/17"
-                   ],
-                   "output": "ACCEPT"
-                 }
-               },
-               "interface": "eth0",
-               "proto": "dhcp"
-             },
-             "wifi": [
-               {
-                 "channel": 1,
-                 "htmode": "HT20",
-                 "hwmode": "11g",
-                 "id": "pci-wifi-0"
-               },
-               {
-                 "channel": 36,
-                 "htmode": "HT40+",
-                 "hwmode": "11a",
-                 "id": "pci-wifi-1",
-                 "short_gi_40": true
-               }
-             ],
-             "wifi-interfaces": [
-               {
-                 "device": "pci-wifi-0",
-                 "maxassoc": 100,
-                 "mode": "ap",
-                 "network": "lan",
-                 "ssid": "ParaDrop"
-               }
-             ],
-             "zerotier": {
-               "enabled": false,
-               "networks": []
-             }
+             ...
            }
 
         **Example response**:
@@ -151,49 +69,7 @@ class ConfigApi(object):
              change_id: 1
            }
 
-        The "wifi" section sets up physical device settings.
-        Right now it is just the channel number.
-        Other settings related to 11n or 11ac may go there as we implement them.
-
-        The "wifi-interfaces" section sets up virtual interfaces.  Each virtual
-        interface has an underlying physical device, but there can be multiple
-        interfaces per device up to a limit set somewhere in the driver,
-        firmware, or hardware.  Virtual interfaces can be configured as APs as
-        in the example. They could also be set to client mode and connect to
-        other APs, but this is not supported currently.
-
-        Therefore, it enables one card in the sense that it starts an AP using
-        one of the cards but does not start anything on the second card.  On the
-        other hand, it enables two cards in the sense that it configures one
-        card to use channel 1 and the second one to use channel 6, and a chute
-        may start an AP on the second card.
-
-        Here are a few ways we can modify the example configuration:
-        - If we want to run a second AP on the second device, we can add a
-          section to "wifi-interfaces" with device="wlan1" and ifname="wlan1".
-        - If we want to run a second AP on the first device, we can add a
-          section to "wifi-interfaces" with device="wlan0" and an ifname that is
-          different from all others interfaces sharing the device.
-          We should avoid anything that starts with "wlan" except the case
-          where the name exactly matches the device.
-          For device "wlan0", acceptable names would be "wlan0", "pd-wlan", etc.
-          Avoid "vwlan0.X" and the like because that would conflict with chute interfaces,
-          but "hwlan0.X" would be fine.
-        - If we want to add WPA2, set encryption="psk2" and key="the passphrase"
-          in the wifi-interface section for the AP.
-          Based on standard, the Passphrase of WPA2 must be between 8 and 63 characters, inclusive.
-
-        Advanced wifi device settings:
-        - For 2.4 GHz channels, set hwmode="11g", and for 5 GHz, set hwmode="11a".
-        It may default to 802.11b (bad, slow) otherwise.
-        - For a 40 MHz channel width in 802.11n, set htmode="HT40+" or htmode="HT40-".
-        Plus means add the next higher channel, and minus means add the lower channel.
-        For example, setting channel=36 and htmode="HT40+" results in using
-        channels 36 and 40.
-        - If the hardware supports it, you can enable short guard interval
-        for slightly higher data rates.  There are separate settings for each
-        channel width, short_gi_20, short_gi_40, short_gi_80, short_gi_160.
-        Most 11n hardware can support short_gi_40 at the very least.
+        For a complete example, please see the Host Configuration section.
         """
         cors.config_cors(request)
         body = str2json(request.content.read())
@@ -245,6 +121,8 @@ class ConfigApi(object):
              },
              ...
            }
+
+        For a complete example, please see the Host Configuration section.
         """
         cors.config_cors(request)
         config = hostconfig.prepareHostConfig()
@@ -436,9 +314,3 @@ class ConfigApi(object):
                 out.warn(str(e))
                 request.setResponseCode(404)
                 return json.dumps({'message': str(e)})
-
-
-# The following lines are for compatibility with the autoflask documentation
-# generator.
-ConfigApi.routes.static_path = ""
-ConfigApi.routes.view_functions = ConfigApi.routes._endpoints

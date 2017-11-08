@@ -52,6 +52,7 @@
                     "description": "Network mask for LAN."
                 },
                 "proto": {
+                    "type": "string",
                     "enum": ["static"],
                     "description": "Method for setting interface IP address."
                 }
@@ -76,6 +77,7 @@
                     "description": "The IP range available for chutes in CIDR notation."
                 },
                 "onMissingWiFi": {
+                    "type": "string",
                     "enum": ["ignore", "reboot", "warn"],
                     "description": "Behavior if expected wireless devices are missing on boot."
                 }
@@ -119,6 +121,7 @@
                     "description": "Name of interface to use for WAN."
                 },
                 "proto": {
+                    "type": "string",
                     "enum": ["dhcp"],
                     "description": "Method of acquiring interface IP address."
                 }

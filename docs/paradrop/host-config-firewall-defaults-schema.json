@@ -5,9 +5,11 @@
     "properties": {
         "conntrack": {},
         "forward": {
+            "type": "string",
             "enum": ["ACCEPT", "REJECT", "DROP"]
         },
         "input": {
+            "type": "string",
             "enum": ["ACCEPT", "REJECT", "DROP"]
         },
         "masq": {},
@@ -19,6 +21,7 @@
             "uniqueItems": true
         },
         "output": {
+            "type": "string",
             "enum": ["ACCEPT", "REJECT", "DROP"]
         }
     }

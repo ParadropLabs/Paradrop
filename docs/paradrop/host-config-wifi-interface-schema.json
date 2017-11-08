@@ -12,6 +12,7 @@
             "description": "Type of wireless network security to use, e.g. none, psk2, wpa2 (Enterprise)."
         },
         "mode": {
+            "type": "string",
             "enum": ["airshark", "ap", "managed", "monitor"],
             "description": "Operating mode for the interface."
         },

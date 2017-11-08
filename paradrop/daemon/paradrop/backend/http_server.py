@@ -199,3 +199,14 @@ def setup_http_server(http_server, host, port):
         "tcp:port={0}:interface={1}".format(port, host)
     )
     endpoint.listen(Site(http_server.app.resource()))
+
+
+def annotate_routes(router, prefix):
+    """
+    Annotate klein routes for compatibility with autoflask generator.
+    """
+    router.static_path = ""
+    router.view_functions = router.endpoints
+
+
+annotate_routes(ConfigApi.routes, "/api/v1/config")
