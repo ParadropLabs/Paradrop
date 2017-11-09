@@ -54,42 +54,58 @@ def getLineParts(line):
     """
     parts = line.split(" ")
 
-    if len(parts) < 3:
+    # Nothing to work with in this case. It is probably an erroneous line,
+    # because they should usually have at least two parts.
+    if len(parts) <= 1:
         return parts
 
-    if parts[1].startswith("'") and parts[1].endswidth("'"):
-        parts[1] = parts[1][1:-1]
+    groups = []
+    current = []
 
-    try:
-        if (parts[2].startswith("'") and not parts[2].endswith("'")):
-            # strip off first quotation
-            parts[2] = parts[2][1:]
-            addStr = parts[2]
+    while len(parts) > 0:
+        word = parts.pop(0)
 
-            i = 3
+        # Suppress empty words that are not enclosed in quotations.
+        if len(word) == 0:
+            continue
 
-            # Iterate over the rest of the words until we find a second quotation
-            while True:
-                if (parts[i].endswith("'")):
-                    addStr = "%s %s" % (addStr, parts[i][:-1])
+        opening_quote = None
+        if word.startswith("'") or word.startswith('"'):
+            opening_quote = word[0]
+            word = word[1:]
 
-                    a = [parts[0], parts[1]]
-                    a.append(addStr)
-                    if (len(parts) > i+1):
-                        a.extend(parts[i+1:])
-                    break
-                else:
-                    addStr = "%s %s" % (addStr, parts[i])
-                i += 1
+        closing_quote = None
+        if opening_quote is not None and word.endswith(opening_quote):
+            closing_quote = word[-1]
+            word = word[:-1]
 
-            parts = a
-        else:
-            parts[2] = parts[2].replace("'", "")
-            parts[2] = parts[2].replace('"', '')
-    except:
-        pass
+        group = [word]
 
-    return parts
+        # Simple case: line part is a single word.
+        if opening_quote is None or opening_quote == closing_quote:
+            groups.append(group)
+            continue
+
+        # Build up a multi-word part until we find the closing quote.
+        # Example: config ssid 'Free WiFi' # <- Space inside quotation marks.
+        while len(parts) > 0:
+            word = parts.pop(0)
+
+            if word.endswith(opening_quote):
+                closing_quote = word[-1]
+                word = word[:-1]
+
+            group.append(word)
+
+            if opening_quote == closing_quote:
+                break
+
+        groups.append(group)
+
+    combined = [" ".join(g) for g in groups]
+    result = [x for x in combined if len(x) > 0]
+
+    return result
 
 def chuteConfigsMatch(chutePre, chutePost):
     """ Takes two lists of objects, and returns whether or not they are identical."""
@@ -434,9 +450,6 @@ class UCIConfig:
 
     def readConfig(self):
         """Reads in the config file."""
-        def correctStr(line):
-            return " ".join(line.split())
-
         lines = []
         try:
             fd = pdos.open(self.filepath, 'r')
@@ -457,15 +470,12 @@ class UCIConfig:
 
         # Now we have the data, deal with it
         for line in lines:
-            line = line.rstrip()
+            line = line.strip()
+
             # If comment ignore
-            if(line.startswith('#')):
+            if line.startswith('#'):
                 continue
 
-            # First make all lines have correct whitespace
-            # FIXME: if there is a space WITHIN quotes this kills it!
-            # this could come up as a key in an encryption key
-            line = correctStr(line)
             l = getLineParts(line)
 
             #
