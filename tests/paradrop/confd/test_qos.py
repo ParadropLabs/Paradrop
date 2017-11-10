@@ -13,7 +13,7 @@ def test_qos():
     qos_iface.name = "wan"
     qos_iface.enabled = True
     qos_iface.classgroup = "Group"
-    qos_iface.upload = "1000"
+    qos_iface.upload = 1000
 
     group = qos.ConfigClassgroup()
     group.name = "Group"
@@ -22,9 +22,13 @@ def test_qos():
 
     class1 = qos.ConfigClass()
     class1.name = "Default"
+    class1.avgrate = 50
+    class1.priority = 1
 
     class2 = qos.ConfigClass()
     class2.name = "Special"
+    class2.avgrate = 50
+    class2.priority = 10
 
     classify1 = qos.ConfigClassify()
     classify1.name = "other-1"

@@ -190,12 +190,17 @@ class ConfigObject(object):
                 parent.dependents.remove(self)
         self.parents.clear()
 
-    def findByType(self, allConfigs, module, typename):
+    def findByType(self, allConfigs, module, typename, where={}):
         """
         Look up sections by type (generator).
+
+        where: filter the returned results by checking option values.
         """
         for key in allConfigs.keys():
             if key[0] == module and key[1] == typename:
+                # Skip this section if any of the option values do not match.
+                if any(getattr(allConfigs[key], op, None) != where[op] for op in where):
+                    continue
                 yield allConfigs[key]
 
     def optionsMatch(self, other):
