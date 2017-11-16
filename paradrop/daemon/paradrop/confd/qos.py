@@ -12,6 +12,87 @@ DEFAULT_CLASSES = {
 }
 
 
+def compute_hfsc_params(classes, capacity):
+    result = dict()
+
+    sum_priority = 0
+    sum_avgrate = 0
+    sum_limitrate = 0
+
+    # During the first pass, calculate the sums of rates and priorities and
+    # determine which service curves are present for each class.
+    for cid, cl in classes:
+        params = {
+            "has_rt": False,
+            "has_ls": False,
+            "has_ul": False,
+            "has_bend": False
+        }
+
+        # The avgrate option adds real-time (rt) service curve.
+        if cl.avgrate is not None:
+            sum_avgrate += cl.avgrate
+            params['has_rt'] = True
+
+        # The priority option adds link share (ls) service curve.
+        if cl.priority is not None:
+            sum_priority += cl.priority
+            params['has_ls'] = True
+
+        if cl.limitrate is not None:
+            sum_limitrate += cl.limitrate
+            params['has_ul'] = True
+
+        # Note: if the class has neither rt nor ls curves,
+        # it will get no service (packets dropped).
+
+        # The packetsize or packetdelay are not very intuitive names, but we
+        # use them to set the duration of the first bend of the service curve.
+        if (cl.packetsize is not None or cl.packetdelay is not None):
+            params['has_bend'] = True
+
+        result[cid] = params
+
+    for cid, cl in classes:
+        params = result[cid]
+
+        if params['has_rt']:
+            # In steady state, each class with a real-time curve gets at least
+            # its allocated rate. The avgrate option is interpreted as a
+            # percentage of the capacity.
+            params['rt_m2'] = float(cl.avgrate) * capacity / 100.0
+
+            if params['has_bend']:
+                # The classes with real-time curves are allowed to temporarily
+                # burst up to the full capacity.
+                params['rt_m1'] = float(cl.avgrate) / sum_avgrate * capacity
+
+                params['rt_d'] = cl.packetdelay
+                if cl.packetsize is not None:
+                    transfer_delay = float(8 * cl.packetsize) / params['rt_m1']
+                    params['rt_d'] = max(params['rt_d'], transfer_delay)
+
+        if params['has_ls']:
+            # In steady state, each class with a link-share curve gets a
+            # proportion of the capacity defined by its priority.
+            params['ls_m2'] = float(cl.priority) * capacity / 100.0
+
+            if params['has_bend']:
+                # Allow temporary burst up to the full capacity.
+                params['ls_m1'] = float(cl.priority) / sum_priority * capacity
+
+                params['ls_d'] = cl.packetdelay
+                if cl.packetsize is not None:
+                    transfer_delay = float(8 * cl.packetsize) / params['ls_m1']
+                    params['ls_d'] = max(params['ls_d'], transfer_delay)
+
+        if params['has_ul']:
+            # Set steady state upper limit from a percentage of the capacity.
+            params['ul_m2'] = float(cl.limitrate) * capacity / 100.0
+
+    return result
+
+
 class ConfigInterface(ConfigObject):
     typename = "interface"
 
@@ -32,6 +113,9 @@ class ConfigInterface(ConfigObject):
         # Look up the interface section.
         interface = self.lookup(allConfigs, "network", "interface", self.name)
 
+        # Store ifname mainly for the revert command.
+        self.config_ifname = interface.config_ifname
+
         classes = []
         default_classid = None
         classgroup = self.lookup(allConfigs, "qos", "classgroup", self.classgroup)
@@ -43,50 +127,50 @@ class ConfigInterface(ConfigObject):
             classes.append((class_id, traffic_class))
 
         cmd = ["tc", "qdisc", "add",
-                "dev", interface.config_ifname,
+                "dev", self.config_ifname,
                 "root", "handle", "1:",
                 "hfsc"]
         if default_classid is not None:
             cmd.extend(["default", str(default_classid)])
         commands.append((self.PRIO_CREATE_QDISC, Command(cmd, self)))
 
+        hfsc_params = compute_hfsc_params(classes, self.upload)
         for class_id, traffic_class in classes:
             full_class_id = "1:{}".format(class_id)
-
-            sum_avgrate = sum(x[1].avgrate for x in classes)
-            rt_m1 = float(traffic_class.avgrate) / sum_avgrate * self.upload
-            rt_m2 = float(traffic_class.avgrate) * self.upload / 100.0
-            ls_m1 = rt_m1
-
-            # packetsize in bytes
-            # packetdelay in ms
-            # bits / kbps results in a delay specified in ms
-            transfer_delay = float(8 * traffic_class.packetsize) / self.upload
-            rt_d = max(traffic_class.packetdelay, transfer_delay)
-            ls_d = rt_d
-
-            sum_priority = sum(x[1].priority for x in classes)
-            ls_m2 = float(traffic_class.priority) / sum_priority * self.upload
-
-            ul_rate = float(traffic_class.limitrate) * self.upload / 100
+            params = hfsc_params[class_id]
 
             cmd = [
                 "tc", "class", "add",
-                "dev", interface.config_ifname,
+                "dev", self.config_ifname,
                 "parent", "1:",
                 "classid", full_class_id,
-                "hfsc",
-                "rt", "m1", str(rt_m1)+"kbit", "d", str(rt_d)+"ms", "m2", str(rt_m2)+"kbit",
-                "ls", "m1", str(ls_m1)+"kbit", "d", str(ls_d)+"ms", "m2", str(ls_m2)+"kbit",
-                "ul", "m2", str(ul_rate)+"kbit"
+                "hfsc"
             ]
+
+            if params['has_rt']:
+                cmd.append("rt")
+                if params['has_bend']:
+                    cmd.extend(["m1", str(params['rt_m1']) + "kbit",
+                                "d", str(params['rt_d']) + "ms"])
+                cmd.extend(["m2", str(params['rt_m2']) + "kbit"])
+
+            if params['has_ls']:
+                cmd.append("ls")
+                if params['has_bend']:
+                    cmd.extend(["m1", str(params['ls_m1']) + "kbit",
+                                "d", str(params['ls_d']) + "ms"])
+                cmd.extend(["m2", str(params['ls_m2']) + "kbit"])
+
+            if params['has_ul']:
+                cmd.extend(["ul", "m2", str(params['ul_m2'])+"kbit"])
+
             commands.append((self.PRIO_CREATE_QDISC, Command(cmd, self)))
 
             # Add a fair queue to each class so that flows within the same
             # class receive fair treatment.
             cmd = [
                 "tc", "qdisc", "add",
-                "dev", interface.config_ifname,
+                "dev", self.config_ifname,
                 "parent", full_class_id,
                 "fq"
             ]
@@ -100,10 +184,7 @@ class ConfigInterface(ConfigObject):
         if not self.enabled:
             return commands
 
-        # Look up the interface section.
-        interface = self.lookup(allConfigs, "qos", "interface", self.name)
-
-        cmd = ["tc", "qdisc", "del", "dev", interface.config_ifname, "root"]
+        cmd = ["tc", "qdisc", "del", "dev", self.config_ifname, "root"]
         commands.append((-self.PRIO_CREATE_QDISC, Command(cmd, self)))
 
         return commands
@@ -251,10 +332,10 @@ class ConfigClass(ConfigObject):
     typename = "class"
 
     options = [
-        ConfigOption(name="packetsize", type=int, default=0),
-        ConfigOption(name="packetdelay", type=int, default=0),
+        ConfigOption(name="packetsize", type=int),
+        ConfigOption(name="packetdelay", type=int),
         ConfigOption(name="maxsize", type=int),
-        ConfigOption(name="avgrate", type=int, required=True),
-        ConfigOption(name="limitrate", type=int, default=100),
-        ConfigOption(name="priority", type=int, required=True)
+        ConfigOption(name="avgrate", type=int),
+        ConfigOption(name="limitrate", type=int),
+        ConfigOption(name="priority", type=int)
     ]

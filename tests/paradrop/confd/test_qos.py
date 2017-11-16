@@ -68,3 +68,59 @@ def test_qos():
     for cmd in commands:
         print(cmd[1])
     assert len(commands) > 0
+
+
+def test_compute_hfsc_params():
+    priority = qos.ConfigClass()
+    priority.packetsize = 500
+    priority.avgrate = 40
+    priority.priority = 10
+
+    express = qos.ConfigClass()
+    express.packetsize = 1000
+    express.avgrate = 40
+    express.priority = 10
+
+    normal = qos.ConfigClass()
+    normal.packetdelay = 100
+    normal.priority = 5
+
+    bulk = qos.ConfigClass()
+    bulk.priority = 1
+
+    limited = qos.ConfigClass()
+    limited.packetdelay = 100
+    limited.priority = 4
+    limited.limitrate = 20
+
+    classes = [
+        (1, priority),
+        (2, express),
+        (3, normal),
+        (4, bulk),
+        (5, limited)
+    ]
+
+    result = qos.compute_hfsc_params(classes, 1000)
+
+    print(result)
+
+    assert result[1]['has_rt'] is True
+    assert result[1]['has_ls'] is True
+    assert result[1]['has_ul'] is False
+
+    assert result[2]['has_rt'] is True
+    assert result[2]['has_ls'] is True
+    assert result[2]['has_ul'] is False
+
+    assert result[3]['has_rt'] is False
+    assert result[3]['has_ls'] is True
+    assert result[3]['has_ul'] is False
+
+    assert result[4]['has_rt'] is False
+    assert result[4]['has_ls'] is True
+    assert result[4]['has_ul'] is False
+
+    assert result[5]['has_rt'] is False
+    assert result[5]['has_ls'] is True
+    assert result[5]['has_ul'] is True
