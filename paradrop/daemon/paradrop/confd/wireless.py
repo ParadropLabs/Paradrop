@@ -665,7 +665,9 @@ class HostapdConfGenerator(ConfGenerator):
         if self.interface.type == "bridge":
             options.append(("bridge", self.interface.config_ifname))
 
-        options.append(("ctrl_interface", CTRL_INTERFACE_DIR))
+        control_dir = os.path.join(self.wifiIface.manager.writeDir, "hostapd")
+        options.append(("ctrl_interface", control_dir))
+        options.append(("ctrl_interface_group", 0))
 
         options.append(("ssid", self.wifiIface.ssid))
 

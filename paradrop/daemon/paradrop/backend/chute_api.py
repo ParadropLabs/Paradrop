@@ -11,12 +11,14 @@ from klein import Klein
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from paradrop.base import pdutils
+from paradrop.base import pdutils, settings
 from paradrop.base.output import out
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config import resource
 from paradrop.core.container.chutecontainer import ChuteContainer
+
 from . import cors
+from . import hostapd_control
 
 
 class ChuteCacheEncoder(json.JSONEncoder):
@@ -431,6 +433,90 @@ class ChuteApi(object):
                 leases.append(dict(zip(keys, parts)))
 
         return json.dumps(leases)
+
+    @routes.route('/<chute>/networks/<network>/ssid', methods=['GET'])
+    def get_ssid(self, request, chute, network):
+        """
+        Get currently configured SSID for the chute network.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        chute_obj = ChuteStorage.chuteList[chute]
+        networkInterfaces = chute_obj.getCache('networkInterfaces')
+
+        ifname = None
+        for iface in networkInterfaces:
+            if iface['name'] == network:
+                ifname = iface['externalIntf']
+                break
+
+        def send_result(result):
+            request.setHeader('Content-Type', 'application/json')
+            return json.dumps(result)
+
+        address = os.path.join(settings.PDCONFD_WRITE_DIR, "hostapd", ifname)
+        print(address)
+        dee = hostapd_control.execute(address, command="GET_CONFIG")
+        return dee.addCallback(send_result)
+
+    @routes.route('/<chute>/networks/<network>/ssid', methods=['PUT'])
+    def set_ssid(self, request, chute, network):
+        """
+        Change the configured SSID for the chute network.
+
+        The change will not persist after a reboot. If a persistent change is
+        desired, you should update the chute instead.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        chute_obj = ChuteStorage.chuteList[chute]
+        networkInterfaces = chute_obj.getCache('networkInterfaces')
+
+        ifname = None
+        for iface in networkInterfaces:
+            if iface['name'] == network:
+                ifname = iface['externalIntf']
+                break
+
+        def send_result(result):
+            request.setHeader('Content-Type', 'application/json')
+            return json.dumps(result)
+
+        body = json.loads(request.content.read())
+        if "ssid" not in body:
+            raise Exception("ssid required")
+
+        command = "SET ssid {}".format(body['ssid'])
+        address = os.path.join(settings.PDCONFD_WRITE_DIR, "hostapd", ifname)
+        dee = hostapd_control.execute(address, command=command)
+        return dee.addCallback(send_result)
+
+    @routes.route('/<chute>/networks/<network>/status', methods=['GET'])
+    def get_status(self, request, chute, network):
+        """
+        Get low-level status information from the access point.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        chute_obj = ChuteStorage.chuteList[chute]
+        networkInterfaces = chute_obj.getCache('networkInterfaces')
+
+        ifname = None
+        for iface in networkInterfaces:
+            if iface['name'] == network:
+                ifname = iface['externalIntf']
+                break
+
+        def send_result(result):
+            request.setHeader('Content-Type', 'application/json')
+            return json.dumps(result)
+
+        address = os.path.join(settings.PDCONFD_WRITE_DIR, "hostapd", ifname)
+        dee = hostapd_control.execute(address, command="STATUS")
+        return dee.addCallback(send_result)
 
     @routes.route('/<chute>/networks/<network>/stations', methods=['GET'])
     def get_stations(self, request, chute, network):
