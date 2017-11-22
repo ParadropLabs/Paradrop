@@ -7,6 +7,7 @@ import tarfile
 import tempfile
 import yaml
 
+from autobahn.twisted.resource import WebSocketResource
 from klein import Klein
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -451,14 +452,8 @@ class ChuteApi(object):
                 ifname = iface['externalIntf']
                 break
 
-        def send_result(result):
-            request.setHeader('Content-Type', 'application/json')
-            return json.dumps(result)
-
         address = os.path.join(settings.PDCONFD_WRITE_DIR, "hostapd", ifname)
-        print(address)
-        dee = hostapd_control.execute(address, command="GET_CONFIG")
-        return dee.addCallback(send_result)
+        return hostapd_control.execute(address, command="GET_CONFIG")
 
     @routes.route('/<chute>/networks/<network>/ssid', methods=['PUT'])
     def set_ssid(self, request, chute, network):
@@ -480,21 +475,16 @@ class ChuteApi(object):
                 ifname = iface['externalIntf']
                 break
 
-        def send_result(result):
-            request.setHeader('Content-Type', 'application/json')
-            return json.dumps(result)
-
         body = json.loads(request.content.read())
         if "ssid" not in body:
             raise Exception("ssid required")
 
         command = "SET ssid {}".format(body['ssid'])
         address = os.path.join(settings.PDCONFD_WRITE_DIR, "hostapd", ifname)
-        dee = hostapd_control.execute(address, command=command)
-        return dee.addCallback(send_result)
+        return hostapd_control.execute(address, command=command)
 
-    @routes.route('/<chute>/networks/<network>/status', methods=['GET'])
-    def get_status(self, request, chute, network):
+    @routes.route('/<chute>/networks/<network>/hostapd_status', methods=['GET'])
+    def get_hostapd_status(self, request, chute, network):
         """
         Get low-level status information from the access point.
         """
@@ -510,13 +500,8 @@ class ChuteApi(object):
                 ifname = iface['externalIntf']
                 break
 
-        def send_result(result):
-            request.setHeader('Content-Type', 'application/json')
-            return json.dumps(result)
-
         address = os.path.join(settings.PDCONFD_WRITE_DIR, "hostapd", ifname)
-        dee = hostapd_control.execute(address, command="STATUS")
-        return dee.addCallback(send_result)
+        return hostapd_control.execute(address, command="STATUS")
 
     @routes.route('/<chute>/networks/<network>/stations', methods=['GET'])
     def get_stations(self, request, chute, network):
@@ -616,3 +601,19 @@ class ChuteApi(object):
             messages.append(line)
 
         return json.dumps(messages)
+
+    @routes.route('/<chute>/networks/<network>/hostapd_control/ws', branch=True)
+    def hostapd_control(self, request, chute, network):
+        chute_obj = ChuteStorage.chuteList[chute]
+        networkInterfaces = chute_obj.getCache('networkInterfaces')
+
+        ifname = None
+        for iface in networkInterfaces:
+            if iface['name'] == network:
+                ifname = iface['externalIntf']
+                break
+
+        ctrl_iface = os.path.join(settings.PDCONFD_WRITE_DIR, "hostapd", ifname)
+        factory = hostapd_control.HostapdControlWSFactory(ctrl_iface)
+        factory.setProtocolOptions(autoPingInterval=10, autoPingTimeout=5)
+        return WebSocketResource(factory)
