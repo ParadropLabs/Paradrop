@@ -12,9 +12,10 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
 import shlex
+import six
+import sys
 
 from mock import MagicMock
 
@@ -317,3 +318,46 @@ MOCK_MODULES = ['pycurl']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = MagicMock()
+
+
+#
+# Monkey patch sphinxcontrib.autohttp.flask_base for documenting our Klein API.
+#
+
+# Modified version of get_routes function from sphinxcontrib.autohttp.flask_base.
+#
+# Additions:
+# - Default to GET if the methods list is missing.
+# - Search for doc_prefix attribute and insert into the path that will be
+#   displayed.
+def get_routes(app, endpoint=None, order=None):
+    endpoints = []
+    for rule in app.url_map.iter_rules(endpoint):
+        url_with_endpoint = (
+            six.text_type(next(app.url_map.iter_rules(rule.endpoint))),
+            rule.endpoint
+        )
+        if url_with_endpoint not in endpoints:
+            endpoints.append(url_with_endpoint)
+    if order == 'path':
+        endpoints.sort()
+    endpoints = [e for _, e in endpoints]
+    for endpoint in endpoints:
+        methodrules = {}
+        for rule in app.url_map.iter_rules(endpoint):
+            if rule.methods is None:
+                methods = ['GET']
+            else:
+                methods = rule.methods.difference(['OPTIONS', 'HEAD'])
+            prefix = getattr(rule, 'doc_prefix', '')
+            path = prefix + sphinxcontrib.autohttp.flask_base.translate_werkzeug_rule(rule.rule)
+            for method in methods:
+                if method in methodrules:
+                    methodrules[method].append(path)
+                else:
+                    methodrules[method] = [path]
+        for method, paths in methodrules.items():
+            yield method, paths, endpoint
+
+import sphinxcontrib.autohttp.flask_base
+sphinxcontrib.autohttp.flask_base.get_routes = get_routes

@@ -207,6 +207,8 @@ def annotate_routes(router, prefix):
     """
     router.static_path = ""
     router.view_functions = router.endpoints
+    for rule in router.url_map.iter_rules():
+        rule.doc_prefix = prefix
 
 
 annotate_routes(ChuteApi.routes, "/api/v1/chutes")
