@@ -209,4 +209,6 @@ def annotate_routes(router, prefix):
     router.view_functions = router.endpoints
 
 
+annotate_routes(ChuteApi.routes, "/api/v1/chutes")
 annotate_routes(ConfigApi.routes, "/api/v1/config")
+annotate_routes(InformationApi.routes, "/api/v1/information")
