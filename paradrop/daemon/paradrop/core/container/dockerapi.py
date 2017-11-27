@@ -777,6 +777,7 @@ def prepare_environment(chute):
     env = getattr(chute, 'environment', {}).copy()
 
     env['PARADROP_CHUTE_NAME'] = chute.name
+    env['PARADROP_FEATURES'] = settings.DAEMON_FEATURES
     env['PARADROP_ROUTER_ID'] = nexus.core.info.pdid
     env['PARADROP_DATA_DIR'] = chute.getCache('internalDataDir')
     env['PARADROP_SYSTEM_DIR'] = chute.getCache('internalSystemDir')

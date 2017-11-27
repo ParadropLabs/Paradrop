@@ -82,7 +82,7 @@ PORTAL_SERVER_PORT = 8080
 # Local domain - this domain and subdomains will be resolved to the router so
 # that chutes and their users can access it by name.
 #
-LOCAL_DOMAIN = "home.paradrop.org"
+LOCAL_DOMAIN = "paradrop.io"
 
 #
 # hostconfig
@@ -146,6 +146,12 @@ CONTAINER_UID = 999
 # Directory containing Airshark installation ('airshark' binary and
 # 'run_airshark.sh' script).
 AIRSHARK_INSTALL_DIR = "/snap/airshark/current"
+
+# Space-separated list of features that will be passed to chutes through
+# environment variable or API call. This allows chutes to check the features of
+# the host on which they are running. Update this when significant features are
+# added.
+DAEMON_FEATURES = "hostapd-control"
 
 ###############################################################################
 # Helper functions

@@ -8,6 +8,7 @@ import platform
 from psutil import virtual_memory
 from klein import Klein
 
+from paradrop.base import settings
 from paradrop.core.config.devices import detectSystemDevices
 from paradrop.core.system.system_info import getOSVersion, getPackageVersion
 from paradrop.core.agent.reporting import TelemetryReportBuilder
@@ -81,6 +82,18 @@ class InformationApi:
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
         return json.dumps(os.environ.data)
+
+    @routes.route('/features')
+    def get_features(self, request):
+        """
+        Get daemon features.
+
+        This is a list of strings specifying features supported by the daemon.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+        features = settings.DAEMON_FEATURES.split()
+        return json.dumps(features)
 
     @routes.route('/telemetry')
     def get_telemetry(self, request):
