@@ -163,14 +163,15 @@ def router_login(request_url, username, password, session):
         return (res.status_code, None)
 
 
-def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
+def router_request(method, url, json=None, headers=None, dump=True, data=None, **kwargs):
     """
     Issue a router API request.
 
     This will prompt for a username and password if necessary.
     """
     session = requests.Session()
-    request = requests.Request(method, url, json=json, headers=headers, **kwargs)
+    request = requests.Request(method, url, json=json, headers=headers,
+            data=data, **kwargs)
 
     # Extract just the hostname from the controller URL.  This will be the
     # authentication domain.
@@ -179,9 +180,16 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
     config = PdtoolsConfig.load()
     token = config.getAccessToken(url_parts.netloc)
 
+    # If data is a file or file-like stream, then every time we read from it,
+    # the read pointer moves to the end, and we will need to reset it if we are
+    # to read again.
+    try:
+        pos = data.tell()
+    except AttributeError:
+        pos = None
+
     if token is not None:
         session.headers.update({'Authorization': 'Bearer {}'.format(token)})
-        request = requests.Request(method, url, json=json, headers=headers)
         prepped = session.prepare_request(request)
 
         res = session.send(prepped)
@@ -208,9 +216,13 @@ def router_request(method, url, json=None, headers=None, dump=True, **kwargs):
 
         userpass = "{}:{}".format(username, password).encode('utf-8')
         encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
-
         session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
         prepped = session.prepare_request(request)
+
+        # Reset the read pointer if the body comes from a file.
+        if pos is not None:
+            prepped.body.seek(pos)
+
         res = session.send(prepped)
         print("Server responded: {} {}".format(res.status_code, res.reason))
         if res.status_code == 401:
