@@ -12,10 +12,10 @@ class ConfigDhcp(ConfigObject):
 
     options = [
         ConfigOption(name="interface", required=True),
-        ConfigOption(name="leasetime", required=True),
-        ConfigOption(name="limit", type=int, required=True),
-        ConfigOption(name="start", type=int, required=True),
-        ConfigOption(name="dhcp_option", type=list),
+        ConfigOption(name="leasetime"),
+        ConfigOption(name="limit", type=int),
+        ConfigOption(name="start", type=int),
+        ConfigOption(name="dhcp_option", type=list, default=[]),
 
         # Non-standard options:
         #
@@ -137,24 +137,27 @@ class ConfigDnsmasq(ConfigObject):
 
                 dhcp = self.lookup(allConfigs, "dhcp", "dhcp", intfName)
 
-                # TODO: Error checking!
-                firstAddress = network.network_address + dhcp.start
-                lastAddress = firstAddress + dhcp.limit
-
                 outputFile.write("\n")
                 outputFile.write("# Options for section dhcp {}\n".
                                  format(interface.name))
-                outputFile.write("dhcp-range={},{},{},{}\n".format(
-                    str(firstAddress), str(lastAddress), interface.netmask,
-                    dhcp.leasetime))
+
+                if None not in [dhcp.start, dhcp.limit, dhcp.leasetime]:
+                    # TODO: Error checking!
+                    firstAddress = network.network_address + dhcp.start
+                    lastAddress = firstAddress + dhcp.limit
+
+                    outputFile.write("dhcp-range={},{},{},{}\n".format(
+                        str(firstAddress), str(lastAddress), interface.netmask,
+                        dhcp.leasetime))
 
                 # Write options sections to the config file.
-                if dhcp.dhcp_option:
-                    for option in dhcp.dhcp_option:
-                        outputFile.write("dhcp-option={}\n".format(option))
+                for option in dhcp.dhcp_option:
+                    outputFile.write("dhcp-option={}\n".format(option))
 
                 for relay in dhcp.relay:
                     outputFile.write("dhcp-relay={}\n".format(relay))
+                if dhcp.relay:
+                    outputFile.write("dhcp-proxy\n")
 
             outputFile.write("\n")
 

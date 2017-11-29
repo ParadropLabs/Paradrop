@@ -162,7 +162,7 @@ class KillCommand(Command):
     """
     Special command object for killing a process
     """
-    def __init__(self, pid, parent=None): 
+    def __init__(self, pid, parent=None):
         """
         Create a kill command
 
@@ -172,7 +172,7 @@ class KillCommand(Command):
         If the pid is coming from a file, it will be resolved at the time that
         execute is called.  Before that time, the command will be stored
         internally as ["kill", "/path/to/file"].  This is not a real command,
-        but it is meaningful you print the command object.
+        but it is meaningful if you print the command object.
         """
         # This will not be a valid command if pid is a file path.
         command = ["kill", pid]

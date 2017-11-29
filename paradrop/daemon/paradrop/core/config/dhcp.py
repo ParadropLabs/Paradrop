@@ -33,12 +33,6 @@ def getVirtDHCPSettings(update):
             continue
         dhcp = iface['dhcp']
 
-        # Check for required fields.
-        res = pdutils.check(dhcp, dict, ['lease', 'start', 'limit'])
-        if(res):
-            out.warn('DHCP server definition {}\n'.format(res))
-            raise Exception("DHCP server definition missing field(s)")
-
         # Construct a path for the lease file that will be visible inside the
         # chute.
         leasefile = os.path.join(
@@ -64,14 +58,25 @@ def getVirtDHCPSettings(update):
             options['noresolv'] = '1'
             options['server'] = dhcp['dns']
 
+        # Disable authoritative mode if serving as a relay.
+        relay = dhcp.get('relay', None)
+        if relay is not None:
+            options['authoritative'] = False
+
         dhcpSettings.append((config, options))
+
+        # Check for fields that are required if not in relay mode.
+        res = pdutils.check(dhcp, dict, ['lease', 'start', 'limit'])
+        if relay is None and res:
+            out.warn('DHCP server definition {}\n'.format(res))
+            raise Exception("DHCP server definition missing field(s)")
 
         config = {'type': 'dhcp', 'name': iface['externalIntf']}
         options = {
             'interface': iface['externalIntf'],
-            'start': dhcp['start'],
-            'limit': dhcp['limit'],
-            'leasetime': dhcp['lease'],
+            'start': dhcp.get('start', None),
+            'limit': dhcp.get('limit', None),
+            'leasetime': dhcp.get('lease', None),
             'dhcp_option': []
         }
 
@@ -90,12 +95,11 @@ def getVirtDHCPSettings(update):
         # Interpret the optional DHCP relay configuration.
         # - string: interpret as the IP address of the relay server.
         # - list: interpret as list of strings to pass to dnsmasq (--dhcp-relay options).
-        relay = dhcp.get('relay', None)
         if isinstance(relay, basestring):
             # TODO: Set the optional third argument (interface) to the name of
             # the network interface on which we expect DHCP response. This
             # could be the WAN interface or it could be VPN interface.
-            options['relay'] = ["{},{}".format(iface['internalIpaddr'], relay)]
+            options['relay'] = ["{},{}".format(iface['externalIpaddr'], relay)]
         elif isinstance(relay, list):
             options['relay'] = relay
 

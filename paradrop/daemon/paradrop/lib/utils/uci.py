@@ -425,7 +425,9 @@ class UCIConfig:
                         # Now append a list set to the config
                         line = "\tlist %s '%s'\n" % (k, vals)
                         output += line
-                else:
+
+                # Skip options that are None rather than writing "None".
+                elif v is not None:
                     sv = stringifyOptionValue(v)
                     line = "\toption %s '%s'\n" % (k, sv)
                     output += line

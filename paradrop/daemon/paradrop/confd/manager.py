@@ -14,6 +14,7 @@ from paradrop.lib.utils.uci import UCIConfig, getSystemConfigDir
 from . import dhcp
 from . import firewall
 from . import network
+from . import parprouted
 from . import qos
 from . import wireless
 

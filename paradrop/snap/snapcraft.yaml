@@ -69,6 +69,7 @@ parts:
       - haproxy
       - iw
       - kmod
+      - parprouted
       - systemd
     filesets:
       binaries:
@@ -78,6 +79,7 @@ parts:
         - sbin/modprobe
         - usr/sbin/dnsmasq
         - usr/sbin/haproxy
+        - usr/sbin/parprouted
       libraries:
         - usr/lib/x86_64-linux-gnu/liblua5.3.so.*
     stage:

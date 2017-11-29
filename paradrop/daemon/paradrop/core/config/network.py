@@ -442,7 +442,8 @@ def getNetworkConfig(update):
         iface = {
             'name': name,                           # Name (not used?)
             'netType': cfg['type'],                 # Type (wan, lan, wifi)
-            'internalIntf': cfg['intfName']         # Interface name in chute
+            'internalIntf': cfg['intfName'],        # Interface name in chute
+            'l3bridge': cfg.get('l3bridge', None)   # Optional
         }
 
         if cfg['type'] == "wifi":
@@ -560,3 +561,37 @@ def setOSNetworkConfig(update):
     changed = uciutils.setConfig(update.new, update.old,
                                  cacheKeys=['osNetworkConfig'],
                                  filepath=uci.getSystemPath("network"))
+
+
+def getL3BridgeConfig(update):
+    """
+    Creates configuration sections for layer 3 bridging.
+    """
+    interfaces = update.new.getCache('networkInterfaces')
+
+    parprouted = list()
+
+    for iface in interfaces:
+        l3bridge = iface.get('l3bridge', None)
+        if l3bridge is None:
+            continue
+
+        config = {'type': 'bridge'}
+        options = {
+            'interfaces': [
+                iface['externalIntf'],
+                l3bridge
+            ]
+        }
+        parprouted.append((config, options))
+
+    update.new.setCache('parproutedConfig', parprouted)
+
+
+def setL3BridgeConfig(update):
+    """
+    Apply configuration for layer 3 bridging.
+    """
+    changed = uciutils.setConfig(update.new, update.old,
+                                 cacheKeys=['parproutedConfig'],
+                                 filepath=uci.getSystemPath("parprouted"))

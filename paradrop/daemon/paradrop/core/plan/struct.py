@@ -58,4 +58,12 @@ def generatePlans(update):
     abtPlan = (osconfig.revertConfig, 'wireless')
     update.plans.addPlans(plangraph.STRUCT_SET_OS_WIRELESS, todoPlan, abtPlan)
 
+    # Layer 3 bridging support
+    todoPlan = (network.getL3BridgeConfig, )
+    update.plans.addPlans(plangraph.STRUCT_GET_L3BRIDGE_CONFIG, todoPlan)
+
+    todoPlan = (network.setL3BridgeConfig, )
+    abtPlan = (osconfig.revertConfig, 'parprouted')
+    update.plans.addPlans(plangraph.STRUCT_SET_L3BRIDGE_CONFIG, todoPlan, abtPlan)
+
     return None

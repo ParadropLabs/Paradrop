@@ -9,7 +9,8 @@ def test_getVirtDHCPSettings():
     networkInterfaces = [{
         'name': 'wlan0',
         'externalIntf': 'vwlan0',
-        'internalIpaddr': '192.168.0.1',
+        'externalIpaddr': '192.168.0.1',
+        'internalIpaddr': '192.168.0.2',
         'dhcp': {
             'lease': '12h',
             'start': 20,
@@ -18,7 +19,8 @@ def test_getVirtDHCPSettings():
     }, {
         'name': 'wlan1',
         'externalIntf': 'vwlan1',
-        'internalIpaddr': '192.168.1.1',
+        'externalIpaddr': '192.168.1.1',
+        'internalIpaddr': '192.168.1.2',
         'dhcp': {
             'lease': '12h',
             'start': 20,
@@ -28,7 +30,8 @@ def test_getVirtDHCPSettings():
     }, {
         'name': 'wlan2',
         'externalIntf': 'vwlan2',
-        'internalIpaddr': '192.168.2.1',
+        'externalIpaddr': '192.168.2.1',
+        'internalIpaddr': '192.168.2.2',
         'dhcp': {
             'lease': '12h',
             'start': 20,
