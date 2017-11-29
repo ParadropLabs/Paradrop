@@ -1,4 +1,6 @@
 import collections
+import ipaddress
+
 from nose.tools import assert_raises
 from mock import MagicMock, Mock, patch
 
@@ -253,3 +255,20 @@ def test_fulfillDeviceRequest_additional_requests():
     assert result['id'] == 'pci-wifi-0'
     result = network.fulfillDeviceRequest(update, config2, devices)
     assert result['id'] == 'pci-wifi-1'
+
+
+@patch("paradrop.core.config.network.chooseSubnet")
+def test_getInterfaceAddress(chooseSubnet):
+    chooseSubnet.return_value = ipaddress.ip_network(u"192.168.30.0/24")
+
+    update = MagicMock()
+    name = "test"
+    cfg = MagicMock()
+    iface = dict()
+    network.getInterfaceAddress(update, name, cfg, iface)
+
+    assert iface['subnet'] == chooseSubnet.return_value
+    assert iface['netmask'] == "255.255.255.0"
+    assert iface['externalIpaddr'] == "192.168.30.1"
+    assert iface['internalIpaddr'] == "192.168.30.2"
+    assert iface['ipaddrWithPrefix'] == "192.168.30.2/24"

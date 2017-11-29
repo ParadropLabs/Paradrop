@@ -152,21 +152,17 @@ def chooseExternalIntf(update, iface):
         return device['primary_interface']
 
 
-def getNetworkConfigWifi(update, name, cfg, iface):
-    iface['mode'] = cfg.get("mode", "ap")
+def getInterfaceAddress(update, name, cfg, iface):
+    """
+    Dynamically select IP address for the chute interface.
 
-    # Make a dictionary of old interfaces.  Any new interfaces that are
-    # identical to an old one do not need to be changed.
-    oldInterfaces = getInterfaceDict(update.old)
+    This function will use a subnet from the chute subnet pool and assign IP
+    addresses to the external (in host) and internal (in chute) interfaces.
 
+    The addresses are stored in the iface object.
+    """
     # Claim a subnet for this interface from the pool.
     subnet = chooseSubnet(update, cfg, iface)
-
-    # Generate a name for the new interface in the host.
-    iface['externalIntf'] = chooseExternalIntf(update, iface)
-    if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
-        out.warn("Interface name ({}) is too long\n".format(iface['externalIntf']))
-        raise Exception("Interface name is too long")
 
     # Generate internal (in the chute) and external (in the host)
     # addresses.
@@ -186,6 +182,20 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     # convenience of other code that expect that format (e.g. pipework).
     iface['ipaddrWithPrefix'] = "{}/{}".format(
             iface['internalIpaddr'], subnet.prefixlen)
+
+
+def getNetworkConfigWifi(update, name, cfg, iface):
+    iface['mode'] = cfg.get("mode", "ap")
+
+    # Make a dictionary of old interfaces.  Any new interfaces that are
+    # identical to an old one do not need to be changed.
+    oldInterfaces = getInterfaceDict(update.old)
+
+    # Generate a name for the new interface in the host.
+    iface['externalIntf'] = chooseExternalIntf(update, iface)
+    if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
+        out.warn("Interface name ({}) is too long\n".format(iface['externalIntf']))
+        raise Exception("Interface name is too long")
 
     if iface['mode'] in ["ap", "sta"]:
         # Check for required fields.
@@ -211,9 +221,6 @@ def getNetworkConfigVlan(update, name, cfg, iface):
     if res:
         raise Exception("Interface definition missing field(s)")
 
-    # Claim a subnet for this interface from the pool.
-    subnet = chooseSubnet(update, cfg, iface)
-
     # Generate a name for the new interface in the host.
     iface['externalIntf'] = "br-lan.{}".format(cfg['vlan_id'])
 
@@ -224,49 +231,10 @@ def getNetworkConfigVlan(update, name, cfg, iface):
             iface['externalIntf']))
     reservations.add(iface['externalIntf'])
 
-    # Generate internal (in the chute) and external (in the host)
-    # addresses.
-    #
-    # Example:
-    # subnet: 192.168.30.0/24
-    # netmask: 255.255.255.0
-    # external: 192.168.30.1
-    # internal: 192.168.30.2
-    hosts = subnet.hosts()
-    iface['subnet'] = subnet
-    iface['netmask'] = str(subnet.netmask)
-    iface['externalIpaddr'] = str(hosts.next())
-    iface['internalIpaddr'] = str(hosts.next())
-
-    # Generate the internal IP address with prefix length (x.x.x.x/y) for
-    # convenience of other code that expect that format (e.g. pipework).
-    iface['ipaddrWithPrefix'] = "{}/{}".format(
-            iface['internalIpaddr'], subnet.prefixlen)
-
 
 def getNetworkConfigLan(update, name, cfg, iface):
     # Claim a subnet for this interface from the pool.
-    subnet = chooseSubnet(update, cfg, iface)
     iface['externalIntf'] = iface['device']
-
-    # Generate internal (in the chute) and external (in the host)
-    # addresses.
-    #
-    # Example:
-    # subnet: 192.168.30.0/24
-    # netmask: 255.255.255.0
-    # external: 192.168.30.1
-    # internal: 192.168.30.2
-    hosts = subnet.hosts()
-    iface['subnet'] = subnet
-    iface['netmask'] = str(subnet.netmask)
-    iface['externalIpaddr'] = str(hosts.next())
-    iface['internalIpaddr'] = str(hosts.next())
-
-    # Generate the internal IP address with prefix length (x.x.x.x/y) for
-    # convenience of other code that expect that format (e.g. pipework).
-    iface['ipaddrWithPrefix'] = "{}/{}".format(
-            iface['internalIpaddr'], subnet.prefixlen)
 
 
 def get_current_phy_conf(update, device_id):
@@ -445,6 +413,8 @@ def getNetworkConfig(update):
             'internalIntf': cfg['intfName'],        # Interface name in chute
             'l3bridge': cfg.get('l3bridge', None)   # Optional
         }
+
+        getInterfaceAddress(update, name, cfg, iface)
 
         if cfg['type'] == "wifi":
             # Try to find a physical device of the requested type.

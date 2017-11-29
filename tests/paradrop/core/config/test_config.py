@@ -391,8 +391,7 @@ def test_get_network_config_wifi():
     getNetworkConfigWifi(update, "mywifi", cfg, iface)
 
     # Check that all of the keys made it into the output.
-    keys = ["subnet", "ssid", "ipaddrWithPrefix", "externalIntf",
-            "externalIpaddr", "netmask", "internalIpaddr", "device"]
+    keys = ["ssid", "externalIntf", "device"]
     assert all(k in iface for k in keys)
 
 
