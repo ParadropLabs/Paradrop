@@ -15,6 +15,7 @@
         "masq": {},
         "masq_src": {
             "type": "array",
+            "description": "List of source addresses or subnets to which SNAT should be applied.",
             "items": {
                 "type": "string"
             },
