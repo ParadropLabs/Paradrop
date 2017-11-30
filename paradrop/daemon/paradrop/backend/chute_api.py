@@ -70,6 +70,24 @@ def tarfile_is_safe(tar):
     return True
 
 
+def extract_tarred_chute(data):
+    tar = tarfile.TarFile(fileobj=data)
+    if not tarfile_is_safe(tar):
+        raise Exception("Tarfile contains unsafe paths")
+
+    tempdir = tempfile.mkdtemp()
+    tar.extractall(tempdir)
+
+    configfile = os.path.join(tempdir, "paradrop.yaml")
+    if not os.path.isfile(configfile):
+        raise Exception("No paradrop.yaml file found in chute source")
+
+    with open(configfile, "r") as source:
+        paradrop_yaml = yaml.safe_load(source)
+
+    return (tempdir, paradrop_yaml)
+
+
 class ChuteApi(object):
     routes = Klein()
 
@@ -141,34 +159,22 @@ class ChuteApi(object):
         ctype = request.requestHeaders.getRawHeaders('Content-Type',
                 default=[None])[0]
         if ctype == "application/x-tar":
-            tar = tarfile.TarFile(fileobj=request.content)
-            if not tarfile_is_safe(tar):
-                raise Exception("Tarfile contains unsafe paths")
-
-            tempdir = tempfile.mkdtemp()
-            tar.extractall(tempdir)
-
-            configfile = os.path.join(tempdir, "paradrop.yaml")
-            if not os.path.isfile(configfile):
-                raise Exception("No paradrop.yaml file found in chute source")
-
-            with open(configfile, "r") as source:
-                full_config = yaml.safe_load(source)
-                config = full_config.get("config", {})
+            workdir, paradrop_yaml = extract_tarred_chute(request.content)
+            config = paradrop_yaml.get("config", {})
 
             # Try to read chute name from top level (preferred) or from config
             # object (deprecated).
-            if 'name' in full_config:
-                update['name'] = full_config['name']
+            if 'name' in paradrop_yaml:
+                update['name'] = paradrop_yaml['name']
             elif 'name' in config:
                 out.warn("Deprecated: move chute name to top level of config file.")
                 update['name'] = config['name']
             else:
                 raise Exception("Chute name not found in configuration file.")
 
-            update['workdir'] = tempdir
-            chute_version = full_config.get("version", None)
-            update['version'] = "{}_x{}".format(chute_version, update['tok'])
+            update['workdir'] = workdir
+            chute_version = paradrop_yaml.get("version", None)
+            update['version'] = "x{}".format(update['tok'])
             update.update(config)
         else:
             # TODO: this case is not tested
@@ -255,34 +261,22 @@ class ChuteApi(object):
         ctype = request.requestHeaders.getRawHeaders('Content-Type',
                 default=[None])[0]
         if ctype == "application/x-tar":
-            tar = tarfile.TarFile(fileobj=request.content)
-            if not tarfile_is_safe(tar):
-                raise Exception("Tarfile contains unsafe paths")
-
-            tempdir = tempfile.mkdtemp()
-            tar.extractall(tempdir)
-
-            configfile = os.path.join(tempdir, "paradrop.yaml")
-            if not os.path.isfile(configfile):
-                raise Exception("No paradrop.yaml file found in chute source")
-
-            with open(configfile, "r") as source:
-                full_config = yaml.safe_load(source)
-                config = full_config.get("config", {})
+            workdir, paradrop_yaml = extract_tarred_chute(request.content)
+            config = paradrop_yaml.get("config", {})
 
             # Try to read chute name from top level (preferred) or from config
             # object (deprecated).
-            if 'name' in full_config:
-                update['name'] = full_config['name']
+            if 'name' in paradrop_yaml:
+                update['name'] = paradrop_yaml['name']
             elif 'name' in config:
                 out.warn("Deprecated: move chute name to top level of config file.")
                 update['name'] = config['name']
             else:
                 raise Exception("Chute name not found in configuration file.")
 
-            update['workdir'] = tempdir
-            chute_version = full_config.get("version", None)
-            update['version'] = "{}_x{}".format(chute_version, update['tok'])
+            update['workdir'] = workdir
+            chute_version = paradrop_yaml.get("version", None)
+            update['version'] = "x{}".format(update['tok'])
             update.update(config)
         else:
             body = json.loads(request.content.read())
