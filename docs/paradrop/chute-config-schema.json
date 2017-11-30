@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "description": "ParaDrop chute configuration",
+    "type": "object",
+    "properties": {
+        "environment": {
+            "type": "object",
+            "description": "Environment variables that will be passed to the chute"
+        },
+        "host_config": {
+            "type": "object",
+            "description": "Options that affect the host network through Docker host config",
+            "properties": {
+                "port_bindings": {
+                    "type": "object",
+                    "description": "Bind host ports to ports inside the chute"
+                },
+                "dns": {
+                    "type": "array",
+                    "description": "List of DNS servers to be used by the chute",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "net": {
+            "type": "object",
+            "description": "Chute network configuration"
+        },
+        "web": {
+            "type": "object",
+            "description": "Declaration of web services hosted in the chute",
+            "properties": {
+                "port": {
+                    "type": "integer",
+                    "description": "Port number of listening web server in chute",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
+            }
+        }
+    }
+}
