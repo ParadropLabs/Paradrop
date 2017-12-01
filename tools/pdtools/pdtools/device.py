@@ -309,6 +309,27 @@ def update(ctx):
 
 @chute.command()
 @click.pass_context
+def reconfigure(ctx):
+    """
+    Reconfigure the chute without rebuilding.
+    """
+    url = ctx.obj['chute_url'] + "/config"
+    headers = {'Content-Type': 'application/x-tar'}
+
+    if not os.path.exists("paradrop.yaml"):
+        raise Exception("No paradrop.yaml file found in working directory.")
+
+    with open("paradrop.yaml", "r") as source:
+        data = yaml.safe_load(source)
+        config = data.get('config', {})
+
+    res = router_request("PUT", url, json=config)
+    data = res.json()
+    ctx.invoke(watch, change_id=data['change_id'])
+
+
+@chute.command()
+@click.pass_context
 def networks(ctx):
     """
     List the chute's networks.

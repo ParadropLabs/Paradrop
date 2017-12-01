@@ -417,6 +417,37 @@ class ChuteApi(object):
 
         return json.dumps(result, cls=ChuteCacheEncoder)
 
+    @routes.route('/<chute>/config', methods=['PUT'])
+    def set_chute_config(self, request, chute):
+        """
+        Reconfigure chute without rebuilding.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        update = dict(updateClass='CHUTE',
+                      updateType='restart',
+                      tok=pdutils.timeint(),
+                      name=chute)
+
+        try:
+            body = json.loads(request.content.read())
+            update.update(body)
+        except Exception as error:
+            pass
+
+        # We will return the change ID to the caller for tracking and log
+        # retrieval.
+        update['change_id'] = self.update_manager.assign_change_id()
+
+        d = self.update_manager.add_update(**update)
+
+        result = {
+            'change_id': update['change_id']
+        }
+        request.setHeader('Content-Type', 'application/json')
+        return json.dumps(result)
+
     @routes.route('/<chute>/networks', methods=['GET'])
     def get_networks(self, request, chute):
         """

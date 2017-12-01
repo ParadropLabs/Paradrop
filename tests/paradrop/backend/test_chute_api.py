@@ -575,3 +575,15 @@ class TestChuteApi(object):
         self.api.hostapd_control(request, self.chute.name,
                 self.interface['name'])
         WebSocketResource.assert_called()
+
+    @patch("paradrop.backend.chute_api.ChuteStorage")
+    def test_set_chute_config(self, ChuteStorage):
+        ChuteStorage.chuteList = {
+            self.chute.name: self.chute
+        }
+
+        request = MagicMock()
+
+        result = self.api.set_chute_config(request, self.chute.name)
+        change = json.loads(result)
+        assert change['change_id'] == 1
