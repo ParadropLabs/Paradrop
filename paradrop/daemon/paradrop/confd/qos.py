@@ -172,7 +172,7 @@ class ConfigInterface(ConfigObject):
                 "tc", "qdisc", "add",
                 "dev", self.config_ifname,
                 "parent", full_class_id,
-                "fq"
+                "fq_codel", "noecn"
             ]
             commands.append((self.PRIO_CREATE_QDISC, Command(cmd, self)))
 
