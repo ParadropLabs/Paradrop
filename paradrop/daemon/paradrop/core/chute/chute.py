@@ -8,14 +8,15 @@ from paradrop.base.output import out
 
 class Chute(object):
     """
-        Wrapper class for Chute objects.
+    Wrapper class for Chute objects.
     """
-
     STATE_INVALID = "invalid"
     STATE_DISABLED = "disabled"
     STATE_RUNNING = "running"
     STATE_FROZEN = "frozen"
     STATE_STOPPED = "stopped"
+
+    CONFIG_FIELDS = set(["environment", "host_config", "net", "web"])
 
     def __init__(self, descriptor, strip=None):
         # Set these first so we don't have to worry about it later
@@ -89,6 +90,20 @@ class Chute(object):
         r.append(val)
         self.setCache(key, r)
         return True
+
+    def getConfiguration(self):
+        """
+        Get the chute's configuration object.
+        """
+        # TODO: Split metadata (e.g. name and version) from configuration data.
+        # Currently, we do this by selectively copying from __dict__.  A
+        # cleaner separation would require refactoring all the way through how
+        # we create update objects.
+        config = {}
+        for key in self.__dict__:
+            if key in self.CONFIG_FIELDS:
+                config[key] = self.__dict__[key]
+        return config
 
     def getHostConfig(self):
         """

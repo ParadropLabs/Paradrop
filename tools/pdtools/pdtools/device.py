@@ -309,6 +309,18 @@ def update(ctx):
 
 @chute.command()
 @click.pass_context
+def config(ctx):
+    """
+    Get the chute's current configuration.
+    """
+    url = ctx.obj['chute_url'] + "/config"
+    headers = {'Content-Type': 'application/x-tar'}
+
+    res = router_request("GET", url)
+
+
+@chute.command()
+@click.pass_context
 def reconfigure(ctx):
     """
     Reconfigure the chute without rebuilding.

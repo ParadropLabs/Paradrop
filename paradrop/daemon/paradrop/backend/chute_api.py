@@ -417,6 +417,19 @@ class ChuteApi(object):
 
         return json.dumps(result, cls=ChuteCacheEncoder)
 
+    @routes.route('/<chute>/config', methods=['GET'])
+    def get_chute_config(self, request, chute):
+        """
+        Get current chute configuration.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        chute_obj = ChuteStorage.chuteList[chute]
+        config = chute_obj.getConfiguration()
+
+        return json.dumps(config)
+
     @routes.route('/<chute>/config', methods=['PUT'])
     def set_chute_config(self, request, chute):
         """
@@ -445,7 +458,6 @@ class ChuteApi(object):
         result = {
             'change_id': update['change_id']
         }
-        request.setHeader('Content-Type', 'application/json')
         return json.dumps(result)
 
     @routes.route('/<chute>/networks', methods=['GET'])

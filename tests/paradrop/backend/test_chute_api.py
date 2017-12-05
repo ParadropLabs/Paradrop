@@ -410,7 +410,13 @@ class TestChuteApi(object):
             'externalIntf': 'vwlan0'
         }
 
-        self.chute = Chute(dict(name="test"))
+        chute = {
+            'name': 'test',
+            'web': {
+                'port': 5000
+            }
+        }
+        self.chute = Chute(chute)
         self.chute.setCache("externalSystemDir", "/tmp")
         self.chute.setCache("networkInterfaces", [self.interface])
 
