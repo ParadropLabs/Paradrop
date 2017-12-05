@@ -421,6 +421,37 @@ class ChuteApi(object):
     def get_chute_config(self, request, chute):
         """
         Get current chute configuration.
+
+        **Example request**:
+
+        .. sourcecode:: http
+
+           GET /api/v1/chutes/captive-portal/config
+
+        **Example response**:
+
+        .. sourcecode:: http
+
+           HTTP/1.1 200 OK
+           Content-Type: application/json
+
+           {
+             "net": {
+               "wifi": {
+                 "dhcp": {
+                   "lease": "1h",
+                   "limit": 250,
+                   "start": 3
+                 },
+                 "intfName": "wlan0",
+                 "options": {
+                   "isolate": True
+                 },
+                 "ssid": "Free WiFi",
+                 "type": "wifi"
+               }
+             }
+           }
         """
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
@@ -433,7 +464,43 @@ class ChuteApi(object):
     @routes.route('/<chute>/config', methods=['PUT'])
     def set_chute_config(self, request, chute):
         """
-        Reconfigure chute without rebuilding.
+        Update the chute configuration and restart to apply changes.
+
+        **Example request**:
+
+        .. sourcecode:: http
+
+           PUT /api/v1/chutes/captive-portal/config
+           Content-Type: application/json
+
+           {
+             "net": {
+               "wifi": {
+                 "dhcp": {
+                   "lease": "1h",
+                   "limit": 250,
+                   "start": 3
+                 },
+                 "intfName": "wlan0",
+                 "options": {
+                   "isolate": True
+                 },
+                 "ssid": "Better Free WiFi",
+                 "type": "wifi"
+               }
+             }
+           }
+
+        **Example response**:
+
+        .. sourcecode:: http
+
+           HTTP/1.1 200 OK
+           Content-Type: application/json
+
+           {
+             "change_id": 1
+           }
         """
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
@@ -655,7 +722,7 @@ class ChuteApi(object):
         Change the configured SSID for the chute network.
 
         The change will not persist after a reboot. If a persistent change is
-        desired, you should update the chute instead.
+        desired, you should update the chute configuration instead.
 
         **Example request**:
 
