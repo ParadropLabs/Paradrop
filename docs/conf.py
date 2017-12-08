@@ -46,7 +46,6 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'rst2pdf.pdfbuilder',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
@@ -309,12 +308,6 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
-
-# -- rst2pdf output ------------------------------------------------------
-
-pdf_documents = [
-    ('index', u'rst2pdf', u'ParaDrop Manual', u'Paradrop Labs')
-]
 
 # -- Mock out modules -------------------------------------------
 

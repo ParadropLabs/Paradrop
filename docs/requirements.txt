@@ -43,7 +43,6 @@ pytz==2017.3
 PyYAML==3.11
 reportlab==3.4.0
 requests==2.15.1
-rst2pdf==0.93.dev0
 service-identity==16.0.0
 six==1.10.0
 smokesignal==0.7.0
