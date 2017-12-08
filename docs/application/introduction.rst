@@ -1,13 +1,15 @@
 Introduction
 =============================
 
-ParaDrop is a software platform that enables services/apps to run on Wi-Fi routers.
-We call these apps "chutes" like a parachute.
+ParaDrop is a software platform that enables services to run on Wi-Fi routers.
+We call these services *chutes* as in *parachutes*.
 
-ParaDrop runs on top of `Ubuntu Core <https://developer.ubuntu.com/core>`_,
-a lightweight, transactionally updated operating system designed for deployments on embedded and IoT devices, cloud and more.
-It runs a new breed of super-secure, remotely upgradeable Linux app packages known as snaps.
-We also enable our apps through containerization by leveraging `Docker <https://www.docker.com/>`_.
+ParaDrop runs on top of `Ubuntu Core <https://developer.ubuntu.com/core>`_, a
+lightweight, transactionally updated operating system designed for deployments
+on embedded and IoT devices, cloud and more.  It runs a new breed of secure,
+remotely upgradeable Linux app packages known as snaps.  We support chute
+deployment through containerization powered by `Docker
+<https://www.docker.com/>`_.
 
 Minimally, a chute has a Dockerfile, which contains instructions for
 building and preparing the application to run on ParaDrop.
@@ -16,8 +18,9 @@ other assets.  For integration with the ParaDrop toolset, we highly
 recommend developing a chute as a `GitHub <https://github.com>`_ project,
 but other organization methods are possible.
 
-We will examine the `hello-world <https://github.com/ParadropLabs/hello-world>`_
-chute as an example of a complete ParaDrop application.
+We will examine the `hello-world
+<https://github.com/ParadropLabs/hello-world>`_ chute as an example of a
+complete ParaDrop application.
 
 Structure
 -----------------------
@@ -118,17 +121,15 @@ network. ::
     1480650200 00:11:22:33:44:55 192.168.128.130 android-ffeeddccbbaa9988 *
     1480640500 00:22:44:66:88:aa 192.168.128.170 someones-iPod 01:00:22:44:66:88:aa
 
-
 Chute-to-Host API
 -----------------
 
-The Paradrop daemon exposes some functionality and configuration
-options to running chutes through an HTTP API.  This aspect of Paradrop
-is under rapid development, and new features will be added with
-every release.  The host API is available to chutes through the URL
-"http://home.paradrop.org/api/v1".  Paradrop automatically configure
-chutes to resolve "home.paradrop.org" to the ParaDrop device itself,
-so these requests go to the ParaDrop daemon running on the router and
+The Paradrop daemon exposes some functionality and configuration options to
+running chutes through an HTTP API.  This aspect of Paradrop is under rapid
+development, and new features will be added with every release.  The host API
+is available to chutes through the URL "http://paradrop.io/api/v1".  Paradrop
+automatically configures chutes to resolve "paradrop.io" to the ParaDrop device
+itself, so these requests go to the ParaDrop daemon running on the router and
 not to an outside server.
 
 Authorization
@@ -136,9 +137,9 @@ Authorization
 
 In order to access the host API, chutes must pass a token with every request
 that proves the authenticity of the request.  When chutes are installed on a
-ParaDrop router, they automatically receive a token through an environment variable
-named "PARADROP_API_TOKEN".  The chute should read this environment variable
-and pass the token as a Bearer token in an HTTP Authorization header.
+ParaDrop router, they automatically receive a token through an environment
+variable named "PARADROP_API_TOKEN".  The chute should read this environment
+variable and pass the token as a Bearer token in an HTTP Authorization header.
 Here is an example in Python using the `Requests library
 <http://docs.python-requests.org/en/master/>`_.::
 
@@ -149,61 +150,9 @@ Here is an example in Python using the `Requests library
     API_TOKEN = os.environ.get('PARADROP_API_TOKEN', 'NA')
 
     headers = { 'Authorization': 'Bearer ' + API_TOKEN }
-    url = 'http://home.paradrop.org/api/v1/chutes/{}/networks'.format(CHUTE_NAME)
+    url = 'http://paradrop.io/api/v1/chutes/{}/networks'.format(CHUTE_NAME)
     res = requests.get(url, headers=headers)
     print(res.json())
 
-/chutes/<chute name>/networks
-"""""""""""""""""""""""""""""
-
-* Purpose: List networks (such as Wi-Fi networks) configured for the chute.
-* Methods: GET
-* Returns: [ object ]
-
-Note: there are currently not many different types of networks supported
-for chutes, so most chutes will either have no networks (empty list) or
-a list containing a single entry that looks like this.::
-
-    { 'interface': 'wlan0', 'name': 'wifi', 'type': 'wifi' }
-
-/chutes/<chute name>/networks/<network name>/stations
-"""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-* Purpose: List devices ("stations") connected to a wireless network.
-* Methods: GET
-* Returns: [ object ]
-
-For chutes that have configured a Wi-Fi AP, this endpoint provides
-detailed information about devices that are connected to the AP, including
-MAC address, bytes sent and received, and average signal strength.
-Here is an example response.::
-
-    [{'authenticated': 'yes',
-      'authorized': 'yes',
-      'inactive_time': '36108 ms',
-      'mac_addr': '5c:59:48:7d:b9:e6',
-      'mfp': 'no',
-      'preamble': 'short',
-      'rx_bitrate': '65.0 MBit/s MCS 7',
-      'rx_bytes': '10211',
-      'rx_packets': '168',
-      'signal': '-42 dBm',
-      'signal_avg': '-43 dBm',
-      'tdls_peer': 'no',
-      'tx_bitrate': '1.0 MBit/s',
-      'tx_bytes': '34779',
-      'tx_failed': '0',
-      'tx_packets': '71',
-      'tx_retries': '0',
-      'wmm_wme': 'yes'}]
-
-/chutes/<chute name>/networks/<network name>/stations/<mac address>
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-* Purpose: View or remove a device ("station") connected to a wireless network.
-* Methods: GET, DELETE
-* Returns: object
-
-GET returns similar information as the request above but for a single
-station.  DELETE will kick the device from the wireless network, but
-in many cases the device will be able to reconnect.
+Please refer to :doc:`../api/index` for a complete listing
+of API functions.

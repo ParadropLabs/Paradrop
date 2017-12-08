@@ -1,5 +1,5 @@
-Local HTTP API
-=========================
+Host API Reference
+==================
 
 Chute Management
 ----------------

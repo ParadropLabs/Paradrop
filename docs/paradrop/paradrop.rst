@@ -1,5 +1,5 @@
-paradrop package
-================
+Source Code Reference
+=========================
 
 Subpackages
 -----------

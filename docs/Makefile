@@ -46,6 +46,7 @@ help:
 	@echo "  pseudoxml  to make pseudoxml-XML files for display purposes"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+	@echo "  usermanual to make a PDF manual"
 	@echo "  coverage   to run coverage check of the documentation (if enabled)"
 	@echo "  serve      to serve the local html build on port 5000 for viewing"
 
@@ -176,6 +177,11 @@ doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+usermanual:
+	@echo "Running files through rst2pdf..."
+	$(SPHINXBUILD) -b pdf -D exclude_patterns="['_build', 'paradrop/paradrop.rst']" $(ALLSPHINXOPTS) $(BUILDDIR)/usermanual
+	@echo "Build finished; the PDF files are in $(BUILDDIR)/usermanual."
 
 coverage:
 	$(SPHINXBUILD) -b coverage $(ALLSPHINXOPTS) $(BUILDDIR)/coverage

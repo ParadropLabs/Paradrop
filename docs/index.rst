@@ -9,13 +9,13 @@
 
    overview/index
    architecture/index
-   device/index
    manual/index
-   development/index
+   device/index
    application/index
-   issues
    faq
-   reference
+   development/index
+   api/index
+   paradrop/paradrop
 
 
 ParaDrop - Enabling Edge Computing at the Extreme Edge

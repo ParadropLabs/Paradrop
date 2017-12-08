@@ -1,23 +1,23 @@
-Develop Applications for ParaDrop
+Developing Applications
 =======================================
 
-This section of the documentation is devoted to describing the edge computing services (chutes) that run on ParaDrop. There are two categories of ParaDrop applications - pure edge applications and cloud-edge hybrid applications. The pure edge applications have standalone chutes can be deployed in the ParaDrop routers. Whereas the cloud-edge hybrid applications have both cloud part and edge part. In this section, we will focus on the chute development, in other words, the edge part. We will introduce how to develop the cloud-edge hybrid applications in <TODO>.
-
-If this is your first time seeing ParaDrop, please start with the :doc:`../manual/index` page.
-
-Contents:
+This section of the document is devoted to describing the edge computing
+services (chutes) that run on ParaDrop. There are two categories of ParaDrop
+applications - pure edge applications and cloud-edge hybrid applications. The
+pure edge applications have standalone chutes, which can be deployed in the
+ParaDrop routers. Cloud-edge hybrid applications have both a cloud component
+and an edge component. In this section, we will focus on the chute development,
+in other words, the edge component.
 
 .. toctree::
    :maxdepth: 2
 
    introduction
-   paradrop-tools
    lightchutes
    getting-started-go
    getting-started-java
    getting-started-node
    getting-started-python
-   deployment
    tutorial-sticky-board
 
 .. These sections are out of date.
