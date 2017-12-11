@@ -1,5 +1,5 @@
 name: paradrop-daemon
-version: 0.10.0
+version: 0.10.1
 summary: The ParaDrop daemon running at the extreme edge
 description: |
   The ParaDrop deamon manages resources in the Wi-Fi routers and provides a virtualized environment for chutes.
