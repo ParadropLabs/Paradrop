@@ -24,7 +24,7 @@ def device(ctx, address):
     """
     if address.startswith("http"):
         parts = urlparse(address)
-        ctx.obj['address'] = parts.hostname
+        ctx.obj['address'] = parts.netloc
 
         if parts.scheme != 'http':
             print("Warning: when specifying the Paradrop device address, "
@@ -39,7 +39,7 @@ def device(ctx, address):
                   .format(parts.scheme))
             path = parts.path
 
-        ctx.obj['base_url'] = "{}://{}{}".format(parts.scheme, parts.hostname, path)
+        ctx.obj['base_url'] = "{}://{}{}".format(parts.scheme, parts.netloc, path)
         print(ctx.obj['base_url'])
 
     else:
