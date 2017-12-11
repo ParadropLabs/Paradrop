@@ -19,6 +19,12 @@ To fix this, remove the pid file on the router and reboot. ::
     sudo rm /var/snap/docker/current/run/docker/libcontainerd/docker-containerd.pid
     sudo reboot
 
+Occasionally Docker will crash and not restart properly even after a reboot.
+We find that disabling and re-enabling the service helps in such cases. ::
+
+    sudo snap disable docker
+    sudo snap enable docker
+
 Issue 2: WiFi devices are not detected after a reboot
 """""""""""""""""""""""""""""""""""""""""""""""""""""
 
