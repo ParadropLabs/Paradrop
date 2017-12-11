@@ -366,7 +366,7 @@ def removeNewContainer(update):
 
         # Grab the last 40 log messages to help with debugging.
         container = client.containers.get(name)
-        logs = container.logs(name, stream=False, tail=40, timestamps=False)
+        logs = container.logs(stream=False, tail=40, timestamps=False)
         update.progress("{}: {}".format(name, logs.rstrip()))
 
         container.remove(force=True)
