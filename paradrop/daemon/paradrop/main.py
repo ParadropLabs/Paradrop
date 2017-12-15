@@ -35,19 +35,18 @@ class Nexus(nexus.NexusBase):
         if not self.provisioned():
             out.warn('Router has no keys or identity. Waiting to connect to to server.')
         else:
-            # Try to connect to the WAMP router (crossbar.io)
             try:
+                # Set up communication with pdserver.
+                # 1. Create a report of the current system state and send that.
+                # 2. Poll for a list of updates that should be applied.
+                # 3. Open WAMP session.
+                yield sendStateReport()
+                yield self.update_fetcher.start_polling()
                 yield self.connect(WampSession)
             except Exception:
                 out.warn('The router ID or password is invalid!')
             else:
                 out.info('WAMP session is ready!')
-                # Set up communication with pdserver.
-                # 1. Create a report of the current system state and send that.
-                # 2. Poll for a list of updates that should be applied.
-                yield sendStateReport()
-                yield self.update_fetcher.start_polling()
-
 
     def onStop(self):
         if self.session is not None:

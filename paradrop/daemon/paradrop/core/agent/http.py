@@ -306,7 +306,7 @@ class PDServerRequest(object):
     # requests.
     token = None
 
-    def __init__(self, path, driver=CurlRequestDriver, setAuthHeader=True):
+    def __init__(self, path, driver=TwistedRequestDriver, setAuthHeader=True):
         self.path = path
         self.driver = driver
         self.setAuthHeader = setAuthHeader

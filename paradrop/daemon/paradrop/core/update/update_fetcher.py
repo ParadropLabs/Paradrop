@@ -29,10 +29,39 @@ class UpdateFetcher(object):
         self.update_manager = update_manager
         self.scheduled_call = task.LoopingCall(self.pull_update, _auto=True)
 
+        self.long_poll_started = False
+        self.use_long_poll = True
+
+    @inlineCallbacks
+    def start_long_poll(self):
+        self.long_poll_started = True
+
+        while self.use_long_poll:
+            request = PDServerRequest('/api/routers/{router_id}/updates/poll')
+            try:
+                response = yield request.get()
+            except Exception:
+                pass
+            else:
+                # 200 = update(s) available
+                # 204 = no updates yet
+                # 404 = server does not support this endpoint
+                if response.code == 200:
+                    self.pull_update(_auto=False)
+                elif response.code == 404:
+                    self.use_long_poll = False
 
     @inlineCallbacks
     def start_polling(self):
-        yield self.pull_update(True)
+        # Long polling is a more recent addition. If the server supports it, it
+        # will only respond to our GET request after an update is available or a
+        # timeout has expired.
+        if not self.long_poll_started:
+            self.start_long_poll()
+
+        # Basic polling is our baseline. It always works with no dependency on
+        # maintaining websocket connections, etc. Set the polling interval to
+        # something reasonable, e.g. 15 minutes to 1 hour.
         if not self.scheduled_call.running:
             self.scheduled_call.start(UPDATE_POLL_INTERVAL, now=False)
 
