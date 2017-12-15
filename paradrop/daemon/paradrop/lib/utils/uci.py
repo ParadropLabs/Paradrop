@@ -102,10 +102,8 @@ def getLineParts(line):
 
         groups.append(group)
 
-    combined = [" ".join(g) for g in groups]
-    result = [x for x in combined if len(x) > 0]
+    return [" ".join(g) for g in groups]
 
-    return result
 
 def chuteConfigsMatch(chutePre, chutePost):
     """ Takes two lists of objects, and returns whether or not they are identical."""

@@ -47,3 +47,14 @@ def test_getLineParts():
     assert parts[1] == "key"
     assert parts[2] == "correct horse   battery staple"
     assert parts[3] == "#comment"
+
+    # Test case containing an empty string as value.
+    line = "option key ''"
+    parts = uci.getLineParts(line)
+    assert len(parts) == 3
+    assert parts[2] == ''
+
+    line = 'option key ""'
+    parts = uci.getLineParts(line)
+    assert len(parts) == 3
+    assert parts[2] == ''
