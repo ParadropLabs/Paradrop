@@ -43,7 +43,6 @@ class PDStorage(object):
 
         if(pdos.exists(self.filename)):
             deleteFile = False
-            out.info('Loading from disk\n')
             data = ""
             try:
                 pyld = pickle.load(pdos.open(self.filename, 'rb'))
