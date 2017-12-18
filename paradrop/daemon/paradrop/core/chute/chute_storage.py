@@ -35,7 +35,6 @@ class ChuteStorage(PDStorage):
 
         # Has it been loaded?
         if(len(ChuteStorage.chuteList) == 0):
-            out.verbose('Loading chutes from disk: %s\n' % (filename))
             self.loadFromDisk()
 
     def setAttr(self, attr):
