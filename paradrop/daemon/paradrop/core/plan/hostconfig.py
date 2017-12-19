@@ -78,6 +78,10 @@ def generatePlans(update):
         update.plans.addPlans(plangraph.AIRSHARK_CONFIGURE,
                               (airshark.configure, ))
 
+        # Apply fix for systemd networkd wait online delay.
+        update.plans.addPlans(plangraph.APPLY_WAIT_ONLINE_FIX,
+                              (osconfig.applyWaitOnlineFix, ))
+
         # Configure telemetry service.
         update.plans.addPlans(plangraph.TELEMETRY_SERVICE,
                               (services.configure_telemetry, ))
