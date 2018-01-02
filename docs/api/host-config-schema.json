@@ -53,8 +53,8 @@
                 },
                 "proto": {
                     "type": "string",
-                    "enum": ["static"],
-                    "description": "Method for setting interface IP address."
+                    "enum": ["auto", "static"],
+                    "description": "Method for setting interface IP address. 'auto' will choose a subnet that avoids conflict with the WAN interface."
                 }
             }
         },
@@ -74,7 +74,7 @@
                 },
                 "chuteSubnetPool": {
                     "type": "string",
-                    "description": "The IP range available for chutes in CIDR notation."
+                    "description": "The IP range available for chutes in CIDR notation or 'auto'. 'auto' will choose a subnet that avoids conflict with the WAN interface."
                 },
                 "onMissingWiFi": {
                     "type": "string",
