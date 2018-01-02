@@ -1,4 +1,5 @@
 import collections
+import netifaces
 import ipaddress
 import itertools
 
@@ -73,6 +74,32 @@ def getWifiKeySettings(cfg, iface):
             raise Exception("No key field defined for WiFi encryption")
 
 
+def select_chute_subnet_pool(host_config):
+    """
+    Select IP subnet to use as pool for chutes.
+
+    Behavior depends on whether a static subnet is configured or auto
+    configuration is requested. If the chuteSubnetPool option is set to 'auto',
+    then we check the WAN interface address and choose either 10.128.0.0/9 or
+    192.168.128.0/17 to avoid conflict.  Otherwise, we used the specified
+    subnet.
+    """
+    pool = datastruct.getValue(host_config, "system.chuteSubnetPool", 'auto')
+    wan_ifname = datastruct.getValue(host_config, 'wan.interface', 'eth0')
+
+    if pool == 'auto':
+        addresses = netifaces.ifaddresses(wan_ifname)
+        ipv4_addrs = addresses.get(netifaces.AF_INET, [])
+
+        if any(x['addr'].startswith("10.") for x in ipv4_addrs):
+            return "192.168.128.0/17"
+        else:
+            return "10.128.0.0/9"
+
+    else:
+        return pool
+
+
 def chooseSubnet(update, cfg, iface):
     reservations = update.new.getCache('subnetReservations')
 
@@ -92,8 +119,7 @@ def chooseSubnet(update, cfg, iface):
 
     # Get subnet configuration settings from host configuration.
     host_config = update.new.getCache('hostConfig')
-    network_pool = datastruct.getValue(host_config,
-            "system.chuteSubnetPool", settings.DYNAMIC_NETWORK_POOL)
+    network_pool = select_chute_subnet_pool(host_config)
     prefix_size = datastruct.getValue(host_config,
             "system.chutePrefixSize", SUBNET_SIZE)
 

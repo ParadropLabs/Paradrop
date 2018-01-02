@@ -1,3 +1,5 @@
+import netifaces
+
 from nose.tools import assert_raises
 from mock import MagicMock, Mock, patch
 
@@ -92,3 +94,40 @@ def test_readHostconfigVlan():
 
     sections = builder.getSections("firewall")
     assert len(sections) >= 1
+
+
+@patch("paradrop.core.config.devices.netifaces.ifaddresses")
+def test_select_brlan_address(ifaddresses):
+    host_config = {
+        'wan': {
+            'interface': 'eth0'
+        },
+        'lan': {
+            'proto': 'auto'
+        }
+    }
+
+    # Mock ifaddresses as if WAN interface has 192.x.x.x address.
+    ifaddrs = {
+        netifaces.AF_INET: [
+            { 'addr': '192.168.1.20' }
+        ]
+    }
+    ifaddresses.return_value = ifaddrs
+
+    addr, netmask = devices.select_brlan_address(host_config)
+    assert addr.startswith("10.")
+
+    # Mock ifaddresses as if WAN interface has 10.x.x.x address.
+    ifaddrs[netifaces.AF_INET] = [{ 'addr': '10.42.0.20' }]
+
+    addr, netmask = devices.select_brlan_address(host_config)
+    assert addr.startswith("192.168.")
+
+    # Test static assignment.
+    host_config['lan']['proto'] = 'static'
+    host_config['lan']['ipaddr'] = '192.168.1.1'
+    host_config['lan']['netmask'] = '255.255.255.0'
+    addr, netmask = devices.select_brlan_address(host_config)
+    assert addr == '192.168.1.1'
+    assert netmask == '255.255.255.0'

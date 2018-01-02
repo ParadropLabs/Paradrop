@@ -10,6 +10,7 @@ devices, for example "wifi-device" sections.  These are shared between chutes,
 so they only need to be added when missing.
 """
 
+import netifaces
 import itertools
 import operator
 import os
@@ -630,6 +631,32 @@ class UCIBuilder(object):
                     uci.getSystemPath(f))
 
 
+def select_brlan_address(hostConfig):
+    """
+    Select IP address and netmask to use for LAN bridge.
+
+    Behavior depends on the proto field, which can either be 'auto' or
+    'static'. When proto is set to 'auto', we check the WAN interface address
+    and choose either 10.0.0.0 or 192.168.0.1 to avoid conflict. Otherwise,
+    when proto is set to 'static', we use the specified address.
+    """
+    proto = datastruct.getValue(hostConfig, 'lan.proto', 'auto')
+    netmask = datastruct.getValue(hostConfig, 'lan.netmask', '255.255.255.0')
+    wan_ifname = datastruct.getValue(hostConfig, 'wan.interface', 'eth0')
+
+    if proto == 'auto':
+        addresses = netifaces.ifaddresses(wan_ifname)
+        ipv4_addrs = addresses.get(netifaces.AF_INET, [])
+
+        if any(x['addr'].startswith("10.") for x in ipv4_addrs):
+            return "192.168.0.1", netmask
+        else:
+            return "10.0.0.1", netmask
+
+    else:
+        return hostConfig['lan']['ipaddr'], netmask
+
+
 def setSystemDevices(update):
     """
     Initialize system configuration files.
@@ -640,6 +667,7 @@ def setSystemDevices(update):
     """
     hostConfig = update.new.getCache('hostConfig')
     networkDevices = update.new.getCache('networkDevices')
+    networkDevicesByName = update.new.getCache('networkDevicesByName')
 
     builder = UCIBuilder()
 
@@ -683,8 +711,7 @@ def setSystemDevices(update):
         options['type'] = "bridge"
         options['bridge_empty'] = "1"
         options['proto'] = 'static'
-        options['ipaddr'] = hostConfig['lan']['ipaddr']
-        options['netmask'] = hostConfig['lan']['netmask']
+        options['ipaddr'], options['netmask'] = select_brlan_address(hostConfig)
         options['ifname'] = hostConfig['lan']['interfaces']
         builder.add("network", "interface", options, name="lan")
 

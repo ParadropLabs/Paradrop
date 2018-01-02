@@ -19,6 +19,7 @@ setup(
         'ipaddress',
         'jsonpatch==1.15',
         'klein==16.12.0',
+        'netifaces==0.10.4',
         'psutil',
         'pycurl',
         'PyJWT>=1.5.3',

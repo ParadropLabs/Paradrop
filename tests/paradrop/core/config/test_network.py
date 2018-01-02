@@ -1,4 +1,5 @@
 import collections
+import netifaces
 import ipaddress
 
 from nose.tools import assert_raises
@@ -272,3 +273,37 @@ def test_getInterfaceAddress(chooseSubnet):
     assert iface['externalIpaddr'] == "192.168.30.1"
     assert iface['internalIpaddr'] == "192.168.30.2"
     assert iface['ipaddrWithPrefix'] == "192.168.30.2/24"
+
+
+@patch("paradrop.core.config.network.netifaces.ifaddresses")
+def test_select_chute_subnet_pool(ifaddresses):
+    host_config = {
+        'wan': {
+            'interface': 'eth0'
+        },
+        'system': {
+            'chuteSubnetPool': 'auto'
+        }
+    }
+
+    # Mock ifaddresses as if WAN interface has 192.x.x.x address.
+    ifaddrs = {
+        netifaces.AF_INET: [
+            { 'addr': '192.168.1.20' }
+        ]
+    }
+    ifaddresses.return_value = ifaddrs
+
+    pool = network.select_chute_subnet_pool(host_config)
+    assert pool.startswith("10.")
+
+    # Mock ifaddresses as if WAN interface has 10.x.x.x address.
+    ifaddrs[netifaces.AF_INET] = [{ 'addr': '10.42.0.20' }]
+
+    pool = network.select_chute_subnet_pool(host_config)
+    assert pool.startswith("192.168.")
+
+    # Test static assignment.
+    host_config['system']['chuteSubnetPool'] = '192.168.128.0/17'
+    pool = network.select_chute_subnet_pool(host_config)
+    assert pool == '192.168.128.0/17'
