@@ -19,7 +19,7 @@ from . import qos
 from . import wireless
 
 from .base import ConfigObject
-from .command import CommandList
+from .command import CommandList, ErrorCommand
 
 
 # Map of type names to the classes that handle them.  We now prefer the
@@ -264,22 +264,30 @@ class ConfigManager(object):
 
         while undoWork:
             prio, config = heapq.heappop(undoWork)
-            if config in undoConfigs:
-                commands.extend(config.revert(allConfigs))
-            else:
-                new = allConfigs[config.getTypeAndName()]
-                commands.extend(config.updateRevert(new, allConfigs))
+
+            try:
+                if config in undoConfigs:
+                    commands.extend(config.revert(allConfigs))
+                else:
+                    new = allConfigs[config.getTypeAndName()]
+                    commands.extend(config.updateRevert(new, allConfigs))
+            except Exception as error:
+                commands.append(prio, ErrorCommand(error, config))
 
         applyWork = ConfigObject.prioritizeConfigs(updatedConfigs | newConfigs)
         heapq.heapify(applyWork)
 
         while applyWork:
             prio, config = heapq.heappop(applyWork)
-            if config in newConfigs:
-                commands.extend(config.apply(allConfigs))
-            else:
-                new = allConfigs[config.getTypeAndName()]
-                commands.extend(config.updateApply(new, allConfigs))
+
+            try:
+                if config in newConfigs:
+                    commands.extend(config.apply(allConfigs))
+                else:
+                    new = allConfigs[config.getTypeAndName()]
+                    commands.extend(config.updateApply(new, allConfigs))
+            except Exception as error:
+                commands.append(prio, ErrorCommand(error, config))
 
             # Reset list of executed commands so that previous failures do not
             # haunt us.

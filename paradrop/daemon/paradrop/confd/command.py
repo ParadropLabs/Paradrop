@@ -158,6 +158,21 @@ class Command(object):
         return (self.ignoreFailure or self.result == 0)
 
 
+class ErrorCommand(Command):
+    """
+    Special command object that indicates an error occurred.
+    """
+    def __init__(self, error, parent=None):
+        super(ErrorCommand, self).__init__([], parent)
+        self.error = error
+
+    def execute(self):
+        out.info("An error occurred: {}".format(self.error))
+
+    def success(self):
+        return False
+
+
 class KillCommand(Command):
     """
     Special command object for killing a process
