@@ -19,6 +19,7 @@ import subprocess
 
 from paradrop.base.output import out
 from paradrop.base import settings
+from paradrop.base.exceptions import DeviceNotFoundException
 from paradrop.lib.utils import datastruct, pdos, uci
 from paradrop.core.config import uciutils
 
@@ -481,7 +482,7 @@ def resolveWirelessDevRef(name, networkDevices):
         if name in identifiers:
             return device
 
-    raise Exception("Could not resolve wireless device {}".format(name))
+    raise DeviceNotFoundException("Could not resolve wireless device {}".format(name))
 
 
 def readHostconfigWifiInterfaces(wifiInterfaces, networkDevices, builder):
@@ -505,6 +506,24 @@ def readHostconfigWifiInterfaces(wifiInterfaces, networkDevices, builder):
         builder.add("wireless", "wifi-iface", options)
 
 
+def handleMissingWiFi(hostConfig):
+    """
+    Take appropriate action in response to missing WiFi devices.
+
+    Depending on the host configuration, we may either emit a warning or reboot
+    the system.
+    """
+    # Missing WiFi devices - check what we should do.
+    action = datastruct.getValue(hostConfig, "system.onMissingWiFi")
+    if action == "reboot":
+        out.warn("Missing WiFi devices, system will be rebooted.")
+        cmd = ["shutdown", "-r", "now"]
+        subprocess.call(cmd)
+
+    elif action == "warn":
+        out.warn("Missing WiFi devices.")
+
+
 def checkSystemDevices(update):
     """
     Check whether expected devices are present.
@@ -516,15 +535,7 @@ def checkSystemDevices(update):
     hostConfig = update.new.getCache('hostConfig')
 
     if len(devices['wifi']) == 0:
-        # No WiFi devices - check what we should do.
-        action = datastruct.getValue(hostConfig, "system.onMissingWiFi")
-        if action == "reboot":
-            out.warn("No WiFi devices were detected, system will be rebooted.")
-            cmd = ["shutdown", "-r", "now"]
-            subprocess.call(cmd)
-
-        elif action == "warn":
-            out.warn("No WiFi devices were detected.")
+        handleMissingWiFi(hostConfig)
 
 
 def readHostconfigVlan(vlanInterfaces, builder):
@@ -768,7 +779,10 @@ def setSystemDevices(update):
     builder.add("firewall", "zone", options)
 
     wifi = hostConfig.get('wifi', [])
-    readHostconfigWifi(wifi, networkDevices, builder)
+    try:
+        readHostconfigWifi(wifi, networkDevices, builder)
+    except DeviceNotFoundException as error:
+        handleMissingWiFi(hostConfig)
 
     wifiInterfaces = hostConfig.get('wifi-interfaces', [])
     readHostconfigWifiInterfaces(wifiInterfaces, networkDevices, builder)

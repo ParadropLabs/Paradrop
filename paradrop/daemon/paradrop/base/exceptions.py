@@ -40,3 +40,6 @@ class ChuteNotFound(ParadropException):
 
 class ChuteNotRunning(ParadropException):
     pass
+
+class DeviceNotFoundException(ParadropException):
+    pass
