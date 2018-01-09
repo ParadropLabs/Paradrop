@@ -21,6 +21,7 @@ setup(
         'klein==16.12.0',
         'netifaces==0.10.4',
         'psutil',
+        'pulsectl==17.12.2',
         'pycurl',
         'PyJWT>=1.5.3',
         'pyyaml',

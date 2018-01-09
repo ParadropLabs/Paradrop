@@ -18,6 +18,7 @@ from paradrop.base.exceptions import ParadropException
 from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.system.system_status import SystemStatus
 
+from .audio_api import AudioApi
 from .auth import requires_auth, AuthApi
 from .information_api import InformationApi
 from .change_api import ChangeApi
@@ -53,6 +54,11 @@ class HttpServer(object):
             self.portal_dir = os.environ['SNAP'] + '/www'
         else:
             self.portal_dir = resource_filename('paradrop', 'static')
+
+
+    @app.route('/api/v1/audio', branch=True)
+    def api_audio(self, request):
+        return AudioApi().routes.resource()
 
 
     @app.route('/api/v1/auth', branch=True)
@@ -211,6 +217,7 @@ def annotate_routes(router, prefix):
         rule.doc_prefix = prefix
 
 
+annotate_routes(AudioApi.routes, "/api/v1/audio")
 annotate_routes(ChuteApi.routes, "/api/v1/chutes")
 annotate_routes(ConfigApi.routes, "/api/v1/config")
 annotate_routes(InformationApi.routes, "/api/v1/info")

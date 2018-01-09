@@ -18,6 +18,7 @@ netifaces==0.10.4
 nose==1.3.7
 pbr==1.10.0
 psutil==4.3
+pulsectl==17.12.2
 pyasn1==0.1.9
 pyasn1-modules==0.0.8
 pycparser==2.16

@@ -47,6 +47,73 @@ def device(ctx, address):
         ctx.obj['base_url'] = "http://{}/api/v1".format(address)
 
 
+@device.group()
+@click.pass_context
+def audio(ctx):
+    """
+    Control device audio properties.
+    """
+    url = "{}/audio".format(ctx.obj['base_url'])
+    ctx.obj['audio_url'] = url
+
+
+@audio.command()
+@click.pass_context
+def info(ctx):
+    """
+    Get audio server information.
+    """
+    url = "{}/info".format(ctx.obj['audio_url'])
+    router_request("GET", url)
+
+
+@audio.command()
+@click.pass_context
+def sinks(ctx):
+    """
+    List audio sinks.
+    """
+    url = "{}/sinks".format(ctx.obj['audio_url'])
+    router_request("GET", url)
+
+
+@audio.group()
+@click.pass_context
+@click.argument('sink_name')
+def sink(ctx, sink_name):
+    """
+    Configure audio sink.
+    """
+    url = "{}/sinks/{}".format(ctx.obj['audio_url'], sink_name)
+    ctx.obj['sink_url'] = url
+
+
+@sink.command()
+@click.pass_context
+@click.argument('channel_volume', nargs=-1)
+def volume(ctx, channel_volume):
+    """
+    Set sink volume.
+    """
+    url = "{}/volume".format(ctx.obj['sink_url'])
+
+    # Convert to a list of floats. Be aware: the obvious approach
+    # list(channel_volume) behaves strangely.
+    data = [float(vol) for vol in channel_volume]
+
+    router_request("PUT", url, json=data)
+
+
+@audio.command()
+@click.pass_context
+def sources(ctx):
+    """
+    List audio sources.
+    """
+    url = "{}/sources".format(ctx.obj['audio_url'])
+    router_request("GET", url)
+
+
 @device.command()
 @click.pass_context
 def changes(ctx):

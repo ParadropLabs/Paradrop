@@ -34,6 +34,7 @@ pbr==1.10.0
 pdfrw==0.4
 Pillow==4.3.0
 psutil==4.3.0
+pulsectl==17.12.2
 pyasn1==0.1.9
 pyasn1-modules==0.0.8
 pycparser==2.16
