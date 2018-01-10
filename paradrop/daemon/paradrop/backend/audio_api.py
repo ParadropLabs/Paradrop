@@ -24,6 +24,12 @@ class AudioApi(object):
     def __init__(self):
         self.pulse = pulsectl.Pulse('paradrop-daemon')
 
+    def __del__(self):
+        # Make sure we close the connection to the PulseAudio server.
+        if self.pulse is not None:
+            self.pulse.close()
+            self.pulse = None
+
     @routes.route('/info', methods=['GET'])
     def get_info(self, request):
         """
