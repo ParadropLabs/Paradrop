@@ -1,0 +1,49 @@
+- config:
+  - testset: "Audio API tests"
+
+- test:
+  - name: "Get server information"
+  - url: "/api/v1/audio/info"
+  - extract_binds:
+    - default_sink_name: {jsonpath_mini: default_sink_name}
+    - default_source_name: {jsonpath_mini: default_source_name}
+  - validators:
+    - compare: {jsonpath_mini: "server_name", expected: "pulseaudio"}
+
+- test:
+  - name: "Set default sink and source"
+  - url: "/api/v1/audio/info"
+  - method: "PUT"
+  - body: {template: '{"default_sink_name": "$default_sink_name", "default_source_name": "$default_source_name"}'}
+
+- test:
+  - name: "Get loaded modules"
+  - url: "/api/v1/audio/modules"
+
+- test:
+  - name: "Load a module"
+  - url: "/api/v1/audio/modules"
+  - method: POST
+  - body: '{"name": "module-switch-on-connect"}'
+  - validators:
+    - compare: {jsonpath_mini: "index", comparator: "type", expected: "int"}
+
+- test:
+  - name: "Get list of audio sinks"
+  - url: "/api/v1/audio/sinks"
+
+- test:
+  - name: "Set sink volume"
+  - url: {template: "/api/v1/audio/sinks/$default_sink_name/volume"}
+  - method: "PUT"
+  - body: '[1.0, 1.0]'
+
+- test:
+  - name: "Get list of audio sources"
+  - url: "/api/v1/audio/sources"
+
+- test:
+  - name: "Set source volume"
+  - url: {template: "/api/v1/audio/sources/$default_source_name/volume"}
+  - method: "PUT"
+  - body: '[1.0]'
