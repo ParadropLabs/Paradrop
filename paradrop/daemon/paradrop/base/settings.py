@@ -151,7 +151,7 @@ AIRSHARK_INSTALL_DIR = "/snap/airshark/current"
 # environment variable or API call. This allows chutes to check the features of
 # the host on which they are running. Update this when significant features are
 # added.
-DAEMON_FEATURES = "hostapd-control"
+DAEMON_FEATURES = "audio hostapd-control"
 
 ###############################################################################
 # Helper functions

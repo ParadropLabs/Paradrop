@@ -64,6 +64,52 @@ class AudioApi(object):
         }
         return json.dumps(result)
 
+    @routes.route('/info', methods=['PUT'])
+    def update_info(self, request):
+        """
+        Update audio server information.
+
+        The only writable attributes are default_sink_name and default_source_name.
+
+        **Example request**:
+
+        .. sourcecode:: http
+
+           PUT /api/v1/audio/info
+
+           {
+             "default_sink_name": "alsa_output.usb-Performance_Designed_Products_PDP_Audio_Device-00.analog-stereo",
+             "default_source_name": "alsa_input.usb-Performance_Designed_Products_PDP_Audio_Device-00.analog-mono"
+           }
+
+        **Example response**:
+
+        .. sourcecode:: http
+
+           HTTP/1.1 200 OK
+           Content-Type: application/json
+
+           {
+             "default_sink_name": "alsa_output.usb-Performance_Designed_Products_PDP_Audio_Device-00.analog-stereo",
+             "default_source_name": "alsa_input.usb-Performance_Designed_Products_PDP_Audio_Device-00.analog-mono"
+           }
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        body = json.loads(request.content.read())
+
+        result = {}
+        with pulsectl.Pulse('paradrop-daemon') as pulse:
+            if 'default_sink_name' in body:
+                pulse.sink_default_set(body['default_sink_name'])
+                result['default_sink_name'] = body['default_sink_name']
+            if 'default_source_name' in body:
+                pulse.source_default_set(body['default_source_name'])
+                result['default_source_name'] = body['default_source_name']
+
+        return json.dumps(result)
+
     @routes.route('/modules', methods=['GET'])
     def get_modules(self, request):
         """

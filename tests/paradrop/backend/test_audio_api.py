@@ -34,6 +34,20 @@ class TestChuteApi(object):
         data = json.loads(response)
         assert data['default_sink_name'] == "test"
 
+    def test_update_info(self):
+        request = MagicMock()
+
+        data = {
+            'default_sink_name': 'test',
+            'default_source_name': 'test'
+        }
+        request.content.read.return_value = json.dumps(data)
+
+        response = self.api.update_info(request)
+        data = json.loads(response)
+        assert data['default_sink_name'] == 'test'
+        assert data['default_source_name'] == 'test'
+
     def test_get_modules(self):
         request = MagicMock()
 
