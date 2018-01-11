@@ -21,15 +21,6 @@ from . import cors
 class AudioApi(object):
     routes = Klein()
 
-    def __init__(self):
-        self.pulse = pulsectl.Pulse('paradrop-daemon')
-
-    def __del__(self):
-        # Make sure we close the connection to the PulseAudio server.
-        if self.pulse is not None:
-            self.pulse.close()
-            self.pulse = None
-
     @routes.route('/info', methods=['GET'])
     def get_info(self, request):
         """
@@ -60,7 +51,9 @@ class AudioApi(object):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
 
-        info = self.pulse.server_info()
+        with pulsectl.Pulse('paradrop-daemon') as pulse:
+            info = pulse.server_info()
+
         result = {
             'default_sink_name': info.default_sink_name,
             'default_source_name': info.default_source_name,
@@ -101,12 +94,14 @@ class AudioApi(object):
         request.setHeader('Content-Type', 'application/json')
 
         result = []
-        for module in self.pulse.module_list():
-            result.append({
-                'index': module.index,
-                'name': module.name,
-                'n_used': module.n_used
-            })
+
+        with pulsectl.Pulse('paradrop-daemon') as pulse:
+            for module in pulse.module_list():
+                result.append({
+                    'index': module.index,
+                    'name': module.name,
+                    'n_used': module.n_used
+                })
 
         return json.dumps(result)
 
@@ -142,7 +137,9 @@ class AudioApi(object):
 
         body = json.loads(request.content.read())
 
-        index = self.pulse.module_load(body['name'])
+        with pulsectl.Pulse('paradrop-daemon') as pulse:
+            index = pulse.module_load(body['name'])
+
         result = {
             'index': index,
             'name': body['name']
@@ -182,15 +179,16 @@ class AudioApi(object):
         request.setHeader('Content-Type', 'application/json')
 
         result = []
-        for sink in self.pulse.sink_list():
-            result.append({
-                'channel_count': sink.channel_count,
-                'channel_list': sink.channel_list,
-                'description': sink.description,
-                'index': sink.index,
-                'name': sink.name,
-                'volume': sink.volume.values
-            })
+        with pulsectl.Pulse('paradrop-daemon') as pulse:
+            for sink in pulse.sink_list():
+                result.append({
+                    'channel_count': sink.channel_count,
+                    'channel_list': sink.channel_list,
+                    'description': sink.description,
+                    'index': sink.index,
+                    'name': sink.name,
+                    'volume': sink.volume.values
+                })
 
         return json.dumps(result)
 
@@ -221,19 +219,20 @@ class AudioApi(object):
 
         body = json.loads(request.content.read())
 
-        found = False
-        for sink in self.pulse.sink_list():
-            if sink.name == name:
-                found = True
-                break
+        with pulsectl.Pulse('paradrop-daemon') as pulse:
+            found = False
+            for sink in pulse.sink_list():
+                if sink.name == name:
+                    found = True
+                    break
 
-        if found:
-            volume = pulsectl.PulseVolumeInfo(body)
-            self.pulse.volume_set(sink, volume)
-            return json.dumps(body)
-        else:
-            request.setResponseCode(404)
-            return '{}'
+            if found:
+                volume = pulsectl.PulseVolumeInfo(body)
+                pulse.volume_set(sink, volume)
+                return json.dumps(body)
+            else:
+                request.setResponseCode(404)
+                return '{}'
 
     @routes.route('/sources', methods=['GET'])
     def get_sources(self, request):
@@ -276,15 +275,16 @@ class AudioApi(object):
         request.setHeader('Content-Type', 'application/json')
 
         result = []
-        for source in self.pulse.source_list():
-            result.append({
-                'channel_count': source.channel_count,
-                'channel_list': source.channel_list,
-                'description': source.description,
-                'index': source.index,
-                'name': source.name,
-                'volume': source.volume.values
-            })
+        with pulsectl.Pulse('paradrop-daemon') as pulse:
+            for source in pulse.source_list():
+                result.append({
+                    'channel_count': source.channel_count,
+                    'channel_list': source.channel_list,
+                    'description': source.description,
+                    'index': source.index,
+                    'name': source.name,
+                    'volume': source.volume.values
+                })
 
         return json.dumps(result)
 
@@ -315,16 +315,17 @@ class AudioApi(object):
 
         body = json.loads(request.content.read())
 
-        found = False
-        for source in self.pulse.source_list():
-            if source.name == name:
-                found = True
-                break
+        with pulsectl.Pulse('paradrop-daemon') as pulse:
+            found = False
+            for source in pulse.source_list():
+                if source.name == name:
+                    found = True
+                    break
 
-        if found:
-            volume = pulsectl.PulseVolumeInfo(body)
-            self.pulse.volume_set(source, volume)
-            return json.dumps(body)
-        else:
-            request.setResponseCode(404)
-            return '{}'
+            if found:
+                volume = pulsectl.PulseVolumeInfo(body)
+                pulse.volume_set(source, volume)
+                return json.dumps(body)
+            else:
+                request.setResponseCode(404)
+                return '{}'

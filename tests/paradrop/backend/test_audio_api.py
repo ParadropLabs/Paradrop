@@ -7,12 +7,16 @@ from paradrop.backend import audio_api
 
 
 class TestChuteApi(object):
-    @patch("paradrop.backend.audio_api.pulsectl")
-    def __init__(self, pulsectl):
+    def __init__(self):
         self.pulse = MagicMock()
-        pulsectl.Pulse.return_value = self.pulse
-
         self.api = audio_api.AudioApi()
+
+    def setUp(self):
+        patcher = patch("paradrop.backend.audio_api.pulsectl")
+        pulsectl = patcher.start()
+
+        pulsectl.Pulse.return_value = self.pulse
+        self.pulse.__enter__.return_value = self.pulse
 
     def test_get_info(self):
         request = MagicMock()
