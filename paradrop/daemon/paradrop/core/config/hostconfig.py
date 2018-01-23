@@ -78,8 +78,8 @@ def generateHostConfig(devices):
     }
     config['lan'] = {
         'interfaces': list(),
-        'proto': 'static',
-        'ipaddr': '10.0.0.1',
+        'proto': 'auto',
+        'ipaddr': '0.0.0.0',
         'netmask': '255.255.255.0',
         'dhcp': {
             'start': 100,
@@ -100,7 +100,7 @@ def generateHostConfig(devices):
     config['wifi-interfaces'] = list()
     config['system'] = {
         'autoUpdate': True,
-        'chuteSubnetPool': settings.DYNAMIC_NETWORK_POOL,
+        'chuteSubnetPool': 'auto',
         'chutePrefixSize': 24,
         'onMissingWiFi': None
     }
@@ -130,8 +130,10 @@ def generateHostConfig(devices):
                     'output': 'ACCEPT',
                     'forward': 'ACCEPT',
                     'masq_src': [
-                        '10.0.0.0/24',
-                        settings.DYNAMIC_NETWORK_POOL
+                        '0.0.0.0/0'
+                    ],
+                    'masq_dest': [
+                        '0.0.0.0/0'
                     ]
                 }
             }
