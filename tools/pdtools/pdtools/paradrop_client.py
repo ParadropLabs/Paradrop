@@ -86,8 +86,8 @@ class ParadropClient(object):
             url = self.base_url + "/chutes/{}/networks/{}/leases".format(
                     chute_name, net)
             result = self.request("GET", url)
-
-            devices.extend(result)
+            if isinstance(result, list):
+                devices.extend(result)
 
         return devices
 
