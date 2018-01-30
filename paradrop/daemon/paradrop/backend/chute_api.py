@@ -228,11 +228,14 @@ class ChuteApi(object):
            }
         """
         cors.config_cors(request)
-
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        container = ChuteContainer(chute)
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            container = ChuteContainer(chute)
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
         chuteStorage = ChuteStorage()
         allocation = resource.computeResourceAllocation(
@@ -409,13 +412,15 @@ class ChuteApi(object):
         It can be useful for debugging the Paradrop platform.
         """
         cors.config_cors(request)
-
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        result = chute_obj.getCacheContents()
-
-        return json.dumps(result, cls=ChuteCacheEncoder)
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            result = chute_obj.getCacheContents()
+            return json.dumps(result, cls=ChuteCacheEncoder)
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
     @routes.route('/<chute>/config', methods=['GET'])
     def get_chute_config(self, request, chute):
@@ -456,10 +461,13 @@ class ChuteApi(object):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        config = chute_obj.getConfiguration()
-
-        return json.dumps(config)
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            config = chute_obj.getConfiguration()
+            return json.dumps(config)
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
     @routes.route('/<chute>/config', methods=['PUT'])
     def set_chute_config(self, request, chute):
@@ -554,11 +562,14 @@ class ChuteApi(object):
            ]
         """
         cors.config_cors(request)
-
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "[]"
 
         result = []
         for iface in networkInterfaces:
@@ -596,11 +607,14 @@ class ChuteApi(object):
            }
         """
         cors.config_cors(request)
-
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
         data = {}
         for iface in networkInterfaces:
@@ -657,11 +671,14 @@ class ChuteApi(object):
            ]
         """
         cors.config_cors(request)
-
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        externalSystemDir = chute_obj.getCache('externalSystemDir')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            externalSystemDir = chute_obj.getCache('externalSystemDir')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "[]"
 
         leasefile = 'dnsmasq-{}.leases'.format(network)
         path = os.path.join(externalSystemDir, leasefile)
@@ -670,13 +687,19 @@ class ChuteApi(object):
         # space-separated fields.
         keys = ['expires', 'mac_addr', 'ip_addr', 'hostname', 'client_id']
 
-        leases = []
-        with open(path, 'r') as source:
-            for line in source:
-                parts = line.strip().split()
-                leases.append(dict(zip(keys, parts)))
+        try:
+            leases = []
+            with open(path, 'r') as source:
+                for line in source:
+                    parts = line.strip().split()
+                    leases.append(dict(zip(keys, parts)))
+            return json.dumps(leases)
 
-        return json.dumps(leases)
+        except IOError as error:
+            # During chute uninstallation, there is a small window where the
+            # chute still exists but the leases file has been removed.
+            request.setResponseCode(404)
+            return "[]"
 
     @routes.route('/<chute>/networks/<network>/ssid', methods=['GET'])
     def get_ssid(self, request, chute, network):
@@ -704,8 +727,12 @@ class ChuteApi(object):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
         ifname = None
         for iface in networkInterfaces:
@@ -749,8 +776,12 @@ class ChuteApi(object):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
         ifname = None
         for iface in networkInterfaces:
@@ -813,8 +844,12 @@ class ChuteApi(object):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
         ifname = None
         for iface in networkInterfaces:
@@ -867,11 +902,14 @@ class ChuteApi(object):
            ]
         """
         cors.config_cors(request)
-
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "[]"
 
         ifname = None
         for iface in networkInterfaces:
@@ -943,11 +981,14 @@ class ChuteApi(object):
            }
         """
         cors.config_cors(request)
-
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
         ifname = None
         for iface in networkInterfaces:
@@ -978,11 +1019,14 @@ class ChuteApi(object):
     @routes.route('/<chute>/networks/<network>/stations/<mac>', methods=['DELETE'])
     def delete_station(self, request, chute, network, mac):
         cors.config_cors(request)
-
         request.setHeader('Content-Type', 'application/json')
 
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return "{}"
 
         ifname = None
         for iface in networkInterfaces:
@@ -1002,8 +1046,12 @@ class ChuteApi(object):
 
     @routes.route('/<chute>/networks/<network>/hostapd_control/ws', branch=True, methods=['GET'])
     def hostapd_control(self, request, chute, network):
-        chute_obj = ChuteStorage.chuteList[chute]
-        networkInterfaces = chute_obj.getCache('networkInterfaces')
+        try:
+            chute_obj = ChuteStorage.chuteList[chute]
+            networkInterfaces = chute_obj.getCache('networkInterfaces')
+        except KeyError as error:
+            request.setResponseCode(404)
+            return ""
 
         ifname = None
         for iface in networkInterfaces:
