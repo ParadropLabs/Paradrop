@@ -7,6 +7,6 @@ python setup.py bdist_wheel --universal
 
 Make sure the dist directory is clean and run:
 
-twine updload dist/*
+twine upload dist/*
 
 Reference: https://packaging.python.org/tutorials/distributing-packages/
