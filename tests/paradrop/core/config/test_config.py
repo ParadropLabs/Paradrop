@@ -258,8 +258,9 @@ def test_config_dhcp():
     assert_raises(Exception, dhcp.getVirtDHCPSettings, update)
 
 
+@patch("paradrop.core.container.dockerapi.prepare_port_bindings")
 @patch("paradrop.core.container.chutecontainer.ChuteContainer")
-def test_config_dockerconfig(ChuteContainer):
+def test_config_dockerconfig(ChuteContainer, prepare_port_bindings):
     """
     Test the dockerconfig module.
     """
@@ -273,6 +274,8 @@ def test_config_dockerconfig(ChuteContainer):
     update.new.name = "test"
     update.new.getHostConfig.return_value = {}
     update.new.getWebPort.return_value = None
+
+    prepare_port_bindings.return_value = {}
 
     # Test with missing attribute 'dockerfile'.
     del update.dockerfile
