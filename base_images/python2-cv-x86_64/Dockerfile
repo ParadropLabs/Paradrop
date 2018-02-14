@@ -10,7 +10,8 @@ RUN apt-get update && \
         iptables \
         libboost-python-dev \
         libopenblas-dev \
-        liblapack-dev
+        liblapack-dev \
+        sudo
 
 #RUN git clone https://github.com/davisking/dlib /opt/dlib && \
 #        cd /opt/dlib && \
@@ -46,7 +47,25 @@ RUN pip install \
         numpy~=1.13.1 \
         opencv-python~=3.3.0.10 \
         Pillow~=4.2.1 \
-        scipy~=0.19.1
+        scipy~=0.19.1 && \
+    mkdir -p /usr/share/openface-models/
+
+RUN git clone https://github.com/torch/distro.git /opt/torch --recursive && \
+    cd /opt/torch && \
+    bash install-deps && \
+    ./install.sh && \
+    /opt/torch/install/bin/luarocks install torch && \
+    /opt/torch/install/bin/luarocks install nn && \
+    /opt/torch/install/bin/luarocks install dpnn
+
+RUN git clone https://github.com/cmusatyalab/openface.git /opt/openface && \
+    cd /opt/openface && \
+    ./models/get-models.sh && \
+    pip install -r requirements.txt && \
+    python setup.py install
+
+# Download openface neural network model.
+#ADD https://storage.cmusatyalab.org/openface-models/nn4.small2.v1.t7 /usr/share/openface-models/
 
 # Set up an unprivileged user so that we can drop out of root.
 # Make /home/paradrop so that pip can drop some files in there.
@@ -64,6 +83,7 @@ RUN useradd --system --uid 999 paradrop && \
 RUN find / -perm +6000 -type f -exec chmod a-s {} \; || true
 
 WORKDIR /opt/paradrop/app
+ENV PATH $PATH:/opt/torch/install/bin
 
 # Copy paradrop.yaml and requirements.txt, the latter only if it exists.  Then
 # call init-app.sh to install dependencies. These layers will be cached as long
