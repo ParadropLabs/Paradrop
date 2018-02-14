@@ -140,7 +140,54 @@ def pdserver_request(method, url, json=None, headers=None):
             return res
 
 
-def router_login(request_url, username, password, session):
+def router_login(base_url):
+    """
+    Prompt for router username and password and attempt login.
+
+    Returns the username if successful or None.
+    """
+    config = PdtoolsConfig.load()
+    session = requests.Session()
+    url_parts = urlparse(base_url)
+
+    for username, password in LoginGatherer(url_parts.netloc):
+        # Try to get a token for later use. Prior to 1.10, paradrop-daemon
+        # does not not support tokens.
+        _, token = send_router_login(base_url, username, password, session)
+        if token is not None:
+            config.addAccessToken(url_parts.netloc, username, token)
+            config.save()
+            return username
+
+    return None
+
+
+def router_logout(base_url):
+    """
+    Delete access token(s) for device if they exist.
+
+    Returns the number of tokens removed.
+    """
+    config = PdtoolsConfig.load()
+    url_parts = urlparse(base_url)
+
+    # Generally, there should be only zero or one access token, but it is
+    # possible for a code bug or other situation to cause there to be multiple
+    # tokens.  The loop makes sure we remove them all.
+    removed = 0
+    while True:
+        token = config.getAccessToken(url_parts.netloc)
+        if token is None:
+            break
+        else:
+            config.removeAccessToken(token)
+            config.save()
+            removed += 1
+
+    return removed
+
+
+def send_router_login(request_url, username, password, session):
     url_parts = urlparse(request_url)
 
     auth_url = "{}://{}/api/v1/auth/local".format(url_parts.scheme, url_parts.netloc)
@@ -209,7 +256,7 @@ def router_request(method, url, json=None, headers=None, dump=True, data=None, *
     for username, password in LoginGatherer(url_parts.netloc):
         # Try to get a token for later use. Prior to 1.10, paradrop-daemon
         # does not not support tokens.
-        _, token = router_login(url, username, password, session)
+        _, token = send_router_login(url, username, password, session)
         if token is not None:
             config.addAccessToken(url_parts.netloc, username, token)
             config.save()

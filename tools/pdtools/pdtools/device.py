@@ -12,7 +12,7 @@ import builtins
 import click
 import yaml
 
-from .comm import change_json, router_request, router_ws_request
+from .comm import change_json, router_login, router_logout, router_request, router_ws_request
 
 
 @click.group()
@@ -539,6 +539,29 @@ def hostconfig(ctx):
     """
     url = ctx.obj['base_url'] + "/config/hostconfig"
     router_request("GET", url)
+
+
+@device.command()
+@click.pass_context
+def login(ctx):
+    """
+    Log in using device-local credentials.
+    """
+    username = router_login(ctx.obj['base_url'])
+    if username is not None:
+        print("Logged in as: {}".format(username))
+    else:
+        print("Log in failed.")
+
+
+@device.command()
+@click.pass_context
+def logout(ctx):
+    """
+    Log out by removing any stored access tokens.
+    """
+    removed = router_logout(ctx.obj['base_url'])
+    print("Removed {} token(s).".format(removed))
 
 
 @hostconfig.command()
