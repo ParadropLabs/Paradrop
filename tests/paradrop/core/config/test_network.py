@@ -52,6 +52,8 @@ def test_getNetworkConfig():
     update.new.setCache('interfaceReservations', set())
     update.new.setCache('subnetReservations', set())
 
+    update.new.state = update.new.STATE_RUNNING
+
     # Exception: Interafce definition missing field(s)
     assert_raises(Exception, network.getNetworkConfig, update)
 

@@ -394,6 +394,10 @@ def getNetworkConfig(update):
     if not hasattr(update.new, 'net'):
         return None
 
+    # Make sure we only assign interfaces to running chutes.
+    if not update.new.isRunning():
+        return None
+
     # Make a dictionary of old interfaces.  Any new interfaces that are
     # identical to an old one do not need to be changed.
     oldInterfaces = getInterfaceDict(update.old)
