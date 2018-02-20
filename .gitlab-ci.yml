@@ -9,13 +9,13 @@ unit_test_job:
     - pip install -r requirements.txt
     - nosetests --with-coverage --cover-package=paradrop
 
-build_job:
-  stage: build
-  only:
-    - master
-  when: on_success
-  script:
-    - ./pdbuild.sh build
-  artifacts:
-    paths:
-      - "paradrop/*.snap"
+#build_job:
+#  stage: build
+#  only:
+#    - master
+#  when: on_success
+#  script:
+#    - ./pdbuild.sh build
+#  artifacts:
+#    paths:
+#      - "paradrop/*.snap"
