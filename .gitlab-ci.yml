@@ -2,7 +2,6 @@ image: paradrop/paradrop-ci-environment
 
 stages:
   - unit_test
-  - build
 
 unit_test_job:
   stage: unit_test
