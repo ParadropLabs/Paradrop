@@ -27,6 +27,9 @@ class MockChute(object):
     def getChuteStaticIPs(self):
         return self.staticIPs
 
+    def isRunning(self):
+        return True
+
 
 class MockChuteStorage(object):
     def __init__(self):
