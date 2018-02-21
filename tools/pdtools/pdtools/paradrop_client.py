@@ -115,16 +115,20 @@ class ParadropClient(object):
         request = requests.Request(method, url, json=json, headers=headers, **kwargs)
 
         # TODO: Implement selectable auth methods including:
-        # - API token from environment variable
         # - Default username and password
         # - Prompt for username and password
 
-        # First try with the default username and password.
-        # If that fails, prompt user and try again.
-        userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
+        if PARADROP_API_TOKEN is None:
+            # First try with the default username and password.
+            # If that fails, prompt user and try again.
+            userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
 
-        encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
-        session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
+            encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
+            session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
+
+        else:
+            value = 'Bearer {}'.format(PARADROP_API_TOKEN)
+            session.headers.update({'Authorization': value})
 
         prepped = session.prepare_request(request)
 
