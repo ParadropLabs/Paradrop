@@ -34,6 +34,152 @@ class ParadropClient(object):
         self.host = host
         self.base_url = "http://{}/api/v1".format(host)
 
+
+
+    def get_audio(self):
+        """
+        Get information about the audio subsystem.
+        """
+        url = self.base_url + "/audio/info"
+        return self.request("GET", url)
+
+    def get_chute(self, chute_name):
+        """
+        Get information about an installed chute.
+        """
+        url = self.base_url + "/chutes/" + chute_name
+        return self.request("GET", url)
+
+    def get_chute_cache(self, chute_name):
+        """
+        Get internal information about an installed chute.
+        """
+        url = "{}/chutes/{}/cache".format(self.base_url, chute_name)
+        return self.request("GET", url)
+
+    def get_chute_config(self, chute_name):
+        """
+        Get chute configuration.
+        """
+        url = "{}/chutes/{}/config".format(self.base_url, chute_name)
+        return self.request("GET", url)
+
+    def get_config(self):
+        """
+        Get node configuration.
+        """
+        url = self.base_url + "/config/hostconfig"
+        return self.request("GET", url)
+
+    def list_audio_modules(self):
+        """
+        List modules loaded by the audio subsystem.
+        """
+        url = self.base_url + "/audio/modules"
+        return self.request("GET", url)
+
+    def list_audio_sinks(self):
+        """
+        List audio sinks.
+        """
+        url = self.base_url + "/audio/sinks"
+        return self.request("GET", url)
+
+    def list_audio_sources(self):
+        """
+        List audio sources.
+        """
+        url = self.base_url + "/audio/sources"
+        return self.request("GET", url)
+
+    def list_changes(self):
+        """
+        List queued or in-progress changes.
+        """
+        url = self.base_url + "/changes/"
+        return self.request("GET", url)
+
+    def list_chute_networks(self, chute_name):
+        """
+        List networks configured by the chute.
+        """
+        url = "{}/chutes/{}/networks".format(self.base_url, chute_name)
+        return self.request("GET", url)
+
+    def list_chutes(self):
+        """
+        List chutes installed on the node.
+        """
+        url = self.base_url + "/chutes/"
+        return self.request("GET", url)
+
+    def load_audio_module(self, module_name):
+        """
+        Load a module into the audio subsystem.
+        """
+        url = "{}/audio/modules".format(self.base_url)
+        data = {
+            "name": module_name
+        }
+        return self.request("POST", url, json=data)
+
+    def set_chute_config(self, chute_name, config):
+        """
+        Set chute configuration.
+        """
+        url = "{}/chutes/{}/config".format(self.base_url, chute_name)
+        return self.request("PUT", url, json=config)
+
+    def set_chute_variables(self, chute_name, config):
+        """
+        Set chute environment variables.
+        """
+        url = "{}/chutes/{}/restart".format(self.base_url, chute_name)
+        data = {
+            "environment": config
+        }
+        return self.request("POST", url, json=data)
+
+    def set_config(self, config):
+        """
+        Set node configuration.
+        """
+        url = self.base_url + "/config/hostconfig"
+        data = {
+            'config': config
+        }
+        return self.request("PUT", url, json=data)
+
+    def remove_chute(self, chute_name):
+        """
+        Remove a chute from the node.
+        """
+        url = self.base_url + "/chutes/" + chute_name
+        return self.request("DELETE", url)
+
+    def restart_chute(self, chute_name):
+        """
+        Restart a chute.
+        """
+        url = "{}/chutes/{}/restart".format(self.base_url, chute_name)
+        return self.request("POST", url)
+
+    def start_chute(self, chute_name):
+        """
+        Start a stopped chute.
+        """
+        url = "{}/chutes/{}/start".format(self.base_url, chute_name)
+        return self.request("POST", url)
+
+    def stop_chute(self, chute_name):
+        """
+        Stop a running chute.
+        """
+        url = "{}/chutes/{}/stop".format(self.base_url, chute_name)
+        return self.request("POST", url)
+
+
+
     def get_cameras(self, chute_name=PARADROP_CHUTE_NAME, network_name=None):
         """
         List cameras connected to a chute's network.

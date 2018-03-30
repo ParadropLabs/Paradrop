@@ -14,6 +14,9 @@ from . import groups
 from . import routers
 from . import store
 
+# Future CLI
+from . import node
+
 
 PDSERVER_URL = os.environ.get("PDSERVER_URL", "https://paradrop.org")
 
@@ -45,6 +48,8 @@ root.add_command(chute.chute)
 root.add_command(device.device)
 root.add_command(routers.routers)
 root.add_command(store.store)
+
+root.add_command(node.root)
 groups.register_commands(root)
 
 
