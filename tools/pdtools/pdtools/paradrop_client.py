@@ -33,7 +33,15 @@ class ParadropClient(object):
 
         self.host = host
         self.base_url = "http://{}/api/v1".format(host)
+        self.snapd_url = "http://{}/snapd/v2".format(host)
 
+
+    def add_change(self, change):
+        """
+        Schedule a new change on the node.
+        """
+        url = "{}/changes/".format(self.base_url)
+        return self.request("POST", url, json=change)
 
     def add_ssh_key(self, key_text, user="paradrop"):
         """
@@ -44,6 +52,36 @@ class ParadropClient(object):
             'key': key_text
         }
         return self.request("POST", url, json=data)
+
+    def connect_snap_interface(self, slots=[], plugs=[]):
+        """
+        Connect an interface for an installed snap.
+        """
+        url = self.snapd_url + "/interfaces"
+        data = {
+            "action": "connect",
+            "slots": slots,
+            "plugs": plugs
+        }
+        return self.request("POST", url, json=data)
+
+    def create_user(self, email):
+        """
+        Create a local user connected to an Ubuntu One account.
+        """
+        url = self.snapd_url + "/create-user"
+        data = {
+            "email": email,
+            "sudoer": True
+        }
+        return self.request("POST", url, json=data)
+
+    def generate_config(self):
+        """
+        Generate a new node configuration based on detected hardware.
+        """
+        url = self.base_url + "/config/new-config"
+        return self.request("GET", url)
 
     def get_audio(self):
         """
@@ -102,6 +140,21 @@ class ParadropClient(object):
         url = self.base_url + "/config/provision"
         return self.request("GET", url)
 
+    def install_tar(self, data, name=None):
+        """
+        Install a chute from a tar file.
+        """
+        url = self.base_url + "/chutes/" # trailing slash is intentional
+
+        if name is None:
+            method = "POST"
+        else:
+            method = "PUT"
+            url = url + name
+
+        headers = {'Content-Type': 'application/x-tar'}
+        return self.request(method, url, headers=headers, data=data)
+
     def list_audio_modules(self):
         """
         List modules loaded by the audio subsystem.
@@ -149,7 +202,14 @@ class ParadropClient(object):
         """
         List chutes installed on the node.
         """
-        url = self.base_url + "/chutes/"
+        url = self.base_url + "/chutes/" # trailing slash is intentional
+        return self.request("GET", url)
+
+    def list_snap_interfaces(self):
+        """
+        List interfaces for snaps installed on the node.
+        """
+        url = self.snapd_url + "/interfaces"
         return self.request("GET", url)
 
     def list_ssh_keys(self, user="paradrop"):
@@ -186,6 +246,28 @@ class ParadropClient(object):
 
         return self.request("POST", url, json=data)
 
+    def remove_chute(self, chute_name):
+        """
+        Remove a chute from the node.
+        """
+        url = self.base_url + "/chutes/" + chute_name
+        return self.request("DELETE", url)
+
+    def remove_chute_client(self, chute_name, network, client):
+        """
+        Remove a connected client from the chute's network.
+        """
+        url = "{}/chutes/{}/networks/{}/stations/{}".format(self.base_url,
+                chute_name, network, client)
+        return self.request("DELETE", url)
+
+    def restart_chute(self, chute_name):
+        """
+        Restart a chute.
+        """
+        url = "{}/chutes/{}/restart".format(self.base_url, chute_name)
+        return self.request("POST", url)
+
     def set_chute_config(self, chute_name, config):
         """
         Set chute configuration.
@@ -213,27 +295,30 @@ class ParadropClient(object):
         }
         return self.request("PUT", url, json=data)
 
-    def remove_chute(self, chute_name):
+    def set_password(self, username, password):
         """
-        Remove a chute from the node.
+        Set the local admin password.
         """
-        url = self.base_url + "/chutes/" + chute_name
-        return self.request("DELETE", url)
+        url = self.base_url + "/password/change"
+        data = {
+            "username": username,
+            "password": password
+        }
+        return self.request("POST", url, json=data)
 
-    def remove_chute_client(self, chute_name, network, client):
+    def set_sink_volume(self, sink, volumes):
         """
-        Remove a connected client from the chute's network.
+        Set audio sink volume.
         """
-        url = "{}/chutes/{}/networks/{}/stations/{}".format(self.base_url,
-                chute_name, network, client)
-        return self.request("DELETE", url)
+        url = "{}/audio/sinks/{}/volume".format(self.base_url, sink)
+        return self.request("PUT", url, json=volumes)
 
-    def restart_chute(self, chute_name):
+    def set_source_volume(self, source, volumes):
         """
-        Restart a chute.
+        Set audio source volume.
         """
-        url = "{}/chutes/{}/restart".format(self.base_url, chute_name)
-        return self.request("POST", url)
+        url = "{}/audio/sources/{}/volume".format(self.base_url, source)
+        return self.request("PUT", url, json=volumes)
 
     def start_chute(self, chute_name):
         """

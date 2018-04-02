@@ -129,6 +129,41 @@ class ConfigApi(object):
         request.setHeader('Content-Type', 'application/json')
         return json.dumps(config, separators=(',',':'))
 
+    @routes.route('/new-config', methods=['GET'])
+    def new_config(self, request):
+        """
+        Generate a new node configuration based on the hardware.
+
+        **Example request**:
+
+        .. sourcecode:: http
+
+           GET /api/v1/config/new_config
+
+        **Example response**:
+
+        .. sourcecode:: http
+
+           HTTP/1.1 200 OK
+           Content-Type: application/json
+
+           {
+             "firewall": {
+               "defaults": {
+                 "forward": "ACCEPT",
+                 "input": "ACCEPT",
+                 "output": "ACCEPT"
+               }
+             },
+             ...
+           }
+
+        For a complete example, please see the Host Configuration section.
+        """
+        cors.config_cors(request)
+        config = hostconfig.prepareHostConfig(hostConfigPath='/dev/null')
+        request.setHeader('Content-Type', 'application/json')
+        return json.dumps(config, separators=(',',':'))
 
     @routes.route('/pdid', methods=['GET'])
     def get_pdid(self, request):

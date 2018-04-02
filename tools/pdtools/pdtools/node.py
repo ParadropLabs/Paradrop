@@ -16,6 +16,7 @@ import yaml
 
 from .comm import change_json, router_login, router_logout, router_request, router_ws_request
 from .paradrop_client import ParadropClient
+from .util import update_object
 
 
 # Default target for node commands. Unless the environment variable is set, we
@@ -99,6 +100,9 @@ def print_pdconf(data):
         help='Target node name or address (default: {}'.format(PDTOOLS_TARGET_NODE))
 @click.pass_context
 def root(ctx, target):
+    """
+    Manage a Paradrop edge compute node.
+    """
     ctx.obj['target'] = target
 
 
@@ -108,16 +112,39 @@ def connect_snap_interfaces(ctx):
     """
     Connect all interfaces for installed snaps
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.list_snap_interfaces()
+    for item in result['result']['plugs']:
+        connections = item.get('connections', [])
+        if len(connections) > 0:
+            continue
+
+        if item['plug'] == 'docker':
+            # The docker slot needs to be treated differently from core slots.
+            slot = {'snap': 'docker'}
+        elif item['plug'] == 'zerotier-control':
+            # TODO: This connection is failing, but I am not sure why.
+            slot = {'snap': 'zerotier-one', 'slot': 'zerotier-control'}
+        else:
+            # Most slots are provided by the core snap and specified this way.
+            slot = {'slot': item['interface']}
+
+        result = client.connect_snap_interface(slots=[slot], plugs=[{'snap':
+            item['snap'], 'plug': item['plug']}])
+        if result['type'] == 'error':
+            print(result['result']['message'])
 
 
 @root.command('create-user')
+@click.argument('email')
 @click.pass_context
-def create_user(ctx, target):
+def create_user(ctx, email):
     """
     Create local Linux user connected to Ubuntu store account
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.create_user(email)
+    pprint(result)
 
 
 @root.command('describe-audio')
@@ -265,12 +292,20 @@ def export_configuration(ctx, format):
 
 
 @root.command('generate-configuration')
+@click.option('--format', '-f', help='Output format (json, yaml)')
 @click.pass_context
-def generate_configuration(ctx, target):
+def generate_configuration(ctx, format):
     """
     Generate a new node configuration and print or save to file
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.generate_config()
+    if format == 'json':
+        print(json.dumps(result, indent=4))
+    elif format == 'yaml':
+        print(yaml.safe_dump(result, default_flow_style=False))
+    else:
+        pprint(result)
 
 
 @root.command('help')
@@ -283,12 +318,18 @@ def help(ctx):
 
 
 @root.command('import-configuration')
+@click.argument('path')
 @click.pass_context
-def import_configuration(ctx, target):
+def import_configuration(ctx, path):
     """
     Import a node configuration from file and apply changes
     """
-    pass
+    with open(path, 'r') as source:
+        config = yaml.safe_load(source)
+
+    client = ParadropClient(ctx.obj['target'])
+    result = client.set_config(config)
+    ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
 
 @root.command('import-ssh-key')
@@ -314,12 +355,30 @@ def import_ssh_key(ctx, path, user):
 
 
 @root.command('install-chute')
+@click.option('--directory', '-d', default='.', help='Directory containing chute files')
 @click.pass_context
-def install_chute(ctx, target):
+def install_chute(ctx, directory):
     """
     Install a new chute from the working directory
     """
-    pass
+    os.chdir(directory)
+
+    if not os.path.exists("paradrop.yaml"):
+        raise Exception("No paradrop.yaml file found in chute directory.")
+
+    client = ParadropClient(ctx.obj['target'])
+    with tempfile.TemporaryFile() as temp:
+        tar = tarfile.open(fileobj=temp, mode="w")
+        for dirName, subdirList, fileList in os.walk("."):
+            for fname in fileList:
+                path = os.path.join(dirName, fname)
+                arcname = os.path.normpath(path)
+                tar.add(path, arcname=arcname)
+        tar.close()
+
+        temp.seek(0)
+        result = client.install_tar(temp)
+        ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
 
 @root.command('list-audio-modules')
@@ -402,6 +461,17 @@ def list_chutes(ctx):
     pprint(result)
 
 
+@root.command('list-snap-interfaces')
+@click.pass_context
+def list_snap_interfaces(ctx):
+    """
+    List interfaces for snaps installed on the node
+    """
+    client = ParadropClient(ctx.obj['target'])
+    result = client.list_snap_interfaces()
+    pprint(result)
+
+
 @root.command('list-ssh-keys')
 @click.option('--user', '-u', default='paradrop', help='Local username')
 @click.pass_context
@@ -432,17 +502,23 @@ def login(ctx):
     """
     Interactively login using the local admin password
     """
-    click.echo('target: ' + ctx.obj['target'])
-    pass
+    base_url = "http://{}/api/v1".format(ctx.obj['target'])
+    username = router_login(base_url)
+    if username is not None:
+        click.echo("Logged in as: {}".format(username))
+    else:
+        click.echo("Log in failed.")
 
 
 @root.command('logout')
 @click.pass_context
-def logout(ctx, target):
+def logout(ctx):
     """
     Log out by removing stored credentials
     """
-    pass
+    base_url = "http://{}/api/v1".format(ctx.obj['target'])
+    removed = router_logout(base_url)
+    click.echo("Removed {} token(s).".format(removed))
 
 
 @root.command('open-chute-shell')
@@ -477,11 +553,18 @@ def provision(ctx, id, key, controller, wamp):
 
 @root.command('reboot')
 @click.pass_context
-def reboot(ctx, target):
+def reboot(ctx):
     """
     Reboot the node
     """
-    pass
+    change = {
+        'name': '__PARADROP__',
+        'updateClass': 'ROUTER',
+        'updateType': 'reboot'
+    }
+    client = ParadropClient(ctx.obj['target'])
+    result = client.add_change(change)
+    ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
 
 @root.command('remove-chute')
@@ -523,48 +606,105 @@ def restart_chute(ctx, chute):
 
 
 @root.command('set-configuration')
+@click.argument('path')
+@click.argument('value')
 @click.pass_context
-def set_configuration(ctx, target):
+def set_configuration(ctx, path, value):
     """
     Change a node configuration value and apply
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    config = client.get_config()
+
+    # This does some type inference for boolean, numerics, etc.
+    value = yaml.safe_load(value)
+
+    def set_value(parent, key, created):
+        if created:
+            print("Created new field {} = {}".format(path, value))
+        else:
+            current = parent[key]
+            print("Changed {} from {} to {}".format(path, current, value))
+        parent[key] = value
+
+    update_object(config, path, set_value)
+
+    result = client.set_config(config)
+    ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
 
 @root.command('set-sink-volume')
+@click.argument('sink')
+@click.argument('volume', nargs=-1)
 @click.pass_context
-def set_sink_volume(ctx, target):
+def set_sink_volume(ctx, sink, volume):
     """
     Configure audio sink volume
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+
+    # Convert to a list of floats. Be aware: the obvious approach
+    # list(volume) behaves strangely.
+    data = [float(vol) for vol in volume]
+
+    result = client.set_sink_volume(sink, data)
+    pprint(result)
 
 
 @root.command('set-source-volume')
+@click.argument('source')
+@click.argument('volume', nargs=-1)
 @click.pass_context
-def set_source_volume(ctx, target):
+def set_source_volume(ctx, source, volume):
     """
     Configure audio source volume
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+
+    # Convert to a list of floats. Be aware: the obvious approach
+    # list(volume) behaves strangely.
+    data = [float(vol) for vol in volume]
+
+    result = client.set_source_volume(source, data)
+    pprint(result)
 
 
 @root.command('set-password')
 @click.pass_context
-def set_password(ctx, target):
+def set_password(ctx):
     """
     Change the local admin password
     """
-    pass
+    username = builtins.input("Username: ")
+    while True:
+        password = getpass.getpass("New password: ")
+        confirm = getpass.getpass("Confirm password: ")
+
+        if password == confirm:
+            break
+        else:
+            print("Passwords do not match.")
+
+    print("Next, if prompted, you should enter the current username and password.")
+    client = ParadropClient(ctx.obj['target'])
+    result = client.set_password(username, password)
+    pprint(result)
 
 
 @root.command('shutdown')
 @click.pass_context
-def shutdown(ctx, target):
+def shutdown(ctx):
     """
     Shutdown the node
     """
-    pass
+    change = {
+        'name': '__PARADROP__',
+        'updateClass': 'ROUTER',
+        'updateType': 'shutdown'
+    }
+    client = ParadropClient(ctx.obj['target'])
+    result = client.add_change(change)
+    ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
 
 @root.command('start-chute')
@@ -603,12 +743,37 @@ def trigger_pdconf(ctx):
 
 
 @root.command('update-chute')
+@click.option('--directory', '-d', default='.', help='Directory containing chute files')
 @click.pass_context
-def update_chute(ctx, target):
+def update_chute(ctx, directory):
     """
     Install a new version of the chute from the working directory
     """
-    pass
+    os.chdir(directory)
+
+    if not os.path.exists("paradrop.yaml"):
+        raise Exception("No paradrop.yaml file found in chute directory.")
+
+    with open('paradrop.yaml', 'r') as source:
+        config = yaml.safe_load(source)
+
+    if 'name' not in config:
+        click.echo('Chute name is not defined in paradrop.yaml.')
+        return
+
+    client = ParadropClient(ctx.obj['target'])
+    with tempfile.TemporaryFile() as temp:
+        tar = tarfile.open(fileobj=temp, mode="w")
+        for dirName, subdirList, fileList in os.walk("."):
+            for fname in fileList:
+                path = os.path.join(dirName, fname)
+                arcname = os.path.normpath(path)
+                tar.add(path, arcname=arcname)
+        tar.close()
+
+        temp.seek(0)
+        result = client.install_tar(temp, name=config['name'])
+        ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
 
 @root.command('watch-change-logs')
@@ -643,5 +808,19 @@ def watch_chute_logs(ctx, chute):
         time = arrow.get(data['timestamp']).to('local').datetime
         msg = data['message'].rstrip()
         print("{}: {}".format(time, msg))
+
+    router_ws_request(url, on_message=on_message)
+
+
+@root.command('watch-logs')
+@click.pass_context
+def watch_logs(ctx):
+    """
+    Stream log messages from the Paradrop daemon
+    """
+    url = "ws://{}/ws/paradrop_logs".format(ctx.obj['target'])
+
+    def on_message(ws, message):
+        print(message)
 
     router_ws_request(url, on_message=on_message)

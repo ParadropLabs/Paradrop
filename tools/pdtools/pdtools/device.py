@@ -20,7 +20,10 @@ from .comm import change_json, router_login, router_logout, router_request, rout
 @click.pass_context
 def device(ctx, address):
     """
-    Sub-tree for configuring a device.
+    (deprecated) Sub-tree for configuring a device.
+
+    These commands are deprecated. Please use the equivalent commands under
+    `pdtools node --help`.
     """
     if address.startswith("http"):
         parts = urlparse(address)
