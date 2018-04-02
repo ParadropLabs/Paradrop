@@ -35,6 +35,15 @@ class ParadropClient(object):
         self.base_url = "http://{}/api/v1".format(host)
 
 
+    def add_ssh_key(self, key_text, user="paradrop"):
+        """
+        Add an authorized key for SSH access.
+        """
+        url = "{}/config/sshKeys/{}".format(self.base_url, user)
+        data = {
+            'key': key_text
+        }
+        return self.request("POST", url, json=data)
 
     def get_audio(self):
         """
@@ -57,6 +66,14 @@ class ParadropClient(object):
         url = "{}/chutes/{}/cache".format(self.base_url, chute_name)
         return self.request("GET", url)
 
+    def get_chute_client(self, chute_name, network, client):
+        """
+        Get information about a chute's network client.
+        """
+        url = "{}/chutes/{}/networks/{}/stations/{}".format(self.base_url,
+                chute_name, network, client)
+        return self.request("GET", url)
+
     def get_chute_config(self, chute_name):
         """
         Get chute configuration.
@@ -69,6 +86,20 @@ class ParadropClient(object):
         Get node configuration.
         """
         url = self.base_url + "/config/hostconfig"
+        return self.request("GET", url)
+
+    def get_pdconf(self):
+        """
+        Get status of the pdconf subsystem.
+        """
+        url = self.base_url + "/config/pdconf"
+        return self.request("GET", url)
+
+    def get_provision(self):
+        """
+        Get provisioning status of the node.
+        """
+        url = self.base_url + "/config/provision"
         return self.request("GET", url)
 
     def list_audio_modules(self):
@@ -99,6 +130,14 @@ class ParadropClient(object):
         url = self.base_url + "/changes/"
         return self.request("GET", url)
 
+    def list_chute_clients(self, chute_name, network):
+        """
+        List clients connected to the chute's network
+        """
+        url = "{}/chutes/{}/networks/{}/stations".format(self.base_url,
+                chute_name, network)
+        return self.request("GET", url)
+
     def list_chute_networks(self, chute_name):
         """
         List networks configured by the chute.
@@ -113,6 +152,13 @@ class ParadropClient(object):
         url = self.base_url + "/chutes/"
         return self.request("GET", url)
 
+    def list_ssh_keys(self, user="paradrop"):
+        """
+        List authorized keys for SSH access.
+        """
+        url = "{}/config/sshKeys/{}".format(self.base_url, user)
+        return self.request("GET", url)
+
     def load_audio_module(self, module_name):
         """
         Load a module into the audio subsystem.
@@ -121,6 +167,23 @@ class ParadropClient(object):
         data = {
             "name": module_name
         }
+        return self.request("POST", url, json=data)
+
+    def provision(self, id, key, controller=None, wamp=None):
+        """
+        Provision the node by connecting to a cloud controller.
+        """
+        url = self.base_url + "/config/provision"
+
+        data = {
+            'routerId': id,
+            'apitoken': key
+        }
+        if controller is not None:
+            data['pdserver'] = controller
+        if wamp is not None:
+            data['wampRouter'] = wamp
+
         return self.request("POST", url, json=data)
 
     def set_chute_config(self, chute_name, config):
@@ -157,6 +220,14 @@ class ParadropClient(object):
         url = self.base_url + "/chutes/" + chute_name
         return self.request("DELETE", url)
 
+    def remove_chute_client(self, chute_name, network, client):
+        """
+        Remove a connected client from the chute's network.
+        """
+        url = "{}/chutes/{}/networks/{}/stations/{}".format(self.base_url,
+                chute_name, network, client)
+        return self.request("DELETE", url)
+
     def restart_chute(self, chute_name):
         """
         Restart a chute.
@@ -177,6 +248,13 @@ class ParadropClient(object):
         """
         url = "{}/chutes/{}/stop".format(self.base_url, chute_name)
         return self.request("POST", url)
+
+    def trigger_pdconf(self):
+        """
+        Trigger pdconf to reload configuration.
+        """
+        url = self.base_url + "/config/pdconf"
+        return self.request("PUT", url)
 
 
 

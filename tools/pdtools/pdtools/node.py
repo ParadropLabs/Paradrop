@@ -3,6 +3,7 @@ import getpass
 import json
 import operator
 import os
+import re
 import tarfile
 import tempfile
 from pprint import pprint
@@ -15,6 +16,12 @@ import yaml
 
 from .comm import change_json, router_login, router_logout, router_request, router_ws_request
 from .paradrop_client import ParadropClient
+
+
+# Default target for node commands. Unless the environment variable is set, we
+# will default to "localhost", which means all of the node commands can be run
+# conveniently on the node itself.
+PDTOOLS_TARGET_NODE = os.environ.get("PDTOOLS_TARGET_NODE", "localhost")
 
 
 def get_base_url(target):
@@ -78,8 +85,18 @@ def open_editor(data, description):
     return new_data
 
 
+def print_pdconf(data):
+    data.sort(key=operator.itemgetter("age"))
+
+    print("{:3s} {:12s} {:20s} {:30s} {:5s}".format("Age", "Type", "Name",
+        "Comment", "Pass"))
+    for item in data:
+        print("{age:<3d} {type:12s} {name:20s} {comment:30s} {success}".format(**item))
+
+
 @click.group('node')
-@click.option('--target', '-t', default='localhost', help='Target node name or address')
+@click.option('--target', '-t', default=PDTOOLS_TARGET_NODE,
+        help='Target node name or address (default: {}'.format(PDTOOLS_TARGET_NODE))
 @click.pass_context
 def root(ctx, target):
     ctx.obj['target'] = target
@@ -151,21 +168,39 @@ def describe_chute_configuration(ctx, chute):
 
 
 @root.command('describe-chute-network-client')
+@click.argument('chute')
+@click.argument('network')
+@click.argument('client')
 @click.pass_context
-def describe_chute_network_client(ctx, target):
+def describe_chute_network_client(ctx, chute, network, client):
     """
     Display information about a connected client
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.get_chute_client(chute, network, client)
+    pprint(result)
 
 
 @root.command('describe-pdconf')
 @click.pass_context
-def describe_pdconf(ctx, target):
+def describe_pdconf(ctx):
     """
     Show status of the pdconf subsystem
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.get_pdconf()
+    print_pdconf(result)
+
+
+@root.command('describe-provision')
+@click.pass_context
+def describe_provision(ctx):
+    """
+    Show provisioning status of the node
+    """
+    client = ParadropClient(ctx.obj['target'])
+    result = client.get_provision()
+    pprint(result)
 
 
 @root.command('edit-configuration')
@@ -238,6 +273,15 @@ def generate_configuration(ctx, target):
     pass
 
 
+@root.command('help')
+@click.pass_context
+def help(ctx):
+    """
+    Show this message and exit
+    """
+    click.echo(ctx.parent.get_help())
+
+
 @root.command('import-configuration')
 @click.pass_context
 def import_configuration(ctx, target):
@@ -248,12 +292,25 @@ def import_configuration(ctx, target):
 
 
 @root.command('import-ssh-key')
+@click.argument('path')
+@click.option('--user', '-u', default='paradrop', help='Local username')
 @click.pass_context
-def import_ssh_key(ctx, target):
+def import_ssh_key(ctx, path, user):
     """
     Add an authorized key from a public key file
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    with open(path, 'r') as source:
+        key_string = source.read().strip()
+
+    match = re.search("-----BEGIN \w+ PRIVATE KEY-----", key_string)
+    if match is not None:
+        print("The path ({}) contains a private key.".format(path))
+        print("Please provide the path to your public key.")
+        return
+
+    result = client.add_ssh_key(key_string, user=user)
+    pprint(result)
 
 
 @root.command('install-chute')
@@ -322,12 +379,16 @@ def list_chute_networks(ctx, chute):
 
 
 @root.command('list-chute-network-clients')
+@click.argument('chute')
+@click.argument('network')
 @click.pass_context
-def list_chute_network_clients(ctx, target):
+def list_chute_network_clients(ctx, chute, network):
     """
     List clients connected to the chute's network
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.list_chute_clients(chute, network)
+    pprint(result)
 
 
 @root.command('list-chutes')
@@ -342,12 +403,15 @@ def list_chutes(ctx):
 
 
 @root.command('list-ssh-keys')
+@click.option('--user', '-u', default='paradrop', help='Local username')
 @click.pass_context
-def list_ssh_keys(ctx, target):
+def list_ssh_keys(ctx, user):
     """
     List authorized keys for SSH access
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.list_ssh_keys(user=user)
+    pprint(result)
 
 
 @root.command('load-audio-module')
@@ -397,12 +461,18 @@ def open_chute_shell(ctx, chute):
 
 
 @root.command('provision')
+@click.argument('id')
+@click.argument('key')
+@click.option('--controller', '-c', default="https://paradrop.org", help="Cloud controller endpoint")
+@click.option('--wamp', '-w', default="ws://paradrop.org:9086/ws", help="WAMP endpoint")
 @click.pass_context
-def provision(ctx, target):
+def provision(ctx, id, key, controller, wamp):
     """
     Associate the node with a cloud controller
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.provision(id, key, controller=controller, wamp=wamp)
+    pprint(result)
 
 
 @root.command('reboot')
@@ -427,12 +497,17 @@ def remove_chute(ctx, chute):
 
 
 @root.command('remove-chute-network-client')
+@click.argument('chute')
+@click.argument('network')
+@click.argument('client')
 @click.pass_context
-def remove_chute_network_client(ctx):
+def remove_chute_network_client(ctx, chute, network, client):
     """
     Remove a connected client from the chute's network
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.remove_chute_client(chute, network, client)
+    pprint(result)
 
 
 @root.command('restart-chute')
@@ -518,11 +593,13 @@ def stop_chute(ctx, chute):
 
 @root.command('trigger-pdconf')
 @click.pass_context
-def trigger_pdconf(ctx, target):
+def trigger_pdconf(ctx):
     """
     Trigger pdconf to reload configuration
     """
-    pass
+    client = ParadropClient(ctx.obj['target'])
+    result = client.trigger_pdconf()
+    print_pdconf(result)
 
 
 @root.command('update-chute')
@@ -553,9 +630,18 @@ def watch_change_logs(ctx, change_id):
 
 
 @root.command('watch-chute-logs')
+@click.argument('chute')
 @click.pass_context
-def watch_chute_logs(ctx, target):
+def watch_chute_logs(ctx, chute):
     """
     Stream log messages from a running chute
     """
-    pass
+    url = "ws://{}/sockjs/logs/{}/websocket".format(ctx.obj['target'], chute)
+
+    def on_message(ws, message):
+        data = json.loads(message)
+        time = arrow.get(data['timestamp']).to('local').datetime
+        msg = data['message'].rstrip()
+        print("{}: {}".format(time, msg))
+
+    router_ws_request(url, on_message=on_message)
