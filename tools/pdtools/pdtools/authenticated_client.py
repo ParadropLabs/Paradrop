@@ -1,14 +1,9 @@
-import getpass
-import os
-import sys
-
 from six.moves.urllib.parse import urlparse
 
-import builtins
 import requests
 
 from .config import PdtoolsConfig
-from .token_provider import *
+from .token_provider import EnvironmentVariableTokenProvider, SavedTokenProvider, DefaultLoginTokenProvider, LoginPromptTokenProvider
 
 
 class AuthenticatedClient(object):

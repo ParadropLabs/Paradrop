@@ -12,12 +12,10 @@
 from __future__ import print_function
 
 import base64
-import getpass
 import os
 from pprint import pprint
 from six.moves.urllib.parse import urlparse
 
-import builtins
 import requests
 import websocket
 

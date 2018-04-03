@@ -1,12 +1,6 @@
-import base64
-import getpass
 import os
-import re
 from simplejson.scanner import JSONDecodeError
 from six.moves.urllib.parse import urlparse
-
-import builtins
-import requests
 
 from .authenticated_client import AuthenticatedClient
 from .config import PdtoolsConfig

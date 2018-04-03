@@ -1,10 +1,5 @@
-import base64
-import getpass
 import os
 import re
-
-import builtins
-import requests
 
 from .authenticated_client import AuthenticatedClient
 from .devices.camera import Camera
