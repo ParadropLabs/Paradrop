@@ -1,3 +1,14 @@
+#
+# This module is DEPRECATED and should be removed prior to the 1.0 release.
+#
+# Most functionality has been moved to the AuthenticatedClient base class along
+# with the ParadropClient and ControllerClient child classes. Some of the old
+# command trees (device, group, routers) still depend on the functions in this
+# module, and in particular, we should keep the "device" command tree around
+# until the 1.0 release because the router_request function here supports
+# Paradrop versions prior to 0.10.
+#
+
 from __future__ import print_function
 
 import base64
@@ -11,6 +22,7 @@ import requests
 import websocket
 
 from .config import PdtoolsConfig
+from .util import LoginGatherer
 
 
 PDSERVER_URL = os.environ.get('PDSERVER_URL', 'https://paradrop.org')
@@ -30,60 +42,6 @@ def change_json(data, path, value):
             parts[i] = int(parts[i])
         head = head[parts[i]]
     head[parts[-1]] = value
-
-
-class LoginGatherer(object):
-    """
-    LoginGatherer is an iterator that produces username/password tuples.
-
-    On the first iteration, it returns a default username/password combination
-    for convenience. On subsequent iterations, it prompts the user for input.
-
-    The class method prompt() can be used directly in a loop for situations
-    where the default is not desired.
-
-    Usage examples:
-
-    for username, password in LoginGatherer(netloc):
-        ...
-
-    while True:
-        username, password = LoginGatherer.prompt(netloc)
-    """
-    def __init__(self, netloc):
-        self.first = True
-        self.netloc = netloc
-
-    def __iter__(self):
-        self.first = True
-        return self
-
-    def __next__(self):
-        if self.first:
-            self.first = False
-            return (LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
-        else:
-            return LoginGatherer.prompt(self.netloc)
-
-    def next(self):
-        """
-        Get the next username and password pair.
-        """
-        return self.__next__()
-
-    @classmethod
-    def prompt(cls, netloc):
-        """
-        Prompt the user to enter a username and password.
-
-        The netloc argument is presented in the prompt, so that the user knows
-        the relevant authentication domain.
-        """
-        print("Please enter your username and password for {}."
-              .format(netloc))
-        username = builtins.input("Username: ")
-        password = getpass.getpass("Password: ")
-        return (username, password)
 
 
 def pdserver_request(method, url, json=None, headers=None):
@@ -254,7 +212,7 @@ def router_request(method, url, json=None, headers=None, dump=True, data=None, *
             return res
 
     for username, password in LoginGatherer(url_parts.netloc):
-        # Try to get a token for later use. Prior to 1.10, paradrop-daemon
+        # Try to get a token for later use. Prior to 0.10, paradrop-daemon
         # does not not support tokens.
         _, token = send_router_login(url, username, password, session)
         if token is not None:

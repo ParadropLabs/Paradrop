@@ -15,6 +15,7 @@ from . import routers
 from . import store
 
 # Future CLI
+from . import cloud
 from . import node
 
 
@@ -49,6 +50,7 @@ root.add_command(device.device)
 root.add_command(routers.routers)
 root.add_command(store.store)
 
+root.add_command(cloud.root)
 root.add_command(node.root)
 groups.register_commands(root)
 

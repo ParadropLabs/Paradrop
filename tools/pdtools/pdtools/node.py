@@ -14,9 +14,9 @@ import builtins
 import click
 import yaml
 
-from .comm import change_json, router_login, router_logout, router_request, router_ws_request
+from . import util
+from .comm import router_ws_request
 from .paradrop_client import ParadropClient
-from .util import update_object
 
 
 # Default target for node commands. Unless the environment variable is set, we
@@ -46,44 +46,6 @@ def get_base_url(target):
 
     else:
         return "http://{}/api/v1".format(target)
-
-
-def open_editor(data, description):
-    if data is None:
-        data = {}
-
-    fd, path = tempfile.mkstemp()
-    os.close(fd)
-
-    with open(path, 'w') as output:
-        if len(data) > 0:
-            output.write(yaml.safe_dump(data, default_flow_style=False))
-        output.write("\n")
-        output.write("# You are editing the configuration for the {}.\n".format(description))
-        output.write("# Blank lines and lines starting with '#' will be ignored.\n")
-        output.write("# Save and exit to apply changes; exit without saving to discard.\n")
-
-    # Get modified time before calling editor.
-    orig_mtime = os.path.getmtime(path)
-
-    editor = os.environ.get("EDITOR", "vim")
-    os.spawnvpe(os.P_WAIT, editor, [editor, path], os.environ)
-
-    with open(path, 'r') as source:
-        data = source.read()
-        new_data = yaml.safe_load(data)
-
-    # If result is null, convert to an empty dict before sending to router.
-    if new_data is None:
-        new_data = {}
-
-    # Check if the file has been modified, and if it has, send the update.
-    new_mtime = os.path.getmtime(path)
-    if new_mtime == orig_mtime:
-        new_data = None
-
-    os.remove(path)
-    return new_data
 
 
 def print_pdconf(data):
@@ -238,7 +200,7 @@ def edit_configuration(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     old_data = client.get_config()
-    new_data = open_editor(old_data, "node")
+    new_data = util.open_yaml_editor(old_data, "node")
     if new_data is not None:
         result = client.set_config(new_data)
         ctx.invoke(watch_change_logs, change_id=result['change_id'])
@@ -253,7 +215,7 @@ def edit_chute_configuration(ctx, chute):
     """
     client = ParadropClient(ctx.obj['target'])
     old_data = client.get_chute_config(chute)
-    new_data = open_editor(old_data, "chute " + chute)
+    new_data = util.open_yaml_editor(old_data, "chute " + chute)
     if new_data is not None:
         result = client.set_chute_config(chute, new_data)
         ctx.invoke(watch_change_logs, change_id=result['change_id'])
@@ -268,7 +230,7 @@ def edit_chute_variables(ctx, chute):
     """
     client = ParadropClient(ctx.obj['target'])
     old_data = client.get_chute(chute).get('environment', {})
-    new_data = open_editor(old_data, "chute " + chute)
+    new_data = util.open_yaml_editor(old_data, "chute " + chute)
     if new_data is not None:
         result = client.set_chute_variables(chute, new_data)
         ctx.invoke(watch_change_logs, change_id=result['change_id'])
@@ -502,12 +464,12 @@ def login(ctx):
     """
     Interactively login using the local admin password
     """
-    base_url = "http://{}/api/v1".format(ctx.obj['target'])
-    username = router_login(base_url)
-    if username is not None:
-        click.echo("Logged in as: {}".format(username))
+    client = ParadropClient(ctx.obj['target'])
+    token = client.login()
+    if token is None:
+        click.echo("Login attempt failed.")
     else:
-        click.echo("Log in failed.")
+        click.echo("Login successful.")
 
 
 @root.command('logout')
@@ -516,8 +478,8 @@ def logout(ctx):
     """
     Log out by removing stored credentials
     """
-    base_url = "http://{}/api/v1".format(ctx.obj['target'])
-    removed = router_logout(base_url)
+    client = ParadropClient(ctx.obj['target'])
+    removed = client.logout()
     click.echo("Removed {} token(s).".format(removed))
 
 
@@ -627,7 +589,7 @@ def set_configuration(ctx, path, value):
             print("Changed {} from {} to {}".format(path, current, value))
         parent[key] = value
 
-    update_object(config, path, set_value)
+    util.update_object(config, path, set_value)
 
     result = client.set_config(config)
     ctx.invoke(watch_change_logs, change_id=result['change_id'])

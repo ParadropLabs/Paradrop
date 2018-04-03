@@ -7,7 +7,9 @@ from .comm import pdserver_request
 @click.pass_context
 def list_groups(ctx):
     """
-    List user groups.
+    (deprecated) List user groups.
+
+    Please use `pdtools cloud list-groups`.
     """
     url = ctx.obj['pdserver_url'] + "/api/groups"
     result = pdserver_request('GET', url)
@@ -30,7 +32,10 @@ def list_groups(ctx):
 @click.argument('group_id')
 def group(ctx, group_id):
     """
-    Manage a user group.
+    (deprecated) Manage a user group.
+
+    These commands are deprecated. Please use the equivalent commands under
+    `pdtools cloud --help`.
     """
     ctx.obj['group_url'] = ctx.obj['pdserver_url'] + "/api/groups/{}".format(group_id)
 

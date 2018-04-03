@@ -7,7 +7,10 @@ from .comm import pdserver_request
 @click.pass_context
 def routers(ctx):
     """
-    Access router information on the controller.
+    (deprecated) Access router information on the controller.
+
+    These commands are deprecated. Please use the equivalent commands under
+    `pdtools cloud --help`.
     """
     ctx.obj['routers_url'] = ctx.obj['pdserver_url'] + "/api/routers"
 

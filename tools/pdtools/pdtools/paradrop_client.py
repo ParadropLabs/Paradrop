@@ -6,6 +6,7 @@ import re
 import builtins
 import requests
 
+from .authenticated_client import AuthenticatedClient
 from .devices.camera import Camera
 
 
@@ -16,7 +17,7 @@ PARADROP_API_TOKEN = os.environ.get("PARADROP_API_TOKEN", None)
 PARADROP_CHUTE_NAME = os.environ.get("PARADROP_CHUTE_NAME", None)
 
 
-class ParadropClient(object):
+class ParadropClient(AuthenticatedClient):
     """
     Client for interacting with a Paradrop daemon instance.
 
@@ -30,6 +31,8 @@ class ParadropClient(object):
     def __init__(self, host=None):
         if host is None:
             host = "172.17.0.1"
+
+        super(ParadropClient, self).__init__("node", "http://"+host)
 
         self.host = host
         self.base_url = "http://{}/api/v1".format(host)
@@ -413,47 +416,3 @@ class ParadropClient(object):
         result = self.request("GET", url)
 
         return result
-
-    def request(self, method, url, json=None, headers=None, **kwargs):
-        """
-        Issue a router API request.
-
-        This will prompt for a username and password if necessary.
-        """
-        session = requests.Session()
-        request = requests.Request(method, url, json=json, headers=headers, **kwargs)
-
-        # TODO: Implement selectable auth methods including:
-        # - Default username and password
-        # - Prompt for username and password
-
-        if PARADROP_API_TOKEN is None:
-            # First try with the default username and password.
-            # If that fails, prompt user and try again.
-            userpass = "{}:{}".format(LOCAL_DEFAULT_USERNAME, LOCAL_DEFAULT_PASSWORD)
-
-            encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
-            session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
-
-        else:
-            value = 'Bearer {}'.format(PARADROP_API_TOKEN)
-            session.headers.update({'Authorization': value})
-
-        prepped = session.prepare_request(request)
-
-        while True:
-            res = session.send(prepped)
-            if res.status_code == 401:
-                username = builtins.input("Username: ")
-                password = getpass.getpass("Password: ")
-                userpass = "{}:{}".format(username, password).encode('utf-8')
-                encoded = base64.b64encode(userpass.encode('utf-8')).decode('ascii')
-
-                session.headers.update({'Authorization': 'Basic {}'.format(encoded)})
-                prepped = session.prepare_request(request)
-
-            elif res.ok:
-                return res.json()
-
-            else:
-                return None
