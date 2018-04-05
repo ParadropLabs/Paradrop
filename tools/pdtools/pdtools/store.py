@@ -60,7 +60,10 @@ def chute_resolve_source(source, config):
 @click.pass_context
 def store(ctx):
     """
-    Interact with chute store.
+    (deprecated) Interact with chute store.
+
+    These commands are deprecated. Please use the equivalent commands under
+    `pdtools chute --help`.
     """
     ctx.obj['chutes_url'] = ctx.obj['pdserver_url'] + '/api/chutes'
 

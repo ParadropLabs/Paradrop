@@ -8,13 +8,14 @@ import os
 
 import click
 
-from . import chute
+# Deprecated command groups to be removed prior to 1.0 release
 from . import device
 from . import groups
 from . import routers
 from . import store
 
-# Future CLI
+# Command groups
+from . import chute
 from . import cloud
 from . import node
 
@@ -45,14 +46,25 @@ def root():
     pass
 
 
-root.add_command(chute.chute)
+@root.command('help')
+@click.pass_context
+def help(ctx):
+    """
+    Show this message and exit
+    """
+    click.echo(ctx.parent.get_help())
+
+
+# Deprecated command groups to be removed prior to 1.0 release
 root.add_command(device.device)
 root.add_command(routers.routers)
 root.add_command(store.store)
+groups.register_commands(root)
 
+# Command groups
+root.add_command(chute.root)
 root.add_command(cloud.root)
 root.add_command(node.root)
-groups.register_commands(root)
 
 
 def main():

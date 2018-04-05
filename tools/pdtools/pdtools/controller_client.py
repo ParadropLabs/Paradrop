@@ -37,6 +37,18 @@ class ControllerClient(AuthenticatedClient):
         }
         return self.request("POST", url, json=data)
 
+    def create_chute(self, name, description, public=False):
+        """
+        Create a new chute in the store.
+        """
+        url = self.base_url + "/chutes"
+        data = {
+            "name": name,
+            "description": description,
+            "public": public
+        }
+        return self.request("POST", url, json=data)
+
     def create_node(self, name, orphaned=False, claim=None):
         """
         Create a new node tracked by the controller.
@@ -63,6 +75,21 @@ class ControllerClient(AuthenticatedClient):
         }
         return self.request("POST", url, json=data)
 
+    def create_version(self, name, config):
+        """
+        Create a new chute version.
+        """
+        chute = self.find_chute(name)
+        if chute is None:
+            return None
+
+        url = "{}/chutes/{}/versions".format(self.base_url, chute['_id'])
+        data = {
+            "chute_id": chute['_id'],
+            "config": config
+        }
+        return self.request("POST", url, json=data)
+
     def delete_node(self, name):
         """
         Delete a node tracked by the controller.
@@ -73,6 +100,20 @@ class ControllerClient(AuthenticatedClient):
             return self.request("DELETE", url)
         else:
             return None
+
+    def find_chute(self, name):
+        """
+        Find a chute by name or id.
+        """
+        # If this client object is ever used for multiple requests during its
+        # lifetime, we could consider caching the group list locally for a
+        # better response time. Then we need to add cache invalidation to all
+        # of the methods that might affect the group list.
+        chutes = self.list_chutes()
+        for chute in chutes:
+            if chute['_id'] == name or chute['name'] == name:
+                return chute
+        return None
 
     def find_group(self, name):
         """
@@ -119,6 +160,13 @@ class ControllerClient(AuthenticatedClient):
         }
         return self.request("POST", url, json=data)
 
+    def list_chutes(self):
+        """
+        List chutes that the user owns or has access to.
+        """
+        url = self.base_url + "/chutes"
+        return self.request("GET", url)
+
     def list_groups(self):
         """
         List groups that the user belongs to.
@@ -131,6 +179,17 @@ class ControllerClient(AuthenticatedClient):
         List nodes that the user owns or has access to.
         """
         url = self.base_url + "/routers"
+        return self.request("GET", url)
+
+    def list_versions(self, name):
+        """
+        List nodes that the user owns or has access to.
+        """
+        chute = self.find_chute(name)
+        if chute is None:
+            return []
+
+        url = "{}/chutes/{}/versions".format(self.base_url, chute['_id'])
         return self.request("GET", url)
 
     def save_node(self, node):

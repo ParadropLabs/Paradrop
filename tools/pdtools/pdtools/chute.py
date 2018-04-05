@@ -1,30 +1,84 @@
+import builtins
 import click
 import json
+import operator
 import os
+
+from pprint import pprint
+
+import git
 import yaml
 
+from .controller_client import ControllerClient
 from .helpers.chute import build_chute
 from .store import chute_resolve_source
 from .util import update_object
 
 
-@click.group()
-@click.pass_context
-def chute(ctx):
+def chute_find_field(chute, key, default=Exception):
     """
-    Sub-tree for building chutes.
+    Find a field in a chute definition loading from a paradrop.yaml file.
+    """
+    if key in chute:
+        return chute[key]
+    elif 'config' in chute and key in chute['config']:
+        return chute['config'][key]
+    elif isinstance(default, type):
+        raise default("{} field not found in chute definition.".format(key))
+    else:
+        return default
+
+
+def chute_resolve_source(source, config):
+    """
+    Resolve the source section from paradrop.yaml to store configuration.
+
+    If git/http, add an appropriate download section to the chute
+    configuration. For git repos, we also identify the latest commit and add
+    that to the download information. If type is inline, add a dockerfile
+    string field to the chute and no download section.
+    """
+    if 'type' not in source:
+        raise Exception("Source type not specified for chute.")
+
+    source_type = source['type']
+    if source_type == 'http':
+        config['download'] = {
+            'url': source['url']
+        }
+
+    elif source_type == 'git':
+        repo = git.Repo('.')
+        config['download'] = {
+            'url': source['url'],
+            'checkout': str(repo.head.commit)
+        }
+
+    elif source_type == 'inline':
+        with open('Dockerfile', 'r') as dockerfile:
+            config['dockerfile'] = dockerfile.read()
+
+    else:
+        raise Exception("Invalid source type {}".format(source_type))
+
+
+@click.group('chute')
+@click.pass_context
+def root(ctx):
+    """
+    Chute development and publishing functions.
     """
     pass
 
 
-@chute.command('create-wifi-interface')
-@click.pass_context
+@root.command('add-wifi-ap')
 @click.argument('essid')
 @click.option('--password', default=None)
 @click.option('--force', default=False, is_flag=True)
-def create_wifi_interface(ctx, essid, password, force):
+@click.pass_context
+def add_wifi_ap(ctx, essid, password, force):
     """
-    Add a Wi-Fi interface (AP mode) to the chute configuration.
+    Add a WiFi AP to the chute configuration.
     """
     with open('paradrop.yaml', 'r') as source:
         chute = yaml.safe_load(source)
@@ -64,14 +118,54 @@ def create_wifi_interface(ctx, essid, password, force):
         yaml.safe_dump(chute, output, default_flow_style=False)
 
 
-@chute.command('cloud-config')
+@root.command('create-version')
 @click.pass_context
-def cloud_config(ctx):
+def create_version(ctx):
     """
-    Produce a JSON config object that can be used with cloud API.
+    Push a new version of the chute to the store.
+    """
+    if not os.path.exists("paradrop.yaml"):
+        raise Exception("No paradrop.yaml file found in working directory.")
+
+    with open('paradrop.yaml', 'r') as source:
+        chute = yaml.safe_load(source)
+
+    name = chute_find_field(chute, 'name')
+    source = chute_find_field(chute, 'source')
+    config = chute.get('config', {})
+
+    chute_resolve_source(source, config)
+
+    client = ControllerClient()
+    result = client.find_chute(name)
+    if result is None:
+        raise Exception("Could not find ID for chute {} - is it registered?".format(name))
+
+    result = client.create_version(name, config)
+    pprint(result)
+
+
+@root.command('describe')
+@click.argument('name')
+@click.pass_context
+def describe(ctx, name):
+    """
+    Show detailed information about a chute in the store.
+    """
+    client = ControllerClient()
+    result = client.find_chute(name)
+    pprint(result)
+
+
+@root.command('export-configuration')
+@click.option('--format', '-f', help="Format (json or yaml)")
+@click.pass_context
+def export_configuration(ctx, format):
+    """
+    Export chute configuration in JSON or YAML format.
 
     The configuration format used by the cloud API is slightly different
-    from the paradrop.yaml file. This command dumps a JSON object in
+    from the paradrop.yaml file. This command can export a JSON object in
     a form suitable for installing the chute through the cloud API.
 
     The config object will usually be used in an envelope like the following:
@@ -95,16 +189,28 @@ def cloud_config(ctx):
 
     chute_resolve_source(chute['source'], config)
 
-    print(json.dumps(config, sort_keys=True, indent=2))
+    if format == "json":
+        print(json.dumps(config, sort_keys=True, indent=2))
+    elif format == "yaml":
+        print(yaml.safe_dump(config, default_flow_style=False))
+    else:
+        pprint(config)
 
 
-@chute.command()
+@root.command('help')
 @click.pass_context
-def init(ctx):
+def help(ctx):
+    """
+    Show this message and exit
+    """
+    click.echo(ctx.parent.get_help())
+
+
+@root.command('initialize')
+@click.pass_context
+def initialize(ctx):
     """
     Interactively create a paradrop.yaml file.
-
-    This will ask the user some questions and then writes a paradrop.yaml file.
     """
     chute = build_chute()
     with open("paradrop.yaml", "w") as output:
@@ -123,13 +229,78 @@ def init(ctx):
                 json.dump(data, output, sort_keys=True, indent=2)
 
 
-@chute.command()
+@root.command('list-chutes')
 @click.pass_context
+def list_chutes(ctx):
+    """
+    List chutes in the store that you own or have access to.
+    """
+    client = ControllerClient()
+    result = client.list_chutes()
+    click.echo("Name                             Ver Description")
+    for chute in sorted(result, key=operator.itemgetter('name')):
+        click.echo("{name:32s} {current_version:3d} {description}".format(**chute))
+
+
+@root.command('list-versions')
+@click.argument('name')
+@click.pass_context
+def list_versions(ctx, name):
+    """
+    List versions of a chute in the store.
+    """
+    client = ControllerClient()
+    result = client.list_versions(name)
+    click.echo("Version GitCheckout")
+    for version in sorted(result, key=operator.itemgetter('version')):
+        try:
+            code = version['config']['download']['checkout']
+        except:
+            code = "N/A"
+        print("{:7s} {}".format(str(version['version']), code))
+
+
+@root.command()
+@click.pass_context
+@click.option('--public/--not-public', default=False)
+def register(ctx, public):
+    """
+    Register a chute with the store.
+    """
+    if not os.path.exists("paradrop.yaml"):
+        raise Exception("No paradrop.yaml file found in working directory.")
+
+    with open('paradrop.yaml', 'r') as source:
+        chute = yaml.safe_load(source)
+
+    name = chute_find_field(chute, 'name')
+    description = chute_find_field(chute, 'description')
+
+    print("Name: {}".format(name))
+    print("Description: {}".format(description))
+    print("Public: {}".format(public))
+    print("")
+
+    prompt = "Ready to send this information to {} (Y/N)? ".format(
+            ctx.obj['pdserver_url'])
+    response = builtins.input(prompt)
+    print("")
+
+    if response.upper().startswith("Y"):
+        client = ControllerClient()
+        result = client.create_chute(name, description, public=public)
+        pprint(result)
+    else:
+        print("Operation cancelled.")
+
+
+@root.command('set')
 @click.argument('path')
 @click.argument('value')
-def set(ctx, path, value):
+@click.pass_context
+def set_config(ctx, path, value):
     """
-    Set a value in the chute configuration file.
+    Set a value in the paradrop.yaml file.
 
     Example: set config.web.port 80
     """
