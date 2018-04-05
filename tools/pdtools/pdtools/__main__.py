@@ -1,8 +1,28 @@
 """
 Paradrop command line utility.
 
-Environment Variables:
-    PDSERVER_URL    Paradrop controller URL [default: https://paradrop.org].
+Two guiding principles were used in the design of the Paradrop command
+line utility.
+
+* The command tree should be relatively flat for easy discoverability.
+Commands are grouped into a few cohesive modules (chute, cloud, and node).
+All of the commands in the cloud module make use of the cloud controller
+API, for example. There are no further subgroups under these top-level
+groups, which means that `pdtools cloud --help` lists all relevant
+commands.
+
+* Commands should be self-evident in their effect. All command names
+begin with a verb. Commands that begin with "list-" can be expected
+to produce a table of output; commands that begin with "create-" can
+be expected to result in the creation of a new resource; and so on.
+Although "describe-" is a bit verbose, it conveys a sense that this
+command returns everything one needs to know about an object in a way that
+"get" does not. It is possible to enable tab completion when pdtools
+is installed as a system package.
+
+To enable tab completion, add the following line to your .bashrc file:
+
+    eval "$(_PDTOOLS_COMPLETE=source pdtools)"
 """
 import os
 
@@ -39,9 +59,6 @@ CONTEXT_SETTINGS = dict(
 def root():
     """
     Paradrop command line utility.
-
-    Environment Variables
-        PDSERVER_URL    ParaDrop controller URL [default: https://paradrop.org]
     """
     pass
 

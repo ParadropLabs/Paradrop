@@ -1,3 +1,13 @@
+"""
+This module defines click commands for managing a Paradrop edge compute
+node.
+
+One important point about how these commands are implemented is that
+the target node is an optional argument. If the target is not specified,
+it defaults to the local machine, which means these commands can be run
+conveniently on a Paradrop node. It is also possible to override the
+default target by setting the PDTOOLS_NODE_TARGET environment variable.
+"""
 import datetime
 import getpass
 import json
@@ -17,12 +27,6 @@ import yaml
 from . import util
 from .comm import router_ws_request
 from .paradrop_client import ParadropClient
-
-
-# Default target for node commands. Unless the environment variable is set, we
-# will default to "localhost", which means all of the node commands can be run
-# conveniently on the node itself.
-PDTOOLS_TARGET_NODE = os.environ.get("PDTOOLS_TARGET_NODE", "localhost")
 
 
 def get_base_url(target):
@@ -58,12 +62,16 @@ def print_pdconf(data):
 
 
 @click.group('node')
-@click.option('--target', '-t', default=PDTOOLS_TARGET_NODE,
-        help='Target node name or address (default: {}'.format(PDTOOLS_TARGET_NODE))
+@click.option('--target', '-t', default="172.17.0.1",
+        help='Target node name or address')
 @click.pass_context
 def root(ctx, target):
     """
     Manage a Paradrop edge compute node.
+
+    These commands respect the following environment variables:
+
+    PDTOOLS_NODE_TARGET            Default target node name or address.
     """
     ctx.obj['target'] = target
 
