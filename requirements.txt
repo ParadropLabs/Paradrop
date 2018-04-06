@@ -1,3 +1,4 @@
+appdirs==1.4.3
 attrs==16.0.0
 autobahn==0.15.0
 backports.ssl-match-hostname==3.5.0.1
