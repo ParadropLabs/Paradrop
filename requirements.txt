@@ -3,6 +3,7 @@ autobahn==0.15.0
 backports.ssl-match-hostname==3.5.0.1
 bcrypt==3.1.0
 cffi==1.7.0
+click==6.7
 colorama==0.3.7
 coverage==4.1
 cryptography==1.4
