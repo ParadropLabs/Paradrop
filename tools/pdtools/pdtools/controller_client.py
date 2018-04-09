@@ -1,5 +1,4 @@
 import os
-from simplejson.scanner import JSONDecodeError
 from six.moves.urllib.parse import urlparse
 
 from .authenticated_client import AuthenticatedClient
