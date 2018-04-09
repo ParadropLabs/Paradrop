@@ -171,7 +171,19 @@ def register(ctx):
 
     client = ControllerClient()
     result = client.create_user(name, email, password, password2)
-    pprint(result)
+
+    if 'message' in result:
+        click.echo(result['message'])
+
+    if 'token' in result:
+        click.echo("The account registration was successful. "
+                   "Please check your email and verify the account "
+                   "before using any other pdtools cloud commands.")
+
+    if 'errors' in result:
+        for key, value in result['errors'].iteritems():
+            if 'message' in value:
+                click.echo(value['message'])
 
 
 @root.command('rename-node')
