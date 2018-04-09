@@ -32,7 +32,6 @@ def test_simple_node_commands(ParadropClient, open_yaml_editor):
         ["load-audio-module", "module-test"],
         ["login"],
         ["logout"],
-        ["open-chute-shell", "test"],
         ["remove-chute-network-client", "test", "wifi", "00:11:22:33:44:55"],
         ["set-sink-volume", "default", "0"],
         ["set-source-volume", "default", "0"],
