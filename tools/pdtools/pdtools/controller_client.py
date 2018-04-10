@@ -159,6 +159,49 @@ class ControllerClient(AuthenticatedClient):
         }
         return self.request("POST", url, json=data)
 
+    def install_chute(self, chute_name, node_name, select_version=None):
+        """
+        Install a chute from the store.
+        """
+        chute = self.find_chute(chute_name)
+        if chute is None:
+            raise Exception("Chute was not found")
+        node = self.find_node(node_name)
+        if node is None:
+            raise Exception("Node was not found")
+
+        versions = self.list_versions(chute_name)
+        if versions is None:
+            raise Exception("No version to install")
+
+        version = None
+        if select_version is None:
+            version = versions[-1]
+        else:
+            for ver in versions:
+                if str(ver['version']) == str(select_version):
+                    version = ver
+                    break
+        if version is None:
+            raise Exception("Version not found")
+
+        data = {
+            "updateClass": "CHUTE",
+            "updateType": "update",
+            "chute_id": chute['_id'],
+            "router_id": node['_id'],
+            "version_id": version['_id'],
+            "config": version['config']
+        }
+
+        # Important: the server will reject the update if the name field is
+        # missing. Version is also not automatically filled in.
+        data['config']['name'] = chute['name']
+        data['config']['version'] = version['version']
+
+        url = "{}/routers/{}/updates".format(self.base_url, node['_id'])
+        return self.request("POST", url, json=data)
+
     def list_chutes(self):
         """
         List chutes that the user owns or has access to.

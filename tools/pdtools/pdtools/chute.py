@@ -11,7 +11,6 @@ import yaml
 
 from .controller_client import ControllerClient
 from .helpers.chute import build_chute
-from .store import chute_resolve_source
 from .util import update_object
 
 
@@ -118,45 +117,6 @@ def add_wifi_ap(ctx, essid, password, force):
         yaml.safe_dump(chute, output, default_flow_style=False)
 
 
-@root.command('create-version')
-@click.pass_context
-def create_version(ctx):
-    """
-    Push a new version of the chute to the store.
-    """
-    if not os.path.exists("paradrop.yaml"):
-        raise Exception("No paradrop.yaml file found in working directory.")
-
-    with open('paradrop.yaml', 'r') as source:
-        chute = yaml.safe_load(source)
-
-    name = chute_find_field(chute, 'name')
-    source = chute_find_field(chute, 'source')
-    config = chute.get('config', {})
-
-    chute_resolve_source(source, config)
-
-    client = ControllerClient()
-    result = client.find_chute(name)
-    if result is None:
-        raise Exception("Could not find ID for chute {} - is it registered?".format(name))
-
-    result = client.create_version(name, config)
-    pprint(result)
-
-
-@root.command('describe')
-@click.argument('name')
-@click.pass_context
-def describe(ctx, name):
-    """
-    Show detailed information about a chute in the store.
-    """
-    client = ControllerClient()
-    result = client.find_chute(name)
-    pprint(result)
-
-
 @root.command('export-configuration')
 @click.option('--format', '-f', help="Format (json or yaml)")
 @click.pass_context
@@ -197,15 +157,6 @@ def export_configuration(ctx, format):
         pprint(config)
 
 
-@root.command('help')
-@click.pass_context
-def help(ctx):
-    """
-    Show this message and exit
-    """
-    click.echo(ctx.parent.get_help())
-
-
 @root.command('initialize')
 @click.pass_context
 def initialize(ctx):
@@ -227,71 +178,6 @@ def initialize(ctx):
             }
             with open('package.json', 'w') as output:
                 json.dump(data, output, sort_keys=True, indent=2)
-
-
-@root.command('list-chutes')
-@click.pass_context
-def list_chutes(ctx):
-    """
-    List chutes in the store that you own or have access to.
-    """
-    client = ControllerClient()
-    result = client.list_chutes()
-    click.echo("Name                             Ver Description")
-    for chute in sorted(result, key=operator.itemgetter('name')):
-        click.echo("{name:32s} {current_version:3d} {description}".format(**chute))
-
-
-@root.command('list-versions')
-@click.argument('name')
-@click.pass_context
-def list_versions(ctx, name):
-    """
-    List versions of a chute in the store.
-    """
-    client = ControllerClient()
-    result = client.list_versions(name)
-    click.echo("Version GitCheckout")
-    for version in sorted(result, key=operator.itemgetter('version')):
-        try:
-            code = version['config']['download']['checkout']
-        except:
-            code = "N/A"
-        print("{:7s} {}".format(str(version['version']), code))
-
-
-@root.command()
-@click.pass_context
-@click.option('--public/--not-public', default=False)
-def register(ctx, public):
-    """
-    Register a chute with the store.
-    """
-    if not os.path.exists("paradrop.yaml"):
-        raise Exception("No paradrop.yaml file found in working directory.")
-
-    with open('paradrop.yaml', 'r') as source:
-        chute = yaml.safe_load(source)
-
-    name = chute_find_field(chute, 'name')
-    description = chute_find_field(chute, 'description')
-
-    print("Name: {}".format(name))
-    print("Description: {}".format(description))
-    print("Public: {}".format(public))
-    print("")
-
-    prompt = "Ready to send this information to {} (Y/N)? ".format(
-            ctx.obj['pdserver_url'])
-    response = builtins.input(prompt)
-    print("")
-
-    if response.upper().startswith("Y"):
-        client = ControllerClient()
-        result = client.create_chute(name, description, public=public)
-        pprint(result)
-    else:
-        print("Operation cancelled.")
 
 
 @root.command('set')

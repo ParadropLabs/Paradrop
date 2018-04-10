@@ -1,78 +1,29 @@
 import builtins
 import click
-import git
 import operator
 import os
 import yaml
+
 from pprint import pprint
 
-from .comm import pdserver_request
+from .chute import chute_resolve_source
+from .controller_client import ControllerClient
 
 
-def chute_find_field(chute, key, default=Exception):
-    """
-    Find a field in a chute definition loading from a paradrop.yaml file.
-    """
-    if key in chute:
-        return chute[key]
-    elif 'config' in chute and key in chute['config']:
-        return chute['config'][key]
-    elif isinstance(default, type):
-        raise default("{} field not found in chute definition.".format(key))
-    else:
-        return default
-
-
-def chute_resolve_source(source, config):
-    """
-    Resolve the source section from paradrop.yaml to store configuration.
-
-    If git/http, add an appropriate download section to the chute
-    configuration. For git repos, we also identify the latest commit and add
-    that to the download information. If type is inline, add a dockerfile
-    string field to the chute and no download section.
-    """
-    if 'type' not in source:
-        raise Exception("Source type not specified for chute.")
-
-    source_type = source['type']
-    if source_type == 'http':
-        config['download'] = {
-            'url': source['url']
-        }
-
-    elif source_type == 'git':
-        repo = git.Repo('.')
-        config['download'] = {
-            'url': source['url'],
-            'checkout': str(repo.head.commit)
-        }
-
-    elif source_type == 'inline':
-        with open('Dockerfile', 'r') as dockerfile:
-            config['dockerfile'] = dockerfile.read()
-
-    else:
-        raise Exception("Invalid source type {}".format(source_type))
-
-
-@click.group()
+@click.group('store')
 @click.pass_context
-def store(ctx):
+def root(ctx):
     """
-    (deprecated) Interact with chute store.
-
-    These commands are deprecated. Please use the equivalent commands under
-    `pdtools chute --help`.
+    Interact with the public chute store.
     """
-    ctx.obj['chutes_url'] = ctx.obj['pdserver_url'] + '/api/chutes'
+    pass
 
 
-@store.command('create-version')
+@root.command('create-version')
 @click.pass_context
 def create_version(ctx):
     """
-    Push a new version to the chute store.
+    Push a new version of the chute to the store.
     """
     if not os.path.exists("paradrop.yaml"):
         raise Exception("No paradrop.yaml file found in working directory.")
@@ -83,58 +34,91 @@ def create_version(ctx):
     name = chute_find_field(chute, 'name')
     source = chute_find_field(chute, 'source')
     config = chute.get('config', {})
-    chute_id = None
 
     chute_resolve_source(source, config)
 
-    result = pdserver_request('GET', ctx.obj['chutes_url'])
-    if result.ok:
-        data = result.json()
-        for chute in data:
-            if chute['name'] == name:
-                chute_id = chute['_id']
-                break
-
-    if chute_id is None:
+    client = ControllerClient()
+    result = client.find_chute(name)
+    if result is None:
         raise Exception("Could not find ID for chute {} - is it registered?".format(name))
 
-    data = {
-        'chute_id': chute_id,
-        'config': config
-    }
-    url = "{}/{}/versions".format(ctx.obj['chutes_url'], chute_id)
-    result = pdserver_request('POST', url, data)
-    if result.status_code == 201:
-        response = result.json()
-        print("Version {} created.".format(response['version']))
+    result = client.create_version(name, config)
+    pprint(result)
 
 
-@store.command()
+@root.command('describe-chute')
+@click.argument('name')
 @click.pass_context
-def list(ctx):
+def describe_chute(ctx, name):
     """
-    List chutes owned by the developer.
+    Show detailed information about a chute in the store.
     """
-    url = ctx.obj['chutes_url']
-
-    result = pdserver_request('GET', url)
-    if result.ok:
-        data = result.json()
-
-        print("Name                 Version Public")
-        for chute in sorted(data, key=operator.itemgetter('name')):
-            print("{name:20s} {current_version:7d} {public}".format(**chute))
+    client = ControllerClient()
+    result = client.find_chute(name)
+    pprint(result)
 
 
-@store.command()
+@root.command('help')
+@click.pass_context
+def help(ctx):
+    """
+    Show this message and exit
+    """
+    click.echo(ctx.parent.get_help())
+
+
+@root.command('install-chute')
+@click.argument('chute')
+@click.argument('node')
+@click.option('--version', '-v', help='Version to install')
+@click.pass_context
+def install_chute(ctx, chute, node, version):
+    """
+    Install a chute from the store.
+    """
+    client = ControllerClient()
+    result = client.install_chute(chute, node, select_version=version)
+    pprint(result)
+
+
+@root.command('list-chutes')
+@click.pass_context
+def list_chutes(ctx):
+    """
+    List chutes in the store that you own or have access to.
+    """
+    client = ControllerClient()
+    result = client.list_chutes()
+    click.echo("Name                             Ver Description")
+    for chute in sorted(result, key=operator.itemgetter('name')):
+        click.echo("{name:32s} {current_version:3d} {description}".format(**chute))
+
+
+@root.command('list-versions')
+@click.argument('name')
+@click.pass_context
+def list_versions(ctx, name):
+    """
+    List versions of a chute in the store.
+    """
+    client = ControllerClient()
+    result = client.list_versions(name)
+    click.echo("Version GitCheckout")
+    for version in sorted(result, key=operator.itemgetter('version')):
+        try:
+            code = version['config']['download']['checkout']
+        except:
+            code = "N/A"
+        print("{:7s} {}".format(str(version['version']), code))
+
+
+@root.command()
 @click.pass_context
 @click.option('--public/--not-public', default=False)
 def register(ctx, public):
     """
     Register a chute with the store.
     """
-    url = ctx.obj['chutes_url']
-
     if not os.path.exists("paradrop.yaml"):
         raise Exception("No paradrop.yaml file found in working directory.")
 
@@ -155,16 +139,8 @@ def register(ctx, public):
     print("")
 
     if response.upper().startswith("Y"):
-        data = {
-            'name': name,
-            'description': description,
-            'public': public
-        }
-        result = pdserver_request('POST', url, data)
-        if result.status_code == 201:
-            print("Chute created.")
-        else:
-            print("There was a problem creating the chute.")
-            print("Perhaps the name is invalid or already in use.")
+        client = ControllerClient()
+        result = client.create_chute(name, description, public=public)
+        pprint(result)
     else:
         print("Operation cancelled.")

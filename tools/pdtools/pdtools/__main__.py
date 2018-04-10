@@ -5,11 +5,11 @@ Two guiding principles were used in the design of the Paradrop command
 line utility.
 
 * The command tree should be relatively flat for easy discoverability.
-Commands are grouped into a few cohesive modules (chute, cloud, and node).
-All of the commands in the cloud module make use of the cloud controller
-API, for example. There are no further subgroups under these top-level
-groups, which means that `pdtools cloud --help` lists all relevant
-commands.
+Commands are grouped into a few cohesive modules (chute, cloud, node,
+and store).  All of the commands in the cloud module make use of the
+cloud controller API, for example. There are no further subgroups under
+these top-level groups, which means that `pdtools cloud --help` lists
+all relevant commands.
 
 * Commands should be self-evident in their effect. All command names
 begin with a verb. Commands that begin with "list-" can be expected
@@ -32,12 +32,12 @@ import click
 from . import device
 from . import groups
 from . import routers
-from . import store
 
 # Command groups
 from . import chute
 from . import cloud
 from . import node
+from . import store
 
 
 PDSERVER_URL = os.environ.get("PDSERVER_URL", "https://paradrop.org")
@@ -75,13 +75,13 @@ def help(ctx):
 # Deprecated command groups to be removed prior to 1.0 release
 root.add_command(device.device)
 root.add_command(routers.routers)
-root.add_command(store.store)
 groups.register_commands(root)
 
 # Command groups
 root.add_command(chute.root)
 root.add_command(cloud.root)
 root.add_command(node.root)
+root.add_command(store.root)
 
 
 def main():

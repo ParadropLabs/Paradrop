@@ -130,7 +130,11 @@ def list_nodes(ctx):
     """
     client = ControllerClient()
     result = client.list_nodes()
-    pprint(result)
+    print("Name             Online Version Description")
+    for node in result:
+        description = node.get('description', '')
+        version = node.get('platform_version', 'unknown').split('+')[0]
+        print("{name:16s} {online!s:6s} {0:7s} {1}".format(version, description, **node))
 
 
 @root.command('login')
