@@ -38,6 +38,7 @@ from . import chute
 from . import cloud
 from . import node
 from . import store
+from . import wizard
 
 
 PDSERVER_URL = os.environ.get("PDSERVER_URL", "https://paradrop.org")
@@ -82,6 +83,7 @@ root.add_command(chute.root)
 root.add_command(cloud.root)
 root.add_command(node.root)
 root.add_command(store.root)
+root.add_command(wizard.root)
 
 
 def main():

@@ -26,7 +26,11 @@ def claim_node(ctx, token):
     """
     client = ControllerClient()
     result = client.claim_node(token)
-    pprint(result)
+    if result is not None:
+        print("Claimed node with name {}".format(result['name']))
+    else:
+        print("No node was found with that claim token.")
+    return result
 
 
 @root.command('create-node')
@@ -130,11 +134,15 @@ def list_nodes(ctx):
     """
     client = ControllerClient()
     result = client.list_nodes()
-    print("Name             Online Version Description")
+    if len(result) > 0:
+        print("Name             Online Version Description")
+    else:
+        print("No nodes were found.")
     for node in result:
         description = node.get('description', '')
         version = node.get('platform_version', 'unknown').split('+')[0]
         print("{name:16s} {online!s:6s} {0:7s} {1}".format(version, description, **node))
+    return result
 
 
 @root.command('login')
@@ -147,8 +155,10 @@ def login(ctx):
     token = client.login()
     if token is None:
         click.echo("Login attempt failed.")
+        return False
     else:
         click.echo("Login successful.")
+        return True
 
 
 @root.command('logout')
@@ -176,18 +186,24 @@ def register(ctx):
     client = ControllerClient()
     result = client.create_user(name, email, password, password2)
 
+    retval = None
+
     if 'message' in result:
         click.echo(result['message'])
 
     if 'token' in result:
         click.echo("The account registration was successful. "
                    "Please check your email and verify the account "
-                   "before using any other pdtools cloud commands.")
+                   "before attempting to log in and use any other "
+                   "pdtools cloud commands.")
+        retval = email
 
     if 'errors' in result:
         for key, value in result['errors'].iteritems():
             if 'message' in value:
                 click.echo(value['message'])
+
+    return retval
 
 
 @root.command('rename-node')

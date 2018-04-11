@@ -321,7 +321,8 @@ def import_ssh_key(ctx, path, user):
         return
 
     result = client.add_ssh_key(key_string, user=user)
-    pprint(result)
+    if result is not None:
+        print("Added public key from {}".format(path))
 
 
 @root.command('install-chute')
@@ -476,8 +477,10 @@ def login(ctx):
     token = client.login()
     if token is None:
         click.echo("Login attempt failed.")
+        return False
     else:
         click.echo("Login successful.")
+        return True
 
 
 @root.command('logout')
