@@ -51,7 +51,9 @@ default, so you will need to have an RSA key pair available, and you can use
 the router configuration page to upload the public key and authorize it.
 
 1. Open tools page on the router (`http://localhost:8080/#!/tools
-   <http://localhost:8080/#!/tools>`_).
+   <http://localhost:8080/#!/tools>`_). The page might prompt you for
+   a username and password. If so, use the username "paradrop" and an
+   empty password.
 2. Find the SSH Keys section and use the text area to submit your public key.
    Typically, your public key file will be found at `~/.ssh/id_rsa.pub`.  You
    can use `ssh-keygen` to generate one if you do not already have one.  Copy
