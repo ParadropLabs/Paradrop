@@ -63,13 +63,12 @@ def open_yaml_editor(data, description):
     if new_data is None:
         new_data = {}
 
-    # Check if the file has been modified, and if it has, send the update.
+    # Check if the file has been modified.
     new_mtime = os.path.getmtime(path)
-    if new_mtime == orig_mtime:
-        new_data = None
+    changed = (new_mtime != orig_mtime)
 
     os.remove(path)
-    return new_data
+    return new_data, changed
 
 
 def update_object(obj, path, callback=None):
