@@ -61,7 +61,7 @@ def root(ctx):
             click.echo("Important: Since this is a new developer account, "
                        "please make sure "
                        "you have followed the instructions in the email to "
-                       "activate your account before proceeding.\n")
+                       "activate your account before proceeding to log in.\n")
 
         # Keep trying until login succeeds.
         result = False
@@ -73,20 +73,24 @@ def root(ctx):
         ctx.invoke(cloud.list_nodes)
         click.echo("")
 
-        while click.confirm("Would you like to use a claim token to add a node to your account"):
+        while click.confirm("Do you have a claim token for a node not listed above"):
             token = click.prompt("Claim token").strip()
             ctx.invoke(cloud.claim_node, token=token)
             click.echo("")
 
-    have_node = click.confirm("Do you have network access to a node that you "
-                              "would like to use for development")
+    click.echo("If you have network access to a node, you can use the "
+               "pdtools node commands for development and testing on "
+               "the node.")
+    have_node = click.confirm("Do you have a node to configure")
     ready = False
     while have_node and not ready:
         target = click.prompt("Node address").strip()
         click.echo("")
 
         click.echo("Let's log in to the node. This will give you direct "
-                   "access to install and configure chutes on the node.\n")
+                   "access to install and configure chutes on the node. "
+                   "Please note that the node username/password is different "
+                   "from your paradrop.org account.\n")
 
         ctx.obj['target'] = target
         ready = ctx.invoke(node.login)
@@ -94,12 +98,20 @@ def root(ctx):
 
     if have_node:
         click.echo("Next, we'll look for SSH public keys in order to enable "
-                   "SSH access to your node. You can always do this later "
-                   "by running ssh-keygen and pdtools node import-ssh-key <path>.\n")
+                   "SSH access to your node.\n")
 
         search_path = os.path.expanduser("~/.ssh/*.pub")
+        pubkeys = glob.glob(search_path)
+        if len(pubkeys) == 0:
+            click.echo("No keys were found in ~/.ssh/. We can generate one now "
+                       "or you can do this later by running ssh-keygen "
+                       "and adding the key with pdtools node import-ssh-key <path>.")
+            if click.confirm("Generate an SSH key now"):
+                cmd = ["ssh-keygen", "-b", "4096"]
+                subprocess.call(cmd)
+
         for path in glob.iglob(search_path):
-            if click.confirm("Import {}".format(path)):
+            if click.confirm("Use the public key {}".format(path)):
                 ctx.invoke(node.import_ssh_key, path=path)
 
     with open(env_path, "w") as output:
