@@ -53,6 +53,11 @@ class AuthenticatedClient(object):
         ]
 
     def login(self):
+        config = PdtoolsConfig.load()
+        token = config.getAccessToken(self.auth_domain)
+        if token is not None:
+            return token
+
         provider = LoginPromptTokenProvider(self.auth_url, self.api_spec['param_map'])
         token = provider.get_token()
         if token is not None:
