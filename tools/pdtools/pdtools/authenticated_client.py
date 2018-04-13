@@ -131,4 +131,7 @@ class AuthenticatedClient(object):
                 provider.update(token, False)
             else:
                 provider.update(token, True)
-                return res.json()
+                if res.status_code == 204:
+                    return None
+                else:
+                    return res.json()

@@ -4,8 +4,6 @@ import json
 import operator
 import os
 
-from pprint import pprint
-
 import git
 import yaml
 
@@ -65,19 +63,29 @@ def chute_resolve_source(source, config):
 @click.pass_context
 def root(ctx):
     """
-    Chute development and publishing functions.
+    Utilities for developing chutes.
+
+    These commands all operate on a chute project in the current working
+    directory.  Remember, that all chutes must have a paradrop.yaml file
+    in the top-level directory.  You can create one interactively with
+    the initialize command.
     """
     pass
 
 
 @root.command('add-wifi-ap')
 @click.argument('essid')
-@click.option('--password', default=None)
-@click.option('--force', default=False, is_flag=True)
+@click.option('--password', default=None,
+        help='Password for the network, must be at least 8 characters if specified.')
+@click.option('--force', default=False, is_flag=True,
+        help='Overwrite an existing section in the configuration file.')
 @click.pass_context
 def add_wifi_ap(ctx, essid, password, force):
     """
     Add a WiFi AP to the chute configuration.
+
+    ESSID must be between 1 and 32 characters in length.  Spaces are
+    allowed if you enclose the argument in quotation marks.
     """
     with open('paradrop.yaml', 'r') as source:
         chute = yaml.safe_load(source)
@@ -87,8 +95,8 @@ def add_wifi_ap(ctx, essid, password, force):
 
     # Only support adding the first Wi-Fi interface for now.
     if 'wifi' in net and not force:
-        print("Wi-Fi interface already exists in paradrop.yaml.")
-        print("Please edit the file directly to make changes.")
+        click.echo("Wi-Fi interface already exists in paradrop.yaml.")
+        click.echo("Please edit the file directly to make changes.")
         return
 
     net['wifi'] = {
@@ -118,7 +126,8 @@ def add_wifi_ap(ctx, essid, password, force):
 
 
 @root.command('export-configuration')
-@click.option('--format', '-f', help="Format (json or yaml)")
+@click.option('--format', '-f', default='json',
+        help="Format (json or yaml)")
 @click.pass_context
 def export_configuration(ctx, format):
     """
@@ -139,7 +148,7 @@ def export_configuration(ctx, format):
         chute = yaml.safe_load(source)
 
     if 'source' not in chute:
-        print("Error: source section missing in paradrop.yaml")
+        click.echo("Error: source section missing in paradrop.yaml")
         return
 
     config = chute.get('config', {})
@@ -149,12 +158,13 @@ def export_configuration(ctx, format):
 
     chute_resolve_source(chute['source'], config)
 
+    format = format.lower()
     if format == "json":
-        print(json.dumps(config, sort_keys=True, indent=2))
+        click.echo(json.dumps(config, sort_keys=True, indent=2))
     elif format == "yaml":
-        print(yaml.safe_dump(config, default_flow_style=False))
+        click.echo(yaml.safe_dump(config, default_flow_style=False))
     else:
-        pprint(config)
+        click.echo("Unrecognized format: {}".format(format))
 
 
 @root.command('initialize')
@@ -188,10 +198,21 @@ def set_config(ctx, path, value):
     """
     Set a value in the paradrop.yaml file.
 
+    PATH must be a dot-separated path to a value in the paradrop.yaml
+    file, such as "config.web.port". VALUE will be interpreted as a
+    string, numeric, or boolean type as appropriate.
+
+    Changing values inside a list is not currently supported.  For that
+    you will need to edit the file directly.
+
     Example: set config.web.port 80
     """
     with open('paradrop.yaml', 'r') as source:
         chute = yaml.safe_load(source)
+
+    # Empty paradrop.yaml file?
+    if chute is None:
+        chute = {}
 
     # Calling yaml.safe_load on the value does a little type interpretation
     # (e.g. numeric vs. string) and allows the user to directly set lists and
@@ -200,10 +221,10 @@ def set_config(ctx, path, value):
 
     def set_value(parent, key, created):
         if created:
-            print("Creating new field {} = {}".format(path, value))
+            click.echo("Creating new field {} = {}".format(path, value))
         else:
             current = parent[key]
-            print("Changing {} from {} to {}".format(path, current, value))
+            click.echo("Changing {} from {} to {}".format(path, current, value))
 
         parent[key] = value
 

@@ -6,6 +6,15 @@ import builtins
 import yaml
 
 
+def format_result(data):
+    """
+    Format a result from an API call for printing.
+    """
+    if data is None or data == []:
+        return ""
+    return yaml.safe_dump(data, default_flow_style=False)
+
+
 def open_text_editor(data):
     if data is None:
         data = ""

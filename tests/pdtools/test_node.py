@@ -6,7 +6,7 @@ from pdtools import node
 
 
 @patch("pdtools.util.open_yaml_editor")
-@patch("pdtools.node.format_result")
+@patch("pdtools.node.util.format_result")
 @patch("pdtools.node.ParadropClient")
 def test_simple_node_commands(ParadropClient, format_result, open_yaml_editor):
     commands = [
@@ -39,7 +39,7 @@ def test_simple_node_commands(ParadropClient, format_result, open_yaml_editor):
         ["trigger-pdconf"]
     ]
 
-    format_result.return_value = ""
+    format_result.return_value = "result"
     open_yaml_editor.return_value = "", True
 
     runner = CliRunner()

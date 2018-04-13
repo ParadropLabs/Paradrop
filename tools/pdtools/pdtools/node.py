@@ -16,7 +16,6 @@ import os
 import re
 import tarfile
 import tempfile
-from pprint import pprint
 from six.moves.urllib.parse import urlparse
 
 import arrow
@@ -50,15 +49,6 @@ def get_base_url(target):
 
     else:
         return "http://{}/api/v1".format(target)
-
-
-def format_result(data):
-    """
-    Format a result from an API call for printing.
-    """
-    if data == []:
-        return ""
-    return yaml.safe_dump(data, default_flow_style=False)
 
 
 def print_pdconf(data):
@@ -128,7 +118,7 @@ def create_user(ctx, email):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.create_user(email)
-    pprint(result)
+    click.echo(util.format_result(result))
     return result
 
 
@@ -143,7 +133,7 @@ def describe_audio(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.get_audio()
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -158,7 +148,7 @@ def describe_chute(ctx, chute):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.get_chute(chute)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -177,7 +167,7 @@ def describe_chute_cache(ctx, chute):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.get_chute_cache(chute)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -195,7 +185,7 @@ def describe_chute_configuration(ctx, chute):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.get_chute_config(chute)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -215,7 +205,7 @@ def describe_chute_network_client(ctx, chute, network, client):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.get_chute_client(chute, network, client)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -245,7 +235,7 @@ def describe_provision(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.get_provision()
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -313,7 +303,8 @@ def edit_chute_variables(ctx, chute):
 
 
 @root.command('export-configuration')
-@click.option('--format', '-f', help='Output format (json, yaml)')
+@click.option('--format', '-f', default='json',
+        help="Format (json or yaml)")
 @click.pass_context
 def export_configuration(ctx, format):
     """
@@ -321,17 +312,20 @@ def export_configuration(ctx, format):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.get_config()
+
+    format = format.lower()
     if format == 'json':
         click.echo(json.dumps(result, indent=4))
     elif format == 'yaml':
         click.echo(yaml.safe_dump(result, default_flow_style=False))
     else:
-        pprint(result)
+        click.echo("Unrecognized format: {}".format(format))
     return result
 
 
 @root.command('generate-configuration')
-@click.option('--format', '-f', help='Output format (json, yaml)')
+@click.option('--format', '-f', default='json',
+        help="Format (json or yaml)")
 @click.pass_context
 def generate_configuration(ctx, format):
     """
@@ -342,12 +336,14 @@ def generate_configuration(ctx, format):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.generate_config()
+
+    format = format.lower()
     if format == 'json':
         click.echo(json.dumps(result, indent=4))
     elif format == 'yaml':
         click.echo(yaml.safe_dump(result, default_flow_style=False))
     else:
-        pprint(result)
+        click.echo("Unrecognized format: {}".format(format))
     return result
 
 
@@ -445,7 +441,7 @@ def list_audio_modules(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_audio_modules()
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -457,7 +453,7 @@ def list_audio_sinks(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_audio_sinks()
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -469,7 +465,7 @@ def list_audio_sources(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_audio_sources()
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -481,7 +477,7 @@ def list_changes(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_changes()
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -496,7 +492,7 @@ def list_chute_networks(ctx, chute):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_chute_networks(chute)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -514,7 +510,7 @@ def list_chute_network_clients(ctx, chute, network):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_chute_clients(chute, network)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -526,7 +522,7 @@ def list_chutes(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_chutes()
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -538,7 +534,7 @@ def list_snap_interfaces(ctx):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_snap_interfaces()
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -551,7 +547,7 @@ def list_ssh_keys(ctx, user):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.list_ssh_keys(user=user)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -567,7 +563,7 @@ def load_audio_module(ctx, module):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.load_audio_module(module)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -641,7 +637,7 @@ def provision(ctx, id, key, controller, wamp):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.provision(id, key, controller=controller, wamp=wamp)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -694,7 +690,7 @@ def remove_chute_network_client(ctx, chute, network, client):
     """
     client = ParadropClient(ctx.obj['target'])
     result = client.remove_chute_client(chute, network, client)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -766,7 +762,7 @@ def set_sink_volume(ctx, sink, volume):
     data = [float(vol) for vol in volume]
 
     result = client.set_sink_volume(sink, data)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -789,7 +785,7 @@ def set_source_volume(ctx, source, volume):
     data = [float(vol) for vol in volume]
 
     result = client.set_source_volume(source, data)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 
@@ -815,7 +811,7 @@ def set_password(ctx):
     click.echo("Next, if prompted, you should enter the current username and password.")
     client = ParadropClient(ctx.obj['target'])
     result = client.set_password(username, password)
-    click.echo(format_result(result))
+    click.echo(util.format_result(result))
     return result
 
 

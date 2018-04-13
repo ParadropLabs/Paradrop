@@ -5,8 +5,9 @@ from mock import patch
 from pdtools import cloud
 
 
+@patch("pdtools.cloud.util.format_result")
 @patch("pdtools.cloud.ControllerClient")
-def test_simple_cloud_commands(ControllerClient):
+def test_simple_cloud_commands(ControllerClient, format_result):
     commands = [
         ["claim-node", "token"],
         ["create-node", "test"],
@@ -20,6 +21,8 @@ def test_simple_cloud_commands(ControllerClient):
         ["logout"],
         ["rename-node", "node", "node"]
     ]
+
+    format_result.return_value = "result"
 
     runner = CliRunner()
     for command in commands:

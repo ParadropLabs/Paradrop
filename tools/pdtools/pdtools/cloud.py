@@ -1,5 +1,4 @@
 import getpass
-from pprint import pprint
 
 import builtins
 import click
@@ -12,7 +11,10 @@ from .controller_client import ControllerClient
 @click.pass_context
 def root(ctx):
     """
-    Access services provided by a cloud controller
+    Access services provided by a cloud controller.
+
+    By default the cloud controller is assumed to be paradrop.org. This
+    can be configured through the environment variable PDSERVER_URL.
     """
     pass
 
@@ -23,28 +25,38 @@ def root(ctx):
 def claim_node(ctx, token):
     """
     Take ownership of a node by using a claim token.
+
+    TOKEN is a hard-to-guess string that the previous owner would have
+    configured when setting the node's status as orphaned.
     """
     client = ControllerClient()
     result = client.claim_node(token)
     if result is not None:
-        print("Claimed node with name {}".format(result['name']))
+        click.echo("Claimed node with name {}".format(result['name']))
     else:
-        print("No node was found with that claim token.")
+        click.echo("No node was found with that claim token.")
     return result
 
 
 @root.command('create-node')
 @click.argument('name')
-@click.option('--orphaned/--not-orphaned', default=False)
-@click.option('--claim', default=None)
+@click.option('--orphaned/--not-orphaned', default=False,
+        help='Allow another user to claim the node.')
+@click.option('--claim', default=None,
+        help='Claim token required to claim the node.')
 @click.pass_context
 def create_node(ctx, name, orphaned, claim):
     """
     Create a new node to be tracked by the controller.
+
+    NAME must be unique among the nodes that you own and may only consist
+    of lowercase letters, numbers, and hyphens. It must also begin with
+    a letter.
     """
     client = ControllerClient()
     result = client.create_node(name, orphaned=orphaned, claim=claim)
-    pprint(result)
+    click.echo(util.format_result(result))
+    return result
 
 
 @root.command('delete-node')
@@ -53,10 +65,13 @@ def create_node(ctx, name, orphaned, claim):
 def delete_node(ctx, name):
     """
     Delete a node that is tracked by the controller.
+
+    NAME must be the name of a node that you own.
     """
     client = ControllerClient()
     result = client.delete_node(name)
-    pprint(result)
+    click.echo(util.format_result(result))
+    return result
 
 
 @root.command('describe-node')
@@ -65,10 +80,13 @@ def delete_node(ctx, name):
 def describe_node(ctx, name):
     """
     Get detailed information about an existing node.
+
+    NAME must be the name of a node that you own.
     """
     client = ControllerClient()
     result = client.find_node(name)
-    pprint(result)
+    click.echo(util.format_result(result))
+    return result
 
 
 @root.command('edit-node-description')
@@ -77,6 +95,12 @@ def describe_node(ctx, name):
 def edit_node_description(ctx, name):
     """
     Interactively edit the node description and save.
+
+    NAME must be the name of a node that you own.
+
+    Open the text editor specified by the EDITOR environment variable
+    with the current node description. If you save and exit, the changes
+    will be applied to the node.
     """
     client = ControllerClient()
     node = client.find_node(name)
@@ -84,13 +108,14 @@ def edit_node_description(ctx, name):
         click.echo("Node {} was not found.".format(name))
         return
 
-    description = util.open_text_editor(node.get('description', ''))
+    description = click.edit(node.get('description', ''))
     if description is None:
         click.echo("No change made.")
     else:
         node['description'] = description
         result = client.save_node(node)
-        pprint(result)
+        click.echo(util.format_result(result))
+        return result
 
 
 @root.command('group-add-node')
@@ -100,17 +125,21 @@ def edit_node_description(ctx, name):
 def group_add_node(ctx, group, node):
     """
     Add a node to a group for other members to access.
+
+    GROUP must be the string ID of a group. NODE must be the name of a
+    node that you control.
     """
     client = ControllerClient()
     result = client.group_add_node(group, node)
-    pprint(result)
+    click.echo(util.format_result(result))
+    return result
 
 
 @root.command('help')
 @click.pass_context
 def help(ctx):
     """
-    Show this message and exit
+    Show this message and exit.
     """
     click.echo(ctx.parent.get_help())
 
@@ -123,7 +152,8 @@ def list_groups(ctx):
     """
     client = ControllerClient()
     result = client.list_groups()
-    pprint(result)
+    click.echo(util.format_result(result))
+    return result
 
 
 @root.command('list-nodes')
@@ -135,13 +165,13 @@ def list_nodes(ctx):
     client = ControllerClient()
     result = client.list_nodes()
     if len(result) > 0:
-        print("Name             Online Version Description")
+        click.echo("Name             Online Version Description")
     else:
-        print("No nodes were found.")
+        click.echo("No nodes were found.")
     for node in result:
         description = node.get('description', '')
         version = node.get('platform_version', 'unknown').split('+')[0]
-        print("{name:16s} {online!s:6s} {0:7s} {1}".format(version, description, **node))
+        click.echo("{name:16s} {online!s:6s} {0:7s} {1}".format(version, description, **node))
     return result
 
 
@@ -150,6 +180,10 @@ def list_nodes(ctx):
 def login(ctx):
     """
     Interactively login to your user account on the controller.
+
+    Authenticate with the controller using account credentials that you
+    created either through the website or with the register command.
+    Typically, the username will be your email address.
     """
     client = ControllerClient()
     token = client.login()
@@ -165,11 +199,12 @@ def login(ctx):
 @click.pass_context
 def logout(ctx):
     """
-    Log out by removing stored credentials.
+    Log out and remove stored credentials.
     """
     client = ControllerClient()
     removed = client.logout()
     click.echo("Removed {} token(s).".format(removed))
+    return removed
 
 
 @root.command('register')
@@ -213,6 +248,11 @@ def register(ctx):
 def rename_node(ctx, name, new_name):
     """
     Change the name of a node.
+
+    NAME must be the name of a node that you control. NEW_NAME is the
+    desired new name. It must adhere to the same naming rules as for
+    the create-node command, namely, it must begin with a letter and
+    consist of only lowercase letters, numbers, and hyphen.
     """
     client = ControllerClient()
     node = client.find_node(name)
@@ -221,4 +261,5 @@ def rename_node(ctx, name, new_name):
         return
     node['name'] = new_name
     result = client.save_node(node)
-    pprint(result)
+    click.echo(util.format_result(result))
+    return result
