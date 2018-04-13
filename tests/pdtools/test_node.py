@@ -1,6 +1,6 @@
 import click
 from click.testing import CliRunner
-from mock import patch
+from mock import patch, MagicMock
 
 from pdtools import node
 
@@ -39,6 +39,11 @@ def test_simple_node_commands(ParadropClient, format_result, open_yaml_editor):
         ["trigger-pdconf"]
     ]
 
+    client = MagicMock()
+    client.generate_config.return_value = {}
+    client.get_config.return_value = {}
+    ParadropClient.return_value = client
+
     format_result.return_value = "result"
     open_yaml_editor.return_value = "", True
 
@@ -46,4 +51,6 @@ def test_simple_node_commands(ParadropClient, format_result, open_yaml_editor):
     for command in commands:
         result = runner.invoke(node.root, command, obj={})
         print("Command {} exit code {}".format(command[0], result.exit_code))
+        if result.exception is not None:
+            print(result.exception)
         assert result.exit_code == 0
