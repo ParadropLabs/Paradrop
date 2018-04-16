@@ -15,6 +15,7 @@
    faq
    development/index
    api/index
+   pdtools
    paradrop/paradrop
 
 

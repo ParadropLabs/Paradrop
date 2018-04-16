@@ -25,6 +25,7 @@ from mock import MagicMock
 # path = os.path.abspath('../paradrop/paradrop')
 # print path
 sys.path.insert(0, os.path.abspath('../paradrop/daemon'))
+sys.path.insert(1, os.path.abspath('../tools/pdtools'))
 
 # -- General configuration ------------------------------------------------
 
@@ -50,7 +51,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'sphinxcontrib.jsonschema',
-    'sphinxcontrib.autohttp.flask'
+    'sphinxcontrib.autohttp.flask',
+    'sphinx_click.ext'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -69,7 +71,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'paradrop'
-copyright = u'2017, ParaDrop Labs'
+copyright = u'2017-2018, ParaDrop Labs'
 author = u'ParaDrop Labs'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -96,7 +98,10 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = [
+    '_build',
+    'venv'
+]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -313,7 +318,7 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # These modules use C extensions which cause trouble when building on
 # readthedocs.
-MOCK_MODULES = ['pulsectl', 'pycurl']
+MOCK_MODULES = ['git', 'pulsectl', 'pycurl']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = MagicMock()
