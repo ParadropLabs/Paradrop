@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pdtools",
-    version='0.10.3',
+    version='0.11.0',
     author="ParaDrop Labs",
     description="ParaDrop development tools",
     install_requires=[
