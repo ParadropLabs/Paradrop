@@ -313,7 +313,7 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 # These modules use C extensions which cause trouble when building on
 # readthedocs.
-MOCK_MODULES = ['pycurl']
+MOCK_MODULES = ['pulsectl', 'pycurl']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = MagicMock()
