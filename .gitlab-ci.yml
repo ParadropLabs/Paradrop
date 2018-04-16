@@ -2,12 +2,20 @@ image: paradrop/paradrop-ci-environment
 
 stages:
   - unit_test
+  - build_docs
 
 unit_test_job:
   stage: unit_test
   script:
     - pip install -r requirements.txt
     - nosetests --with-coverage --cover-package=paradrop
+
+build_docs_job:
+  stage: build_docs
+  script:
+    - cd docs
+    - pip install -r requirements.txt
+    - make html
 
 #build_job:
 #  stage: build
