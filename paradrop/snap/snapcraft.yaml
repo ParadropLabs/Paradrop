@@ -62,6 +62,10 @@ parts:
       - python-openssl
       - python-pyasn1
       - python-pyasn1-modules
+    organize:
+      # For some reason, the libpulsecommon .so file could not be found in its
+      # default install location, so move it to a place where it can be found.
+      usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-8.0.so: usr/lib/x86_64-linux-gnu/libpulsecommon-8.0.so
 
   dependencies:
     plugin: nil
