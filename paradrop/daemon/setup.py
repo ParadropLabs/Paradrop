@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="paradrop",
-    version='0.11.0',
+    version='0.11.1',
     author="ParaDrop Labs",
     description="ParaDrop wireless virtualization",
     license="GPL",
