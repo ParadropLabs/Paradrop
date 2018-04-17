@@ -26,7 +26,7 @@ class AuthenticatedClient(object):
         }
     }
 
-    def __init__(self, api_spec, url):
+    def __init__(self, api_spec, url, debug=False):
         """
         Initialize AuthenticatedClient object.
 
@@ -51,6 +51,8 @@ class AuthenticatedClient(object):
             DefaultLoginTokenProvider(self.auth_url, self.api_spec['param_map']),
             LoginPromptTokenProvider(self.auth_url, self.api_spec['param_map'])
         ]
+
+        self.debug = debug
 
     def login(self):
         config = PdtoolsConfig.load()
@@ -85,6 +87,11 @@ class AuthenticatedClient(object):
         return removed
 
     def request(self, method, url, authenticated=True, json=None, headers=None, data=None, **kwargs):
+        if self.debug:
+            print("{} {}".format(method, url))
+            if json is not None:
+                print(json)
+
         session = requests.Session()
         request = requests.Request(method, url, json=json, headers=headers,
                 data=data, **kwargs)

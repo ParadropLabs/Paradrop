@@ -23,11 +23,11 @@ class ParadropClient(AuthenticatedClient):
     for camera in client.get_cameras():
         img = camera.get_image()
     """
-    def __init__(self, host=None):
+    def __init__(self, host=None, debug=False):
         if host is None:
             host = "172.17.0.1"
 
-        super(ParadropClient, self).__init__("node", "http://"+host)
+        super(ParadropClient, self).__init__("node", "http://"+host, debug=debug)
 
         self.host = host
         self.base_url = "http://{}/api/v1".format(host)
