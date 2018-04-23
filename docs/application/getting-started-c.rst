@@ -47,9 +47,8 @@ The end result should be a paradrop.yaml file similar to the following.
 
 ::
 
-    command: app
     config: {}
-    description: Hello World chute for ParaDrop using Go.
+    description: Hello World chute for ParaDrop using C.
     name: c-hello-world
     type: normal
     version: 1
@@ -188,3 +187,10 @@ following command to alter the configuration file.
 ::
 
     python -m pdtools chute set config.web.port 8888
+
+After that, you can continue developing the chute and install it
+on a ParaDrop node.
+
+::
+
+    python -m pdtools node --target=<node address> install-chute
