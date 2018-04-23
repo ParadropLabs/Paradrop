@@ -8,11 +8,11 @@ Prerequisites
 -------------
 
 Make sure you have Java 1.8+, Maven 3.0+, as well as ParaDrop pdtools
-(v0.9.2 or newer).
+(v0.11.2 or newer).
 
 ::
 
-    pip install pdtools>=0.9.2
+    pip install pdtools~=0.11.2
 
 Set up
 ------
