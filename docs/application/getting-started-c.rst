@@ -109,8 +109,7 @@ microhttpd library.
         }
       *ptr = NULL;                  /* reset when done */
       response = MHD_create_response_from_buffer (strlen (me),
-    ~...~...~...~...~...      (void *) me,
-    ~...~...~...~...~...      MHD_RESPMEM_PERSISTENT);
+                     (void *) me, MHD_RESPMEM_PERSISTENT);
       ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
       MHD_destroy_response (response);
       return ret;
@@ -127,34 +126,16 @@ microhttpd library.
           return 1;
         }
       d = MHD_start_daemon (
-    ~...~...~...MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+              MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
                             atoi (argv[1]),
                             NULL, NULL, &ahc_echo, PAGE,
-    ~...~...~...MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
-    ~...~...~...MHD_OPTION_END);
+              MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 120,
+              MHD_OPTION_END);
       if (d == NULL)
         return 1;
       pause ();
       MHD_stop_daemon (d);
       return 0;
-    }
-
-
-    package main
-
-    import (
-        "fmt"
-        "net/http"
-    )
-
-    func GetIndex(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "Hello, World!\n")
-    }
-
-    func main() {
-        fmt.Println("Listening on :8000")
-        http.HandleFunc("/", GetIndex)
-        http.ListenAndServe(":8000", nil)
     }
 
 Create a file named ``Dockerfile`` with the following contents.
