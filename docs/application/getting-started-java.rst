@@ -27,12 +27,12 @@ Use Maven to set up an empty project.
 Create a chute configuration
 ----------------------------
 
-Use the pdtools interactive init command to create a paradrop.yaml
+Use the pdtools interactive initialize command to create a paradrop.yaml
 file for your chute.
 
 ::
 
-    python -m pdtools chute init
+    python -m pdtools chute initialize
 
 Use the following values as suggested responses to the prompts. If
 you have a different version of pdtools installed, the prompts may be
@@ -115,3 +115,10 @@ following command to alter the configuration file.
 ::
 
     python -m pdtools chute set config.web.port 8000
+
+After that, you can continue developing the chute and install it
+on a ParaDrop node.
+
+::
+
+    python -m pdtools node --target=<node address> install-chute
