@@ -59,6 +59,17 @@ class WirelessOptions(jsl.Document):
     )
 
 
+class InterfaceRequirements(jsl.Document):
+    hwmode = jsl.StringField(
+        description="Required operating mode (11b for old hardware, 11g for 2.4 GHz, 11a for 5 Ghz).",
+        enum=["11b", "11g", "11a"]
+    )
+    ipv4_network = jsl.StringField(
+        description="Required IP network in slash notation.",
+        pattern="^\d+\.\d+\.\d+\.\d+/\d+"
+    )
+
+
 class Interface(jsl.Document):
     class Options(object):
         definition_id = "interface"
@@ -69,6 +80,21 @@ class Interface(jsl.Document):
         enum=["monitor", "vlan", "wifi-ap"],
         required=True
     )
+
     dhcp = jsl.DocumentField(DHCPService)
+    dns = jsl.ArrayField(
+        description="List of DNS servers to advertise to connected clients.",
+        items=jsl.StringField()
+    )
     wireless = jsl.DocumentField(WirelessOptions)
-    requirements = jsl.DictField()
+    requirements = jsl.DocumentField(InterfaceRequirements)
+
+    l3bridge = jsl.StringField(
+        description="Bridge to another network using ARP proxying (experimental)."
+    )
+    vlan_id = jsl.IntField(
+        name="vlan-id",
+        description="VLAN tag for traffic to and from the interface.",
+        minimum=1,
+        maximum=4094
+    )

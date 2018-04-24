@@ -7,8 +7,10 @@
             "properties": {
                 "type": {
                     "type": "string", 
-                    "description": "Network type, must be wifi for an AP.", 
+                    "description": "Network interface type.", 
                     "enum": [
+                        "monitor", 
+                        "vlan", 
                         "wifi-ap"
                     ]
                 }, 
@@ -32,6 +34,13 @@
                         }
                     }, 
                     "additionalProperties": false
+                }, 
+                "dns": {
+                    "type": "array", 
+                    "description": "List of DNS servers to advertise to connected clients.", 
+                    "items": {
+                        "type": "string"
+                    }
                 }, 
                 "wireless": {
                     "type": "object", 
@@ -80,7 +89,34 @@
                     "additionalProperties": false
                 }, 
                 "requirements": {
-                    "type": "object"
+                    "type": "object", 
+                    "properties": {
+                        "hwmode": {
+                            "type": "string", 
+                            "description": "Required operating mode (11b for old hardware, 11g for 2.4 GHz, 11a for 5 Ghz).", 
+                            "enum": [
+                                "11b", 
+                                "11g", 
+                                "11a"
+                            ]
+                        }, 
+                        "ipv4_network": {
+                            "type": "string", 
+                            "description": "Required IP network in slash notation.", 
+                            "pattern": "^\\d+\\.\\d+\\.\\d+\\.\\d+/\\d+"
+                        }
+                    }, 
+                    "additionalProperties": false
+                }, 
+                "l3bridge": {
+                    "type": "string", 
+                    "description": "Bridge to another network using ARP proxying (experimental)."
+                }, 
+                "vlan-id": {
+                    "type": "integer", 
+                    "description": "VLAN tag for traffic to and from the interface.", 
+                    "minimum": 1, 
+                    "maximum": 4094
                 }
             }, 
             "required": [
@@ -122,6 +158,13 @@
                             }
                         }
                     ]
+                }, 
+                "dns": {
+                    "type": "array", 
+                    "description": "List of DNS servers to be used within the container.", 
+                    "items": {
+                        "type": "string"
+                    }
                 }, 
                 "environment": {
                     "type": "object", 

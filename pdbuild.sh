@@ -36,6 +36,16 @@ version() {
     fi
 }
 
+update_schemas() {
+    # Update chute schema for documentation.
+    python -m schemas.chute >docs/api/chute.json
+    git add docs/api/chute.json
+
+    # Update chute schema for pdtools.
+    python -m schemas.chute >tools/pdtools/pdtools/schemas/chute.json
+    git add tools/pdtools/pdtools/schemas/chute.json
+}
+
 release() {
     if [ -z "$1" ]; then
         printhelp
@@ -55,14 +65,7 @@ release() {
         exit 1
     fi
 
-    # Update chute schema for documentation.
-    python -m schemas.chute >docs/api/chute.json
-    git add docs/api/chute.json
-
-    # Update chute schema for pdtools.
-    python -m schemas.chute >tools/pdtools/pdtools/schemas/chute.json
-    git add tools/pdtools/pdtools/schemas/chute.json
-
+    update_schemas
     version $1
 
     git add --update
@@ -207,6 +210,7 @@ case "$1" in
     "docs") docs;;
     "version") version $2;;
     "release") release $2;;
+    "update_schemas") update_schemas;;
     *) echo "Unknown input $1"
    ;;
 esac

@@ -56,6 +56,10 @@ class Service(jsl.Document):
         [jsl.StringField(), jsl.ArrayField(items=jsl.StringField())]
     )
 
+    dns = jsl.ArrayField(
+        description="List of DNS servers to be used within the container.",
+        items=jsl.StringField()
+    )
     environment = jsl.DictField(
         description="Environment variables."
     )

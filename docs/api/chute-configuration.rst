@@ -37,19 +37,16 @@ such as
 WiFi AP Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
-A WiFi AP interface is created by setting *type=wifi* and *mode=ap*.
-*ap* is the default mode for chute WiFi interfaces, so the latter option
-can be omitted.
-
-.. jsonschema:: chute-ap-network-schema.json
+A WiFi AP interface is created by setting *type=wifi-ap*.  There are
+many options for configuring the WiFi AP available through the wireless
+section of the interface object.
 
 Monitor-mode Interface Configuration (Experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A monitor-mode interface enables a chute to observe all detected
-WiFi traffic with RadioTap headers.
-
-.. jsonschema:: chute-monitor-interface-schema.json
+A monitor-mode interface enables a chute to observe all detected WiFi
+traffic with RadioTap headers. A monitor-mode interface is created by
+setting *type=monitor*.
 
 VLAN Interface Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,8 +56,6 @@ the device to be received by the chute. The interface must be configured
 with a VLAN ID. Incoming traffic with that VLAN tag will be untagged and
 forwarded to the chute interface. Likewise, traffic leaving the chute
 interface will be tagged and sent on one the physical ports.
-
-.. jsonschema:: chute-vlan-interface-schema.json
 
 Example
 -------
