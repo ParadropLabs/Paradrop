@@ -8,21 +8,31 @@ also appear in JSON format, particularly when manipulating it through
 the Local HTTP API or through the cloud API. This page describes the
 structure and interpretation of values in the chute configuration.
 
-Chute Configuration Object
---------------------------
+.. jsonschema:: chute.json
 
-.. jsonschema:: chute-config-schema.json
-
-Chute Network Object
+Chute Service Object
 --------------------
+
+Chutes consist of one or more *services*, which are long-running processes
+that implement the functionality of the chute. Services may be built
+from code in the chute project, from a Dockerfile, or pulled as images
+from the public Docker Hub.
+
+.. jsonschema:: chute.json#/definitions/service
+
+Chute Interface Object
+----------------------
 
 Chutes may have one or more network interfaces. All chutes are configured
 with a default *eth0* interface that provides WAN connectivity. Chutes
 may request additional network interfaces of various types by defining
-them in the *net* object. *net* is a dictionary, so each network object
-has a name of your choosing. The network name corresponds to the network
-name in certain Local API endpoints such as
+them in the *interfaces* object. *interfaces* is a dictionary, where the
+key should be the desired interface name inside your chute, e.g. *wlan0*.
+The same key is used to reference the interface in certain API endpoints
+such as
 ``/api/v1/chutes/(chute)/networks/(network)``.
+
+.. jsonschema:: chute.json#/definitions/interface
 
 WiFi AP Configuration
 ~~~~~~~~~~~~~~~~~~~~~
@@ -56,51 +66,58 @@ Example
 -------
 
 The following example chute configuration sets up a WiFi access point
-and a web server running on port 5000. First, we show the example in
-YAML format.
+and a web server running on port 5000. It also shows how to install
+and connect a database from a public image.
 
 .. code-block:: yaml
 
-   net:
-     wifi:
-       type: wifi
-       intfName: wlan0
-       dhcp:
-         start: 3
-         limit: 250
-         lease: 1h
-       ssid: Free WiFi
-       options:
-         isolate: true
-         maxassoc: 100
-   web:
-     port: 5000
+  name: seccam
+  description: A Paradrop chute that performs motion detection using a simple WiFi camera.
+  version: 1
 
-Here is the same example in JSON format.
+  services:
+    main:
+      type: light
+      source: .
+      image: python2
+      command: python -u seccam.py
 
-.. code-block:: json
+      environment:
+        IMAGE_INTERVAL: 2.0
+        MOTION_THRESHOLD: 40.0
+        SECCAM_MODE: detect
 
-   {
-     "net": {
-       "wifi": {
-         "type": "wifi",
-         "intfName": "wlan0",
-         "dhcp": {
-           "start": 3,
-           "limit": 250,
-           "lease": "1h"
-         },
-         "ssid": "Free WiFi",
-         "options": {
-           "isolate": true,
-           "maxassoc": 100
-         }
-       }
-     },
-     "web": {
-       "port": 5000
-     }
-   }
+      interfaces:
+        wlan0:
+          type: wifi-ap
+
+          dhcp:
+            leasetime: 12h
+            limit: 250
+            start: 4
+
+          wireless:
+            ssid: seccam42
+            key: paradropseccam
+            hidden: false
+            isolate: true
+
+          requirements:
+            hwmode: 11g
+
+      requests:
+        as-root: true
+        port-bindings:
+          - external: 81
+            internal: 81
+
+    db:
+      type: image
+      image: mongo:3.0
+
+  web:
+    service: main
+    port: 5000
 
 Experimental Features
 ---------------------

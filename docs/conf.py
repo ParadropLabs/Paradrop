@@ -50,8 +50,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.jsonschema',
     'sphinxcontrib.autohttp.flask',
+    'sphinx-jsonschema',
     'sphinx_click.ext'
 ]
 

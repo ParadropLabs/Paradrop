@@ -55,6 +55,14 @@ release() {
         exit 1
     fi
 
+    # Update chute schema for documentation.
+    python -m schemas.chute >docs/api/chute.json
+    git add docs/api/chute.json
+
+    # Update chute schema for pdtools.
+    python -m schemas.chute >tools/pdtools/pdtools/schemas/chute.json
+    git add tools/pdtools/pdtools/schemas/chute.json
+
     version $1
 
     git add --update

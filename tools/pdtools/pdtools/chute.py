@@ -3,8 +3,10 @@ import click
 import json
 import operator
 import os
+import pkg_resources
 
 import git
+import jsonschema
 import yaml
 
 from .controller_client import ControllerClient
@@ -232,3 +234,27 @@ def set_config(ctx, path, value):
 
     with open('paradrop.yaml', 'w') as output:
         yaml.safe_dump(chute, output, default_flow_style=False)
+
+
+@root.command('validate')
+@click.pass_context
+def validate(ctx):
+    """
+    Validate the paradrop.yaml file.
+
+    A note about versions: this command validates the chute configuration
+    against the current rules for the installed version of pdtools. If
+    the chute is to be installed on a Paradrop node running a different
+    version, then this command may not be reliable for determining
+    compatibility.
+    """
+    with open('paradrop.yaml', 'r') as source:
+        chute = yaml.safe_load(source)
+
+    schema_path = pkg_resources.resource_filename('pdtools', 'schemas/chute.json')
+    with open(schema_path, 'r') as source:
+        schema = json.load(source)
+
+    validator = jsonschema.Draft4Validator(schema)
+    for error in sorted(validator.iter_errors(chute), key=str):
+        click.echo(error.message)

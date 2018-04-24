@@ -11,6 +11,7 @@ setup(
         'click~=6.7',
         'future~=0.16.0',
         'GitPython~=2.1.5',
+        'jsonschema~=2.6.0',
         'PyYAML~=3.12',
         'requests~=2.18.1',
         'six~=1.10.0',
@@ -18,6 +19,9 @@ setup(
     ],
 
     packages=find_packages(),
+    package_dir={'pdtools': 'pdtools'},
+    package_data={'pdtools': ['schemas/*.json']},
+    include_package_data=True,
 
     entry_points={
         'console_scripts': [
