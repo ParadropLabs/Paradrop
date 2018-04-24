@@ -8,11 +8,11 @@ Prerequisites
 -------------
 
 Make sure you have Node.js (v6 or newer) installed as well as ParaDrop
-pdtools (v0.9.2 or newer).
+pdtools (v0.11.2 or newer).
 
 ::
 
-    pip install pdtools>=0.9.2
+    pip install pdtools~=0.11.2
 
 Set up
 ------
@@ -27,12 +27,12 @@ Make a new directory.
 Create a chute configuration
 ----------------------------
 
-Use the pdtools interactive init command to create a paradrop.yaml
+Use the pdtools interactive initialize command to create a paradrop.yaml
 file for your chute.
 
 ::
 
-    python -m pdtools chute init
+    python -m pdtools chute initialize
 
 Use the following values as suggested responses to the prompts. If
 you have a different version of pdtools installed, the prompts may be
@@ -112,3 +112,10 @@ following command to alter the configuration file.
 ::
 
     python -m pdtools chute set config.web.port 3000
+
+After that, you can continue developing the chute and install it
+on a ParaDrop node.
+
+::
+
+    python -m pdtools node --target=<node address> install-chute

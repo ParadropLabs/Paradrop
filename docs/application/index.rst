@@ -14,6 +14,7 @@ in other words, the edge component.
 
    introduction
    lightchutes
+   getting-started-c
    getting-started-go
    getting-started-java
    getting-started-node

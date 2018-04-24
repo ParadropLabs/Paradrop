@@ -5,7 +5,7 @@ import os
 import yaml
 
 from . import util
-from .chute import chute_resolve_source
+from .chute import chute_find_field, chute_resolve_source
 from .controller_client import ControllerClient
 
 
