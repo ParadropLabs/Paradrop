@@ -10,13 +10,10 @@ from twisted.python.failure import Failure
 from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.core import plan
+from paradrop.core.chute.builder import build_chute
 from paradrop.core.chute.chute import Chute
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.agent.http import PDServerRequest
-
-
-# Fields that should be present in updates but not chute objects.
-UPDATE_SPECIFIC_ARGS = ['deferred']
 
 
 class UpdateObject(object):
@@ -52,8 +49,10 @@ class UpdateObject(object):
         self.plans = plan.plangraph.PlanMap(self.name)
         # Grab a reference to our storage system
         self.chuteStor = ChuteStorage()
-        # Explicitly define a reference to the new data object
-        self.new = Chute(obj, strip=UPDATE_SPECIFIC_ARGS)
+
+        # Build new Chute object.
+        self.new = build_chute(obj)
+
         # Grab the old version if it exists
         self.old = self.chuteStor.getChute(self.name)
 
