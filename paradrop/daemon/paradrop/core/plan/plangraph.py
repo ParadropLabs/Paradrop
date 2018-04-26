@@ -3,6 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
+import heapq
 
 ###############################################################################
 # PRIORITYFLAGS: Define the priority numbers as constants here
@@ -121,6 +122,7 @@ class Plan:
             return False
         return True
 
+
 class PlanMap:
     """
         This class helps build a dependency graph required to determine what steps are
@@ -129,17 +131,24 @@ class PlanMap:
     def __init__(self, name):
         """Hold onto a name object so we know what we are referencing with this PlanMap."""
         self.name = name
-        # Hold onto plans here
+
+        # Hold onto all available plans here.
         self.plans = []
-        self.planPtr = 0
-        self.abtPtr = None
-        self.abtPlans = []
+        self.abortPlans = []
+
+        # workingPlans is implemented as a heapq. All of the other plan lists
+        # are plain lists.
+        self.maxPriorityReturned = 0
+        self.startedAbort = False
+        self.workingPlans = []
+        self.workingAbortPlans = []
+
         self.skipFunctions = []
 
     def addPlans(self, priority, todoPlan, abortPlan=[]):
         """
             Adds new Plan objects into the list of plans for this PlanMap.
-            
+
             Arguments:
                 @priority   : The priority number (1 is done first, 99 done last - see PRIORITYFLAGS section at top of this file)
                 @todoPlan   : A tuple of (function, (args)), this is the function that completes the actual task requested
@@ -150,6 +159,12 @@ class PlanMap:
                               function fails (ie we were called, then something later on fails that would cause us to undo everything
                               we did to setup/change the Chute).
         """
+        # It is OK to call addPlans out of order during the plan generation
+        # phase, but if we have already started execution and add something out
+        # of order, it indicates a programming error.
+        if priority < self.maxPriorityReturned:
+            raise Exception("Added plan out of order during execution.")
+
         # They can provide multiple abortPlans in a list, or 1 in a tuple, or none at all empty list
         # But internally the abortPlan should be either None or a list (even if the list is size 1)
         if(isinstance(abortPlan, tuple)):
@@ -162,11 +177,12 @@ class PlanMap:
                 abortP = [Plan(*a) for a in abortPlan]
         else:
             raise Exception('BadAbortPlan', 'Plan should be tuple, list of tuples, or empty')
-        
+
         todoP = Plan(*todoPlan)
-        
+
         # Now add into the set
         self.plans.append((priority, todoP, abortP))
+        heapq.heappush(self.workingPlans, (priority, todoP, abortP))
 
     def addMap(self, other):
         """
@@ -175,12 +191,15 @@ class PlanMap:
         # Make sure to extend NOT append these new plans!
         self.plans.extend(other.plans)
 
+        for item in other.plans:
+            heapq.heappush(self.workingPlans, item)
+
     def sort(self):
         """
             Sorts the plans based on priority.
         """
         # Sort by the Priority (first index in tuple)
-        self.plans = sorted(self.plans, key=lambda tup: tup[0])
+        self.plans.sort(key=lambda tup: tup[0])
 
     def registerSkip(self, func):
         """
@@ -191,72 +210,67 @@ class PlanMap:
 
     def getNextTodo(self):
         """
-            Like an iterator function, it returns each element in the list of plans in order.
-            
-            Returns: 
-                (function, args) : Each todo is returned just how the user first added it
-                None                      : None is returned when there are no more todo's
+        Like an iterator function, it returns each element in the list of plans in order.
+
+        Returns:
+            (function, args) : Each todo is returned just how the user first added it
+            None             : None is returned when there are no more todo's
         """
-        # Are there more plans?
-        if(self.planPtr == len(self.plans)):
+        if len(self.workingPlans) == 0:
             return None
         else:
-            prio, todo, abt = self.plans[self.planPtr]
-            self.planPtr += 1
-            
-            # After we updated the pointer, check if this is a skipped function
-            # if so then we should just call getNextTodo again!
-            if(todo.func in self.skipFunctions):
+            prio, todo, abt = heapq.heappop(self.workingPlans)
+            self.maxPriorityReturned = prio
+
+            # After popping the next plan, check if this is a skipped function.
+            # If so, then get the next plan.
+            if todo.func in self.skipFunctions:
                 return self.getNextTodo()
             else:
+                self.abortPlans.append(abt)
                 return (todo.func, todo.args)
-    
+
     def getNextAbort(self):
         """
-            Like an iterator function, it returns each element in the list of abort plans in order.
-            
-            Returns: 
-                (function, args) : Each todo is returned just how the user first added it
-                None                      : None is returned when there are no more todo's
+        Like an iterator function, it returns each element in the list of abort plans in order.
+
+        Returns:
+            (function, args) : Each todo is returned just how the user first added it
+            None             : None is returned when there are no more todo's
         """
         # Check if this is the first time calling the function
-        if(self.abtPtr == None):
+        if not self.startedAbort:
             ###################################################################################
             # If so we generate the abort list right now
             # The reason we do this is that depending on how far along the plan got, we have
             # to abort different things, and some functions will exist in multiple abort plans
             # so we need to call stuff in the proper order
             ###################################################################################
-            
-            # So start at one minus the todoPlan that failed
-            startPoint = self.planPtr - 1
 
-            for prio, todo, abt in self.plans[startPoint::-1]:
+            # Skip the last stage and iterate in reverse order.
+            for stage in reversed(self.abortPlans[:-1]):
                 # If nothing keep looking
-                if(not abt):
+                if not stage:
                     continue
 
                 # This should be a list of Plan() objects
-                for a in abt:
+                for a in stage:
                     # See if we are already going to do this Plan()
-                    if(a not in self.abtPlans):
-                        self.abtPlans.append(a)
-            
-            # Lastly set the abtPtr so we know we can start
-            self.abtPtr = 0
-        
-        # Here occurs after the first time call check
-        # Now we actually return each new Plan from abtPlans
-        if(self.abtPtr == len(self.abtPlans)):
+                    if a not in self.workingAbortPlans:
+                        self.workingAbortPlans.append(a)
+
+            # Lastly, set the started flag, so we don't initialize the list again.
+            self.startedAbort = True
+
+        if len(self.workingAbortPlans) == 0:
             return None
         else:
-            abt = self.abtPlans[self.abtPtr]
-            self.abtPtr += 1
+            abt = self.workingAbortPlans.pop(0)
             return (abt.func, abt.args)
 
     def __repr__(self):
         return "<%s %r: %d Plans>" % (self.__class__.__name__, self.name, len(self.plans))
-    
+
     def __str__(self):
         ret = "%r:\n" % self.name
         for p, todopl, abortpl in self.plans:
