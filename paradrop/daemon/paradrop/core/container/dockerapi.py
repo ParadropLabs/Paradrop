@@ -154,14 +154,6 @@ def buildImage(update):
     if hasattr(update, 'dockerfile'):
         buildSuccess = _buildImage(update, client, True,
                 rm=True, tag=repo, fileobj=update.dockerfile)
-    elif hasattr(update, 'download'):
-        # download field should be an object with at least 'url' but may also
-        # contain 'user' and 'secret' for authentication.
-        download_args = update.download
-        with downloader(**download_args) as dl:
-            workDir, meta = dl.fetch()
-            buildSuccess = _buildImage(update, client, False,
-                    rm=True, tag=repo, path=workDir)
     elif hasattr(update, 'workdir'):
         buildSuccess = _buildImage(update, client, False, rm=True, tag=repo,
                 path=update.workdir)

@@ -21,6 +21,7 @@ class Chute(object):
     def __init__(self, descriptor, strip=None):
         # Set these first so we don't have to worry about it later
         self.name = None
+        self.config = {}
         self.state = None
         self.warning = None
 
@@ -99,11 +100,7 @@ class Chute(object):
         # Currently, we do this by selectively copying from __dict__.  A
         # cleaner separation would require refactoring all the way through how
         # we create update objects.
-        config = {}
-        for key in self.__dict__:
-            if key in self.CONFIG_FIELDS:
-                config[key] = self.__dict__[key]
-        return config
+        return self.config
 
     def getHostConfig(self):
         """
@@ -111,10 +108,7 @@ class Chute(object):
 
         Returns an empty dictionary if there is no host_config setting.
         """
-        config = getattr(self, 'host_config', None)
-        if config is None:
-            config = {}
-        return config
+        return self.config.get('host_config', {})
 
     def getWebPort(self):
         """
@@ -122,12 +116,7 @@ class Chute(object):
 
         Returns port (int) or None if no port is configured.
         """
-        port = None
-        if hasattr(self, 'web'):
-            port = self.web.get('port', None)
-
-        if port is not None:
-            # Make sure it is an int.
-            return int(port)
-        else:
+        try:
+            return int(self.config['web']['port'])
+        except:
             return None

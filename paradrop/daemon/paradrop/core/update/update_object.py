@@ -16,6 +16,14 @@ from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.agent.http import PDServerRequest
 
 
+# Examples of update objects, first from local installation, second from cloud
+# update.
+#
+# {'web': {'port': 8080}, 'workdir': '/tmp/tmpo67yf7', 'name': 'go-hello-world', 'deferred': <Deferred at 0x7f46dc5fae18>, 'updateType': 'create', 'state': 'running', 'tok': 1524765733, 'updateClass': 'CHUTE', 'version': 'x1524765733', 'change_id': 2}
+#
+# {u'web': {u'port': u'8080'}, u'name': u'go-hello-world', 'deferred': <Deferred at 0x7f46dc5adfc8>, 'updateType': u'update', 'state': 'running', 'tok': 1524765792, 'updateClass': u'CHUTE', u'version': 1, 'external': {'chute_id': u'5ae20aa29ca0e4049ca2fff3', 'update_id': u'5ae2145f9ca0e4049ca3017d', 'version_id': u'5ae20ab59ca0e4049ca2fff8'}, 'change_id': 3, u'download': {u'url': u'https://github.com/ParadropLabs/go-hello-world', u'checkout': u'master'}}
+
+
 class UpdateObject(object):
 
     """
@@ -253,6 +261,12 @@ class UpdateObject(object):
     def remove_message_observer(self, observer):
         self.message_observers.remove(observer)
 
+    def has_chute_build(self):
+        """
+        Check whether this update involves building a chute.
+        """
+        return False
+
 
 # This gives the new chute state if an update of a given type succeeds.
 NEW_CHUTE_STATE = {
@@ -304,6 +318,9 @@ class UpdateChute(UpdateObject):
             self.old.version = 0
         if not hasattr(self.new, 'version'):
             self.new.version = 0
+
+    def has_chute_build(self):
+        return self.updateType in ["create", "update"]
 
 
 class UpdateRouter(UpdateObject):

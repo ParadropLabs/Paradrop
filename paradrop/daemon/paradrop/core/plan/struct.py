@@ -4,7 +4,7 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.core.config import devices, network, hostconfig, osconfig, reservations, wifi
+from paradrop.core.config import devices, files, network, hostconfig, osconfig, reservations, wifi
 
 from . import plangraph
 
@@ -18,6 +18,13 @@ def generatePlans(update):
             True: abort the plan generation process
     """
     out.verbose("%r\n" % (update))
+
+    update.plans.addPlans(plangraph.DOWNLOAD_CHUTE_FILES,
+                          (files.download_chute_files, ),
+                          (files.delete_chute_files, ))
+
+    update.plans.addPlans(plangraph.LOAD_CHUTE_CONFIGURATION,
+                          (files.load_chute_configuration, ))
 
     # Detect system devices and set up basic configuration for them (WAN
     # interface, wireless devices).  These steps do not need to be reverted on

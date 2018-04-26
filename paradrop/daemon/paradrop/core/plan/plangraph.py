@@ -23,8 +23,8 @@ RUNTIME_SECURITY_CHECK          = 5
 
 ###############################################################################
 # Configuration Generation
-SNAP_CHECK_VERSION              = 6
-NAME_RESV_PART                  = 7
+DOWNLOAD_CHUTE_FILES            = 6
+LOAD_CHUTE_CONFIGURATION        = 7
 STRUCT_GET_SYSTEM_DEVICES       = 8
 STRUCT_GET_RESERVATIONS         = 9
 STRUCT_GET_HOST_CONFIG          = 10

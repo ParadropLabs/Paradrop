@@ -67,6 +67,8 @@ class Downloader(object):
         Returns the full path to the temporary directory containing the project
         and a dictionary containing meta data.
         """
+        if self.workDir is None:
+            self.workDir = tempfile.mkdtemp()
         runDir = self.download()
         meta = self.meta()
         return runDir, meta

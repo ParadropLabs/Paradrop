@@ -171,6 +171,8 @@ class MultiServiceChuteBuilder(ChuteBuilder):
             value = config.get(field, "unknown")
             setattr(self.chute, field, value)
 
+        self.chute.config = config.get("config", {})
+
     def create_services(self, config):
         services = []
 
