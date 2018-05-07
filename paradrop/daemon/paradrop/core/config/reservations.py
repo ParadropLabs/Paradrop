@@ -209,6 +209,6 @@ def getReservations(update):
     interfaces = getInterfaceReservations(exclude=update.new.name)
     subnets = getSubnetReservations(exclude=update.new.name)
 
-    update.new.setCache('deviceReservations', devices)
-    update.new.setCache('interfaceReservations', interfaces)
-    update.new.setCache('subnetReservations', subnets)
+    update.cache_set('deviceReservations', devices)
+    update.cache_set('interfaceReservations', interfaces)
+    update.cache_set('subnetReservations', subnets)

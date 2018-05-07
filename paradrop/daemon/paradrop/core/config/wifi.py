@@ -10,7 +10,7 @@ def getOSWirelessConfig(update):
     """
     # old code under lib.internal.chs.chutelxc same function name
 
-    interfaces = update.new.getCache('networkInterfaces')
+    interfaces = update.cache_get('networkInterfaces')
     if interfaces is None:
         return
 
@@ -42,7 +42,7 @@ def getOSWirelessConfig(update):
 
         wifiIfaces.append((config, options))
 
-    update.new.setCache('osWirelessConfig', wifiIfaces)
+    update.cache_set('osWirelessConfig', wifiIfaces)
 
 
 def setOSWirelessConfig(update):

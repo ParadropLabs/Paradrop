@@ -21,7 +21,7 @@ def getVirtDHCPSettings(update):
     key:virtDHCPSettings.
     """
 
-    interfaces = update.new.getCache('networkInterfaces')
+    interfaces = update.cache_get('networkInterfaces')
     if interfaces is None:
         return
 
@@ -36,7 +36,7 @@ def getVirtDHCPSettings(update):
         # Construct a path for the lease file that will be visible inside the
         # chute.
         leasefile = os.path.join(
-            update.new.getCache('externalSystemDir'),
+            update.cache_get('externalSystemDir'),
             "dnsmasq-{}.leases".format(iface['name'])
         )
 
@@ -105,7 +105,7 @@ def getVirtDHCPSettings(update):
 
         dhcpSettings.append((config, options))
 
-    update.new.setCache('virtDHCPSettings', dhcpSettings)
+    update.cache_set('virtDHCPSettings', dhcpSettings)
 
 
 def setVirtDHCPSettings(update):

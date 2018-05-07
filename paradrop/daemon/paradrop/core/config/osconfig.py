@@ -42,7 +42,7 @@ def applyWaitOnlineFix(update):
     This fixes the long delay on system startup while it waits for all network
     interfaces to be connected.
     """
-    hostConfig = update.new.getCache('hostConfig')
+    hostConfig = update.cache_get('hostConfig')
     ifname = datastruct.getValue(hostConfig, 'wan.interface', None)
 
     if ifname is not None:

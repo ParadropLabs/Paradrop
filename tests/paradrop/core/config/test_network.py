@@ -49,11 +49,11 @@ def test_getNetworkConfig():
         }
     }
 
-    update.new.setCache('deviceReservations', {})
-    update.new.setCache('interfaceReservations', set())
-    update.new.setCache('subnetReservations', set())
+    update.cache_set('deviceReservations', {})
+    update.cache_set('interfaceReservations', set())
+    update.cache_set('subnetReservations', set())
 
-    update.new.state = update.new.STATE_RUNNING
+    update.state = "running"
 
     # Exception: Interafce definition missing field(s)
     assert_raises(Exception, network.getNetworkConfig, update)
@@ -70,7 +70,7 @@ def test_getNetworkConfig():
     network.getNetworkConfig(update)
 
     # Should have called setCache with a list containing one interface.
-    value = update.new.getCache('networkInterfaces')
+    value = update.cache_get('networkInterfaces')
     assert isinstance(value, list) and len(value) == 1
 
     # Should have passed through the dhcp section.
@@ -86,7 +86,7 @@ def test_get_current_phy_conf():
     }
 
     update = MagicMock()
-    update.new.getCache.return_value = hostConfig
+    update.cache_get.return_value = hostConfig
 
     result = network.get_current_phy_conf(update, 'pci-wifi-0')
     assert result['id'] == 'pci-wifi-0'
@@ -116,7 +116,7 @@ def test_fulfillDeviceRequest():
     update = MagicMock()
 
     reservations = collections.defaultdict(DeviceReservations)
-    update.new.getCache.return_value = reservations
+    update.cache_get.return_value = reservations
 
     devices = {
         'wifi': [
@@ -146,7 +146,7 @@ def test_fulfillDeviceRequest():
     assert_raises(Exception, network.fulfillDeviceRequest, update, config, devices)
 
     reservations = collections.defaultdict(DeviceReservations)
-    update.new.getCache.return_value = reservations
+    update.cache_get.return_value = reservations
 
     # Test shared access type interfaces (AP).
     #
@@ -168,7 +168,7 @@ def test_fulfillDeviceRequest():
     assert_raises(Exception, network.fulfillDeviceRequest, update, config, devices)
 
     reservations = collections.defaultdict(DeviceReservations)
-    update.new.getCache.return_value = reservations
+    update.cache_get.return_value = reservations
 
     # Test mixed assignment.
     #
@@ -232,7 +232,7 @@ def test_fulfillDeviceRequest_additional_requests():
             return hostConfig
 
     update = MagicMock()
-    update.new.getCache.side_effect = getCache
+    update.cache_get.side_effect = getCache
 
     config1 = {
         'type': 'wifi',

@@ -45,15 +45,15 @@ class ChuteBuilder(object):
     JSON object via cloud update. The ChuteBuilder then produces a valid
     Chute object with one or more Service objects.
     """
-    def configure_chute(self, config):
+    def configure_chute(self, spec):
         for field in ["name", "version", "description"]:
-            value = config.get(field, "unknown")
+            value = spec.get(field, "unknown")
             setattr(self.chute, field, value)
 
-    def create_chute(self, config):
+    def create_chute(self, spec):
         return NotImplemented
 
-    def create_services(self, config):
+    def create_services(self, spec):
         return NotImplemented
 
     def get_chute(self):
@@ -92,18 +92,29 @@ class SingleServiceChuteBuilder(ChuteBuilder):
     # Fields that should be present in updates but not chute objects.
     UpdateSpecificArgs = ['deferred']
 
-    def create_chute(self, config):
-        self.chute = Chute(config, strip=self.UpdateSpecificArgs)
+    def create_chute(self, spec):
+        self.chute = Chute()
+        self.chute.name = spec.get("name")
+        self.chute.description = spec.get("description", None)
+        self.chute.version = spec.get("version", None)
 
-    def create_services(self, config):
+        config = spec.get("config", {})
+        self.chute.config = config
+
+        # Temporary solution: these will need to be moved to the services.
+        self.chute.environment = config.get("environment", {})
+        self.chute.net = config.get("net", {})
+        self.chute.web = config.get("web", {})
+
+    def create_services(self, spec):
         service = Service(self.chute, None)
 
-        service.command = config.get("command", None)
-        service.image = config.get("use", None)
+        service.command = spec.get("command", None)
+        service.image = spec.get("use", None)
         service.source = "."
-        service.type = config.get("type", "normal")
+        service.type = spec.get("type", "normal")
 
-        service.environment = config.get("environment", {})
+        service.environment = spec.get("environment", {})
 
         self.chute.services = [service]
 
@@ -164,19 +175,19 @@ class MultiServiceChuteBuilder(ChuteBuilder):
          service: main
          port: 5000
     """
-    def create_chute(self, config):
+    def create_chute(self, spec):
         self.chute = Chute({})
 
         for field in ["name", "version", "description"]:
-            value = config.get(field, "unknown")
+            value = spec.get(field, "unknown")
             setattr(self.chute, field, value)
 
-        self.chute.config = config.get("config", {})
+        self.chute.config = spec.get("config", {})
 
-    def create_services(self, config):
+    def create_services(self, spec):
         services = []
 
-        for name, spec in config.get("services", {}).iteritems():
+        for name, spec in spec.get("services", {}).iteritems():
             service = Service(self.chute, name)
 
             service.command = spec.get("command", None)
@@ -191,13 +202,13 @@ class MultiServiceChuteBuilder(ChuteBuilder):
         self.chute.services = services
 
 
-def build_chute(config):
-    if 'services' in config:
+def build_chute(spec):
+    if 'services' in spec:
         builder = MultiServiceChuteBuilder()
     else:
         builder = SingleServiceChuteBuilder()
 
-    builder.create_chute(config)
-    builder.create_services(config)
+    builder.create_chute(spec)
+    builder.create_services(spec)
 
     return builder.get_chute()

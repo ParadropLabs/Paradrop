@@ -21,7 +21,7 @@ telemetry_looping_call = None
 def configure_telemetry(update):
     global telemetry_looping_call
 
-    hostConfig = update.new.getCache('hostConfig')
+    hostConfig = update.cache_get('hostConfig')
 
     enabled = datastruct.getValue(hostConfig, 'telemetry.enabled', False)
     interval = datastruct.getValue(hostConfig, 'telemetry.interval', 60)

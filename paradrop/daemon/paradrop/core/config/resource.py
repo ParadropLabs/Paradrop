@@ -59,5 +59,5 @@ def getResourceAllocation(update):
 
     new_allocation = computeResourceAllocation(chutes)
 
-    update.new.setCache('newResourceAllocation', new_allocation)
-    update.new.setCache('oldResourceAllocation', old_allocation)
+    update.cache_set('newResourceAllocation', new_allocation)
+    update.cache_set('oldResourceAllocation', old_allocation)

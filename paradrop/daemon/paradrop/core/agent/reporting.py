@@ -71,7 +71,7 @@ class StateReportBuilder(object):
                 'name': chute.name,
                 'desired': chute.state,
                 'state': container.getStatus(),
-                'warning': chute.warning,
+                'warning': None,
                 'version': getattr(chute, 'version', None),
                 'allocation': allocation.get(chute.name, None),
                 'environment': getattr(chute, 'environment', None),

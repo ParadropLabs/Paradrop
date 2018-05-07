@@ -101,7 +101,7 @@ def select_chute_subnet_pool(host_config):
 
 
 def chooseSubnet(update, cfg, iface):
-    reservations = update.new.getCache('subnetReservations')
+    reservations = update.cache_get('subnetReservations')
 
     # Check if the chute configuration requests a specific network.
     #
@@ -118,7 +118,7 @@ def chooseSubnet(update, cfg, iface):
             return network
 
     # Get subnet configuration settings from host configuration.
-    host_config = update.new.getCache('hostConfig')
+    host_config = update.cache_get('hostConfig')
     network_pool = select_chute_subnet_pool(host_config)
     prefix_size = datastruct.getValue(host_config,
             "system.chutePrefixSize", SUBNET_SIZE)
@@ -153,7 +153,7 @@ def chooseExternalIntf(update, iface):
         name = "{}:{}".format(update.new.name, iface['internalIntf'])
         base = hash(name)
 
-        reservations = update.new.getCache('interfaceReservations')
+        reservations = update.cache_get('interfaceReservations')
 
         for i in range(MAX_INTERFACE_NUMBERS):
             number = (base + i) % MAX_INTERFACE_NUMBERS
@@ -166,7 +166,7 @@ def chooseExternalIntf(update, iface):
 
     else:
         # For monitor and managed mode, use the existing primary interface.
-        devices = update.new.getCache('networkDevicesByName')
+        devices = update.cache_get('networkDevicesByName')
         if iface['device'] not in devices:
             raise Exception("Could not find device {}".format(iface['device']))
 
@@ -251,7 +251,7 @@ def getNetworkConfigVlan(update, name, cfg, iface):
     iface['externalIntf'] = "br-lan.{}".format(cfg['vlan_id'])
 
     # Prevent multiple chutes from using the same VLAN.
-    reservations = update.new.getCache('interfaceReservations')
+    reservations = update.cache_get('interfaceReservations')
     if iface['externalIntf'] in reservations:
         raise Exception("Interface {} already in use".format(
             iface['externalIntf']))
@@ -271,7 +271,7 @@ def get_current_phy_conf(update, device_id):
 
     Returns a dictionary, which may be empty if no configuration was found.
     """
-    hostConfig = update.new.getCache('hostConfig')
+    hostConfig = update.cache_get('hostConfig')
 
     for dev in hostConfig.get('wifi', []):
         if dev.get('id', None) == device_id:
@@ -309,7 +309,7 @@ def fulfillDeviceRequest(update, cfg, devices):
     # Get list of devices by requested type.
     devlist = devices.get(dtype, [])
 
-    reservations = update.new.getCache('deviceReservations')
+    reservations = update.cache_get('deviceReservations')
 
     bestDevice = None
     bestScore = -1
@@ -416,7 +416,7 @@ def getNetworkConfig(update):
     # Put the list in the cache now (shared reference), so that if we fail out
     # of this function after partial completion, the abort function can take
     # care of what made it into the list.
-    update.new.setCache('networkInterfaces', interfaces)
+    update.cache_set('networkInterfaces', interfaces)
     if not hasattr(update.new, 'net'):
         return None
 
@@ -428,7 +428,7 @@ def getNetworkConfig(update):
     # identical to an old one do not need to be changed.
     oldInterfaces = getInterfaceDict(update.old)
 
-    devices = update.new.getCache('networkDevices')
+    devices = update.cache_get('networkDevices')
 
     for name, cfg in update.new.net.iteritems():
         # Check for required fields.
@@ -481,7 +481,7 @@ def getNetworkConfig(update):
 
         interfaces.append(iface)
 
-    update.new.setCache('networkInterfaces', interfaces)
+    update.cache_set('networkInterfaces', interfaces)
 
 
 def abortNetworkConfig(update):
@@ -510,7 +510,7 @@ def getOSNetworkConfig(update):
     # through the new interfaces.  Anything remaining should be freed.
     removedInterfaces = getInterfaceDict(update.old)
 
-    interfaces = update.new.getCache('networkInterfaces')
+    interfaces = update.cache_get('networkInterfaces')
 
     osNetwork = list()
 
@@ -542,7 +542,7 @@ def getOSNetworkConfig(update):
         if iface['name'] in removedInterfaces:
             del removedInterfaces[iface['name']]
 
-    update.new.setCache('osNetworkConfig', osNetwork)
+    update.cache_set('osNetworkConfig', osNetwork)
 
 
 def setOSNetworkConfig(update):
@@ -567,7 +567,7 @@ def getL3BridgeConfig(update):
     """
     Creates configuration sections for layer 3 bridging.
     """
-    interfaces = update.new.getCache('networkInterfaces')
+    interfaces = update.cache_get('networkInterfaces')
 
     parprouted = list()
 
@@ -585,7 +585,7 @@ def getL3BridgeConfig(update):
         }
         parprouted.append((config, options))
 
-    update.new.setCache('parproutedConfig', parprouted)
+    update.cache_set('parproutedConfig', parprouted)
 
 
 def setL3BridgeConfig(update):

@@ -41,12 +41,12 @@ def test_getVirtDHCPSettings():
     }]
 
     update = UpdateObject({'name': 'test'})
-    update.new.setCache('externalSystemDir', '/tmp')
-    update.new.setCache('networkInterfaces', networkInterfaces)
+    update.cache_set('externalSystemDir', '/tmp')
+    update.cache_set('networkInterfaces', networkInterfaces)
 
     dhcp.getVirtDHCPSettings(update)
 
-    virtDHCPSettings = update.new.getCache('virtDHCPSettings')
+    virtDHCPSettings = update.cache_get('virtDHCPSettings')
 
     # Convert the results to a dictionary for easy validation.
     results = dict()

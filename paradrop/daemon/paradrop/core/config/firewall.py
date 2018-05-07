@@ -23,7 +23,7 @@ def getOSFirewallRules(update):
 
     Stored in key: osFirewallRules
     """
-    interfaces = update.new.getCache('networkInterfaces')
+    interfaces = update.cache_get('networkInterfaces')
     if interfaces is None:
         return None
 
@@ -81,7 +81,7 @@ def getOSFirewallRules(update):
             }
             rules.append((config, options))
 
-    update.new.setCache('osFirewallRules', rules)
+    update.cache_set('osFirewallRules', rules)
 
 
 def getDeveloperFirewallRules(update):
@@ -89,7 +89,7 @@ def getDeveloperFirewallRules(update):
     Generate other firewall rules requested by the developer such as redirects.
     The object returned is a list of tuples (config, options).
     """
-    interfaces = update.new.getCache('networkInterfaces')
+    interfaces = update.cache_get('networkInterfaces')
     if interfaces is None:
         return None
 
@@ -146,7 +146,7 @@ def getDeveloperFirewallRules(update):
 
                 rules.append((config, options))
 
-    update.new.setCache('developerFirewallRules', rules)
+    update.cache_set('developerFirewallRules', rules)
 
 
 def setOSFirewallRules(update):

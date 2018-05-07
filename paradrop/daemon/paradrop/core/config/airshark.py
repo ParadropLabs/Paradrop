@@ -41,8 +41,8 @@ airshark_interface_manager = AirsharkInterfaceManager()
 
 
 def configure(update):
-    hostConfig = update.new.getCache('hostConfig')
-    networkDevices = update.new.getCache('networkDevices')
+    hostConfig = update.cache_get('hostConfig')
+    networkDevices = update.cache_get('networkDevices')
 
     interfaces = hostConfig.get('wifi-interfaces', [])
     airshark_interfaces = []

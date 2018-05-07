@@ -50,20 +50,17 @@ def test_update_chute(getChute):
         'updateType': 'restart',
         'new': Mock(),
         'old': Mock(),
-        'tok': 'tok',
-        'special': 'stuff'
+        'tok': 'tok'
     }
 
     # This means when it looks up the chute in the ChuteStorage,
     # it will find one that is the same as the new chute.
-    getChute.return_value = chute.Chute(obj)
-
-    # We will remove this field on the new object to test the code
-    # that imports fields from the old object from storage.
-    del obj['special']
+    getChute.return_value = chute.Chute(name="Test", description="testing",
+            version="1")
 
     update = UpdateChute(obj)
-    assert update.new.special == update.old.special
+    assert update.new.description == "testing"
+    assert update.new.version == "1"
 
 
 def test_update_object_parse():

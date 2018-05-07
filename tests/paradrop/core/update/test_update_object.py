@@ -50,7 +50,7 @@ def test_UpdateChute(ChuteStorage):
         'name': 'test',
         'version': 5
     }
-    storage.getChute.return_value = Chute(old_chute_data)
+    storage.getChute.return_value = Chute(**old_chute_data)
 
     update_data = {
         'name': 'test',

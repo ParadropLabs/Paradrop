@@ -81,7 +81,7 @@ def test_getHostconfig(prepareHostConfig):
 
     update = MagicMock()
     getHostConfig(update)
-    assert update.new.setCache.called
+    assert update.cache_set.called
 
 
 @patch("paradrop.core.config.hostconfig.prepareHostConfig")
@@ -97,4 +97,4 @@ def test_patchHostconfig(prepareHostConfig):
     ]
 
     getHostConfig(update)
-    assert update.new.setCache.called
+    assert update.cache_set.called

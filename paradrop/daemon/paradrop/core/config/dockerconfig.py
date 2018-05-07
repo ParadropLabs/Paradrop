@@ -43,12 +43,12 @@ def getVirtPreamble(update):
     # chute running so that we can inherit any dynamic port settings.
     bindings = dockerapi.prepare_port_bindings(update.new)
 
-    update.new.setCache('volumes', volumes)
-    update.new.setCache('internalDataDir', intDataDir)
-    update.new.setCache('externalDataDir', extDataDir)
-    update.new.setCache('internalSystemDir', intSystemDir)
-    update.new.setCache('externalSystemDir', extSystemDir)
-    update.new.setCache('portBindings', bindings)
+    update.cache_set('volumes', volumes)
+    update.cache_set('internalDataDir', intDataDir)
+    update.cache_set('externalDataDir', extDataDir)
+    update.cache_set('internalSystemDir', intSystemDir)
+    update.cache_set('externalSystemDir', extSystemDir)
+    update.cache_set('portBindings', bindings)
 
     # Reuse previous token if it exists. This is not ideal but works for
     # updates that do not recreate the container with updated environment
@@ -59,7 +59,7 @@ def getVirtPreamble(update):
         token = update.old.getCache('apiToken')
     if token is None:
         token = generateToken()
-    update.new.setCache('apiToken', token)
+    update.cache_set('apiToken', token)
 
     if not hasattr(update, 'dockerfile'):
         return
@@ -71,8 +71,8 @@ def getVirtPreamble(update):
 
 
 def createVolumeDirs(update):
-    extDataDir = update.new.getCache('externalDataDir')
-    extSystemDir = update.new.getCache('externalSystemDir')
+    extDataDir = update.cache_get('externalDataDir')
+    extSystemDir = update.cache_get('externalSystemDir')
 
     if update.updateType == 'delete':
         pdos.remove(extDataDir, suppressNotFound=True)
@@ -87,8 +87,8 @@ def abortCreateVolumeDirs(update):
     # If there is no old version of the chute, then clean up directories that
     # we created.  Otherwise, leave them in place for the old version.
     if update.old is None:
-        extDataDir = update.new.getCache('externalDataDir')
+        extDataDir = update.cache_get('externalDataDir')
         pdos.remove(extDataDir)
 
-        extSystemDir = update.new.getCache('externalSystemDir')
+        extSystemDir = update.cache_get('externalSystemDir')
         pdos.remove(extSystemDir)

@@ -210,13 +210,13 @@ def getHostConfig(update):
     # TODO We need to check for changes in hardware.  If a new device was
     # added, we should try to automatically configure it.  If a device was
     # removed, we should be aware of what is no longer valid.
-    devices = update.new.getCache('networkDevices')
+    devices = update.cache_get('networkDevices')
     config = prepareHostConfig(devices)
 
     # update.old is not guaranteed to contain the old host configuration, so
     # save a backup copy in update.new.  This will be used by revertHostConfig
     # if we need to back out.
-    update.new.setCache('oldHostConfig', config)
+    update.cache_set('oldHostConfig', config)
 
     # If this is a sethostconfig operation, then read the host config from the
     # update object.  Ordinary chute operations should not alter the host
@@ -233,7 +233,7 @@ def getHostConfig(update):
         config = prepareHostConfig(devices,
                 hostConfigPath=settings.DEFAULT_HOST_CONFIG_FILE)
 
-    update.new.setCache('hostConfig', config)
+    update.cache_set('hostConfig', config)
 
 
 def setAutoUpdate(enable):
@@ -253,7 +253,7 @@ def setHostConfig(update):
 
     Read host configuration from hostConfig.
     """
-    config = update.new.getCache('hostConfig')
+    config = update.cache_get('hostConfig')
     setAutoUpdate(datastruct.getValue(config, "system.autoUpdate", True))
     save(config)
 
@@ -264,6 +264,6 @@ def revertHostConfig(update):
 
     Uses oldHostConfig cache entry.
     """
-    config = update.new.getCache('oldHostConfig')
+    config = update.cache_get('oldHostConfig')
     setAutoUpdate(datastruct.getValue(config, "system.autoUpdate", True))
     save(config)

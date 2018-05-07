@@ -5,8 +5,6 @@ import tempfile
 from nose.tools import assert_raises
 from mock import MagicMock, Mock, patch
 
-from pdmock import MockChute, MockUpdate
-
 from paradrop.base import settings
 from paradrop.lib.utils import pdos
 from paradrop.core.update.update_object import UpdateObject
@@ -134,7 +132,7 @@ def test_configservice():
     from paradrop.core.config import configservice
 
     # This one should succeed
-    update = MockUpdate(name="GoodChute")
+    update = UpdateObject({'name': 'test'})
     assert configservice.reloadAll(update) is None
 
 
@@ -146,7 +144,7 @@ def test_configservice():
     from paradrop.core.config import configservice
 
     # This one should raise an exception
-    update = MockUpdate(name="BadChute")
+    update = UpdateObject({'name': "BadChute"})
     assert_raises(Exception, configservice.reloadAll, update)
 
 
@@ -167,9 +165,9 @@ def test_config_devices():
     assert devices.isWAN("eth0")
     assert devices.isWAN("wlan0") is False
 
-    update = MockUpdate()
+    update = UpdateObject({'name': 'test'})
     update.old = None
-    update.new = MockChute()
+    update.new = MagicMock()
 
     hostConfig = {
         'wan': {
@@ -187,7 +185,7 @@ def test_config_devices():
         },
         'wifi': [{'macaddr': '00:11:22:33:44:55', 'channel': 1}]
     }
-    update.new.setCache('hostConfig', hostConfig)
+    update.cache_set('hostConfig', hostConfig)
 
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
     settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
@@ -200,7 +198,7 @@ def test_config_devices():
     devices.getSystemDevices(update)
     devices.setSystemDevices(update)
 
-    cachedDevices = update.new.getCache("networkDevices")
+    cachedDevices = update.cache_get("networkDevices")
     assert len(cachedDevices) == 3
 
     # Make sure it continues to work with missing devices.
@@ -220,16 +218,16 @@ def test_config_dhcp():
     """
     from paradrop.core.config import dhcp
 
-    update = MockUpdate()
+    update = UpdateObject({'name': 'test'})
     update.old = None
-    update.new = MockChute()
+    update.new = MagicMock()
 
     # Should do nothing before we set "networkInterfaces".
     dhcp.getVirtDHCPSettings(update)
 
     interfaces = fake_interface_list()
-    update.new.setCache("externalSystemDir", "/tmp")
-    update.new.setCache("networkInterfaces", interfaces)
+    update.cache_set("externalSystemDir", "/tmp")
+    update.cache_set("networkInterfaces", interfaces)
 
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
     settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
@@ -305,22 +303,22 @@ def test_config_firewall():
     assert firewall.findMatchingInterface("??lan", interfaces) is not None
     assert firewall.findMatchingInterface("missing", interfaces) is None
 
-    update = MockUpdate()
+    update = UpdateObject({'name': 'test'})
     update.old = None
-    update.new = MockChute()
+    update.new = MagicMock()
 
     # No interfaces in the cache---should return without a problem
     firewall.getOSFirewallRules(update)
     firewall.getDeveloperFirewallRules(update)
 
-    update.new.setCache("networkInterfaces", interfaces)
+    update.cache_set("networkInterfaces", interfaces)
     firewall.getOSFirewallRules(update)
-    result = update.new.getCache("osFirewallRules")
+    result = update.cache_get("osFirewallRules")
     assert len(result) >= 4
 
     update.new.firewall = fake_rules_list()
     firewall.getDeveloperFirewallRules(update)
-    result = update.new.getCache('developerFirewallRules')
+    result = update.cache_get('developerFirewallRules')
     assert len(result) == 1
 
     # Need to make a writable location for our config files.
@@ -381,8 +379,8 @@ def test_get_network_config_wifi():
     update = UpdateObject({'name': 'test'})
     update.old = None
 
-    update.new.setCache('interfaceReservations', set())
-    update.new.setCache('subnetReservations', set())
+    update.cache_set('interfaceReservations', set())
+    update.cache_set('subnetReservations', set())
 
     cfg = dict()
     cfg['type'] = "wifi"
@@ -422,9 +420,9 @@ def test_get_network_config():
     cfg = {'encryption': 'psk2'}
     assert_raises(Exception, network.getWifiKeySettings, cfg, iface)
 
-    update = MockUpdate()
+    update = UpdateObject({'name': 'test'})
     update.old = None
-    update.new = MockChute()
+    update.new = MagicMock()
 
     # Should do nothing on a chute with no "networkInterfaces" cache key.
     network.reclaimNetworkResources(update.new)
@@ -444,12 +442,12 @@ def test_get_network_config():
     devices = {
         'wifi': [{'name': 'wlan0', 'mac': '00:11:22:33:44:55', 'phy': 'phy0'}]
     }
-    update.new.setCache("networkDevices", devices)
-    update.new.setCache("deviceReservations", {
+    update.cache_set("networkDevices", devices)
+    update.cache_set("deviceReservations", {
         "wlan0": DeviceReservations()
     })
-    update.new.setCache("subnetReservations", set())
-    update.new.setCache("interfaceReservations", set())
+    update.cache_set("subnetReservations", set())
+    update.cache_set("interfaceReservations", set())
 
     # Missing 'ssid' field should raise exception.
     assert_raises(Exception, network.getNetworkConfig, update)
@@ -467,9 +465,9 @@ def test_get_network_config():
     network.abortNetworkConfig(update)
 
     # Set up state so that old chute matches new chute.
-    update.old = MockChute()
+    update.old = MagicMock()
     update.old.net = update.new.net.copy()
-    ifaces = list(update.new.getCache("networkInterfaces"))
+    ifaces = list(update.cache_get("networkInterfaces"))
     update.old.setCache("networkInterfaces", ifaces)
 
     # Now try sequence of steps that would occur for a restart.
@@ -519,9 +517,9 @@ def test_revert_config():
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
     settings.UCI_BACKUP_DIR = tempfile.mkdtemp()
 
-    update = MockUpdate()
+    update = UpdateObject({'name': 'test'})
     update.old = None
-    update.new = MockChute()
+    update.new = MagicMock()
 
     osconfig.revertConfig(update, "network")
 
@@ -536,20 +534,20 @@ def test_config_wifi():
     """
     from paradrop.core.config import wifi
 
-    update = MockUpdate()
+    update = UpdateObject({'name': 'test'})
     update.old = None
-    update.new = MockChute()
+    update.new = MagicMock()
 
     # Chute has no net information, we should pass silently.
     assert wifi.getOSWirelessConfig(update) is None
 
     interfaces = fake_interface_list()
-    update.new.setCache('networkInterfaces', interfaces)
+    update.cache_set("networkInterfaces", interfaces)
 
     wifi.getOSWirelessConfig(update)
 
     # Verify the new cache entry
-    result = update.new.getCache('osWirelessConfig')
+    result = update.cache_get('osWirelessConfig')
     assert len(result) == 1
 
     # Need to make a writable location for our config files.

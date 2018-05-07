@@ -9,7 +9,7 @@ from paradrop.lib.utils import datastruct
 
 
 def configure(update):
-    hostConfig = update.new.getCache('hostConfig')
+    hostConfig = update.cache_get('hostConfig')
 
     snapd = SnapdClient(logging=True, wait_async=True)
 

@@ -1,5 +1,5 @@
 ###################################################################
-# Copyright 2013-2015 All Rights Reserved
+# Copyright 2013-2018 All Rights Reserved
 # Authors: The Paradrop Team
 ###################################################################
 
@@ -8,7 +8,15 @@ from paradrop.base.output import out
 
 class Chute(object):
     """
-    Wrapper class for Chute objects.
+    This Chute class provides the internal representation of a Paradrop chute.
+
+    This class encapsulates the complex configuration details of a chute and
+    provides a stable interface for the execution path even as the chute
+    specification language evolves over time.
+
+    The Chute class has minimal external dependencies, e.g. no dependency on
+    the Docker API. Chute objects should be immutable, since they describe a
+    desired software state at a fixed point in time.
     """
     STATE_INVALID = "invalid"
     STATE_DISABLED = "disabled"
@@ -16,33 +24,44 @@ class Chute(object):
     STATE_FROZEN = "frozen"
     STATE_STOPPED = "stopped"
 
-    CONFIG_FIELDS = set(["environment", "host_config", "net", "web"])
+    def __init__(self, name=None, description=None, state="running",
+            version=None, config=None):
+        """
+        Initialize a Chute object.
 
-    def __init__(self, descriptor, strip=None):
-        # Set these first so we don't have to worry about it later
-        self.name = None
-        self.config = {}
-        self.state = None
-        self.warning = None
+        Args:
+            name (str): The name of the chute.
+            description (str): The human-friendly description of the chute.
+            state (str): Desired run state of the chute ("running", "stopped").
+            version (str): The version of the chute.
+            config (dict): Configuration settings for the chute.
+        """
+        self.name = name
+        self.description = description
+        self.state = state
+        self.version = version
 
+        if config is None:
+            self.config = {}
+        else:
+            self.config = config
+
+        # The cache as a working storage of intermediate values has been moved
+        # to the update object. Here, we set the cache right before saving the
+        # chute to disk so that the values can be retrieved with the chute
+        # list.
         self._cache = {}
 
-        # See if we need to rm anything from descriptor since we grab the whole thing
-        if(strip):
-            d = descriptor
-            for s in strip:
-                d.pop(s, None)
-            self.__dict__.update(d)
-        else:
-            self.__dict__.update(descriptor)
-
     def __repr__(self):
-        return "<Chute %s - %s>" % (self.name, self.state)
+        return "<Chute {} - {}>".format(self.name, self.state)
 
     def __str__(self):
         return "Chute:{}".format(self.name)
 
     def isRunning(self):
+        """
+        Check if the chute is supposed to be running.
+        """
         return self.state == Chute.STATE_RUNNING
 
     def isValid(self):
@@ -51,46 +70,29 @@ class Chute(object):
             return False
         return True
 
-    def delCache(self, key):
-        """Delete the key:val from the _cache dict object."""
-        if(key in self._cache.keys()):
-            del(self._cache[key])
-
-    def setCache(self, key, val):
-        """Set the key:val into the _cache dict object to carry around."""
-        self._cache[key] = val
-
     def getCache(self, key):
-        """Get the val out of the _cache dict object, or None if it doesn't exist."""
+        """
+        Get a value from the cache or None if it does not exist.
+        """
         return self._cache.get(key, None)
-
-    def dumpCache(self):
-        """
-            Return a string of the contents of this chute's cache.
-            In case of catastrophic failure dump all cache content so we can debug.
-        """
-        return "\n".join(["%s:%s" % (k,v) for k,v in self._cache.iteritems()])
 
     def getCacheContents(self):
         """
-        Return the cache dictionary.
+        Get the contents of the cache as a dictionary.
         """
         return self._cache
 
-    def appendCache(self, key, val):
+    def setCache(self, key, value):
         """
-            Finds the key they requested and appends the val into it, this function assumes the cache object
-            is of list type, if the key hasn't been defined yet then it will set it to an empty list.
+        Set a value in the cache.
         """
-        r = self.getCache(key)
-        if(not r):
-            r = []
-        elif(not isinstance(r, list)):
-            out.warn('Unable to append to cache, not list type\n' )
-            return
-        r.append(val)
-        self.setCache(key, r)
-        return True
+        self._cache[key] = value
+
+    def updateCache(self, other):
+        """
+        Update the chute cache from another dictionary.
+        """
+        self._cache.update(other)
 
     def getConfiguration(self):
         """
@@ -120,3 +122,20 @@ class Chute(object):
             return int(self.config['web']['port'])
         except:
             return None
+
+    def inherit_attributes(self, other):
+        """
+        Inherit attributes from another version of the chute.
+
+        If any settings are None or missing in this chute but present in the
+        other version, they will be copied over. The return value is a
+        dictionary containing changes that were applied.
+        """
+        changes = {}
+        for attr_name in ["name", "description", "state", "version"]:
+            if getattr(self, attr_name, None) is None:
+                other_value = getattr(other, attr_name, None)
+                if other_value is not None:
+                    setattr(self, attr_name, other_value)
+                    changes[attr_name] = other_value
+        return changes

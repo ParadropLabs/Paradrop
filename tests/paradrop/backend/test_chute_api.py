@@ -347,7 +347,7 @@ def test_ChuteApi_get_networks(ChuteStorage):
         'internalIntf': 'wlan0'
     }
 
-    chute = Chute(dict(name="test"))
+    chute = Chute(name="test")
     chute.setCache("networkInterfaces", [iface])
 
     ChuteStorage.chuteList = {
@@ -377,7 +377,7 @@ def test_ChuteApi_get_network(ChuteStorage):
         'internalIntf': 'wlan0'
     }
 
-    chute = Chute(dict(name="test"))
+    chute = Chute(name="test")
     chute.setCache("networkInterfaces", [iface])
 
     ChuteStorage.chuteList = {
@@ -410,15 +410,16 @@ class TestChuteApi(object):
             'externalIntf': 'vwlan0'
         }
 
-        chute = {
-            'name': 'test',
-            'web': {
-                'port': 5000
+        chute = Chute(name="test")
+        chute.setCache("networkInterfaces", [self.interface])
+        chute.setCache("externalSystemDir", "/tmp")
+        chute.config = {
+            "web": {
+                "port": 5000
             }
         }
-        self.chute = Chute(chute)
-        self.chute.setCache("externalSystemDir", "/tmp")
-        self.chute.setCache("networkInterfaces", [self.interface])
+
+        self.chute = chute
 
     @patch("paradrop.backend.chute_api.ChuteStorage")
     def test_get_leases(self, ChuteStorage):

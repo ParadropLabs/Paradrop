@@ -77,6 +77,12 @@ class UpdateObject(object):
         self.message_observers = []
         self.completed = False
 
+        # Cache for passing intermediate values between plan functions.
+        # Previously, this was all done in the chute object, but the
+        # functionality extends to other operations such as a node
+        # configuration change.
+        self.cache = {}
+
     def __repr__(self):
         return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
 
@@ -267,6 +273,23 @@ class UpdateObject(object):
         """
         return False
 
+    def cache_get(self, key, default=None):
+        """
+        Get a value from the cache or the default value if it does not exist.
+        """
+        return self.cache.get(key, default)
+
+    def cache_set(self, key, value):
+        """
+        Set a value in the cache.
+        """
+        self.cache[key] = value
+
+        # Temporary fix for issues with Docker code (setup_net_interfaces).
+        # Remove this after fixing sections of code that rely on the chute
+        # cache during chute installation.
+        self.new.setCache(key, value)
+
 
 # This gives the new chute state if an update of a given type succeeds.
 NEW_CHUTE_STATE = {
@@ -300,26 +323,15 @@ class UpdateChute(UpdateObject):
 
         super(UpdateChute, self).__init__(obj)
 
-        # If the old state is missing, we are probably trying to start a chute
-        # that does not exist.  Another section of code should detect this
-        # problem, but don't try to pull values from the old state.
-        if self.old is None:
-            return
-
-        # Fill in any missing configuration (e.g. version number) from
-        # the old chute without overwriting any new information.
-        missingKeys = set(self.old.__dict__.keys()) - \
-                      set(self.new.__dict__.keys())
-        for k in missingKeys:
-            setattr(self.new, k, getattr(self.old, k))
-
-        # For compatibility with old chutes, patch missing version numbers.
-        if not hasattr(self.old, 'version'):
-            self.old.version = 0
-        if not hasattr(self.new, 'version'):
-            self.new.version = 0
+        # If going from one version of a chute to another, try to fill in
+        # any missing values in the new chute using the old chute.
+        if self.old is not None:
+            self.new.inherit_attributes(self.old)
 
     def has_chute_build(self):
+        """
+        Check whether this update involves building a chute.
+        """
         return self.updateType in ["create", "update"]
 
 

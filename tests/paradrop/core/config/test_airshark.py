@@ -3,6 +3,7 @@ from mock import mock_open, patch, MagicMock
 
 from paradrop.core.chute.chute import Chute
 from paradrop.core.config import airshark
+from paradrop.core.update.update_object import UpdateObject
 
 @patch("os.system")
 def test_configure_airshark_enabled(mockSystem):
@@ -32,11 +33,11 @@ def test_configure_airshark_enabled(mockSystem):
         }]
     }
 
-    update = MagicMock()
+    update = UpdateObject({'name': 'test'})
     update.new = Chute({})
 
-    update.new.setCache('hostConfig', hostconfig)
-    update.new.setCache('networkDevices', networkDevices)
+    update.cache_set('hostConfig', hostconfig)
+    update.cache_set('networkDevices', networkDevices)
 
     airshark.configure(update)
     mockSystem.assert_called()
@@ -69,11 +70,11 @@ def test_configure_airshark_disabled(mockSystem):
         }]
     }
 
-    update = MagicMock()
+    update = UpdateObject({'name': 'test'})
     update.new = Chute({})
 
-    update.new.setCache('hostConfig', hostconfig)
-    update.new.setCache('networkDevices', networkDevices)
+    update.cache_set('hostConfig', hostconfig)
+    update.cache_set('networkDevices', networkDevices)
 
     airshark.configure(update)
     mockSystem.assert_not_called()
@@ -106,11 +107,11 @@ def test_configure_airshark_abnormal(mockSystem):
         }]
     }
 
-    update = MagicMock()
+    update = UpdateObject({'name': 'test'})
     update.new = Chute({})
 
-    update.new.setCache('hostConfig', hostconfig)
-    update.new.setCache('networkDevices', networkDevices)
+    update.cache_set('hostConfig', hostconfig)
+    update.cache_set('networkDevices', networkDevices)
 
     assert_raises(Exception, airshark.configure, update)
     mockSystem.assert_not_called()

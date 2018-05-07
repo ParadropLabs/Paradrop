@@ -813,12 +813,12 @@ def _setResourceAllocation(allocation):
 
 
 def setResourceAllocation(update):
-    allocation = update.new.getCache('newResourceAllocation')
+    allocation = update.cache_get('newResourceAllocation')
     _setResourceAllocation(allocation)
 
 
 def revertResourceAllocation(update):
-    allocation = update.new.getCache('oldResourceAllocation')
+    allocation = update.cache_get('oldResourceAllocation')
     _setResourceAllocation(allocation)
 
 

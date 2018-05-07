@@ -400,8 +400,8 @@ def getSystemDevices(update):
                 out.warn("Multiple network devices named {}".format(name))
             devicesByName[name] = dev
 
-    update.new.setCache('networkDevices', devices)
-    update.new.setCache('networkDevicesByName', devicesByName)
+    update.cache_set('networkDevices', devices)
+    update.cache_set('networkDevicesByName', devicesByName)
 
 
 def readHostconfigWifi(wifi, networkDevices, builder):
@@ -531,8 +531,8 @@ def checkSystemDevices(update):
     This may reboot the machine if devices are missing and the host config is
     set to do that.
     """
-    devices = update.new.getCache('networkDevices')
-    hostConfig = update.new.getCache('hostConfig')
+    devices = update.cache_get('networkDevices')
+    hostConfig = update.cache_get('hostConfig')
 
     if len(devices['wifi']) == 0:
         handleMissingWiFi(hostConfig)
@@ -676,9 +676,9 @@ def setSystemDevices(update):
 
     Creates basic sections that all chutes require such as the "wan" interface.
     """
-    hostConfig = update.new.getCache('hostConfig')
-    networkDevices = update.new.getCache('networkDevices')
-    networkDevicesByName = update.new.getCache('networkDevicesByName')
+    hostConfig = update.cache_get('hostConfig')
+    networkDevices = update.cache_get('networkDevices')
+    networkDevicesByName = update.cache_get('networkDevicesByName')
 
     builder = UCIBuilder()
 
