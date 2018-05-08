@@ -41,6 +41,9 @@ airshark_interface_manager = AirsharkInterfaceManager()
 
 
 def configure(update):
+    """
+    Configure an Airshark interface.
+    """
     hostConfig = update.cache_get('hostConfig')
     networkDevices = update.cache_get('networkDevices')
 

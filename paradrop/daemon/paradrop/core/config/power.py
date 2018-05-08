@@ -2,6 +2,9 @@ import subprocess
 
 
 def reboot(update):
+    """
+    Reboot the node.
+    """
     cmd = ["shutdown", "-r", "+1"]
     result = subprocess.call(cmd)
     if result == 0:
@@ -11,6 +14,9 @@ def reboot(update):
 
 
 def shutdown(update):
+    """
+    Power down the node.
+    """
     cmd = ["shutdown", "-h", "+1"]
     result = subprocess.call(cmd)
     if result == 0:

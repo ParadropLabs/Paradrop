@@ -15,6 +15,16 @@ from paradrop.core.chute.chute import Chute
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.agent.http import PDServerRequest
 
+from paradrop.core.plan import executionplan
+from paradrop.core.plan import hostconfig
+from paradrop.core.plan import name
+from paradrop.core.plan import resource
+from paradrop.core.plan import router
+from paradrop.core.plan import runtime
+from paradrop.core.plan import snap
+from paradrop.core.plan import state
+from paradrop.core.plan import struct
+from paradrop.core.plan import traffic
 
 # Examples of update objects, first from local installation, second from cloud
 # update.
@@ -319,6 +329,9 @@ class UpdateChute(UpdateObject):
 
     def __init__(self, obj):
         updateType = obj.get('updateType', None)
+
+        # TODO: Remove this if unused. It is not the update that has a running
+        # state but rather the chute.
         obj['state'] = NEW_CHUTE_STATE.get(updateType, Chute.STATE_INVALID)
 
         super(UpdateChute, self).__init__(obj)
@@ -327,6 +340,8 @@ class UpdateChute(UpdateObject):
         # any missing values in the new chute using the old chute.
         if self.old is not None:
             self.new.inherit_attributes(self.old)
+
+        self.new.state = NEW_CHUTE_STATE.get(updateType, Chute.STATE_INVALID)
 
     def has_chute_build(self):
         """

@@ -123,6 +123,9 @@ def writeConfigFile(output):
 
 
 def reconfigureProxy(update):
+    """
+    Reconfigure haproxy with forwarding and redirect rules.
+    """
     confFile = os.path.join(settings.RUNTIME_HOME_DIR, "haproxy.conf")
     pidFile = os.path.join(settings.TMP_DIR, "haproxy.pid")
 

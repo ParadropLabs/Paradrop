@@ -2,6 +2,9 @@ from paradrop.core.chute.chute_storage import ChuteStorage
 
 
 def saveChute(update):
+    """
+    Save information about the chute to the filesystem.
+    """
     chuteStore = ChuteStorage()
     if update.updateType == "delete":
         chuteStore.deleteChute(update.old)

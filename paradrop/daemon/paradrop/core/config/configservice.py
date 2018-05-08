@@ -13,6 +13,9 @@ from paradrop.base.output import out
 
 
 def reloadAll(update):
+    """
+    Reload pdconf configuration files.
+    """
     # Note: reloading all config files at once seems safer than individual
     # files because of cross-dependencies.
     statusString = client.reloadAll()

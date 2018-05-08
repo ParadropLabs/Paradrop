@@ -813,6 +813,9 @@ def _setResourceAllocation(allocation):
 
 
 def setResourceAllocation(update):
+    """
+    Adjust compute resources assigned to chute containers.
+    """
     allocation = update.cache_get('newResourceAllocation')
     _setResourceAllocation(allocation)
 

@@ -378,32 +378,6 @@ def setConfig(chuteName, sections, filepath):
         cfgFile.backup(backupToken="paradrop")
 
 
-#
-# Chute update functions
-#
-
-
-def getSystemDevices(update):
-    """
-    Detect devices on the system.
-
-    Store device information in cache key "networkDevices" as well as
-    "networkDevicesByName".
-    """
-    devices = detectSystemDevices()
-
-    devicesByName = dict()
-    for dtype, dlist in devices.iteritems():
-        for dev in dlist:
-            name = dev['name']
-            if name in devicesByName:
-                out.warn("Multiple network devices named {}".format(name))
-            devicesByName[name] = dev
-
-    update.cache_set('networkDevices', devices)
-    update.cache_set('networkDevicesByName', devicesByName)
-
-
 def readHostconfigWifi(wifi, networkDevices, builder):
     for dev in wifi:
         # The preferred method is to use the id field, which could contain many
@@ -666,6 +640,32 @@ def select_brlan_address(hostConfig):
 
     else:
         return hostConfig['lan']['ipaddr'], netmask
+
+
+#
+# Chute update functions
+#
+
+
+def getSystemDevices(update):
+    """
+    Detect devices on the system.
+
+    Store device information in cache key "networkDevices" as well as
+    "networkDevicesByName".
+    """
+    devices = detectSystemDevices()
+
+    devicesByName = dict()
+    for dtype, dlist in devices.iteritems():
+        for dev in dlist:
+            name = dev['name']
+            if name in devicesByName:
+                out.warn("Multiple network devices named {}".format(name))
+            devicesByName[name] = dev
+
+    update.cache_set('networkDevices', devices)
+    update.cache_set('networkDevicesByName', devicesByName)
 
 
 def setSystemDevices(update):

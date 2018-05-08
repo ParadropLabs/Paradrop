@@ -21,6 +21,9 @@ def generateToken(bits=128):
 
 
 def getVirtPreamble(update):
+    """
+    Prepare various settings for Docker containers.
+    """
     extDataDir = settings.EXTERNAL_DATA_DIR.format(chute=update.new.name)
     intDataDir = getattr(update.new, 'dataDir', settings.INTERNAL_DATA_DIR)
 
@@ -71,6 +74,9 @@ def getVirtPreamble(update):
 
 
 def createVolumeDirs(update):
+    """
+    Create directories required by the chute.
+    """
     extDataDir = update.cache_get('externalDataDir')
     extSystemDir = update.cache_get('externalSystemDir')
 

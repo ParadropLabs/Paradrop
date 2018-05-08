@@ -44,6 +44,11 @@ def computeResourceAllocation(chutes):
 
 
 def getResourceAllocation(update):
+    """
+    Allocate compute resources for chutes.
+
+    Sets cache variables "newResourceAllocation" and "oldResourceAllocation".
+    """
     chuteStore = ChuteStorage()
     chutes = chuteStore.getChuteList()
 
