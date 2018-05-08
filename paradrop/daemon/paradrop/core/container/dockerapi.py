@@ -340,8 +340,6 @@ def _startChute(chute):
     except Exception as e:
         raise e
 
-    setup_net_interfaces(chute)
-
 
 def removeNewContainer(update):
     """
@@ -349,8 +347,6 @@ def removeNewContainer(update):
     """
     name = update.new.name
     out.info("Removing container {}\n".format(name))
-
-    cleanup_net_interfaces(update.new)
 
     try:
         client = docker.DockerClient(base_url="unix://var/run/docker.sock",
@@ -379,8 +375,6 @@ def removeChute(update):
     repo = getImageName(update.old)
     name = update.name
 
-    cleanup_net_interfaces(update.old)
-
     try:
         container = c.containers.get(name)
         container.remove(force=True)
@@ -403,8 +397,6 @@ def removeOldContainer(update):
     """
     out.info('Attempting to remove chute %s\n' % (update.name))
 
-    cleanup_net_interfaces(update.old)
-
     client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
     try:
         container = client.containers.get(update.old.name)
@@ -423,8 +415,6 @@ def stopChute(update):
     """
     out.info('Attempting to stop chute %s\n' % (update.name))
 
-    cleanup_net_interfaces(update.old)
-
     c = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
     container = c.containers.get(update.name)
     container.stop()
@@ -442,8 +432,6 @@ def restartChute(update):
     c = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
     container = c.containers.get(update.name)
     container.start()
-
-    setup_net_interfaces(update.new)
 
 
 def getBridgeGateway():
@@ -577,7 +565,7 @@ def call_retry(cmd, env, delay=3, tries=3):
         time.sleep(delay)
 
 
-def setup_net_interfaces(chute):
+def setup_net_interfaces(update):
     """
     Link interfaces in the host to the internal interfaces in the Docker
     container.
@@ -589,7 +577,7 @@ def setup_net_interfaces(chute):
     :type update: obj
     :returns: None
     """
-    interfaces = chute.getCache('networkInterfaces')
+    interfaces = update.cache_get('networkInterfaces')
 
     # Construct environment for subprocess calls.
     env = {
@@ -599,7 +587,7 @@ def setup_net_interfaces(chute):
         env['PATH'] += ":" + settings.DOCKER_BIN_DIR
 
     # We need the chute's PID in order to work with Linux namespaces.
-    container = ChuteContainer(chute.name)
+    container = ChuteContainer(update.new.name)
     pid = container.getPID()
 
     # Keep list of interfaces that assign to the Docker container that we will
@@ -637,15 +625,15 @@ def setup_net_interfaces(chute):
 
             # Rename the interface according to what the chute wants.
             cmd = ['ip', 'link', 'set', tmpIntf, 'name', internalIntf]
-            call_in_netns(chute, env, cmd)
+            call_in_netns(update.new, env, cmd)
 
             # Set the IP address.
             cmd = ['ip', 'addr', 'add', IP, 'dev', internalIntf]
-            call_in_netns(chute, env, cmd)
+            call_in_netns(update.new, env, cmd)
 
             # Bring the interface up again.
             cmd = ['ip', 'link', 'set', internalIntf, 'up']
-            call_in_netns(chute, env, cmd)
+            call_in_netns(update.new, env, cmd)
 
         elif itype == 'wifi' and mode == 'monitor':
             internalIntf = iface['internalIntf']
@@ -658,7 +646,7 @@ def setup_net_interfaces(chute):
             # Rename the interface inside the container.
             cmd = ['ip', 'link', 'set', 'dev', externalIntf, 'up', 'name',
                     internalIntf]
-            call_in_netns(chute, env, cmd)
+            call_in_netns(update.new, env, cmd)
 
             borrowedInterfaces.append({
                 'type': 'wifi',
@@ -686,10 +674,10 @@ def setup_net_interfaces(chute):
                 'external': externalIntf
             })
 
-    chute.setCache('borrowedInterfaces', borrowedInterfaces)
+    update.cache_set('borrowedInterfaces', borrowedInterfaces)
 
 
-def cleanup_net_interfaces(chute):
+def cleanup_net_interfaces(update):
     """
     Cleanup special interfaces when bringing down a container.
 
@@ -697,7 +685,7 @@ def cleanup_net_interfaces(chute):
     they come back to the host network, e.g. "mon0" inside the container should
     be renamed to the appropriate "wlanX" before the container exits.
     """
-    borrowedInterfaces = chute.getCache('borrowedInterfaces')
+    borrowedInterfaces = update.cache_get('borrowedInterfaces')
     if borrowedInterfaces is None:
         return
 
@@ -712,17 +700,17 @@ def cleanup_net_interfaces(chute):
         if iface['type'] == 'wifi':
             cmd = ['ip', 'link', 'set', 'dev', iface['internal'], 'down',
                     'name', iface['external']]
-            call_in_netns(chute, env, cmd, onerror="ignore", pid=iface['pid'])
+            call_in_netns(update.new, env, cmd, onerror="ignore", pid=iface['pid'])
 
             cmd = ['iw', 'phy', iface['phy'], 'set', 'netns', '1']
-            call_in_netns(chute, env, cmd, onerror="ignore", pid=iface['pid'])
+            call_in_netns(update.new, env, cmd, onerror="ignore", pid=iface['pid'])
 
             resetWirelessDevice(iface['phy'], iface['external'])
 
         elif iface['type'] == 'lan':
             cmd = ['ip', 'link', 'set', 'dev', iface['internal'], 'down',
                     'netns', '1', 'name', iface['external']]
-            call_in_netns(chute, env, cmd, onerror="ignore", pid=iface['pid'])
+            call_in_netns(update.new, env, cmd, onerror="ignore", pid=iface['pid'])
 
 
 def call_in_netns(chute, env, command, onerror="raise", pid=None):

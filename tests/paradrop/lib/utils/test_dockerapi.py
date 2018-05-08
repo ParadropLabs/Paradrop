@@ -52,10 +52,9 @@ def test_build_host_config(getBridgeGateway, ChuteContainer):
     res = dockerapi.build_host_config(chute)
     assert res['dns'] == ['0.0.0.0', '8.8.8.8']
 
-@patch('paradrop.core.container.dockerapi.setup_net_interfaces')
 @patch('paradrop.core.container.dockerapi.out')
 @patch('docker.DockerClient')
-def test_restartChute(mockDocker, mockOutput, mockInterfaces):
+def test_restartChute(mockDocker, mockOutput):
     """
     Test that the restartChute function does it's job.
     """
@@ -69,7 +68,6 @@ def test_restartChute(mockDocker, mockOutput, mockInterfaces):
 
     dockerapi.restartChute(update)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
-    mockInterfaces.assert_called_once_with(update.new)
     container.start.assert_called_once()
 
 @patch('paradrop.core.container.dockerapi.out')
@@ -119,10 +117,9 @@ def test_removeChute(mockDocker, mockOutput):
 
 @patch('paradrop.core.container.dockerapi.prepare_environment')
 @patch('paradrop.core.container.dockerapi.build_host_config')
-@patch('paradrop.core.container.dockerapi.setup_net_interfaces')
 @patch('paradrop.core.container.dockerapi.out')
 @patch('docker.DockerClient')
-def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, prepare_environment):
+def test_startChute(mockDocker, mockOutput, mockConfig, prepare_environment):
     """
     Test that the startChute function does it's job.
     """
@@ -145,7 +142,6 @@ def test_startChute(mockDocker, mockOutput, mockInterfaces, mockConfig, prepare_
     mockConfig.assert_called_once_with(update.new)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     client.containers.run.assert_called_once()
-    mockInterfaces.assert_called_once_with(update.new)
 
     #Test when create or start throws exceptions
     client.containers.run.side_effect = Exception('create container exception')

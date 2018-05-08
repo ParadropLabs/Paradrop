@@ -136,9 +136,8 @@ def test_prepare_environment(core):
 @patch('paradrop.core.container.dockerapi.call_in_netns')
 @patch('paradrop.core.container.dockerapi.call_retry')
 def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
-    chute = MagicMock()
-    chute.name = 'test'
-    chute.getCache.return_value = [{
+    update = MagicMock()
+    update.cache_get.return_value = [{
         'netType': 'wifi',
         'ipaddrWithPrefix': '0.0.0.0/24',
         'internalIntf': 'Inside',
@@ -157,7 +156,7 @@ def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
         'externalIntf': 'Outside'
     }]
 
-    dockerapi.setup_net_interfaces(chute)
+    dockerapi.setup_net_interfaces(update)
 
     assert getPID.called
     assert call_in_netns.called

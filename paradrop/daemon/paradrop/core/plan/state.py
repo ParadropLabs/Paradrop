@@ -36,8 +36,9 @@ def generatePlans(update):
         if update.updateType in ['stop', 'start', 'delete', 'restart']:
             update.failure = "No chute found with id: " + update.name
             return True
+
         # If we are now running then everything has to be setup for the first time
-        if(update.new.state == Chute.STATE_RUNNING):
+        if update.new.state == Chute.STATE_RUNNING:
             update.plans.addPlans(plangraph.STATE_CALL_START,
                     (dockerapi.startChute, ),
                     (dockerapi.removeNewContainer, ))
@@ -89,6 +90,17 @@ def generatePlans(update):
                     update.failure = update.name + " already stopped."
                     return True
                 update.plans.addPlans(plangraph.STATE_CALL_STOP, (dockerapi.stopChute,))
+
+
+    if update.old is not None and update.old.isRunning():
+        update.plans.addPlans(plangraph.STATE_NET_STOP,
+                (dockerapi.cleanup_net_interfaces,),
+                (dockerapi.setup_net_interfaces,))
+
+    if update.new.isRunning():
+        update.plans.addPlans(plangraph.STATE_NET_START,
+                (dockerapi.setup_net_interfaces,),
+                (dockerapi.cleanup_net_interfaces,))
 
     # Save the chute to the chutestorage.
     update.plans.addPlans(plangraph.STATE_SAVE_CHUTE,
