@@ -6,14 +6,9 @@ Endpoints for these functions can be found under /api/v1/audio.
 
 import json
 
-from autobahn.twisted.resource import WebSocketResource
 from klein import Klein
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks, returnValue
 
 import pulsectl
-
-from paradrop.base.output import out
 
 from . import cors
 

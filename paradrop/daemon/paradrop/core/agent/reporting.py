@@ -6,13 +6,11 @@
 
 import json
 import time
-from StringIO import StringIO
 
 from twisted.internet import reactor
-from twisted.web.http_headers import Headers
 
 from paradrop.base.output import out
-from paradrop.base import nexus, settings
+from paradrop.base import nexus
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config import devices, hostconfig, resource, zerotier
 from paradrop.core.container.chutecontainer import ChuteContainer
@@ -126,7 +124,7 @@ class TelemetryReportBuilder(object):
             try:
                 pid = container.getPID()
                 chute_info['process'] = SystemStatus.getProcessInfo(pid)
-            except Exception as error:
+            except Exception:
                 chute_info['process'] = None
 
             interfaces = chute.getCache('networkInterfaces')

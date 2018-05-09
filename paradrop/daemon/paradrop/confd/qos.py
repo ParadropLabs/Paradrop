@@ -263,7 +263,7 @@ class ConfigClassify(ConfigObject):
         self._created_rules = []
         commands = []
 
-        target = self.lookup(allConfigs, "qos", "class", self.target)
+        self.lookup(allConfigs, "qos", "class", self.target)
 
         # Find all classgroup sections that contain the target class.
         for group in self.findByType(allConfigs, "qos", "classgroup"):

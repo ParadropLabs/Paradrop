@@ -85,7 +85,7 @@ def incIpaddr(ipaddr, inc=1):
         val = struct.unpack("!I", socket.inet_aton(ipaddr))[0]
         val += inc
         return socket.inet_ntoa(struct.pack('!I', val))
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -103,7 +103,7 @@ def maxIpaddr(ipaddr, netmask):
         val &= nm
         val |= inc
         return socket.inet_ntoa(struct.pack('!I', val))
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -113,7 +113,7 @@ def getSubnet(ipaddr, netmask):
         nm = struct.unpack("!I", socket.inet_aton(netmask))[0]
         res = val1 & nm
         return socket.inet_ntoa(struct.pack('!I', res))
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -148,8 +148,7 @@ def getGatewayIntf(ch):
     intfs = ch.getCache('networkInterfaces')
     if(not intfs):
         return (None, None)
-    
-    l = []
+
     for i in intfs:
         if(i['netType'] == 'wan'):
             return (i['externalIpaddr'], i['internalIntf'])
@@ -160,7 +159,7 @@ def getGatewayIntf(ch):
 def getWANIntf(ch):
     """
         Looks at the key:networkInterfaces for the chute and finds the WAN interface.
-        
+
         Returns:
             The dict from networkInterfaces
             None

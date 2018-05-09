@@ -3,8 +3,7 @@ import jwt
 import os
 import time
 
-from paradrop.base import nexus, settings
-from paradrop.lib.utils import pdos
+from paradrop.base import nexus
 
 
 def generate_jwt_secret():

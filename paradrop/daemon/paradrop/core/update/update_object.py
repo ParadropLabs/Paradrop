@@ -233,18 +233,18 @@ class UpdateObject(object):
         self.startTime = time.time()
 
         # Generate the plans we need to setup the chute
-        if(plan.executionplan.generatePlans(self)):
+        if(executionplan.generatePlans(self)):
             out.warn('Failed to generate plans\n')
             self.complete(success=False, message=self.failure)
             return
 
         # Aggregate those plans
-        plan.executionplan.aggregatePlans(self)
+        executionplan.aggregatePlans(self)
 
         # Execute on those plans
-        if(plan.executionplan.executePlans(self)):
+        if(executionplan.executePlans(self)):
             # Getting here means we need to abort what we did
-            res = plan.executionplan.abortPlans(self)
+            res = executionplan.abortPlans(self)
 
             # Did aborting also fail? This is bad!
             if(res):
@@ -319,12 +319,12 @@ class UpdateChute(UpdateObject):
     """
     # List of all modules that need to be called during execution planning
     updateModuleList = [
-        plan.name,
-        plan.state,
-        plan.struct,
-        plan.resource,
-        plan.traffic,
-        plan.runtime
+        name,
+        state,
+        struct,
+        resource,
+        traffic,
+        runtime
     ]
 
     def __init__(self, obj):
@@ -360,13 +360,9 @@ class UpdateRouter(UpdateObject):
     # steps that are largely irrelevant for host config updates.  Therefore, we
     # use a different module here.
     updateModuleList = [
-        plan.hostconfig,
-        plan.router
+        hostconfig,
+        router
     ]
-
-    def __init__(self, obj):
-        updateType = obj.get('updateType', None)
-        super(UpdateRouter, self).__init__(obj)
 
 
 class UpdateSnap(UpdateObject):
@@ -379,12 +375,8 @@ class UpdateSnap(UpdateObject):
     # steps that are largely irrelevant for host config updates.  Therefore, we
     # use a different module here.
     updateModuleList = [
-        plan.snap
+        snap
     ]
-
-    def __init__(self, obj):
-        updateType = obj.get('updateType', None)
-        super(UpdateSnap, self).__init__(obj)
 
 
 ###################################################################################################

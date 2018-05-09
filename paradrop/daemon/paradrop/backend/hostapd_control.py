@@ -4,10 +4,8 @@ import os
 from autobahn.twisted.websocket import WebSocketServerFactory
 from twisted.internet import interfaces, reactor
 from twisted.internet.defer import Deferred
-from twisted.internet.protocol import ClientFactory, ConnectedDatagramProtocol
+from twisted.internet.protocol import ConnectedDatagramProtocol
 from zope.interface import implementer
-
-from paradrop.base.output import out
 
 from .generic_ws import ProducerConsumerWsProtocol
 

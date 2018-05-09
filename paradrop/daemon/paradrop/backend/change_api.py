@@ -1,11 +1,8 @@
 import json
 
 from klein import Klein
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks, returnValue
 
 from paradrop.base import pdutils
-from paradrop.base.output import out
 from . import cors
 
 
@@ -75,7 +72,7 @@ class ChangeApi(object):
         # retrieval.
         change['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**change)
+        self.update_manager.add_update(**change)
 
         result = {
             'change_id': change['change_id']

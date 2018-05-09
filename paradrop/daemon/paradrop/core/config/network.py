@@ -1,13 +1,12 @@
-import collections
 import netifaces
 import ipaddress
-import itertools
 
 from paradrop.base.output import out
-from paradrop.base import pdutils, settings
-from paradrop.lib.utils import addresses, datastruct, uci
+from paradrop.base import pdutils
+from paradrop.lib.utils import datastruct, uci
 
-from . import configservice, uciutils
+from . import uciutils
+
 
 # TODO: Instead of being a constant, look at device capabilities.
 MAX_AP_INTERFACES = 8
@@ -212,10 +211,6 @@ def getInterfaceAddress(update, name, cfg, iface):
 
 def getNetworkConfigWifi(update, name, cfg, iface):
     iface['mode'] = cfg.get("mode", "ap")
-
-    # Make a dictionary of old interfaces.  Any new interfaces that are
-    # identical to an old one do not need to be changed.
-    oldInterfaces = getInterfaceDict(update.old)
 
     # Generate a name for the new interface in the host.
     iface['externalIntf'] = chooseExternalIntf(update, iface)
@@ -424,10 +419,6 @@ def getNetworkConfig(update):
     if not update.new.isRunning():
         return None
 
-    # Make a dictionary of old interfaces.  Any new interfaces that are
-    # identical to an old one do not need to be changed.
-    oldInterfaces = getInterfaceDict(update.old)
-
     devices = update.cache_get('networkDevices')
 
     for name, cfg in update.new.net.iteritems():
@@ -558,9 +549,9 @@ def setOSNetworkConfig(update):
     #
     # old code under lib.internal.chs.chutelxc same function name
 
-    changed = uciutils.setConfig(update.new, update.old,
-                                 cacheKeys=['osNetworkConfig'],
-                                 filepath=uci.getSystemPath("network"))
+    uciutils.setConfig(update.new, update.old,
+            cacheKeys=['osNetworkConfig'],
+            filepath=uci.getSystemPath("network"))
 
 
 def getL3BridgeConfig(update):
@@ -592,6 +583,6 @@ def setL3BridgeConfig(update):
     """
     Apply configuration for layer 3 bridging.
     """
-    changed = uciutils.setConfig(update.new, update.old,
-                                 cacheKeys=['parproutedConfig'],
-                                 filepath=uci.getSystemPath("parprouted"))
+    uciutils.setConfig(update.new, update.old,
+            cacheKeys=['parproutedConfig'],
+            filepath=uci.getSystemPath("parprouted"))

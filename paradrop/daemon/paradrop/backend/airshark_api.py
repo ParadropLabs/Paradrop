@@ -4,8 +4,6 @@ APIs for developers to check whether Airshark feature is available or not
 import json
 from klein import Klein
 
-from paradrop.lib.utils import pdos
-
 from . import cors
 
 

@@ -2,13 +2,10 @@
 Fetch new updates from the pdserver and apply the updates
 '''
 
-import json
-
-from twisted.internet import reactor, task
-from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet import task
+from twisted.internet.defer import inlineCallbacks
 
 from paradrop.core.agent.http import PDServerRequest
-from paradrop.base import settings
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint
 

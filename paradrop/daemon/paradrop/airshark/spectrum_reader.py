@@ -1,11 +1,8 @@
 import struct
-import time
-import threading
-import math
-from Queue import Queue
 from datetime import datetime
 
 from twisted.internet.fdesc import setNonBlocking
+
 
 class SpectrumReader(object):
 

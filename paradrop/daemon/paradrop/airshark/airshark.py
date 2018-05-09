@@ -6,8 +6,8 @@ from paradrop.base import settings
 from paradrop.lib.utils import pdos
 from paradrop.core.config.airshark import airshark_interface_manager
 from scanner import Scanner
-from spectrum_reader import SpectrumReader
 from analyzer import AnalyzerProcessProtocol
+
 
 class AirsharkManager(object):
     def __init__(self):

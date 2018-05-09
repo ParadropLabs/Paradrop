@@ -2,13 +2,11 @@
 Wamp utility methods.
 '''
 
-import urlparse
-
 from autobahn.twisted import wamp, websocket
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-from autobahn.wamp.types import RegisterOptions, SubscribeOptions, CallOptions, PublishOptions, ComponentConfig
+from autobahn.twisted.wamp import ApplicationSession
+from autobahn.wamp.types import ComponentConfig
 from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
+from twisted.internet.defer import inlineCallbacks, Deferred
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet.ssl import ClientContextFactory
 

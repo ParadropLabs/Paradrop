@@ -3,8 +3,6 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-from paradrop.base.output import out
-
 
 class Chute(object):
     """

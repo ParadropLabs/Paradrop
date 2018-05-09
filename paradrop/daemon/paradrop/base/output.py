@@ -10,15 +10,14 @@ Some of the methods and choice here may seem strange -- they are meant to
 keep this file in
 """
 
-import sys
-import traceback
+import colorama
+import json
+import os
 import Queue
+import sys
 import threading
 import time
-import colorama
 import traceback
-import os
-import json
 
 import smokesignal
 

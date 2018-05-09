@@ -15,16 +15,14 @@ settings.
 
 import itertools
 import jsonpatch
-import os
-import re
 import subprocess
 import yaml
 
-from paradrop.base.output import out
 from paradrop.base import settings
 from paradrop.lib.utils import datastruct
 
 from . import devices as config_devices
+
 
 CHANNELS = [1, 6, 11]
 
@@ -57,7 +55,7 @@ def load(path=None):
         with open(path, 'r') as source:
             data = yaml.safe_load(source.read())
             return data
-    except IOError as e:
+    except IOError:
         pass
 
     return None

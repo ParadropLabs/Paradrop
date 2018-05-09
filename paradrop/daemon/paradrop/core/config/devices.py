@@ -11,7 +11,6 @@ so they only need to be added when missing.
 """
 
 import netifaces
-import itertools
 import operator
 import os
 import re
@@ -21,7 +20,7 @@ from paradrop.base.output import out
 from paradrop.base import settings
 from paradrop.base.exceptions import DeviceNotFoundException
 from paradrop.lib.utils import datastruct, pdos, uci
-from paradrop.core.config import uciutils
+
 
 IEEE80211_DIR = "/sys/class/ieee80211"
 SYS_DIR = "/sys/class/net"
@@ -269,7 +268,6 @@ def listSystemDevices():
     about a network device.
     """
     devices = list()
-    detectedWifi = set()
 
     for ifname in pdos.listdir(SYS_DIR):
         if ifname in EXCLUDE_IFACES:
@@ -678,7 +676,6 @@ def setSystemDevices(update):
     """
     hostConfig = update.cache_get('hostConfig')
     networkDevices = update.cache_get('networkDevices')
-    networkDevicesByName = update.cache_get('networkDevicesByName')
 
     builder = UCIBuilder()
 
@@ -781,7 +778,7 @@ def setSystemDevices(update):
     wifi = hostConfig.get('wifi', [])
     try:
         readHostconfigWifi(wifi, networkDevices, builder)
-    except DeviceNotFoundException as error:
+    except DeviceNotFoundException:
         handleMissingWiFi(hostConfig)
 
     wifiInterfaces = hostConfig.get('wifi-interfaces', [])

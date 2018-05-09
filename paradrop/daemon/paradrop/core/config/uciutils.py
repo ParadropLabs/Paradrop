@@ -1,5 +1,3 @@
-import traceback
-
 from paradrop.lib.utils import uci
 from paradrop.base.output import out
 

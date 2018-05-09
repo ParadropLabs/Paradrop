@@ -12,7 +12,7 @@ starting chutes.
 import time
 
 from paradrop.base.output import out
-from paradrop.base.pdutils import json2str, str2json, timeint, urlDecodeMe
+from paradrop.base.pdutils import str2json, timeint
 from paradrop.base import settings
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config.network import reclaimNetworkResources

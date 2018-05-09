@@ -3,8 +3,6 @@ import json
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
 
-from paradrop.base.output import out
-
 
 class ChangeStreamProtocol(WebSocketServerProtocol):
     def __init__(self, factory):

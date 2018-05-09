@@ -4,7 +4,6 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.base.pdutils import jsonPretty
 from paradrop.base import settings
 from paradrop.core.chute.chute import Chute
 from paradrop.core.config import state

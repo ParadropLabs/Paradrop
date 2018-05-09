@@ -2,7 +2,7 @@ import os
 
 from paradrop.base.output import out
 from paradrop.base import pdutils
-from paradrop.core.config import configservice, uciutils
+from paradrop.core.config import uciutils
 from paradrop.lib.utils import uci
 
 
@@ -112,6 +112,6 @@ def setVirtDHCPSettings(update):
     """
     Takes a list of tuples (config, opts) and saves it to the dhcp config file.
     """
-    changed = uciutils.setConfig(update.new, update.old,
-                                 cacheKeys=['virtDHCPSettings'],
-                                 filepath=uci.getSystemPath("dhcp"))
+    uciutils.setConfig(update.new, update.old,
+            cacheKeys=['virtDHCPSettings'],
+            filepath=uci.getSystemPath("dhcp"))

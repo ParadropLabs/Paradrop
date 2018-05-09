@@ -10,7 +10,6 @@ Functions associated with deploying and cleaning up docker containers.
 import docker
 import json
 import os
-import platform
 import random
 import re
 import shutil
@@ -21,14 +20,10 @@ import yaml
 from paradrop.base.exceptions import ChuteNotFound
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
-from paradrop.lib.misc import resopt
-from paradrop.lib.utils import pdos, pdosq
-from paradrop.core.chute.chute_storage import ChuteStorage
-from paradrop.core.config.devices import getWirelessPhyName, resetWirelessDevice
+from paradrop.core.config.devices import resetWirelessDevice
 
 from .chutecontainer import ChuteContainer
 from .dockerfile import Dockerfile
-from .downloader import downloader
 
 
 DOCKER_CONF = """
@@ -476,7 +471,7 @@ def prepare_port_bindings(chute):
         container = ChuteContainer(chute.name)
         data = container.inspect()
         old_bindings = data['NetworkSettings']['Ports']
-    except ChuteNotFound as error:
+    except ChuteNotFound:
         old_bindings = {}
 
     # If the current binding is unspecified (None), and there exists previous
@@ -743,7 +738,7 @@ def call_in_netns(chute, env, command, onerror="raise", pid=None):
             client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
             container = client.containers.get(chute.name)
             container.exec_run(command, user='root')
-        except Exception as error:
+        except Exception:
             if onerror == "raise":
                 raise
 

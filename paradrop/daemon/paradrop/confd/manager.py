@@ -1,16 +1,14 @@
 import heapq
 import json
 import os
-import subprocess
 import threading
 
 from paradrop.base.output import out
-from paradrop.base import settings
 from paradrop.lib.utils import pdosq
 from paradrop.lib.utils.uci import UCIConfig, getSystemConfigDir
 
 # Import all of the modules defining section types, so that all subclasses of
-# ConfigObject are known.
+# ConfigObject are known. These are imported only for their side effects.
 from . import dhcp
 from . import firewall
 from . import network
@@ -20,6 +18,15 @@ from . import wireless
 
 from .base import ConfigObject
 from .command import CommandList, ErrorCommand
+
+
+# Silence pyflakes warning about unused imports.
+assert dhcp
+assert firewall
+assert network
+assert parprouted
+assert qos
+assert wireless
 
 
 # Map of type names to the classes that handle them.  We now prefer the

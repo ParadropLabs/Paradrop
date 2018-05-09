@@ -14,7 +14,6 @@ import os
 import yaml
 import json
 
-from enum import Enum
 import smokesignal
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue

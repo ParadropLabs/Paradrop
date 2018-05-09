@@ -5,7 +5,7 @@ issue reload commands to the service, see the client.py file instead.
 
 """
 
-from twisted.internet import reactor, defer
+from twisted.internet import reactor
 from paradrop.base import settings
 
 from .manager import ConfigManager

@@ -1,4 +1,3 @@
-import base64
 import json
 import pycurl
 import re
@@ -9,9 +8,8 @@ from StringIO import StringIO
 import twisted
 from twisted.internet import reactor, threads
 from twisted.internet.defer import Deferred, DeferredLock, DeferredSemaphore
-from twisted.internet.error import ConnectionDone
 from twisted.internet.protocol import Protocol
-from twisted.web.client import Agent, FileBodyProducer, HTTPConnectionPool, Response
+from twisted.web.client import Agent, FileBodyProducer, HTTPConnectionPool
 from twisted.web.http_headers import Headers
 
 from paradrop.base import nexus, settings
@@ -163,8 +161,8 @@ class CurlRequestDriver(HTTPRequestDriver):
         if 'json' in contentType:
             try:
                 response.data = json.loads(data)
-            except Exception as error:
-                print("FAILED TO PARSE JSON CRAP")
+            except Exception:
+                print("Failed to parse JSON")
                 print(data)
                 response.data = data
         else:

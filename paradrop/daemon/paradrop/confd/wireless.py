@@ -1,12 +1,8 @@
-import heapq
-import ipaddress
 import os
 import operator
 import random
 import re
 import string
-import subprocess
-from pprint import pprint
 
 from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand

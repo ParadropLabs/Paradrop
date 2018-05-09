@@ -4,7 +4,6 @@ import json
 
 from klein import Klein
 
-from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.core.chute.chute_storage import ChuteStorage
 from . import cors
@@ -30,7 +29,7 @@ def get_username_password(userpass):
     elif count == 2:
         return segments
     else:
-        raise Execption('There should be at most two segments!')
+        raise Exception('There should be at most two segments!')
 
 
 def verify_password(password_manager, userpass):
@@ -77,9 +76,9 @@ def check_auth(password_manager, token_manager, auth_header):
         # allowing user access to the router, etc. In that case we will
         # need to examine the subject, issuer, and audience claims.
         try:
-            decoded = token_manager.decode(token)
+            token_manager.decode(token)
             return True
-        except token_manager.InvalidTokenError as error:
+        except token_manager.InvalidTokenError:
             pass
 
     return False

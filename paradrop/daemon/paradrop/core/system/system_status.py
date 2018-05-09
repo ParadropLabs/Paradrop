@@ -2,8 +2,8 @@
 Get system running status including CPU load, memory usage, network traffic.
 '''
 import psutil
-import socket
 import time
+
 
 class SystemStatus(object):
     INCLUDED_PARTITIONS = set(['/', '/writable'])

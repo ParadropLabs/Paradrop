@@ -62,7 +62,7 @@ class PasswordManager(object):
 
     def _hash_password(self, password):
         salt = self._generate_salt()
-        return crypt.crypt(password, self._generate_salt())
+        return crypt.crypt(password, salt)
 
     def reset(self):
         self.records = []

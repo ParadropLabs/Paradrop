@@ -7,7 +7,6 @@
         we need to support only this module would change.
 """
 
-from paradrop.base.output import out
 from paradrop.lib.utils import datastruct
 from .uciutils import restoreConfigFile
 

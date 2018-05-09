@@ -3,7 +3,8 @@ import fnmatch
 from paradrop.base.output import out
 from paradrop.lib.utils import uci
 
-from . import configservice, uciutils
+from . import uciutils
+
 
 def findMatchingInterface(iface_name, interfaces):
     """
@@ -153,6 +154,6 @@ def setOSFirewallRules(update):
     """
     Takes a list of tuples (config, opts) and saves it to the firewall config file.
     """
-    changed = uciutils.setConfig(update.new, update.old,
-                                 cacheKeys=['osFirewallRules', 'developerFirewallRules'],
-                                 filepath=uci.getSystemPath("firewall"))
+    uciutils.setConfig(update.new, update.old,
+            cacheKeys=['osFirewallRules', 'developerFirewallRules'],
+            filepath=uci.getSystemPath("firewall"))

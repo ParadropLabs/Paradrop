@@ -1,11 +1,8 @@
-import json
-
 from twisted.internet import reactor
 from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET
 
 from paradrop.base import settings
-from paradrop.base.output import out
 from paradrop.lib.utils.uhttp import UHTTPConnection
 from . import cors
 

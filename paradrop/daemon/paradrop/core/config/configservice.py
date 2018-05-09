@@ -8,7 +8,6 @@
 import json
 
 from paradrop.confd import client
-from paradrop.lib.utils import uci
 from paradrop.base.output import out
 
 

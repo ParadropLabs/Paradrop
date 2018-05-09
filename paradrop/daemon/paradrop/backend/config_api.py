@@ -85,7 +85,7 @@ class ConfigApi(object):
         # retrieval.
         update['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**update)
+        self.update_manager.add_update(**update)
 
         result = {
             'change_id': update['change_id']
@@ -278,7 +278,7 @@ class ConfigApi(object):
     @routes.route('/startUpdate', methods=['POST'])
     def start_update(self, request):
         cors.config_cors(request)
-        updateManager.startUpdate()
+        self.update_manager.startUpdate()
         request.setHeader('Content-Type', 'application/json')
         return json.dumps({'success': True})
 

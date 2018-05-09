@@ -2,20 +2,16 @@
 The HTTP server to serve local portal and provide RESTful APIs
 '''
 
-import json
 import os
+import pkg_resources
 from twisted.web.server import Site
 from twisted.web.static import File
-from twisted.web.proxy import ReverseProxyResource
 from twisted.internet import reactor
 from twisted.internet.endpoints import serverFromString
-from twisted.internet.protocol import Factory
 from klein import Klein
 from txsockjs.factory import SockJSResource
 from autobahn.twisted.resource import WebSocketResource
 
-from paradrop.base.exceptions import ParadropException
-from paradrop.core.container.chutecontainer import ChuteContainer
 from paradrop.core.system.system_status import SystemStatus
 
 from .audio_api import AudioApi
@@ -35,7 +31,7 @@ from .password_manager import PasswordManager
 from .token_manager import TokenManager
 from .snapd_resource import SnapdResource
 from .paradrop_log_ws import ParadropLogWsFactory
-from . import cors
+
 
 class HttpServer(object):
     app = Klein()
@@ -53,7 +49,7 @@ class HttpServer(object):
         elif 'SNAP' in os.environ:
             self.portal_dir = os.environ['SNAP'] + '/www'
         else:
-            self.portal_dir = resource_filename('paradrop', 'static')
+            self.portal_dir = pkg_resources.resource_filename('paradrop', 'static')
 
 
     @app.route('/api/v1/audio', branch=True)
@@ -198,8 +194,6 @@ class HttpServer(object):
 
 
 def setup_http_server(http_server, host, port):
-    endpoint_description = "tcp:port={0}:interface={1}".format(port,
-                                                               host)
     endpoint = serverFromString(
         reactor,
         "tcp:port={0}:interface={1}".format(port, host)

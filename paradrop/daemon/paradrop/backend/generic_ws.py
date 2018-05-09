@@ -1,11 +1,6 @@
-import json
-
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from twisted.internet import interfaces
 from zope.interface import implementer
-
-from paradrop.base.output import out
-from paradrop.core.container.log_provider import LogProvider
 
 
 @implementer(interfaces.IConsumer)
@@ -63,7 +58,7 @@ class ProducerConsumerWsProtocol(WebSocketServerProtocol):
     def write(self, data):
         self.sendMessage(data)
         if not self.streaming:
-            producer.resumeProducing()
+            self.producer.resumeProducing()
 
     #
     # IPushProducer interface

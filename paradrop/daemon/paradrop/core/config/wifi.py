@@ -1,7 +1,7 @@
-from paradrop.base.output import out
 from paradrop.lib.utils import uci
 
-from . import configservice, uciutils
+from . import uciutils
+
 
 def getOSWirelessConfig(update):
     """
@@ -49,6 +49,6 @@ def setOSWirelessConfig(update):
     """
     Write settings from osWirelessConfig out to UCI files.
     """
-    changed = uciutils.setConfig(update.new, update.old,
-                                 cacheKeys=['osWirelessConfig'],
-                                 filepath=uci.getSystemPath("wireless"))
+    uciutils.setConfig(update.new, update.old,
+            cacheKeys=['osWirelessConfig'],
+            filepath=uci.getSystemPath("wireless"))

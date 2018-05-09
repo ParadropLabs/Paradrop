@@ -1,9 +1,7 @@
 import httplib
 import json
 import os
-import subprocess
 
-from paradrop.base.output import out
 from paradrop.lib.misc.snapd import SnapdClient
 from paradrop.lib.utils import datastruct
 

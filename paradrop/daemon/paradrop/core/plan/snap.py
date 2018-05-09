@@ -16,4 +16,4 @@ def generatePlans(update):
     out.verbose("%r\n" % (update))
 
     update.plans.addPlans(plangraph.SNAP_INSTALL,
-                          (config.snap.updateSnap, ))
+                          (snap.updateSnap, ))

@@ -8,7 +8,6 @@ import pickle
 from twisted.internet.task import LoopingCall
 
 from paradrop.base.output import out
-from paradrop.base import pdutils
 from paradrop.lib.utils import pdos
 
 
@@ -43,7 +42,6 @@ class PDStorage(object):
 
         if(pdos.exists(self.filename)):
             deleteFile = False
-            data = ""
             try:
                 pyld = pickle.load(pdos.open(self.filename, 'rb'))
                 self.setAttr(self.importAttr(pyld))

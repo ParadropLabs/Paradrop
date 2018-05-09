@@ -21,7 +21,6 @@
 """
 
 import os
-import re
 import sys
 
 DEBUG_MODE = False
@@ -198,7 +197,6 @@ def parseValue(key):
 
 
 def updatePaths(configHomeDir, runtimeHomeDir="/var/run/paradrop"):
-    from types import ModuleType
     # Get a handle to our settings defined above
     mod = sys.modules[__name__]
 

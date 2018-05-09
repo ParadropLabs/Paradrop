@@ -7,7 +7,6 @@ Endpoints for these functions can be found under /api/v1/chutes.
 import json
 import os
 import re
-import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -15,8 +14,6 @@ import yaml
 
 from autobahn.twisted.resource import WebSocketResource
 from klein import Klein
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks, returnValue
 
 from paradrop.base import pdutils, settings
 from paradrop.base.output import out
@@ -39,7 +36,7 @@ class ChuteCacheEncoder(json.JSONEncoder):
     def default(self, o):
         try:
             return json.JSONEncoder.default(self, o)
-        except TypeError as error:
+        except TypeError:
             return repr(o)
 
 
@@ -173,7 +170,6 @@ class ChuteApi(object):
                 raise Exception("Chute name not found in configuration file.")
 
             update['workdir'] = workdir
-            chute_version = paradrop_yaml.get("version", None)
             update['version'] = "x{}".format(update['tok'])
             update.update(config)
         else:
@@ -189,7 +185,7 @@ class ChuteApi(object):
         # retrieval.
         update['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**update)
+        self.update_manager.add_update(**update)
 
         result = {
             'change_id': update['change_id']
@@ -233,7 +229,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             container = ChuteContainer(chute)
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -278,7 +274,6 @@ class ChuteApi(object):
                 raise Exception("Chute name not found in configuration file.")
 
             update['workdir'] = workdir
-            chute_version = paradrop_yaml.get("version", None)
             update['version'] = "x{}".format(update['tok'])
             update.update(config)
         else:
@@ -295,7 +290,7 @@ class ChuteApi(object):
         # retrieval.
         update['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**update)
+        self.update_manager.add_update(**update)
 
         result = {
             'change_id': update['change_id']
@@ -316,7 +311,7 @@ class ChuteApi(object):
         # retrieval.
         update['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**update)
+        self.update_manager.add_update(**update)
 
         result = {
             'change_id': update['change_id']
@@ -337,7 +332,7 @@ class ChuteApi(object):
         # retrieval.
         update['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**update)
+        self.update_manager.add_update(**update)
 
         result = {
             'change_id': update['change_id']
@@ -359,14 +354,14 @@ class ChuteApi(object):
 
             # Chute environment variables can be replaced during the operation.
             update['environment'] = body['environment']
-        except Exception as error:
+        except Exception:
             pass
 
         # We will return the change ID to the caller for tracking and log
         # retrieval.
         update['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**update)
+        self.update_manager.add_update(**update)
 
         result = {
             'change_id': update['change_id']
@@ -388,14 +383,14 @@ class ChuteApi(object):
 
             # Chute environment variables can be replaced during the operation.
             update['environment'] = body['environment']
-        except Exception as error:
+        except Exception:
             pass
 
         # We will return the change ID to the caller for tracking and log
         # retrieval.
         update['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**update)
+        self.update_manager.add_update(**update)
 
         result = {
             'change_id': update['change_id']
@@ -418,7 +413,7 @@ class ChuteApi(object):
             chute_obj = ChuteStorage.chuteList[chute]
             result = chute_obj.getCacheContents()
             return json.dumps(result, cls=ChuteCacheEncoder)
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -465,7 +460,7 @@ class ChuteApi(object):
             chute_obj = ChuteStorage.chuteList[chute]
             config = chute_obj.getConfiguration()
             return json.dumps(config)
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -521,14 +516,14 @@ class ChuteApi(object):
         try:
             body = json.loads(request.content.read())
             update.update(body)
-        except Exception as error:
+        except Exception:
             pass
 
         # We will return the change ID to the caller for tracking and log
         # retrieval.
         update['change_id'] = self.update_manager.assign_change_id()
 
-        d = self.update_manager.add_update(**update)
+        self.update_manager.add_update(**update)
 
         result = {
             'change_id': update['change_id']
@@ -567,7 +562,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "[]"
 
@@ -612,7 +607,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -676,7 +671,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             externalSystemDir = chute_obj.getCache('externalSystemDir')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "[]"
 
@@ -695,7 +690,7 @@ class ChuteApi(object):
                     leases.append(dict(zip(keys, parts)))
             return json.dumps(leases)
 
-        except IOError as error:
+        except IOError:
             # During chute uninstallation, there is a small window where the
             # chute still exists but the leases file has been removed.
             request.setResponseCode(404)
@@ -730,7 +725,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -779,7 +774,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -847,7 +842,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -907,7 +902,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "[]"
 
@@ -986,7 +981,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -1024,7 +1019,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return "{}"
 
@@ -1049,7 +1044,7 @@ class ChuteApi(object):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
             networkInterfaces = chute_obj.getCache('networkInterfaces')
-        except KeyError as error:
+        except KeyError:
             request.setResponseCode(404)
             return ""
 

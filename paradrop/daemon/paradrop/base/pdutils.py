@@ -48,7 +48,7 @@ def timedur(x):
     else:
         res.append(("seconds", x))
 
-    return ", ".join(["%d %s" % (x[1], x[0]) for x in res])
+    return ", ".join(["%d %s" % (w[1], w[0]) for w in res])
 
 
 def convertUnicode(elem):
@@ -227,8 +227,8 @@ def explode(pkt, *args):
             pkt = {'a':0, 'b':1}
             0, 1, None = pdcomm.explode(pkt, 'a', 'b', 'c')
     """
-    if(not args):
-        raise PDError('EXPLODE', 'args must be provided')
+    if not args:
+        raise Exception("Required arguments not provided")
 
     # If there is an error make sure to return a tuple of the proper length
     if(not isinstance(pkt, dict)):

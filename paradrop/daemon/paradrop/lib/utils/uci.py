@@ -60,7 +60,6 @@ def getLineParts(line):
         return parts
 
     groups = []
-    current = []
 
     while len(parts) > 0:
         word = parts.pop(0)

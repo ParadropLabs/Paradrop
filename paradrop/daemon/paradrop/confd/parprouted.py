@@ -1,5 +1,3 @@
-from paradrop.lib.utils import pdosq
-
 from .base import ConfigObject, ConfigOption
 from .command import Command, KillCommand
 

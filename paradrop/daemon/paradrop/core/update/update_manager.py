@@ -8,7 +8,7 @@ import threading
 from twisted.internet import defer, threads
 
 from paradrop.base.output import out
-from paradrop.base.pdutils import timeint, str2json
+from paradrop.base.pdutils import timeint
 from paradrop.base import nexus, settings
 from paradrop.core.agent import reporting
 from paradrop.lib.misc.procmon import dockerMonitor, containerdMonitor
