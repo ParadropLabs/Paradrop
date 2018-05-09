@@ -39,6 +39,7 @@ TRAFFIC_GET_DEVELOPER_FIREWALL  = 19
 RUNTIME_GET_VIRT_PREAMBLE       = 20
 RUNTIME_GET_VIRT_DHCP           = 21
 DHCP_GET_VIRT_RULES             = 22
+STATE_GENERATE_SERVICE_PLANS    = 23
 
 ###############################################################################
 # Build Docker Image

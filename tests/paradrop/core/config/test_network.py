@@ -5,27 +5,11 @@ import ipaddress
 from nose.tools import assert_raises
 from mock import MagicMock, Mock, patch
 
+from paradrop.core.chute.chute import Chute
+from paradrop.core.chute.service import Service
 from paradrop.core.config import network
 from paradrop.core.config.reservations import DeviceReservations
 from paradrop.core.update.update_object import UpdateObject
-
-
-def test_getInterfaceDict():
-    # getInterfaceDict should be able to handle null chute.
-    assert network.getInterfaceDict(None) == {}
-
-    chute = MagicMock()
-    chute.getCache.return_value = []
-    assert network.getInterfaceDict(chute) == {}
-
-    chute = MagicMock()
-    chute.getCache.return_value = [
-        {'name': 'eth0'},
-        {'name': 'eth1'}
-    ]
-    ifaces = network.getInterfaceDict(chute)
-    assert 'eth0' in ifaces
-    assert 'eth1' in ifaces
 
 
 def test_getNetworkConfigWifi():
@@ -43,11 +27,13 @@ def test_getNetworkConfig():
     update = UpdateObject({'name': 'test'})
     update.old = None
 
-    update.new.net = {
-        'wifi': {
-            'dhcp': {}
-        }
+    service = Service(name="main")
+    service.interfaces = {
+        "wlan0": {}
     }
+
+    update.new = Chute(name="test")
+    update.new.add_service(service)
 
     update.cache_set('deviceReservations', {})
     update.cache_set('interfaceReservations', set())
@@ -58,8 +44,8 @@ def test_getNetworkConfig():
     # Exception: Interafce definition missing field(s)
     assert_raises(Exception, network.getNetworkConfig, update)
 
-    update.new.net = {
-        'vlan': {
+    service.interfaces = {
+        "eth1": {
             'intfName': 'eth1',
             'type': 'vlan',
             'dhcp': {},

@@ -7,6 +7,8 @@ from mock import MagicMock, Mock, patch
 
 from paradrop.base import settings
 from paradrop.lib.utils import pdos
+from paradrop.core.chute.chute import Chute
+from paradrop.core.chute.service import Service
 from paradrop.core.update.update_object import UpdateObject
 
 
@@ -272,6 +274,7 @@ def test_config_dockerconfig(ChuteContainer, prepare_port_bindings):
     update.new.name = "test"
     update.new.getHostConfig.return_value = {}
     update.new.getWebPort.return_value = None
+    update.new.get_services.return_value = [MagicMock()]
 
     prepare_port_bindings.return_value = {}
 
@@ -430,14 +433,19 @@ def test_get_network_config():
     # Chute has no net information, we should pass silently.
     assert network.getNetworkConfig(update) is None
 
-    update.new.net = {
-        'mywifi': {
+    service = Service(name="main")
+    service.interfaces = {
+        "wlan0": {
             'type': 'wifi',
             'intfName': 'wlan0',
             'encryption': 'psk2',
             'key': 'password'
         }
     }
+
+    chute = Chute(name="test")
+    chute.add_service(service)
+    update.new = chute
 
     devices = {
         'wifi': [{'name': 'wlan0', 'mac': '00:11:22:33:44:55', 'phy': 'phy0'}]
@@ -452,7 +460,7 @@ def test_get_network_config():
     # Missing 'ssid' field should raise exception.
     assert_raises(Exception, network.getNetworkConfig, update)
 
-    update.new.net['mywifi']['ssid'] = "Paradrop"
+    service.interfaces['wlan0']['ssid'] = "Paradrop"
 
     # Need to make a writable location for our config files.
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()
@@ -465,8 +473,8 @@ def test_get_network_config():
     network.abortNetworkConfig(update)
 
     # Set up state so that old chute matches new chute.
-    update.old = MagicMock()
-    update.old.net = update.new.net.copy()
+    update.old = Chute(name="test")
+    update.old.add_service(service)
     ifaces = list(update.cache_get("networkInterfaces"))
     update.old.setCache("networkInterfaces", ifaces)
 
@@ -477,7 +485,7 @@ def test_get_network_config():
     network.setOSNetworkConfig(update)
 
     # Try asking for a new chute without any interfaces.
-    update.new.net = dict()
+    service.interfaces = {}
 
     # This would be a restart where we remove an interface that was in old but
     # not in new.
@@ -487,17 +495,17 @@ def test_get_network_config():
     network.abortNetworkConfig(update)
 
     # Try a network interface with missing 'type' field.
-    update.new.net = {
-        'mywifi': {
+    service.interfaces = {
+        "wlan0": {
             'intfName': 'wlan0',
         }
     }
     assert_raises(Exception, network.getNetworkConfig, update)
 
     # Try asking for something funny.
-    update.new.net = {
-        'mywifi': {
-            'type': 'fail',
+    service.interfaces = {
+        "wlan0": {
+            'type': 'something funny',
             'intfName': 'wlan0',
         }
     }

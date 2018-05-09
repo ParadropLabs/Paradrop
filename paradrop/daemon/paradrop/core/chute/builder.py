@@ -100,11 +100,6 @@ class SingleServiceChuteBuilder(ChuteBuilder):
 
         config = spec.get("config", {})
         self.chute.config = config
-
-        # Temporary solution: these will need to be moved to the services.
-        self.chute.as_root = config.get("as_root", False)
-        self.chute.environment = config.get("environment", {})
-        self.chute.net = config.get("net", {})
         self.chute.web = config.get("web", {})
 
     def create_services(self, spec):
@@ -115,9 +110,27 @@ class SingleServiceChuteBuilder(ChuteBuilder):
         service.source = "."
         service.type = spec.get("type", "normal")
 
-        service.environment = spec.get("environment", {})
+        config = spec.get("config", {})
 
-        self.chute.services = [service]
+        # Covert old-style structure with arbitrary names to new-style that is
+        # indexed by interface name.
+        interfaces = {}
+        for iface in config.get("net", {}).values():
+            interfaces[iface['intfName']] = iface
+
+        requests = {}
+        requests['as-root'] = config.get("as_root", False)
+
+        try:
+            requests['port-bindings'] = config['host_config']['port_bindings']
+        except KeyError:
+            requests['port-bindings'] = {}
+
+        service.environment = config.get("environment", {})
+        service.interfaces = interfaces
+        service.requests = requests
+
+        self.chute.add_service(service)
 
 
 class MultiServiceChuteBuilder(ChuteBuilder):
@@ -186,8 +199,6 @@ class MultiServiceChuteBuilder(ChuteBuilder):
         self.chute.config = spec.get("config", {})
 
     def create_services(self, spec):
-        services = []
-
         for name, spec in spec.get("services", {}).iteritems():
             service = Service(self.chute, name)
 
@@ -198,9 +209,7 @@ class MultiServiceChuteBuilder(ChuteBuilder):
 
             service.environment = spec.get("environment", {})
 
-            services.append(service)
-
-        self.chute.services = services
+            self.chute.add_service(service)
 
 
 def build_chute(spec):

@@ -22,8 +22,12 @@ class Chute(object):
     STATE_FROZEN = "frozen"
     STATE_STOPPED = "stopped"
 
-    def __init__(self, name=None, description=None, state="running",
-            version=None, config=None):
+    def __init__(self,
+                 name=None,
+                 description=None,
+                 state="running",
+                 version=None,
+                 config=None):
         """
         Initialize a Chute object.
 
@@ -43,6 +47,8 @@ class Chute(object):
             self.config = {}
         else:
             self.config = config
+
+        self.services = {}
 
         # The cache as a working storage of intermediate values has been moved
         # to the update object. Here, we set the cache right before saving the
@@ -64,7 +70,7 @@ class Chute(object):
 
     def isValid(self):
         """Return True only if the Chute object we have has all the proper things defined to be in a valid state."""
-        if(not self.name or len(self.name) == 0):
+        if (not self.name or len(self.name) == 0):
             return False
         return True
 
@@ -137,3 +143,21 @@ class Chute(object):
                     setattr(self, attr_name, other_value)
                     changes[attr_name] = other_value
         return changes
+
+    def add_service(self, service):
+        """
+        Add a service to the chute.
+        """
+        self.services[service.name] = service
+
+    def get_service(self, name):
+        """
+        Get a service by name.
+        """
+        return self.services[name]
+
+    def get_services(self):
+        """
+        Get a list of services installed by this chute.
+        """
+        return self.services.values()

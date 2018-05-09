@@ -3,26 +3,8 @@ from nose.tools import assert_raises
 
 from paradrop.base.exceptions import ChuteNotFound
 from paradrop.core.container import dockerapi
-
-
-def test_getImageName():
-    chute = MagicMock()
-    chute.name = "test"
-    chute.version = 1
-    chute.external_image = "registry.exis.io/test:2"
-
-    result = dockerapi.getImageName(chute)
-    assert result == chute.external_image
-
-    del chute.external_image
-    result = dockerapi.getImageName(chute)
-    assert result == "test:1"
-
-    # For compatibility with older behavior, this should return name:latest
-    # when version is not defined.
-    del chute.version
-    result = dockerapi.getImageName(chute)
-    assert result == "test:latest"
+from paradrop.core.chute.chute import Chute
+from paradrop.core.chute.service import Service
 
 
 def test_getPortList():
@@ -50,35 +32,37 @@ def test_getPortList():
 
 
 @patch('paradrop.core.container.downloader.downloader')
-@patch('paradrop.core.container.dockerapi._pullImage')
-@patch('paradrop.core.container.dockerapi._buildImage')
+@patch('paradrop.core.container.dockerapi._pull_image')
+@patch('paradrop.core.container.dockerapi._build_image')
 @patch('docker.APIClient')
-def test_buildImage(Client, _buildImage, _pullImage, downloader):
+def test_prepare_image(Client, _build_image, _pull_image, downloader):
     client = MagicMock()
     Client.return_value = client
 
-    _buildImage.return_value = True
-    _pullImage.return_value = False
+    _build_image.return_value = True
+    _pull_image.return_value = False
 
     downloader.return_value = MagicMock()
+
+    service = MagicMock()
 
     update = MagicMock()
     del update.download
 
     # Test with dockerfile set.
     update.dockerfile = MagicMock()
-    dockerapi.buildImage(update)
-    _buildImage.assert_called_once()
+    dockerapi.prepare_image(update, service)
+    _build_image.assert_called_once()
 
     # Test with neither dockerfile nor download.
     del update.dockerfile
     del update.workdir
-    assert_raises(Exception, dockerapi.buildImage, update)
+    assert_raises(Exception, dockerapi.prepare_image, update, service)
 
     # Test where build worker function fails.
     update = MagicMock()
-    _buildImage.return_value = False
-    assert_raises(Exception, dockerapi.buildImage, update)
+    _build_image.return_value = False
+    assert_raises(Exception, dockerapi.prepare_image, update, service)
 
 
 def test_buildImage_worker():
@@ -91,7 +75,7 @@ def test_buildImage_worker():
         '{"message": "Message3   "}'
     ]
 
-    res = dockerapi._buildImage(update, client, True)
+    res = dockerapi._build_image(update, client, True)
     assert res is True
 
     # The second message should be suppressed as well as the whitespace after Message3.
@@ -99,21 +83,20 @@ def test_buildImage_worker():
 
 
 @patch('docker.APIClient')
-def test_removeImage_worker(Client):
+def test_remove_image(Client):
     client = MagicMock()
     Client.return_value = client
 
-    chute = MagicMock()
-    chute.name = "test"
-    chute.version = 1
+    update = MagicMock()
+    service = MagicMock()
 
-    dockerapi._removeImage(chute)
+    dockerapi.remove_image(update, service)
     assert client.remove_image.called_once_with(image="test:1")
 
     # Current behavior is to eat the exception, so this call should not raise
     # anything.
     client.remove_image.side_effect = Exception("Image does not exist.")
-    dockerapi._removeImage(chute)
+    dockerapi.remove_image(update, service)
 
 
 @patch('paradrop.base.nexus.core')
@@ -121,11 +104,16 @@ def test_prepare_environment(core):
     chute = MagicMock()
     chute.name = "test"
     chute.version = 5
-    chute.environment = {'CUSTOM_VARIABLE': 42}
 
     core.info.pdid = 'halo42'
 
-    env = dockerapi.prepare_environment(chute)
+    update = MagicMock()
+    update.new = chute
+
+    service = MagicMock()
+    service.environment = {"CUSTOM_VARIABLE": 42}
+
+    env = dockerapi.prepare_environment(update, service)
     assert env['PARADROP_CHUTE_NAME'] == chute.name
     assert env['PARADROP_CHUTE_VERSION'] == chute.version
     assert env['PARADROP_ROUTER_ID'] == core.info.pdid
@@ -138,23 +126,29 @@ def test_prepare_environment(core):
 def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
     update = MagicMock()
     update.cache_get.return_value = [{
+        'service': 'main',
         'netType': 'wifi',
         'ipaddrWithPrefix': '0.0.0.0/24',
         'internalIntf': 'Inside',
         'externalIntf': 'Outside',
         'phy': 'phy0'
     }, {
+        'service': 'main',
         'netType': 'wifi',
         'mode': 'monitor',
         'internalIntf': 'Inside',
         'externalIntf': 'Outside',
         'phy': 'phy1'
     }, {
+        'service': 'main',
         'netType': 'vlan',
         'ipaddrWithPrefix': '0.0.0.0/24',
         'internalIntf': 'Inside',
         'externalIntf': 'Outside'
     }]
+
+    service = MagicMock()
+    update.new.get_service.return_value = service
 
     dockerapi.setup_net_interfaces(update)
 
@@ -165,15 +159,21 @@ def test_setup_net_interfaces(call_retry, call_in_netns, getPID, subprocess):
 
 @patch("paradrop.core.container.dockerapi.ChuteContainer")
 def test_prepare_port_bindings(ChuteContainer):
-    chute = MagicMock()
-    chute.getHostConfig.return_value = {}
-    chute.getWebPort.return_value = 80
+    chute = Chute(name="test")
+    chute.web = {
+        "service": "main",
+        "port": 80
+    }
+
+    service = Service(name="main")
+    service.chute = chute
+    chute.add_service(service)
 
     container = MagicMock()
     container.inspect.side_effect = ChuteNotFound()
     ChuteContainer.return_value = container
 
-    bindings = dockerapi.prepare_port_bindings(chute)
+    bindings = dockerapi.prepare_port_bindings(service)
     assert bindings["80/tcp"] is None
 
     container.inspect.side_effect = None
@@ -188,5 +188,5 @@ def test_prepare_port_bindings(ChuteContainer):
         }
     }
 
-    bindings = dockerapi.prepare_port_bindings(chute)
+    bindings = dockerapi.prepare_port_bindings(service)
     assert bindings["80/tcp"] == "32784"

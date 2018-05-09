@@ -1,12 +1,12 @@
 import netifaces
 import ipaddress
+import six
 
 from paradrop.base.output import out
 from paradrop.base import pdutils
 from paradrop.lib.utils import datastruct, uci
 
 from . import uciutils
-
 
 # TODO: Instead of being a constant, look at device capabilities.
 MAX_AP_INTERFACES = 8
@@ -22,24 +22,8 @@ SUBNET_SIZE = 24
 # Extra Wi-Fi interface options that we will pass on directly to confd.
 # Deprecated: move to 'options' object after 1.0 release.
 IFACE_EXTRA_OPTIONS = set([
-    "auth_server",
-    "auth_secret",
-    "acct_server",
-    "acct_secret",
-    "acct_interval"
+    "auth_server", "auth_secret", "acct_server", "acct_secret", "acct_interval"
 ])
-
-
-def getInterfaceDict(chute):
-    """
-    Return interfaces from a chute as a dict with interface names as the keys.
-    Returns an empty dict if chute is None or it had no interfaces.
-    """
-    oldInterfaces = dict()
-    if chute is not None:
-        cachedInterfaces = chute.getCache('networkInterfaces')
-        oldInterfaces = {iface['name']: iface for iface in cachedInterfaces}
-    return oldInterfaces
 
 
 def reclaimNetworkResources(chute):
@@ -110,8 +94,9 @@ def chooseSubnet(update, cfg, iface):
     if requested is not None:
         network = ipaddress.ip_network(unicode(requested))
         if network in reservations:
-            raise Exception("Could not assign network {}, network already in use".format(
-                requested))
+            raise Exception(
+                "Could not assign network {}, network already in use".format(
+                    requested))
         else:
             reservations.add(network)
             return network
@@ -119,13 +104,14 @@ def chooseSubnet(update, cfg, iface):
     # Get subnet configuration settings from host configuration.
     host_config = update.cache_get('hostConfig')
     network_pool = select_chute_subnet_pool(host_config)
-    prefix_size = datastruct.getValue(host_config,
-            "system.chutePrefixSize", SUBNET_SIZE)
+    prefix_size = datastruct.getValue(host_config, "system.chutePrefixSize",
+                                      SUBNET_SIZE)
 
     network = ipaddress.ip_network(unicode(network_pool))
     if prefix_size < network.prefixlen:
-        raise Exception("Router misconfigured: prefix size {} is invalid for network {}".format(
-            prefix_size, network))
+        raise Exception(
+            "Router misconfigured: prefix size {} is invalid for network {}".
+            format(prefix_size, network))
 
     subnets = network.subnets(new_prefix=prefix_size)
     for subnet in subnets:
@@ -205,8 +191,8 @@ def getInterfaceAddress(update, name, cfg, iface):
 
     # Generate the internal IP address with prefix length (x.x.x.x/y) for
     # convenience of other code that expect that format (e.g. pipework).
-    iface['ipaddrWithPrefix'] = "{}/{}".format(
-            iface['internalIpaddr'], subnet.prefixlen)
+    iface['ipaddrWithPrefix'] = "{}/{}".format(iface['internalIpaddr'],
+                                               subnet.prefixlen)
 
 
 def getNetworkConfigWifi(update, name, cfg, iface):
@@ -215,7 +201,8 @@ def getNetworkConfigWifi(update, name, cfg, iface):
     # Generate a name for the new interface in the host.
     iface['externalIntf'] = chooseExternalIntf(update, iface)
     if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
-        out.warn("Interface name ({}) is too long\n".format(iface['externalIntf']))
+        out.warn("Interface name ({}) is too long\n".format(
+            iface['externalIntf']))
         raise Exception("Interface name is too long")
 
     if iface['mode'] in ["ap", "sta"]:
@@ -361,11 +348,13 @@ def fulfillDeviceRequest(update, cfg, devices):
                 break
 
     if bestDevice is not None:
-        out.info("Assign device {} for requested type {}".format(bestDevice['name'], dtype))
+        out.info("Assign device {} for requested type {}".format(
+            bestDevice['name'], dtype))
         reservations[bestDevice['name']].add(update.new.name, dtype, mode)
         return bestDevice
 
-    raise Exception("Could not satisfy requirement for device of type {}.".format(dtype))
+    raise Exception(
+        "Could not satisfy requirement for device of type {}.".format(dtype))
 
 
 def getExtraOptions(cfg):
@@ -412,8 +401,6 @@ def getNetworkConfig(update):
     # of this function after partial completion, the abort function can take
     # care of what made it into the list.
     update.cache_set('networkInterfaces', interfaces)
-    if not hasattr(update.new, 'net'):
-        return None
 
     # Make sure we only assign interfaces to running chutes.
     if not update.new.isRunning():
@@ -421,56 +408,59 @@ def getNetworkConfig(update):
 
     devices = update.cache_get('networkDevices')
 
-    for name, cfg in update.new.net.iteritems():
-        # Check for required fields.
-        res = pdutils.check(cfg, dict, ['intfName', 'type'])
-        if res:
-            out.warn('Network interface definition {}\n'.format(res))
-            raise Exception("Interface definition missing field(s)")
+    for service in update.new.get_services():
+        for name, cfg in six.iteritems(service.interfaces):
+            # Check for required fields.
+            res = pdutils.check(cfg, dict, ['type'])
+            if res:
+                out.warn('Network interface definition {}\n'.format(res))
+                raise Exception("Interface definition missing field(s)")
 
-        iface = {
-            'name': name,                           # Name (not used?)
-            'netType': cfg['type'],                 # Type (wan, lan, wifi)
-            'internalIntf': cfg['intfName'],        # Interface name in chute
-            'l3bridge': cfg.get('l3bridge', None)   # Optional
-        }
+            iface = {
+                'name': name,  # Name (not used?)
+                'service': service.name,  # Service name
+                'netType': cfg['type'],  # Type (wan, lan, wifi)
+                'internalIntf': cfg['intfName'],  # Interface name in chute
+                'l3bridge': cfg.get('l3bridge', None)  # Optional
+            }
 
-        getInterfaceAddress(update, name, cfg, iface)
+            getInterfaceAddress(update, name, cfg, iface)
 
-        if cfg['type'] == "wifi":
-            # Try to find a physical device of the requested type.
-            #
-            # Note: we try this first because it can fail, and then we will not try
-            # to allocate any resources for it.
-            device = fulfillDeviceRequest(update, cfg, devices)
-            iface['device'] = device['name']
-            iface['phy'] = device['phy']
+            if cfg['type'].startswith("wifi"):
+                # Try to find a physical device of the requested type.
+                #
+                # Note: we try this first because it can fail, and then we will not try
+                # to allocate any resources for it.
+                device = fulfillDeviceRequest(update, cfg, devices)
+                iface['device'] = device['name']
+                iface['phy'] = device['phy']
 
-            getNetworkConfigWifi(update, name, cfg, iface)
+                getNetworkConfigWifi(update, name, cfg, iface)
 
-        elif cfg['type'] == "vlan":
-            getNetworkConfigVlan(update, name, cfg, iface)
+            elif cfg['type'] == "vlan":
+                getNetworkConfigVlan(update, name, cfg, iface)
 
-        elif cfg['type'] == "lan":
-            device = fulfillDeviceRequest(update, cfg, devices)
-            iface['device'] = device['name']
+            elif cfg['type'] == "lan":
+                device = fulfillDeviceRequest(update, cfg, devices)
+                iface['device'] = device['name']
 
-            getNetworkConfigLan(update, name, cfg, iface)
+                getNetworkConfigLan(update, name, cfg, iface)
 
-        else:
-            raise Exception("Unsupported network type, {}".format(cfg['type']))
+            else:
+                raise Exception("Unsupported network type, {}".format(
+                    cfg['type']))
 
-        # Pass on DHCP configuration if it exists.
-        if 'dhcp' in cfg:
-            iface['dhcp'] = cfg['dhcp']
+            # Pass on DHCP configuration if it exists.
+            if 'dhcp' in cfg:
+                iface['dhcp'] = cfg['dhcp']
 
-        # TODO: Refactor!  The problem here is that `cfg` contains a mixture of
-        # fields, some that we will interpret and some that we will pass on to
-        # pdconf.  The result is a lot of logic that tests and copies without
-        # actually accomplishing much.
-        iface['options'] = getExtraOptions(cfg)
+            # TODO: Refactor!  The problem here is that `cfg` contains a mixture of
+            # fields, some that we will interpret and some that we will pass on to
+            # pdconf.  The result is a lot of logic that tests and copies without
+            # actually accomplishing much.
+            iface['options'] = getExtraOptions(cfg)
 
-        interfaces.append(iface)
+            interfaces.append(iface)
 
     update.cache_set('networkInterfaces', interfaces)
 
@@ -497,10 +487,6 @@ def getOSNetworkConfig(update):
     #
     # old code under lib.internal.chs.chutelxc same function name
 
-    # Make a dictionary of old interfaces, then remove them as we go
-    # through the new interfaces.  Anything remaining should be freed.
-    removedInterfaces = getInterfaceDict(update.old)
-
     interfaces = update.cache_get('networkInterfaces')
 
     osNetwork = list()
@@ -511,10 +497,7 @@ def getOSNetworkConfig(update):
         if iface['netType'] == "wifi" and iface.get('mode', 'ap') == "monitor":
             # Monitor mode is a special case - do not configure an IP address
             # for it.
-            options = {
-                'proto': 'none',
-                'ifname': iface['externalIntf']
-            }
+            options = {'proto': 'none', 'ifname': iface['externalIntf']}
 
         else:
             # TODO: Check if configured IP addresses conflict with reservations
@@ -528,10 +511,6 @@ def getOSNetworkConfig(update):
 
         # Add to our OS Network
         osNetwork.append((config, options))
-
-        # This interface is still in use, so take it out of the remove set.
-        if iface['name'] in removedInterfaces:
-            del removedInterfaces[iface['name']]
 
     update.cache_set('osNetworkConfig', osNetwork)
 
@@ -549,9 +528,11 @@ def setOSNetworkConfig(update):
     #
     # old code under lib.internal.chs.chutelxc same function name
 
-    uciutils.setConfig(update.new, update.old,
-            cacheKeys=['osNetworkConfig'],
-            filepath=uci.getSystemPath("network"))
+    uciutils.setConfig(
+        update.new,
+        update.old,
+        cacheKeys=['osNetworkConfig'],
+        filepath=uci.getSystemPath("network"))
 
 
 def getL3BridgeConfig(update):
@@ -568,12 +549,7 @@ def getL3BridgeConfig(update):
             continue
 
         config = {'type': 'bridge'}
-        options = {
-            'interfaces': [
-                iface['externalIntf'],
-                l3bridge
-            ]
-        }
+        options = {'interfaces': [iface['externalIntf'], l3bridge]}
         parprouted.append((config, options))
 
     update.cache_set('parproutedConfig', parprouted)
@@ -583,6 +559,8 @@ def setL3BridgeConfig(update):
     """
     Apply configuration for layer 3 bridging.
     """
-    uciutils.setConfig(update.new, update.old,
-            cacheKeys=['parproutedConfig'],
-            filepath=uci.getSystemPath("parprouted"))
+    uciutils.setConfig(
+        update.new,
+        update.old,
+        cacheKeys=['parproutedConfig'],
+        filepath=uci.getSystemPath("parprouted"))

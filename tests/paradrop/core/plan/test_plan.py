@@ -1,6 +1,6 @@
 from nose.tools import assert_raises
 
-from mock import Mock
+from mock import MagicMock, Mock
 
 from pdmock import MockChute, MockUpdate, do_nothing, make_dummy
 
@@ -223,7 +223,7 @@ def test_state():
 
     # Stop with no old chute should fail
     update.old = None
-    update.new = MockChute()
+    update.new = Chute(name="test")
     update.updateType = "stop"
     assert state.generatePlans(update) is True
 
@@ -237,12 +237,13 @@ def test_state():
     assert state.generatePlans(update) is True
 
     # Start with old chute already running should fail
-    update.old = MockChute()
-    update.updateType = "start"
+    update.old = Chute(name="test")
     update.old.state = Chute.STATE_RUNNING
+    update.updateType = "start"
     assert state.generatePlans(update) is True
 
     # But if the old chute was stopped, then start should succeed
+    update.new.state = "running"
     update.old.state = Chute.STATE_STOPPED
     assert state.generatePlans(update) is None
 

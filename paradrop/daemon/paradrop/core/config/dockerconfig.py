@@ -44,14 +44,15 @@ def getVirtPreamble(update):
 
     # Prepare port bindings while there might still be an old version of the
     # chute running so that we can inherit any dynamic port settings.
-    bindings = dockerapi.prepare_port_bindings(update.new)
+    for service in update.new.get_services():
+        bindings = dockerapi.prepare_port_bindings(service)
+        update.cache_set("portBindings:{}".format(service.name), bindings)
 
     update.cache_set('volumes', volumes)
     update.cache_set('internalDataDir', intDataDir)
     update.cache_set('externalDataDir', extDataDir)
     update.cache_set('internalSystemDir', intSystemDir)
     update.cache_set('externalSystemDir', extSystemDir)
-    update.cache_set('portBindings', bindings)
 
     # Reuse previous token if it exists. This is not ideal but works for
     # updates that do not recreate the container with updated environment

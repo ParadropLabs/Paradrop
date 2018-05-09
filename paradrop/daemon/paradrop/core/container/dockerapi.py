@@ -45,16 +45,6 @@ DOCKER_OPTIONS="--restart=false"
 suppress_re = re.compile("^(Downloading|Extracting|[a-z0-9]+|\[=*>?\s*\].*)$")
 
 
-def getImageName(chute):
-    if hasattr(chute, 'external_image'):
-        return chute.external_image
-    elif hasattr(chute, 'version'):
-        return "{}:{}".format(chute.name, chute.version)
-    else:
-        # Compatibility with old chutes missing version numbers.
-        return "{}:latest".format(chute.name)
-
-
 def getPortList(chute):
     """
     Get a list of ports to expose in the format expected by create_container.
@@ -124,43 +114,98 @@ def writeDockerConfig():
     return written
 
 
-def buildImage(update):
+def prepare_image(update, service):
     """
-    Build the Docker image and monitor progress.
+    Prepare a Docker image for execution.
     """
-    out.info('Building image for {}\n'.format(update.new))
-
     client = docker.APIClient(base_url="unix://var/run/docker.sock", version='auto')
 
-    repo = getImageName(update.new)
+    image_name = service.get_image_name()
 
-    if hasattr(update.new, 'external_image'):
-        # If the pull fails, we will fall through and attempt a local build.
-        # Be aware, in that case, the image will be tagged as if it came from
-        # the registry (e.g. registry.exis.io/image) but will have a different
-        # image id from the published version.  The build should be effectively
-        # the same, though.
-        pulled = _pullImage(update, client)
-        if pulled:
-            return None
-        else:
-            update.progress("Pull failed, attempting a local build.")
+    if service.type == "image":
+        success = _pull_image(update, client, image_name)
+        if not success:
+            raise Exception("Pulling Docker image failed.")
 
-    if hasattr(update, 'dockerfile'):
-        buildSuccess = _buildImage(update, client, True,
-                rm=True, tag=repo, fileobj=update.dockerfile)
-    elif hasattr(update, 'workdir'):
-        buildSuccess = _buildImage(update, client, False, rm=True, tag=repo,
-                path=update.workdir)
+    elif service.type == "inline":
+        success = _build_image(update, client, True, rm=True, tag=image_name,
+                fileobj=service.dockerfile)
+        if not success:
+            raise Exception("Building Docker image failed.")
+
     else:
-        raise Exception("No Dockerfile or download location supplied.")
+        success = _build_image(update, client, False, rm=True, tag=image_name,
+                path=update.workdir)
+        if not success:
+            raise Exception("Building Docker image failed.")
 
-    #If we failed to build skip creating and starting clean up and fail
-    if not buildSuccess:
-        raise Exception("Building docker image failed; check your Dockerfile for errors.")
+
+def remove_image(update, service):
+    """
+    Remove a Docker image.
+    """
+    client = docker.APIClient(base_url="unix://var/run/docker.sock", version='auto')
+
+    image_name = service.get_image_name()
+    out.info("Removing image {}\n".format(image_name))
+
+    try:
+        client = docker.DockerClient(base_url="unix://var/run/docker.sock",
+                version='auto')
+        client.images.remove(image=image_name)
+    except Exception as error:
+        out.warn("Error removing image: {}".format(error))
 
 
-def _buildImage(update, client, inline, **buildArgs):
+def start_container(update, service):
+    """
+    Start running a service in a new container.
+    """
+    client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
+
+    container_name = service.get_container_name()
+    out.info("Attempting to start container {}\n".format(container_name))
+
+    image_name = service.get_image_name()
+
+    host_config = build_host_config(update, service)
+
+    # TODO
+    # Set environment variables for the new container.
+    # PARADROP_ROUTER_ID can be used to change application behavior based on
+    # what router it is running on.
+    environment = prepare_environment(update, service)
+
+    try:
+        container = client.containers.run(detach=True, image=image_name,
+                name=container_name, environment=environment, **host_config)
+        out.info("Successfully started chute with Id: %s\n" % (str(container.id)))
+    except Exception as e:
+        raise e
+
+
+def remove_container(update, service):
+    """
+    Remove a service's container.
+    """
+    container_name = service.get_container_name()
+    out.info("Removing container {}\n".format(container_name))
+
+    try:
+        client = docker.DockerClient(base_url="unix://var/run/docker.sock",
+                version='auto')
+
+        # Grab the last 40 log messages to help with debugging.
+        container = client.containers.get(container_name)
+        logs = container.logs(stream=False, tail=40, timestamps=False)
+        update.progress("{}: {}".format(container_name, logs.rstrip()))
+
+        container.remove(force=True)
+    except Exception as error:
+        out.warn("Error removing container: {}".format(error))
+
+
+def _build_image(update, client, inline, **buildArgs):
     """
     Build the Docker image and monitor progress (worker function).
 
@@ -226,24 +271,23 @@ def _buildImage(update, client, inline, **buildArgs):
     return buildSuccess
 
 
-def _pullImage(update, client):
+def _pull_image(update, client, image_name):
     """
     Pull the image from a registry.
 
     Returns True on success, False on failure.
     """
-    auth_config = {
-        'username': settings.REGISTRY_USERNAME,
-        'password': settings.REGISTRY_PASSWORD
-    }
+    #auth_config = {
+    #    'username': settings.REGISTRY_USERNAME,
+    #    'password': settings.REGISTRY_PASSWORD
+    #}
 
-    update.progress("Pulling image: {}".format(update.new.external_image))
+    update.progress("Pulling image: {}".format(image_name))
 
     layers = 0
     complete = 0
 
-    output = client.pull(update.new.external_image,
-            auth_config=auth_config, stream=True)
+    output = client.pull(image_name, auth_config=None, stream=True)
     for line in output:
         data = json.loads(line)
 
@@ -264,140 +308,7 @@ def _pullImage(update, client):
                 complete += 1
 
     update.progress("Finished pulling {} / {} layers".format(complete, layers))
-    return (complete > 0 and complete == layers)
-
-
-def removeNewImage(update):
-    """
-    Remove the newly built image during abort sequence.
-    """
-    _removeImage(update.new)
-
-
-def removeOldImage(update):
-    """
-    Remove the image for the old version of the chute.
-    """
-    _removeImage(update.old)
-
-
-def _removeImage(chute):
-    """
-    Remove the image for a chute.
-    """
-    image = getImageName(chute)
-    out.info("Removing image {}\n".format(image))
-
-    try:
-        client = docker.DockerClient(base_url="unix://var/run/docker.sock",
-                version='auto')
-        client.images.remove(image=image)
-    except Exception as error:
-        out.warn("Error removing image: {}".format(error))
-
-
-def startChute(update):
-    """
-    Create a docker container based on the passed in update.
-    """
-    _startChute(update.new)
-
-
-def startOldContainer(update):
-    """
-    Create a docker container using the old version of the image.
-    """
-    _startChute(update.old)
-
-
-def _startChute(chute):
-    """
-    Create a docker container based on the passed in chute object.
-    """
-    out.info('Attempting to start new Chute %s \n' % (chute.name))
-
-    repo = getImageName(chute)
-    name = chute.name
-
-    c = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
-
-    host_config = build_host_config(chute)
-
-    # Set environment variables for the new container.
-    # PARADROP_ROUTER_ID can be used to change application behavior based on
-    # what router it is running on.
-    environment = prepare_environment(chute)
-
-    try:
-        container = c.containers.run(detach=True, image=repo, name=name,
-                environment=environment, **host_config)
-        out.info("Successfully started chute with Id: %s\n" % (str(container.id)))
-    except Exception as e:
-        raise e
-
-
-def removeNewContainer(update):
-    """
-    Remove the newly started container during abort sequence.
-    """
-    name = update.new.name
-    out.info("Removing container {}\n".format(name))
-
-    try:
-        client = docker.DockerClient(base_url="unix://var/run/docker.sock",
-                version='auto')
-
-        # Grab the last 40 log messages to help with debugging.
-        container = client.containers.get(name)
-        logs = container.logs(stream=False, tail=40, timestamps=False)
-        update.progress("{}: {}".format(name, logs.rstrip()))
-
-        container.remove(force=True)
-    except Exception as error:
-        out.warn("Error removing container: {}".format(error))
-
-
-def removeChute(update):
-    """
-    Remove a docker container and the image it was built on based on the passed in update.
-
-    :param update: The update object containing information about the chute.
-    :type update: obj
-    :returns: None
-    """
-    out.info('Attempting to remove chute %s\n' % (update.name))
-    c = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-    repo = getImageName(update.old)
-    name = update.name
-
-    try:
-        container = c.containers.get(name)
-        container.remove(force=True)
-    except Exception as e:
-        update.progress(str(e))
-
-    try:
-        c.images.remove(repo)
-    except Exception as e:
-        update.progress(str(e))
-
-
-def removeOldContainer(update):
-    """
-    Remove the docker container for the old version of a chute.
-
-    :param update: The update object containing information about the chute.
-    :type update: obj
-    :returns: None
-    """
-    out.info('Attempting to remove chute %s\n' % (update.name))
-
-    client = docker.DockerClient(base_url='unix://var/run/docker.sock', version='auto')
-    try:
-        container = client.containers.get(update.old.name)
-        container.remove(force=True)
-    except Exception as e:
-        update.progress(str(e))
+    return (complete >= layers)
 
 
 def stopChute(update):
@@ -449,16 +360,16 @@ def getBridgeGateway():
     return '172.17.0.1'
 
 
-def prepare_port_bindings(chute):
-    host_config = chute.getHostConfig()
-    bindings = host_config.get('port_bindings', {}).copy()
+def prepare_port_bindings(service):
+    bindings = service.requests.get("port-bindings", {}).copy()
 
     # If the chute is configured to host a web service, check
     # whether there is a host port binding associated with it.
     # If not, we will add blank one so that Docker dynamically
     # assigns a port in the host to forward to the container.
-    web_port = chute.getWebPort()
-    if web_port is not None:
+    web_port = service.chute.web.get("port", None)
+    web_service = service.chute.web.get("service", None)
+    if web_port is not None and web_service == service.name:
         # The port could appear in multiple formats, e.g. 80, 80/tcp.
         # If any of them are present, we do not need to add anything.
         keys = [web_port, str(web_port), "{}/tcp".format(web_port)]
@@ -468,7 +379,7 @@ def prepare_port_bindings(chute):
     # Check if there is an existing version of the chute installed, so we can
     # potentially inherit old port bindings.
     try:
-        container = ChuteContainer(chute.name)
+        container = ChuteContainer(service.get_container_name())
         data = container.inspect()
         old_bindings = data['NetworkSettings']['Ports']
     except ChuteNotFound:
@@ -489,7 +400,7 @@ def prepare_port_bindings(chute):
     return bindings
 
 
-def build_host_config(chute):
+def build_host_config(update, service):
     """
     Build the host_config dict for a docker container based on the passed in update.
 
@@ -497,11 +408,9 @@ def build_host_config(chute):
     :type chute: obj
     :returns: (dict) The host_config dict which docker needs in order to create the container.
     """
-    config = chute.getHostConfig()
-
     extra_hosts = {}
-    network_mode = config.get('network_mode', 'bridge')
-    volumes = chute.getCache('volumes')
+    network_mode = service.requests.get('network-mode', 'bridge')
+    volumes = update.cache_get('volumes')
 
     # We are not able to set extra_hosts if the network_mode is set to 'host'.
     # In that case, the chute uses the same /etc/hosts file as the host system.
@@ -511,7 +420,7 @@ def build_host_config(chute):
     # If the chute has not configured a host binding for port 80, let Docker
     # assign a dynamic one.  We will use it to redirect HTTP requests to the
     # chute.
-    port_bindings = chute.getCache('portBindings')
+    port_bindings = update.cache_get('portBindings:{}'.format(service.name))
 
     # restart_policy: set to 'no' to prevent Docker from starting containers
     # automatically on system boot.  Paradrop will set up the host environment
@@ -520,13 +429,13 @@ def build_host_config(chute):
     host_conf = dict(
         cap_add=['NET_ADMIN'],
         cap_drop=[],
-        devices=config.get('devices', []),
-        dns=config.get('dns'),
+        #devices=config.get('devices', []),
+        #dns=config.get('dns'),
         dns_search=[],
         extra_hosts=extra_hosts,
         network_mode=network_mode,
         ports=port_bindings,
-        privileged=config.get('privileged', False),
+        privileged=service.requests.get('privileged', False),
         publish_all_ports=False,
         restart_policy={'Name': 'no'},
         volumes=volumes
@@ -595,6 +504,8 @@ def setup_net_interfaces(update):
         itype = iface.get('type', 'wifi')
         mode = iface.get('mode', 'ap')
 
+        service = update.new.get_service(iface['service'])
+
         if itype == 'lan' or itype == 'vlan' or (itype == 'wifi' and mode == 'ap'):
             IP = iface['ipaddrWithPrefix']
             internalIntf = iface['internalIntf']
@@ -620,15 +531,15 @@ def setup_net_interfaces(update):
 
             # Rename the interface according to what the chute wants.
             cmd = ['ip', 'link', 'set', tmpIntf, 'name', internalIntf]
-            call_in_netns(update.new, env, cmd)
+            call_in_netns(service, env, cmd)
 
             # Set the IP address.
             cmd = ['ip', 'addr', 'add', IP, 'dev', internalIntf]
-            call_in_netns(update.new, env, cmd)
+            call_in_netns(service, env, cmd)
 
             # Bring the interface up again.
             cmd = ['ip', 'link', 'set', internalIntf, 'up']
-            call_in_netns(update.new, env, cmd)
+            call_in_netns(service, env, cmd)
 
         elif itype == 'wifi' and mode == 'monitor':
             internalIntf = iface['internalIntf']
@@ -641,7 +552,7 @@ def setup_net_interfaces(update):
             # Rename the interface inside the container.
             cmd = ['ip', 'link', 'set', 'dev', externalIntf, 'up', 'name',
                     internalIntf]
-            call_in_netns(update.new, env, cmd)
+            call_in_netns(service, env, cmd)
 
             borrowedInterfaces.append({
                 'type': 'wifi',
@@ -692,32 +603,36 @@ def cleanup_net_interfaces(update):
         env['PATH'] += ":" + settings.DOCKER_BIN_DIR
 
     for iface in borrowedInterfaces:
+        service = update.new.get_service(iface['service'])
+
         if iface['type'] == 'wifi':
             cmd = ['ip', 'link', 'set', 'dev', iface['internal'], 'down',
                     'name', iface['external']]
-            call_in_netns(update.new, env, cmd, onerror="ignore", pid=iface['pid'])
+            call_in_netns(service, env, cmd, onerror="ignore", pid=iface['pid'])
 
             cmd = ['iw', 'phy', iface['phy'], 'set', 'netns', '1']
-            call_in_netns(update.new, env, cmd, onerror="ignore", pid=iface['pid'])
+            call_in_netns(service, env, cmd, onerror="ignore", pid=iface['pid'])
 
             resetWirelessDevice(iface['phy'], iface['external'])
 
         elif iface['type'] == 'lan':
             cmd = ['ip', 'link', 'set', 'dev', iface['internal'], 'down',
                     'netns', '1', 'name', iface['external']]
-            call_in_netns(update.new, env, cmd, onerror="ignore", pid=iface['pid'])
+            call_in_netns(service, env, cmd, onerror="ignore", pid=iface['pid'])
 
 
-def call_in_netns(chute, env, command, onerror="raise", pid=None):
+def call_in_netns(service, env, command, onerror="raise", pid=None):
     """
-    Call command within a chute's namespace.
+    Call command within a service's namespace.
 
     command: should be a list of strings.
     onerror: should be "raise" or "ignore"
     """
+    container_name = service.get_container_name()
+
     if pid is None:
         # We need the chute's PID in order to work with Linux namespaces.
-        container = ChuteContainer(chute.name)
+        container = ChuteContainer(container_name)
         pid = container.getPID()
 
     # Try first with `nsenter`.  This is preferred because it works using
@@ -736,34 +651,32 @@ def call_in_netns(chute, env, command, onerror="raise", pid=None):
 
         try:
             client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
-            container = client.containers.get(chute.name)
+            container = client.containers.get(container_name)
             container.exec_run(command, user='root')
         except Exception:
             if onerror == "raise":
                 raise
 
 
-def prepare_environment(chute):
+def prepare_environment(update, service):
     """
     Prepare environment variables for a chute container.
     """
     # Make a copy so that we do not alter the original, which only contains
     # user-specified environment variables.
-    env = getattr(chute, 'environment', {}).copy()
+    env = service.environment.copy()
 
-    env['PARADROP_CHUTE_NAME'] = chute.name
+    env['PARADROP_CHUTE_NAME'] = update.new.name
     env['PARADROP_FEATURES'] = settings.DAEMON_FEATURES
     env['PARADROP_ROUTER_ID'] = nexus.core.info.pdid
-    env['PARADROP_DATA_DIR'] = chute.getCache('internalDataDir')
-    env['PARADROP_SYSTEM_DIR'] = chute.getCache('internalSystemDir')
+    env['PARADROP_DATA_DIR'] = update.cache_get('internalDataDir')
+    env['PARADROP_SYSTEM_DIR'] = update.cache_get('internalSystemDir')
     env['PARADROP_API_URL'] = "http://{}/api".format(settings.LOCAL_DOMAIN)
     env['PARADROP_BASE_URL'] = "http://{}/api/v1/chutes/{}".format(
-            settings.LOCAL_DOMAIN, chute.name)
-    env['PARADROP_API_TOKEN'] = chute.getCache('apiToken')
+            settings.LOCAL_DOMAIN, update.new.name)
+    env['PARADROP_API_TOKEN'] = update.cache_get('apiToken')
     env['PARADROP_WS_API_URL'] = "ws://{}/ws".format(settings.LOCAL_DOMAIN)
-
-    if hasattr(chute, 'version'):
-        env['PARADROP_CHUTE_VERSION'] = chute.version
+    env['PARADROP_CHUTE_VERSION'] = update.new.version
 
     return env
 

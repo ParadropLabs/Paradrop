@@ -59,9 +59,11 @@ def test_build_chute():
     chute = builder.build_chute(config)
 
     assert chute.name == "seccam"
-    assert len(chute.services) == 2
 
-    main = chute.services[0]
+    services = chute.get_services()
+    assert len(services) == 2
+
+    main = chute.get_service("main")
     assert main.name == "main"
     assert main.type == "light"
 

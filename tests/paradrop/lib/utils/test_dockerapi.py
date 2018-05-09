@@ -37,20 +37,20 @@ def test_build_host_config(getBridgeGateway, ChuteContainer):
     client = MagicMock()
     client.create_host_config = fake_create_host_config
 
+    update = MagicMock()
+
+    service = MagicMock()
+    service.requests = {}
+
     #Check that an empty host_config gives us certain default settings
-    chute = MagicMock()
-    chute.getHostConfig.return_value = {}
-    res = dockerapi.build_host_config(chute)
+    res = dockerapi.build_host_config(update, service)
     assert res['network_mode'] == 'bridge'
 
     #Check that passing things through host_config works
-    chute = MagicMock()
-    chute.getHostConfig.return_value = {
-        'port_bindings': { 80:9000},
-        'dns': ['0.0.0.0', '8.8.8.8']
-    }
-    res = dockerapi.build_host_config(chute)
-    assert res['dns'] == ['0.0.0.0', '8.8.8.8']
+    service.requests['port-bindings'] = {80: 9000}
+    service.requests['privileged'] = True
+    res = dockerapi.build_host_config(update, service)
+    assert res['privileged'] is True
 
 @patch('paradrop.core.container.dockerapi.out')
 @patch('docker.DockerClient')
@@ -90,9 +90,9 @@ def test_stopChute(mockDocker, mockOutput):
 
 @patch('paradrop.core.container.dockerapi.out')
 @patch('docker.DockerClient')
-def test_removeChute(mockDocker, mockOutput):
+def test_remove_container(mockDocker, mockOutput):
     """
-    Test that the removeChute function does it's job.
+    Test that the remove_container function does it's job.
     """
     update = MagicMock()
     update.name = 'test'
@@ -101,17 +101,19 @@ def test_removeChute(mockDocker, mockOutput):
     client = MagicMock()
     client.containers.get.return_value = container
 
+    service = MagicMock()
+
     mockDocker.return_value = client
-    dockerapi.removeChute(update)
+    dockerapi.remove_container(update, service)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     container.remove.assert_called_once_with(force=True)
-    client.images.remove.assert_called_once()
+    #client.images.remove.assert_called_once()
     assert update.complete.call_count == 0
 
     client.reset_mock()
-    container.remove.side_effect = Exception('Test')
+    mockDocker.side_effect = Exception('Test')
     try:
-        dockerapi.removeChute(update)
+        dockerapi.remove_container(update, service)
     except Exception as e:
         assert e.message == 'Test'
 
@@ -119,9 +121,9 @@ def test_removeChute(mockDocker, mockOutput):
 @patch('paradrop.core.container.dockerapi.build_host_config')
 @patch('paradrop.core.container.dockerapi.out')
 @patch('docker.DockerClient')
-def test_startChute(mockDocker, mockOutput, mockConfig, prepare_environment):
+def test_start_container(mockDocker, mockOutput, mockConfig, prepare_environment):
     """
-    Test that the startChute function does it's job.
+    Test that the start_container function does it's job.
     """
     # Test successful start attempt
     update = MagicMock()
@@ -138,14 +140,16 @@ def test_startChute(mockDocker, mockOutput, mockConfig, prepare_environment):
     mockConfig.return_value = {}
     prepare_environment.return_value = {}
 
-    dockerapi.startChute(update)
-    mockConfig.assert_called_once_with(update.new)
+    service = MagicMock()
+
+    dockerapi.start_container(update, service)
+    mockConfig.assert_called_once_with(update, service)
     mockDocker.assert_called_once_with(base_url='unix://var/run/docker.sock', version='auto')
     client.containers.run.assert_called_once()
 
     #Test when create or start throws exceptions
     client.containers.run.side_effect = Exception('create container exception')
-    assert_raises(Exception, dockerapi.startChute, update)
+    assert_raises(Exception, dockerapi.start_container, update)
 
 @patch('__builtin__.open')
 @patch('paradrop.core.container.dockerapi.os')
