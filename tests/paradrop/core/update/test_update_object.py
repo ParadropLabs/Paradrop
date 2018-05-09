@@ -4,19 +4,19 @@ from mock import patch, MagicMock
 
 @patch('paradrop.core.update.update_object.ChuteStorage')
 @patch('paradrop.core.update.update_object.out')
-@patch('paradrop.core.update.update_object.plan')
-def test_update_object(mExc, mOut, mStore):
+@patch('paradrop.core.update.update_object.executionplan')
+def test_update_object(executionplan, mOut, mStore):
     store = MagicMock()
     mStore.return_value = store
     update = dict(updateClass='CHUTE', updateType='create', name='test',
             tok=111111)
     update = update_object.parse(update)
-    mExc.executionplan.generatePlans.return_value = False
-    mExc.executionplan.executePlans.return_value = False
+    executionplan.generatePlans.return_value = False
+    executionplan.executePlans.return_value = False
     update.execute()
-    mExc.executionplan.generatePlans.assert_called_once_with(update)
-    mExc.executionplan.aggregatePlans.assert_called_once_with(update)
-    mExc.executionplan.executePlans.assert_called_once_with(update)
+    executionplan.generatePlans.assert_called_once_with(update)
+    executionplan.aggregatePlans.assert_called_once_with(update)
+    executionplan.executePlans.assert_called_once_with(update)
     assert mOut.usage.call_count == 1
 
 
