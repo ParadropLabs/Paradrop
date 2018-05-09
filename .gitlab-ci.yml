@@ -8,6 +8,8 @@ unit_test_job:
   stage: unit_test
   script:
     - pip install -r requirements.txt
+    - pip install pyflakes~=1.6.0
+    - pyflakes paradrop/daemon/paradrop
     - nosetests --with-coverage --cover-package=paradrop
 
 build_docs_job:
