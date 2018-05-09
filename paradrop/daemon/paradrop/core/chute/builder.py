@@ -102,6 +102,7 @@ class SingleServiceChuteBuilder(ChuteBuilder):
         self.chute.config = config
 
         # Temporary solution: these will need to be moved to the services.
+        self.chute.as_root = config.get("as_root", False)
         self.chute.environment = config.get("environment", {})
         self.chute.net = config.get("net", {})
         self.chute.web = config.get("web", {})
