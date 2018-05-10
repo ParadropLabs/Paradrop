@@ -16,26 +16,28 @@ def fake_interface_list():
     interfaces = list()
     interfaces.append({
         'name': 'mywan',
-        'netType': 'wan',
+        'type': 'wan',
         'externalIntf': 'v0000.eth0',
         'externalIpaddr': '192.168.1.1',
         'options': {}
     })
     interfaces.append({
         'name': 'mylan',
-        'netType': 'lan',
+        'type': 'lan',
         'externalIntf': 'v0000.eth1',
         'externalIpaddr': '192.168.2.1',
         'options': {}
     })
     interfaces.append({
         'name': 'mywifi',
-        'netType': 'wifi',
+        'type': 'wifi',
         'device': 'wlan0',
         'externalIntf': 'v0000.wlan0',
-        'ssid': 'Paradrop',
-        'encryption': 'psk2',
-        'key': 'password',
+        'wireless': {
+            'ssid': 'Paradrop',
+            'encryption': 'psk2',
+            'key': 'password',
+        },
         'externalIpaddr': '192.168.3.1',
         'internalIpaddr': '192.168.3.2',
         'dhcp': {
@@ -385,12 +387,17 @@ def test_get_network_config_wifi():
     update.cache_set('interfaceReservations', set())
     update.cache_set('subnetReservations', set())
 
-    cfg = dict()
-    cfg['type'] = "wifi"
-    cfg['ssid'] = "Paradrop"
-    iface = dict()
-    iface['device'] = "wlan0"
-    iface['internalIntf'] = "wlan0"
+    cfg = {
+        "type": "wifi-ap",
+        "wireless": {
+            "ssid": "Paradrop"
+        }
+    }
+    iface = {
+        "type": "wifi-ap",
+        "device": "wlan0",
+        "internalIntf": "wlan0"
+    }
 
     getNetworkConfigWifi(update, "mywifi", cfg, iface)
 
@@ -433,13 +440,17 @@ def test_get_network_config():
     # Chute has no net information, we should pass silently.
     assert network.getNetworkConfig(update) is None
 
+    wireless = {
+        'encryption': 'psk2',
+        'key': 'password'
+    }
+
     service = Service(name="main")
     service.interfaces = {
         "wlan0": {
-            'type': 'wifi',
+            'type': 'wifi-ap',
             'intfName': 'wlan0',
-            'encryption': 'psk2',
-            'key': 'password'
+            'wireless': wireless
         }
     }
 
@@ -460,7 +471,7 @@ def test_get_network_config():
     # Missing 'ssid' field should raise exception.
     assert_raises(Exception, network.getNetworkConfig, update)
 
-    service.interfaces['wlan0']['ssid'] = "Paradrop"
+    wireless['ssid'] = "Paradrop"
 
     # Need to make a writable location for our config files.
     settings.UCI_CONFIG_DIR = tempfile.mkdtemp()

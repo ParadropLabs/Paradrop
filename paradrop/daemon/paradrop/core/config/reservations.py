@@ -97,7 +97,7 @@ def getDeviceReservations(exclude=None):
             if dev is None:
                 continue
 
-            reservations[dev].add(chute.name, iface['netType'],
+            reservations[dev].add(chute.name, iface['type'],
                     iface.get('mode', None))
 
     return reservations

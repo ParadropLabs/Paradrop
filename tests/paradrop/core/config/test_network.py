@@ -140,8 +140,7 @@ def test_fulfillDeviceRequest():
     # then to the second, then finally raise an exception.
 
     config = {
-        'type': 'wifi',
-        'mode': 'ap'
+        'type': 'wifi-ap'
     }
 
     for i in range(network.MAX_AP_INTERFACES):
@@ -162,16 +161,14 @@ def test_fulfillDeviceRequest():
     # Following interfaces gain shared access to the second device.
 
     config = {
-        'type': 'wifi',
-        'mode': 'monitor'
+        'type': 'wifi-monitor'
     }
 
     result = network.fulfillDeviceRequest(update, config, devices)
     assert result['name'] == 'wlan0'
 
     config = {
-        'type': 'wifi',
-        'mode': 'ap'
+        'type': 'wifi-ap'
     }
 
     for i in range(network.MAX_AP_INTERFACES):

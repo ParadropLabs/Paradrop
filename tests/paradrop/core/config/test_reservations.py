@@ -12,7 +12,7 @@ def test_getDeviceReservations(ChuteStorage, prepareHostConfig, getWirelessPhyNa
     chute1 = MagicMock()
     chute1.getCache.return_value = [{
         'device': 'wlan0',
-        'netType': 'wifi',
+        'type': 'wifi',
         'mode': 'ap'
     }]
 
@@ -57,7 +57,7 @@ def test_getInterfaceReservations(ChuteStorage, prepareHostConfig, getWirelessPh
     chute1 = MagicMock()
     chute1.getCache.return_value = [{
         'device': 'wlan0',
-        'netType': 'wifi',
+        'type': 'wifi',
         'mode': 'ap',
         'externalIntf': 'vwlan0.0000'
     }]
@@ -114,7 +114,7 @@ def test_getSubnetReservations(ChuteStorage, prepareHostConfig, getWirelessPhyNa
     chute1 = MagicMock()
     chute1.getCache.return_value = [{
         'device': 'wlan0',
-        'netType': 'wifi',
+        'type': 'wifi',
         'mode': 'ap',
         'externalIntf': 'vwlan0.0000',
         'subnet': MagicMock()

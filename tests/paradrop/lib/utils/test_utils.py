@@ -88,7 +88,7 @@ def test_addresses():
     # Now put an interface in the cache
     ifaces = [{
         'internalIntf': "eth0",
-        'netType': "wan",
+        'type': "wan",
         'externalIpaddr': "192.168.1.1"
     }]
     chute.setCache("networkInterfaces", ifaces)

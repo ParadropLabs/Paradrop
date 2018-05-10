@@ -42,7 +42,7 @@ def getOSFirewallRules(update):
             'network': [iface['externalIntf']]
         }
 
-        if iface['netType'] == 'wan':
+        if iface['type'] == 'wan':
             options['masq'] = 1
         else:
             options['masq'] = 0
@@ -51,7 +51,7 @@ def getOSFirewallRules(update):
         rules.append((config, options))
 
         # Then add a forwarding rule for wan type interfaces.
-        if iface['netType'] == 'wan':
+        if iface['type'] == 'wan':
             config = {'type': 'forwarding'}
             options = {
                 'src': iface['externalIntf'],

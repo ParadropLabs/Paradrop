@@ -38,6 +38,14 @@ def reclaimNetworkResources(chute):
     pass
 
 
+def split_interface_type(itype):
+    words = itype.split("-")
+    if len(words) == 1:
+        return words[0], None
+    else:
+        return tuple(words)
+
+
 def getWifiKeySettings(cfg, iface):
     """
     Read encryption settings from cfg and transfer them to iface.
@@ -123,7 +131,7 @@ def chooseSubnet(update, cfg, iface):
 
 
 def chooseExternalIntf(update, iface):
-    if iface['mode'] == "ap":
+    if iface['type'] == "wifi-ap":
         # Generate initial portion (prefix) of interface name.
         #
         # NOTE: We add a "v" in front of the interface name to avoid triggering
@@ -196,7 +204,10 @@ def getInterfaceAddress(update, name, cfg, iface):
 
 
 def getNetworkConfigWifi(update, name, cfg, iface):
-    iface['mode'] = cfg.get("mode", "ap")
+    dtype, mode = split_interface_type(cfg['type'])
+
+    # Later code still depends on the mode field.
+    iface['mode'] = mode
 
     # Generate a name for the new interface in the host.
     iface['externalIntf'] = chooseExternalIntf(update, iface)
@@ -205,17 +216,20 @@ def getNetworkConfigWifi(update, name, cfg, iface):
             iface['externalIntf']))
         raise Exception("Interface name is too long")
 
-    if iface['mode'] in ["ap", "sta"]:
+    wireless = cfg.get("wireless", {})
+    iface['wireless'] = wireless
+
+    if iface['type'] in ["wifi-ap", "wifi-sta"]:
         # Check for required fields.
-        res = pdutils.check(cfg, dict, ['ssid'])
+        res = pdutils.check(wireless, dict, ['ssid'])
         if res:
             out.warn('WiFi network interface definition {}\n'.format(res))
             raise Exception("Interface definition missing field(s)")
 
-        iface['ssid'] = cfg['ssid']
+        iface['ssid'] = wireless['ssid']
 
     # Optional encryption settings
-    getWifiKeySettings(cfg, iface)
+    getWifiKeySettings(wireless, iface)
 
     # Give a warning if the dhcp block is missing, since it is likely
     # that developers will want a DHCP server to go with their AP.
@@ -285,8 +299,7 @@ def fulfillDeviceRequest(update, cfg, devices):
 
     Raises an exception if one cannot be found.
     """
-    dtype = cfg['type']
-    mode = cfg.get('mode', 'ap')
+    dtype, mode = split_interface_type(cfg['type'])
 
     # Get list of devices by requested type.
     devlist = devices.get(dtype, [])
@@ -419,7 +432,7 @@ def getNetworkConfig(update):
             iface = {
                 'name': name,  # Name (not used?)
                 'service': service.name,  # Service name
-                'netType': cfg['type'],  # Type (wan, lan, wifi)
+                'type': cfg['type'],  # Type (wan, lan, wifi)
                 'internalIntf': cfg['intfName'],  # Interface name in chute
                 'l3bridge': cfg.get('l3bridge', None)  # Optional
             }
@@ -494,7 +507,7 @@ def getOSNetworkConfig(update):
     for iface in interfaces:
         config = {'type': 'interface', 'name': iface['externalIntf']}
 
-        if iface['netType'] == "wifi" and iface.get('mode', 'ap') == "monitor":
+        if iface['type'] == "wifi-monitor":
             # Monitor mode is a special case - do not configure an IP address
             # for it.
             options = {'proto': 'none', 'ifname': iface['externalIntf']}

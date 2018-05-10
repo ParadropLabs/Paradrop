@@ -30,10 +30,47 @@ Chute and Service object interface.
 |                +-----------------------------------> |         |
 +----------------+                                     +---------+
 """
-
+import six
 
 from .chute import Chute
 from .service import Service
+
+
+WIRELESS_OPTIONS = set([
+    "ssid",
+    "key",
+    "nasid",
+    "acct_server",
+    "acct_secret",
+    "acct_interval",
+    "hidden",
+    "isolate",
+    "maxassoc"
+])
+
+
+def fix_interface_type(interface):
+    orig_type = interface.get("type")
+    orig_mode = interface.get("mode", "ap")
+
+    if orig_type == "wifi":
+        return "wifi-{}".format(orig_mode)
+    else:
+        return orig_type
+
+
+def fix_wireless_options(interface):
+    wireless = interface.get("wireless", {})
+
+    for key, value in six.iteritems(interface):
+        if key in WIRELESS_OPTIONS:
+            wireless[key] = value
+
+    for key, value in six.iteritems(interface.get("options", {})):
+        if key in WIRELESS_OPTIONS:
+            wireless[key] = value
+
+    return wireless
 
 
 class ChuteBuilder(object):
@@ -116,6 +153,11 @@ class SingleServiceChuteBuilder(ChuteBuilder):
         # indexed by interface name.
         interfaces = {}
         for iface in config.get("net", {}).values():
+            iface['type'] = fix_interface_type(iface)
+
+            if iface['type'].startswith("wifi"):
+                iface['wireless'] = fix_wireless_options(iface)
+
             interfaces[iface['intfName']] = iface
 
         requests = {}
@@ -196,11 +238,11 @@ class MultiServiceChuteBuilder(ChuteBuilder):
             value = spec.get(field, "unknown")
             setattr(self.chute, field, value)
 
-        self.chute.config = spec.get("config", {})
+        self.chute.web = spec.get("web", {})
 
     def create_services(self, spec):
         for name, spec in spec.get("services", {}).iteritems():
-            service = Service(self.chute, name)
+            service = Service(chute=self.chute, name=name)
 
             service.command = spec.get("command", None)
             service.image = spec.get("image", None)
@@ -208,6 +250,12 @@ class MultiServiceChuteBuilder(ChuteBuilder):
             service.type = spec.get("type", "normal")
 
             service.environment = spec.get("environment", {})
+            service.interfaces = spec.get("interfaces", {})
+            service.requests = spec.get("requests", {})
+
+            # Make sure the intfName field exists for code that depends on it.
+            for name, iface in six.iteritems(service.interfaces):
+                iface['intfName'] = name
 
             self.chute.add_service(service)
 

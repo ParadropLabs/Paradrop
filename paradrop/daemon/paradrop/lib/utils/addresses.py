@@ -150,7 +150,7 @@ def getGatewayIntf(ch):
         return (None, None)
 
     for i in intfs:
-        if(i['netType'] == 'wan'):
+        if(i['type'] == 'wan'):
             return (i['externalIpaddr'], i['internalIntf'])
 
     return (None, None)
@@ -169,6 +169,6 @@ def getWANIntf(ch):
         return None
     
     for i in intfs:
-        if(i['netType'] == 'wan'):
+        if(i['type'] == 'wan'):
             return i
     return None

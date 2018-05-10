@@ -343,7 +343,7 @@ def test_ChuteApi_get_networks(ChuteStorage):
 
     iface = {
         'name': 'vwlan0',
-        'netType': 'wifi',
+        'type': 'wifi',
         'internalIntf': 'wlan0'
     }
 
@@ -360,7 +360,7 @@ def test_ChuteApi_get_networks(ChuteStorage):
     data = json.loads(result)
     assert len(data) == 1
     assert data[0]['name'] == iface['name']
-    assert data[0]['type'] == iface['netType']
+    assert data[0]['type'] == iface['type']
     assert data[0]['interface'] == iface['internalIntf']
 
 
@@ -373,7 +373,7 @@ def test_ChuteApi_get_network(ChuteStorage):
 
     iface = {
         'name': 'vwlan0',
-        'netType': 'wifi',
+        'type': 'wifi',
         'internalIntf': 'wlan0'
     }
 
@@ -392,7 +392,7 @@ def test_ChuteApi_get_network(ChuteStorage):
     result = api.get_network(request, "test", "vwlan0")
     data = json.loads(result)
     assert data['name'] == iface['name']
-    assert data['type'] == iface['netType']
+    assert data['type'] == iface['type']
     assert data['interface'] == iface['internalIntf']
 
 
@@ -405,7 +405,7 @@ class TestChuteApi(object):
 
         self.interface = {
             'name': 'testing',
-            'netType': 'wifi',
+            'type': 'wifi',
             'internalIntf': 'wlan0',
             'externalIntf': 'vwlan0'
         }

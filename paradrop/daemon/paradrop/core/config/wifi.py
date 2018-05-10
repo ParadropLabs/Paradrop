@@ -17,7 +17,7 @@ def getOSWirelessConfig(update):
     wifiIfaces = list()
     for iface in interfaces:
         # Only look at wifi interfaces.
-        if iface['netType'] != "wifi":
+        if not iface['type'].startswith("wifi"):
             continue
 
         config = {'type': 'wifi-iface'}
@@ -26,6 +26,9 @@ def getOSWirelessConfig(update):
             'network': iface['externalIntf'],
             'mode': iface.get('mode', 'ap')
         }
+
+        # Add wireless options.
+        options.update(iface['wireless'])
 
         # Required for AP and client mode but not monitor mode.
         if 'ssid' in iface:
@@ -36,9 +39,6 @@ def getOSWirelessConfig(update):
             options['encryption'] = iface['encryption']
         if 'key' in iface:
             options['key'] = iface['key']
-
-        # Add extra options.
-        options.update(iface['options'])
 
         wifiIfaces.append((config, options))
 

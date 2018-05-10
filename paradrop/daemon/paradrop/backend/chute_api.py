@@ -570,7 +570,7 @@ class ChuteApi(object):
         for iface in networkInterfaces:
             data = {
                 'name': iface['name'],
-                'type': iface['netType'],
+                'type': iface['type'],
                 'interface': iface['internalIntf']
             }
             result.append(data)
@@ -618,7 +618,7 @@ class ChuteApi(object):
 
             data = {
                 'name': iface['name'],
-                'type': iface['netType'],
+                'type': iface['type'],
                 'interface': iface['internalIntf']
             }
 
