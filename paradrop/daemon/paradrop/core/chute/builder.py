@@ -168,6 +168,13 @@ class SingleServiceChuteBuilder(ChuteBuilder):
         except KeyError:
             requests['port-bindings'] = {}
 
+        build = {}
+        if service.type == "light":
+            build['image_source'] = config.get("image_source", None)
+            build['image_version'] = config.get("image_version", None)
+            build['packages'] = config.get("packages", [])
+
+        service.build = build
         service.environment = config.get("environment", {})
         service.interfaces = interfaces
         service.requests = requests
@@ -249,6 +256,7 @@ class MultiServiceChuteBuilder(ChuteBuilder):
             service.source = spec.get("source", ".")
             service.type = spec.get("type", "normal")
 
+            service.build = spec.get("build", {})
             service.environment = spec.get("environment", {})
             service.interfaces = spec.get("interfaces", {})
             service.requests = spec.get("requests", {})

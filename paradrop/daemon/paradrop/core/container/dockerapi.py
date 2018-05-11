@@ -128,14 +128,14 @@ def prepare_image(update, service):
             raise Exception("Pulling Docker image failed.")
 
     elif service.type == "inline":
-        success = _build_image(update, client, True, rm=True, tag=image_name,
-                fileobj=service.dockerfile)
+        success = _build_image(update, service, client, True, rm=True,
+                tag=image_name, fileobj=service.dockerfile)
         if not success:
             raise Exception("Building Docker image failed.")
 
     else:
-        success = _build_image(update, client, False, rm=True, tag=image_name,
-                path=update.workdir)
+        success = _build_image(update, service, client, False, rm=True,
+                tag=image_name, path=update.workdir)
         if not success:
             raise Exception("Building Docker image failed.")
 
@@ -205,7 +205,7 @@ def remove_container(update, service):
         out.warn("Error removing container: {}".format(error))
 
 
-def _build_image(update, client, inline, **buildArgs):
+def _build_image(update, service, client, inline, **buildArgs):
     """
     Build the Docker image and monitor progress (worker function).
 
@@ -214,28 +214,11 @@ def _build_image(update, client, inline, **buildArgs):
 
     Returns True on success, False on failure.
     """
-    # Look for additional build information, either as a dictionary in the
-    # update object or a YAML file in the checkout directory.
-    #
-    # If build_conf is specified in both places, we'll let values from
-    # the update object override the file.
-    build_conf = {}
-    if 'path' in buildArgs:
-        conf_path = os.path.join(buildArgs['path'], settings.CHUTE_CONFIG_FILE)
-        try:
-            with open(conf_path, 'r') as source:
-                build_conf = yaml.safe_load(source)
-        except:
-            pass
-    if hasattr(update, 'build'):
-        build_conf.update(update.build)
-
     # If this is a light chute, generate a Dockerfile.
-    chute_type = build_conf.get('type', 'normal')
-    if chute_type == 'light':
+    if service.type == "light":
         buildArgs['pull'] = True
 
-        dockerfile = Dockerfile(build_conf)
+        dockerfile = Dockerfile(service)
         valid, reason = dockerfile.isValid()
         if not valid:
             raise Exception("Invalid configuration: {}".format(reason))
@@ -263,10 +246,6 @@ def _build_image(update, client, inline, **buildArgs):
                 msg = value.rstrip()
                 if len(msg) > 0 and suppress_re.match(msg) is None:
                     update.progress(msg)
-
-    # Clean up working directory after building.
-    if 'path' in buildArgs:
-        shutil.rmtree(buildArgs['path'])
 
     return buildSuccess
 
@@ -490,10 +469,6 @@ def setup_net_interfaces(update):
     if settings.DOCKER_BIN_DIR not in env['PATH']:
         env['PATH'] += ":" + settings.DOCKER_BIN_DIR
 
-    # We need the chute's PID in order to work with Linux namespaces.
-    container = ChuteContainer(update.new.name)
-    pid = container.getPID()
-
     # Keep list of interfaces that assign to the Docker container that we will
     # need to recover when stopping the chute, for example monitor mode
     # interfaces.  They will not automatically return to the default namespace,
@@ -505,6 +480,10 @@ def setup_net_interfaces(update):
         mode = iface.get('mode', 'ap')
 
         service = update.new.get_service(iface['service'])
+
+        # We need the container's PID in order to work with Linux namespaces.
+        container = ChuteContainer(service.get_container_name())
+        pid = container.getPID()
 
         if itype == 'lan' or itype == 'vlan' or (itype == 'wifi' and mode == 'ap'):
             IP = iface['ipaddrWithPrefix']

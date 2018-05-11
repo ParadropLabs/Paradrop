@@ -9,13 +9,13 @@ from io import BytesIO
 
 
 class Dockerfile(object):
-    requiredFields = ["use", "command"]
+    requiredFields = ["image", "command"]
 
-    def __init__(self, config):
+    def __init__(self, service):
         """
-        config: dictionary of data from the paradrop.yaml file.
+        service: Service object containing configuration for the image.
         """
-        self.config = config
+        self.service = service
 
     def getBytesIO(self):
         """
@@ -28,18 +28,18 @@ class Dockerfile(object):
         """
         Generate a Dockerfile as a multi-line string.
         """
-        conf = self.config
-
         # Required fields for generating Dockerfile.
         # Developer tells us what language pack to use and what command to run.
-        language = conf['use']
-        command = conf['command']
+        language = self.service.image
+        command = self.service.command
 
-        # Optional fields.
-        image_source = conf.get('image_source', 'paradrop')
-        image_version = conf.get('image_version', 'latest')
-        packages = conf.get('packages', [])
-        as_root = conf.get('as_root', False)
+        # Extra build options.
+        build = self.service.build
+        image_source = build.get("image_source", "paradrop")
+        image_version = build.get("image_version", "latest")
+        packages = build.get("packages", [])
+
+        as_root = self.service.requests.get("as_root", False)
 
         # Example base image: paradrop/node-x86_64:latest
         from_image = "{}/{}-{}:{}".format(image_source, language,
@@ -79,14 +79,14 @@ class Dockerfile(object):
         """
         # Check required fields.
         for field in Dockerfile.requiredFields:
-            if field not in self.config:
+            if getattr(self.service, field, None) is None:
                 return (False, "Missing required field {}".format(field))
 
-        command = self.config.get('command', "")
+        command = self.service.command
         if not isinstance(command, basestring) and not isinstance(command, list):
             return (False, "Command must be either a string or list of strings")
 
-        packages = self.config.get('packages', [])
+        packages = self.service.build.get("packages", [])
         if not isinstance(packages, list):
             return (False, "Packages must be specified as a list")
         for pkg in packages:

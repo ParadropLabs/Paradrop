@@ -1,12 +1,10 @@
 from paradrop.core.container.dockerfile import Dockerfile
+from paradrop.core.chute.service import Service
 
 
 def test_getString():
-    config = {
-        "use": "python2",
-        "command": "python"
-    }
-    dockerfile = Dockerfile(config)
+    service = Service(image="python2", command="python")
+    dockerfile = Dockerfile(service)
     result = dockerfile.getString()
     assert "FROM" in result
     assert "CMD" in result
@@ -14,44 +12,44 @@ def test_getString():
 
 def test_isValid():
     # Missing required fields.
-    config = {}
-    dockerfile = Dockerfile(config)
+    service = Service()
+    dockerfile = Dockerfile(service)
     valid, reason = dockerfile.isValid()
     assert valid is False
     assert reason is not None
 
     # Command is not a string or list.
-    config['use'] = 'python2'
-    config['command'] = 42
-    dockerfile = Dockerfile(config)
+    service.image = "python2"
+    service.command = 42
+    dockerfile = Dockerfile(service)
     valid, reason = dockerfile.isValid()
     assert valid is False
     assert reason is not None
 
     # Valid
-    config['command'] = "python"
-    dockerfile = Dockerfile(config)
+    service.command = "python"
+    dockerfile = Dockerfile(service)
     valid, reason = dockerfile.isValid()
     assert valid is True
     assert reason is None
 
     # Packages is not a list.
-    config['packages'] = 42
-    dockerfile = Dockerfile(config)
+    service.build['packages'] = 42
+    dockerfile = Dockerfile(service)
     valid, reason = dockerfile.isValid()
     assert valid is False
     assert reason is not None
 
     # Packages contains a weird value.
-    config['packages'] = ["a\nb"]
-    dockerfile = Dockerfile(config)
+    service.build['packages'] = ["something\nfunny"]
+    dockerfile = Dockerfile(service)
     valid, reason = dockerfile.isValid()
     assert valid is False
     assert reason is not None
 
     # Valid
-    config['packages'] = ["a", "ab", "abc"]
-    dockerfile = Dockerfile(config)
+    service.build['packages'] = ["a", "ab", "abc"]
+    dockerfile = Dockerfile(service)
     valid, reason = dockerfile.isValid()
     assert valid is True
     assert reason is None

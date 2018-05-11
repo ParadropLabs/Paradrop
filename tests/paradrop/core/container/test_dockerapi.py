@@ -67,6 +67,7 @@ def test_prepare_image(Client, _build_image, _pull_image, downloader):
 
 def test_buildImage_worker():
     update = MagicMock()
+    service = MagicMock()
     client = MagicMock()
 
     client.build.return_value = [
@@ -75,7 +76,7 @@ def test_buildImage_worker():
         '{"message": "Message3   "}'
     ]
 
-    res = dockerapi._build_image(update, client, True)
+    res = dockerapi._build_image(update, service, client, True)
     assert res is True
 
     # The second message should be suppressed as well as the whitespace after Message3.

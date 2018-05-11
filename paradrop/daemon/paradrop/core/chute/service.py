@@ -8,7 +8,9 @@ class Service(object):
                  name=None,
                  type="normal",
                  image=None,
+                 command=None,
                  dockerfile=None,
+                 build=None,
                  environment=None,
                  interfaces=None,
                  requests=None):
@@ -17,7 +19,13 @@ class Service(object):
 
         self.type = type
         self.image = image
+        self.command = command
         self.dockerfile = dockerfile
+
+        if build is None:
+            self.build = {}
+        else:
+            self.build = build
 
         if environment is None:
             self.environment = {}
