@@ -161,3 +161,17 @@ class Chute(object):
         Get a list of services installed by this chute.
         """
         return self.services.values()
+
+    def get_web_port_and_service(self):
+        """
+        Get the port and Service object that provides this chutes web service.
+
+        Returns a tuple containing the port number and Service object. Both
+        values will be None if a web service is not configured.
+        """
+        port = self.web.get("port", None)
+        if port is None:
+            return None, None
+
+        name = self.web.get("service", None)
+        return port, self.get_service(name)

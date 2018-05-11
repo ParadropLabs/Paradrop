@@ -58,11 +58,11 @@ def generateConfigSections():
     chuteStore = ChuteStorage()
     chutes = chuteStore.getChuteList()
     for chute in chutes:
-        port = chute.getWebPort()
-        if port is None:
+        port, service = chute.get_web_port_and_service()
+        if port is None or service is None:
             continue
 
-        container = ChuteContainer(chute.name)
+        container = ChuteContainer(service.get_container_name())
         if not container.isRunning():
             continue
 

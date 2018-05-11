@@ -39,7 +39,7 @@ class Dockerfile(object):
         image_version = build.get("image_version", "latest")
         packages = build.get("packages", [])
 
-        as_root = self.service.requests.get("as_root", False)
+        as_root = self.service.requests.get("as-root", False)
 
         # Example base image: paradrop/node-x86_64:latest
         from_image = "{}/{}-{}:{}".format(image_source, language,

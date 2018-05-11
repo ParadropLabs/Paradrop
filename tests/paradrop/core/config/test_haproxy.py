@@ -9,8 +9,12 @@ from paradrop.core.config import haproxy
 @patch("paradrop.core.config.haproxy.ChuteContainer")
 @patch("paradrop.core.config.haproxy.ChuteStorage.getChuteList")
 def test_generateConfigSections(getChuteList, ChuteContainer):
+    service = MagicMock()
+    service.get_container_name.return_value = "main"
+
     chute1 = MagicMock()
     chute1.name = "chute1"
+    chute1.get_web_port_and_service.return_value = (80, service)
 
     getChuteList.return_value = [chute1]
 

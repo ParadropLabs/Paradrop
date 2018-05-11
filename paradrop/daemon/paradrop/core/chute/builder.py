@@ -161,18 +161,18 @@ class SingleServiceChuteBuilder(ChuteBuilder):
             interfaces[iface['intfName']] = iface
 
         requests = {}
-        requests['as-root'] = config.get("as_root", False)
+        requests['as-root'] = spec.get("as_root", False)
 
         try:
             requests['port-bindings'] = config['host_config']['port_bindings']
         except KeyError:
             requests['port-bindings'] = {}
 
+        # Find extra build options, particularly for light chutes.
         build = {}
-        if service.type == "light":
-            build['image_source'] = config.get("image_source", None)
-            build['image_version'] = config.get("image_version", None)
-            build['packages'] = config.get("packages", [])
+        for key in ["image_source", "image_version", "packages"]:
+            if key in config:
+                build[key] = config[key]
 
         service.build = build
         service.environment = config.get("environment", {})
