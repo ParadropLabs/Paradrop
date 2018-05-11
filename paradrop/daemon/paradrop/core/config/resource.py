@@ -3,29 +3,24 @@ from paradrop.lib.misc import resopt
 
 
 def computeResourceAllocation(chutes):
-    chute_names = []
-    chute_cpu_fractions = []
+    service_names = []
+    service_cpu_fractions = []
     allocation = {}
     for chute in chutes:
         if not chute.isRunning():
             continue
 
-        resources = getattr(chute, 'resources', {})
-        cpu_fraction = resources.get('cpu_fraction', None)
+        for service in chute.get_services():
+            service_names.append(service.get_container_name())
 
-        chute_names.append(chute.name)
-        chute_cpu_fractions.append(cpu_fraction)
-
-        allocation[chute.name] = {
-            # Pass through prioritize flag: if chutes ask, they get it.
-            'prioritize_traffic': resources.get('prioritize_traffic', False)
-        }
+            cpu_fraction = service.requests.get('cpu-fraction', None)
+            service_cpu_fractions.append(cpu_fraction)
 
     # Use the optimizer to allocate cpu fractions and fill in unspecified
     # (None) values.  The result is a vector that sums to one.
-    new_cpu_fractions = resopt.allocate(chute_cpu_fractions, total=1.0)
+    new_cpu_fractions = resopt.allocate(service_cpu_fractions, total=1.0)
 
-    n = len(chute_names)
+    n = len(service_names)
     for i in range(n):
         # Convert the fraction to an integer.  We multiply by 1024*n so that
         # they all center around 1024, which is what Docker assigns to
@@ -35,10 +30,10 @@ def computeResourceAllocation(chutes):
         # Keep it above 2.  Docker treats 0 and 1 as special values.
         cpu_shares = max(cpu_shares, 2)
 
-        name = chute_names[i]
-        allocation[name].update({
+        name = service_names[i]
+        allocation[name] = {
             'cpu_shares': cpu_shares
-        })
+        }
 
     return allocation
 

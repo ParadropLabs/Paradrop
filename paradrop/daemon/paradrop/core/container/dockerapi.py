@@ -13,6 +13,7 @@ import os
 import random
 import re
 import shutil
+import six
 import subprocess
 import time
 import yaml
@@ -662,10 +663,10 @@ def prepare_environment(update, service):
 
 def _setResourceAllocation(allocation):
     client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
-    for chutename, resources in allocation.iteritems():
+    for container_name, resources in six.iteritems(allocation):
         out.info("Update chute {} set cpu_shares={}\n".format(
-            chutename, resources['cpu_shares']))
-        container = client.containers.get(chutename)
+            container_name, resources['cpu_shares']))
+        container = client.containers.get(container_name)
         container.update(cpu_shares=resources['cpu_shares'])
 
         # Using class id 1:1 for prioritized, 1:3 for best effort.
@@ -677,7 +678,7 @@ def _setResourceAllocation(allocation):
         else:
             classid = "0x10003"
 
-        container = ChuteContainer(chutename)
+        container = ChuteContainer(container_name)
         try:
             container_id = container.getID()
             fname = "/sys/fs/cgroup/net_cls/docker/{}/net_cls.classid".format(container_id)
