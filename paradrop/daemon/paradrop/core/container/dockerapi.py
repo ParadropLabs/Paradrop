@@ -12,11 +12,9 @@ import json
 import os
 import random
 import re
-import shutil
 import six
 import subprocess
 import time
-import yaml
 
 from paradrop.base.exceptions import ChuteNotFound
 from paradrop.base.output import out
