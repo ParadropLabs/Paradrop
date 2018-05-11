@@ -40,7 +40,8 @@ def allocate(reservations, total=1.0):
             else:
                 result[i] += share
     elif remaining < 0:
-        raise Exception("Resource allocation is infeasible (total > {})".format(total))
+        raise Exception("Resource allocation is infeasible (total {} > {})".format(
+            sum(result), total))
 
     return result
 

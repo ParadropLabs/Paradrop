@@ -13,9 +13,11 @@ def test_computeResourceAllocation():
 
     service1 = MagicMock()
     service1.get_container_name.return_value = "service1"
+    service1.requests = {}
 
     service2 = MagicMock()
     service2.get_container_name.return_value = "service2"
+    service2.requests = {}
 
     chutes[0].name = "chute1"
     chutes[0].isRunning.return_value = True
