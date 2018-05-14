@@ -69,10 +69,20 @@ def generatePlans(update):
                               (dockerapi.setup_net_interfaces, ),
                               (dockerapi.cleanup_net_interfaces, ))
 
+        if update.old is None:
+            update.plans.addPlans(plangraph.STATE_CREATE_BRIDGE,
+                                  (dockerapi.create_bridge, ),
+                                  (dockerapi.remove_bridge, ))
+
     if update.old is not None and update.old.isRunning():
         update.plans.addPlans(plangraph.STATE_NET_STOP,
                               (dockerapi.cleanup_net_interfaces, ),
                               (dockerapi.setup_net_interfaces, ))
+
+    if update.updateType == "delete":
+        update.plans.addPlans(plangraph.STATE_REMOVE_BRIDGE,
+                              (dockerapi.remove_bridge, ),
+                              (dockerapi.create_bridge, ))
 
     # Save the chute to the chutestorage.
     update.plans.addPlans(plangraph.STATE_SAVE_CHUTE, (state.saveChute, ),

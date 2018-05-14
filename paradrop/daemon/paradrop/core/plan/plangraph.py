@@ -87,13 +87,14 @@ STATE_MAKE_EXEC                 = 83
 ###############################################################################
 # Manipulate Chute Container
 STATE_NET_STOP                  = 84
-STATE_CALL_STOP                 = 85
-STATE_CALL_UNFREEZE             = 86
+STATE_CREATE_BRIDGE             = 85
+STATE_CALL_STOP                 = 86
 STATE_CALL_START                = 87
 STATE_CALL_FREEZE               = 88
 STATE_CALL_CLEANUP              = 89
 STATE_FILES_START               = 90
 STATE_NET_START                 = 91
+STATE_REMOVE_BRIDGE             = 92
 
 STATE_SAVE_CHUTE                = 95
 RESOURCE_SET_ALLOCATION         = 96

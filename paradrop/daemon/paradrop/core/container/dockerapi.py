@@ -156,6 +156,26 @@ def remove_image(update, service):
         out.warn("Error removing image: {}".format(error))
 
 
+def create_bridge(update):
+    """
+    Create a user-defined bridge network for the chute.
+    """
+    client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
+    client.networks.create(update.new.name, driver="bridge")
+
+
+def remove_bridge(update):
+    """
+    Remove the bridge network associated with the chute.
+    """
+    client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
+    try:
+        network = client.networks.get(update.new.name)
+        network.remove()
+    except docker.errors.NotFound:
+        pass
+
+
 def start_container(update, service):
     """
     Start running a service in a new container.
@@ -181,6 +201,12 @@ def start_container(update, service):
         out.info("Successfully started chute with Id: %s\n" % (str(container.id)))
     except Exception as e:
         raise e
+
+    try:
+        network = client.networks.get(update.new.name)
+        network.connect(container_name, aliases=[service.name])
+    except docker.errors.NotFound:
+        out.warn("Bridge network {} not found; connectivity between containers is limited.".format(update.new.name))
 
 
 def remove_container(update, service):
