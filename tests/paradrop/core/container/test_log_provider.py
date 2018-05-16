@@ -23,7 +23,7 @@ def test_monitor_logs(DockerClient):
     queue = MagicMock()
     queue.put = output.append
 
-    log_provider.monitor_logs("chute", queue)
+    log_provider.monitor_logs("main", "chute-main", queue)
 
     assert len(output) == 3
     assert output[0]['message'] == "MessageA"

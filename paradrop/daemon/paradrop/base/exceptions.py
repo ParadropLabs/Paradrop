@@ -32,14 +32,24 @@ class PdidExclusionError(PdServerException):
 class ModelNotFound(PdServerException):
     pass
 
+
 class ParadropException(Exception):
     pass
+
 
 class ChuteNotFound(ParadropException):
     pass
 
+
+class ServiceNotFound(ParadropException):
+    def __init__(self, name):
+        message = "Service ({}) not found".format(name)
+        super(ServiceNotFound, self).__init__(message)
+
+
 class ChuteNotRunning(ParadropException):
     pass
+
 
 class DeviceNotFoundException(ParadropException):
     pass

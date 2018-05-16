@@ -7,7 +7,7 @@ import docker
 from multiprocessing import Process, Queue
 
 
-def monitor_logs(chute_name, queue, tail=200):
+def monitor_logs(service_name, container_name, queue, tail=200):
     """
     Iterate over log messages from a container and add them to the queue
     for consumption.  This function will block and wait for new messages
@@ -17,7 +17,7 @@ def monitor_logs(chute_name, queue, tail=200):
     is also valid, but highly discouraged for performance reasons.
     """
     client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
-    container = client.containers.get(chute_name)
+    container = client.containers.get(container_name)
     output = container.logs(stdout=True, stderr=True,
                             stream=True, timestamps=True, follow=True,
                             tail=tail)
@@ -29,22 +29,26 @@ def monitor_logs(chute_name, queue, tail=200):
             parts = line.split(" ", 1)
             if len(parts) > 1:
                 queue.put({
+                    'service': service_name,
                     'timestamp': parts[0],
                     'message': parts[1].rstrip()
                 })
 
             else:
                 queue.put({
+                    'service': service_name,
                     'message': line.rstrip()
                 })
-        else:
+        elif isinstance(line, dict):
+            line['service'] = service_name
             queue.put(line)
 
 class LogProvider(object):
-    def __init__(self, chutename):
-        self.chutename = chutename
+    def __init__(self, chute):
+        self.chute = chute
         self.queue = Queue()
         self.listening = False
+        self.processes = []
 
     def attach(self):
         """
@@ -52,13 +56,17 @@ class LogProvider(object):
 
         Log messages in the queue will appear like the following:
         {
+            'service': 'main',
             'timestamp': '2017-01-30T15:46:23.009397536Z',
             'message': 'Something happened'
         }
         """
         if not self.listening:
-            self.process = Process(target=monitor_logs, args=(self.chutename, self.queue))
-            self.process.start()
+            for service in self.chute.get_services():
+                process = Process(target=monitor_logs,
+                        args=(service.name, service.get_container_name(), self.queue))
+                process.start()
+                self.processes.append(process)
             self.listening = True
 
     def get_logs(self):
@@ -78,7 +86,8 @@ class LogProvider(object):
         if self.listening:
             # We have to kill the process explicitly with SIGKILL,
             # terminate() function does not work here.
-            os.kill(self.process.pid, signal.SIGKILL)
-            # self.process.terminate()
-            # self.process.join()
+            for process in self.processes:
+                os.kill(process.pid, signal.SIGKILL)
+
+            self.processes = []
             self.listening = False

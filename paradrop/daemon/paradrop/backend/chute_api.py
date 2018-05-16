@@ -132,8 +132,10 @@ class ChuteApi(object):
 
         result = []
         for chute in chutes:
-            container = ChuteContainer(chute.name)
+            service = chute.get_default_service()
+            container = ChuteContainer(service.get_container_name())
 
+            # TODO Return information about all of the chute's services.
             result.append({
                 'name': chute.name,
                 'state': container.getStatus(),
@@ -228,7 +230,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
-            container = ChuteContainer(chute)
+            service = chute_obj.get_default_service()
+            container = ChuteContainer(service.get_container_name())
         except KeyError:
             request.setResponseCode(404)
             return "{}"
@@ -237,6 +240,7 @@ class ChuteApi(object):
         allocation = resource.computeResourceAllocation(
                 chuteStorage.getChuteList())
 
+        # TODO Return information about all of the chute's services.
         result = {
             'name': chute,
             'state': container.getStatus(),

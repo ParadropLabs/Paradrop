@@ -12,6 +12,7 @@ from klein import Klein
 from txsockjs.factory import SockJSResource
 from autobahn.twisted.resource import WebSocketResource
 
+from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.system.system_status import SystemStatus
 
 from .audio_api import AudioApi
@@ -125,7 +126,8 @@ class HttpServer(object):
             'heartbeat': 5,
             'timeout': 2,
         }
-        return SockJSResource(LogSockJSFactory(name), options)
+        chute = ChuteStorage.get_chute(name)
+        return SockJSResource(LogSockJSFactory(chute), options)
 
 
     @app.route('/sockjs/status', branch=True)
@@ -144,7 +146,8 @@ class HttpServer(object):
     @requires_auth
     def chute_logs(self, request, name):
         #cors.config_cors(request)
-        factory = ChuteLogWsFactory(name)
+        chute = ChuteStorage.get_chute(name)
+        factory = ChuteLogWsFactory(chute)
         factory.setProtocolOptions(autoPingInterval=10, autoPingTimeout=5)
         return WebSocketResource(factory)
 

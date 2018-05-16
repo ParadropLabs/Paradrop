@@ -15,7 +15,7 @@ class LogSockJSProtocol(Protocol):
         self.factory.transports.add(self.transport)
         out.info('sockjs /logs connected')
 
-        self.log_provider = LogProvider(self.factory.chute_name)
+        self.log_provider = LogProvider(self.factory.chute)
         self.log_provider.attach()
         self.loop.start(1.0)
 
@@ -34,9 +34,9 @@ class LogSockJSProtocol(Protocol):
         self.log_provider = None
 
 class LogSockJSFactory(Factory):
-    def __init__(self, chutename):
+    def __init__(self, chute):
         self.transports = set()
-        self.chute_name = chutename
+        self.chute = chute
 
     def buildProtocol(self, addr):
         return LogSockJSProtocol(self)

@@ -84,6 +84,10 @@ class ChuteStorage(PDStorage):
         """Returns True if we should save the ChuteList, otherwise False."""
         return (type(ChuteStorage.chuteList) == dict)
 
+    @classmethod
+    def get_chute(cls, name):
+        return cls.chuteList[name]
+
 
 if(__name__ == '__main__'): # pragma: no cover
     def usage():

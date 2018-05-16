@@ -4,6 +4,9 @@
 ###################################################################
 
 
+from paradrop.base.exceptions import ServiceNotFound
+
+
 class Chute(object):
     """
     This Chute class provides the internal representation of a Paradrop chute.
@@ -150,11 +153,31 @@ class Chute(object):
         """
         self.services[service.name] = service
 
+    def get_default_service(self):
+        """
+        Get one of the chute's services designated as the default one.
+
+        This is more for convenience with existing API functions where the
+        caller did not need to specify a service because prior to 0.12.0,
+        chutes could only have one Docker container. We use some heuristics
+        such as the service's name is "main" to identify one of the services as
+        the default.
+        """
+        if "main" in self.services:
+            return self.services['main']
+
+        # Sort by name and return the first one.
+        name = min(self.services)
+        return self.services[name]
+
     def get_service(self, name):
         """
         Get a service by name.
         """
-        return self.services[name]
+        if name in self.services:
+            return self.services[name]
+        else:
+            raise ServiceNotFound(name)
 
     def get_services(self):
         """

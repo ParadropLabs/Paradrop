@@ -948,7 +948,8 @@ def watch_chute_logs(ctx, chute):
         data = json.loads(message)
         time = arrow.get(data['timestamp']).to('local').datetime
         msg = data['message'].rstrip()
-        print("{}: {}".format(time, msg))
+        service = data.get("service", chute)
+        click.echo("[{}] {}: {}".format(service, time, msg))
 
     router_ws_request(url, on_message=on_message)
 

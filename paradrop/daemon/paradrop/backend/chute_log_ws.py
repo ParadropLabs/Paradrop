@@ -14,7 +14,7 @@ class ChuteLogWsProtocol(WebSocketServerProtocol):
 
     def onOpen(self):
         out.info('ws /chute_logs connected')
-        self.log_provider = LogProvider(self.factory.chute_name)
+        self.log_provider = LogProvider(self.factory.chute)
         self.log_provider.attach()
         self.loop.start(0.5)
 
@@ -31,9 +31,9 @@ class ChuteLogWsProtocol(WebSocketServerProtocol):
 
 
 class ChuteLogWsFactory(WebSocketServerFactory):
-    def __init__(self, chute_name, *args, **kwargs):
+    def __init__(self, chute, *args, **kwargs):
         WebSocketServerFactory.__init__(self, *args, **kwargs)
-        self.chute_name = chute_name
+        self.chute = chute
 
     def buildProtocol(self, addr):
         return ChuteLogWsProtocol(self)
