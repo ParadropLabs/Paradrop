@@ -357,7 +357,7 @@ def help(ctx):
 
 
 @root.command('import-configuration')
-@click.argument('path')
+@click.argument('path', type=click.Path(exists=True))
 @click.pass_context
 def import_configuration(ctx, path):
     """
@@ -375,7 +375,7 @@ def import_configuration(ctx, path):
 
 
 @root.command('import-ssh-key')
-@click.argument('path')
+@click.argument('path', type=click.Path(exists=True))
 @click.option('--user', '-u', default='paradrop', help='Local username')
 @click.pass_context
 def import_ssh_key(ctx, path, user):
