@@ -1,6 +1,7 @@
 import errno
 import os
 import signal
+import six
 import subprocess
 import time
 
@@ -171,6 +172,28 @@ class ErrorCommand(Command):
 
     def success(self):
         return False
+
+
+class FunctionCommand(Command):
+    """
+    Command that runs a Python function.
+    """
+    def __init__(self, parent, function, *args, **kwargs):
+        command = [function.__name__]
+        command.extend(args)
+        for key, value in six.iteritems(kwargs):
+            command.append("{}={}".format(key, value))
+
+        super(FunctionCommand, self).__init__(command, parent)
+
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
+        self.result = None
+
+    def execute(self):
+        self.result = self.function(*self.args, **self.kwargs)
 
 
 class KillCommand(Command):

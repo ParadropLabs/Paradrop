@@ -4,7 +4,7 @@ import os
 from paradrop.lib.utils import pdosq
 
 from .base import ConfigObject, ConfigOption
-from .command import Command, KillCommand
+from .command import Command, KillCommand, FunctionCommand
 
 
 class ConfigDhcp(ConfigObject):
@@ -176,5 +176,11 @@ class ConfigDnsmasq(ConfigObject):
 
         commands.append((-self.PRIO_START_DAEMON,
             KillCommand(self.pidFile, self)))
+
+        # Clean up leases and pid files.
+        commands.append((-self.PRIO_START_DAEMON,
+            FunctionCommand(self, os.remove, self.__leasefile)))
+        commands.append((-self.PRIO_START_DAEMON,
+            FunctionCommand(self, os.remove, self.pidFile)))
 
         return commands
