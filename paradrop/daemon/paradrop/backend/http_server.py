@@ -15,23 +15,24 @@ from autobahn.twisted.resource import WebSocketResource
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.system.system_status import SystemStatus
 
+from .airshark_api import AirsharkApi
+from .airshark_ws import AirsharkSpectrumFactory, AirsharkAnalyzerFactory
 from .audio_api import AudioApi
 from .auth import requires_auth, AuthApi
-from .information_api import InformationApi
 from .change_api import ChangeApi
 from .change_ws import ChangeStreamFactory
-from .config_api import ConfigApi
 from .chute_api import ChuteApi
-from .password_api import PasswordApi
-from .airshark_api import AirsharkApi
-from .log_sockjs import LogSockJSFactory
 from .chute_log_ws import ChuteLogWsFactory
-from .status_sockjs import StatusSockJSFactory
-from .airshark_ws import AirsharkSpectrumFactory, AirsharkAnalyzerFactory
-from .password_manager import PasswordManager
-from .token_manager import TokenManager
-from .snapd_resource import SnapdResource
+from .config_api import ConfigApi
+from .information_api import InformationApi
+from .log_sockjs import LogSockJSFactory
+from .network_api import NetworkApi
 from .paradrop_log_ws import ParadropLogWsFactory
+from .password_api import PasswordApi
+from .password_manager import PasswordManager
+from .snapd_resource import SnapdResource
+from .status_sockjs import StatusSockJSFactory
+from .token_manager import TokenManager
 
 
 class HttpServer(object):
@@ -97,6 +98,12 @@ class HttpServer(object):
     @requires_auth
     def api_airshark(self, request):
         return AirsharkApi(self.airshark_manager).routes.resource()
+
+
+    @app.route('/api/v1/network', branch=True)
+    @requires_auth
+    def api_network(self, request):
+        return NetworkApi().routes.resource()
 
 
     @app.route('/snapd/', branch=True)

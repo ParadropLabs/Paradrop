@@ -526,6 +526,18 @@ def list_chutes(ctx):
     return result
 
 
+@root.command('list-devices')
+@click.pass_context
+def list_devices(ctx):
+    """
+    List devices connected to the node.
+    """
+    client = ParadropClient(ctx.obj['target'])
+    result = client.list_devices()
+    click.echo(util.format_result(result))
+    return result
+
+
 @root.command('list-snap-interfaces')
 @click.pass_context
 def list_snap_interfaces(ctx):

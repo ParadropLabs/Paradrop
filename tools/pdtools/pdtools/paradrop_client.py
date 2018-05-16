@@ -203,6 +203,13 @@ class ParadropClient(AuthenticatedClient):
         url = self.base_url + "/chutes/" # trailing slash is intentional
         return self.request("GET", url)
 
+    def list_devices(self):
+        """
+        List devices connected to the node.
+        """
+        url = "{}/network/devices".format(self.base_url)
+        return self.request("GET", url)
+
     def list_snap_interfaces(self):
         """
         List interfaces for snaps installed on the node.
@@ -355,7 +362,12 @@ class ParadropClient(AuthenticatedClient):
             raise Exception("chute_name was not specified")
 
         cameras = []
-        leases = self.get_leases(chute_name, network_name)
+
+        try:
+            # Introduced in Paradrop v0.12.0.
+            leases = self.list_devices()
+        except:
+            leases = self.get_leases(chute_name, network_name)
 
         dlink_re = re.compile("(28:10:7b|b0:c5:54|01:b0:c5):.*")
         for lease in leases:
