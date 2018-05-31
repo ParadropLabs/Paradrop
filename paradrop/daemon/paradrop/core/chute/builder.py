@@ -139,6 +139,10 @@ class SingleServiceChuteBuilder(ChuteBuilder):
         self.chute.config = config
         self.chute.web = config.get("web", {})
 
+        # Old chutes did not specify the web service because it was implied.
+        if "port" in self.chute.web:
+            self.chute.web['service'] = "main"
+
     def create_services(self, spec):
         service = Service(self.chute, "main")
 
