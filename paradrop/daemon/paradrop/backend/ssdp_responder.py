@@ -3,11 +3,9 @@ import ipaddress
 from BaseHTTPServer import BaseHTTPRequestHandler
 from StringIO import StringIO
 
-from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
 
 from paradrop.base import settings
-from paradrop.base.output import out
 from paradrop.core.system import system_info
 
 
@@ -78,4 +76,3 @@ class SsdpResponder(DatagramProtocol):
     def stop(self):
         self.ssdp.leaveGroup(SSDP_ADDR)
         self.ssdp.stopListening()
-
