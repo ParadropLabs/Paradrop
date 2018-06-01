@@ -36,6 +36,7 @@ from . import routers
 # Command groups
 from . import chute
 from . import cloud
+from . import discover
 from . import node
 from . import store
 from . import wizard
@@ -81,6 +82,7 @@ groups.register_commands(root)
 # Command groups
 root.add_command(chute.root)
 root.add_command(cloud.root)
+root.add_command(discover.root)
 root.add_command(node.root)
 root.add_command(store.root)
 root.add_command(wizard.root)

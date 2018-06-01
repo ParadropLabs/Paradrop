@@ -17,6 +17,7 @@ from paradrop.core.update.update_fetcher import UpdateFetcher
 from paradrop.core.update.update_manager import UpdateManager
 from paradrop.airshark.airshark import AirsharkManager
 from paradrop.backend.http_server import HttpServer, setup_http_server
+from paradrop.backend.ssdp_responder import SsdpResponder
 from paradrop import confd
 
 
@@ -85,6 +86,7 @@ def main():
     nexus.core = Nexus(update_fetcher)
     http_server = HttpServer(update_manager, update_fetcher, airshark_manager, args.portal)
     setup_http_server(http_server, '0.0.0.0', settings.PORTAL_SERVER_PORT)
+    reactor.listenMulticast(1900, SsdpResponder(), listenMultiple=True)
 
     reactor.run()
 
