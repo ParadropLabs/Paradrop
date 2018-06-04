@@ -75,6 +75,10 @@ release() {
 }
 
 activate_virtual_env() {
+    if [ ! -d buildenv ]; then
+        virtualenv buildenv/env
+        pip install --requirements requirements.txt
+    fi
     . buildenv/env/bin/activate
 }
 
@@ -163,7 +167,8 @@ image() {
 
 test() {
     activate_virtual_env
-    nosetests -v
+    nosetests --with-coverage --cover-package=paradrop
+    pyflakes paradrop/daemon/paradrop
     deactivate_virtual_env
 }
 
