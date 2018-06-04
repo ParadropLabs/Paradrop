@@ -161,7 +161,7 @@ class UpdateManager:
         self.updateLock.acquire()
         self.updateQueue.append(self._make_router_update("prehostconfig"))
         self.updateQueue.append(self._make_router_update("inithostconfig"))
-        self.updateQueue.extend(update_object.parse(u) for u in startQueue)
+        self.updateQueue.extend(startQueue)
         self.updateLock.release()
 
         # Always perform this work

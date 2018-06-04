@@ -1,4 +1,5 @@
 from paradrop.core.chute import restart
+from paradrop.core.chute.chute import Chute
 from paradrop.core.chute.chute_storage import ChuteStorage
 from mock import patch, MagicMock
 
@@ -24,8 +25,9 @@ def test_updateStatus(mock_saveChute):
 @patch('paradrop.core.chute.restart.waitSystemUp')
 @patch('paradrop.core.chute.restart.reclaimNetworkResources')
 @patch('paradrop.core.chute.restart.settings')
+@patch.object(ChuteStorage, 'getChute')
 @patch.object(ChuteStorage, 'getChuteList')
-def test_reloadChutes(mock_getChuteList, mockSettings, mResources, mWait, mTime, mOut, mTimeint):
+def test_reloadChutes(mock_getChuteList, getChute, mockSettings, mResources, mWait, mTime, mOut, mTimeint):
     """
     Test that the reloadChutes function does it's job.
     """
@@ -43,26 +45,28 @@ def test_reloadChutes(mock_getChuteList, mockSettings, mResources, mWait, mTime,
     mTimeint.return_value = 'Now'
     mockSettings.PDCONFD_ENABLED = True
     mockSettings.RESERVED_CHUTE = 'PDROP'
-    ch1 = MagicMock()
-    ch2 = MagicMock()
-    ch3 = MagicMock()
-    ch1.state = 'running'
-    ch1.name = 'ch1'
-    ch2.state = 'stopped'
-    ch3.state = 'running'
-    ch3.name = 'ch3'
+    ch1 = Chute(name="ch1", state="running")
+    ch2 = Chute(name="ch2", state="stopped")
+    ch3 = Chute(name="ch3", state="running")
     mock_getChuteList.return_value = [ch1, ch2, ch3]
     mWait.side_effect = [None, None, '[{"success": false, "comment": "PDROP"},{"success": false, "comment": "ch1"},{"success": false, "comment": "ch2"},{"success": true, "comment": "ch3"},{"success": true, "comment": "error"}]']
+
+    chutes = {ch.name: ch for ch in [ch1, ch2, ch3]}
+    def mock_getChute(name):
+        return chutes.get(name, None)
+    getChute.side_effect = mock_getChute
 
     #Call
     ret = restart.reloadChutes()
 
     #Assertions
     mResources.assert_called_with(ch3)
+    print(mResources.call_count)
     assert mResources.call_count == 2
     assert mTime.sleep.call_count == 2
     assert mTime.sleep.called_with(1)
     assert mOut.warn.call_count == 2
     assert 'Failed to load a system config section' in str(mOut.warn.call_args_list[0])
     assert 'Failed to load config section for unrecognized chute: ch2' in str(mOut.warn.call_args_list[1])
-    assert dict(updateClass='CHUTE', updateType='restart', name=ch3.name, tok=mTimeint.return_value, func=restart.updateStatus) in ret
+    assert all(update.updateType == "restart" for update in ret)
+    assert all(update.new.name in chutes for update in ret)

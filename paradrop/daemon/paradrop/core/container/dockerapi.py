@@ -183,9 +183,9 @@ def start_container(update, service):
     client = docker.DockerClient(base_url="unix://var/run/docker.sock", version='auto')
 
     container_name = service.get_container_name()
-    out.info("Attempting to start container {}\n".format(container_name))
-
     image_name = service.get_image_name()
+    out.info("Attempting to start container {} from image {}\n".format(
+        container_name, image_name))
 
     host_config = build_host_config(update, service)
 

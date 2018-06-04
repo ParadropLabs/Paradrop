@@ -313,10 +313,10 @@ NEW_CHUTE_STATE = {
 
 
 class UpdateChute(UpdateObject):
-
     """
     Updates specifically tailored to chute actions like create, delete, etc...
     """
+
     # List of all modules that need to be called during execution planning
     updateModuleList = [
         name,
@@ -327,7 +327,15 @@ class UpdateChute(UpdateObject):
         runtime
     ]
 
-    def __init__(self, obj):
+    def __init__(self, obj, reuse_existing=False):
+        """
+        Create an update object that affects a chute.
+
+        Args:
+            obj (dict): update specification.
+            reuse_existing (bool): use the existing Chute object from storage, e.g.
+                when restarting a chute without changes.
+        """
         updateType = obj.get('updateType', None)
 
         # TODO: Remove this if unused. It is not the update that has a running
@@ -338,7 +346,9 @@ class UpdateChute(UpdateObject):
 
         # If going from one version of a chute to another, try to fill in
         # any missing values in the new chute using the old chute.
-        if self.old is not None:
+        if reuse_existing:
+            self.new = self.old
+        elif self.old is not None:
             self.new.inherit_attributes(self.old)
 
         self.new.state = NEW_CHUTE_STATE.get(updateType, Chute.STATE_INVALID)

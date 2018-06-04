@@ -16,7 +16,9 @@ from paradrop.base.pdutils import str2json, timeint
 from paradrop.base import settings
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config.network import reclaimNetworkResources
+from paradrop.core.update.update_object import UpdateChute
 from paradrop.confd.client import waitSystemUp
+
 
 
 FAILURE_WARNING = """
@@ -28,21 +30,29 @@ FAILURE_WARNING = """
 
 def reloadChutes():
     """
-    This function is called to restart any chutes that were running prior to the system being restarted.
-    It waits for pdconfd to come up and report whether or not it failed to bring up any of the interfaces
-    that existed before the power cycle. If pdconfd indicates something failed we then force a stop update
-    in order to bring down all interfaces associated with that chute and mark it with a warning. 
-    If the stop fails we mark the chute with a warning manually and change its state to stopped and save to 
-    storage this isn't great as it could mean our system still has interfaces up associated with that chute.
-    If pdconfd doesn't report failure we attempt to start the chute and if this fails we trust the abort process
-    to restore the system to a consistent state and we manually mark the chute as stopped and add a warning to it.
-    :param None
-    :returns: (list) A list of update dicts to be used to create updateObjects that should be run before accepting new updates.
+    Get update objects to chutes that should be running at startup.
+
+    This function is called to restart any chutes that were running
+    prior to the system being restarted.  It waits for pdconfd to
+    come up and report whether or not it failed to bring up any of the
+    interfaces that existed before the power cycle. If pdconfd indicates
+    something failed we then force a stop update in order to bring down
+    all interfaces associated with that chute and mark it with a warning.
+    If the stop fails we mark the chute with a warning manually and change
+    its state to stopped and save to storage this isn't great as it could
+    mean our system still has interfaces up associated with that chute.
+    If pdconfd doesn't report failure we attempt to start the chute and
+    if this fails we trust the abort process to restore the system to a
+    consistent state and we manually mark the chute as stopped and add
+    a warning to it.
+
+    :returns: (list) A list of UpdateChute objects that should be run
+              before accepting new updates.
     """
     if not settings.PDCONFD_ENABLED:
         return []
     chuteStore = ChuteStorage()
-    chutes = [ ch for ch in chuteStore.getChuteList() if ch.state == 'running']
+    chutes = [ ch for ch in chuteStore.getChuteList() if ch.isRunning() ]
 
     # Part of restoring the chute to its previously running state is reclaiming
     # IP addresses, interface names, etc. that it had previously.
@@ -100,8 +110,10 @@ def reloadChutes():
     # Only try to restart the chutes that had no problems during pdconf
     # initialization.
     for ch in okChutes:
-        updates.append(dict(updateClass='CHUTE', updateType='restart', name=ch,
-                       tok=timeint(), func=updateStatus))
+        update_spec = dict(updateClass='CHUTE', updateType='restart', name=ch,
+                tok=timeint(), func=updateStatus)
+        update = UpdateChute(update_spec, reuse_existing=True)
+        updates.append(update)
 
     return updates
 
