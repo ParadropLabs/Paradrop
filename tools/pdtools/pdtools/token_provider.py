@@ -12,6 +12,7 @@ Method               | Caller    | Target API
 ---------------------------------------------
 Environment variable | x   x     | x    -
 Saved locally        | x   -     | x    x
+Saved cloud token    | x   -     | x    -
 Default password     | x   -     | x    -
 Prompt for input     | x   -     | x    x
 
@@ -67,6 +68,9 @@ class TokenProvider(object):
 
 
 class EnvironmentVariableTokenProvider(TokenProvider):
+    """
+    Get a token from an environment variable.
+    """
     def __init__(self, variable="PARADROP_API_TOKEN"):
         self.variable = variable
 
@@ -78,6 +82,9 @@ class EnvironmentVariableTokenProvider(TokenProvider):
 
 
 class SavedTokenProvider(TokenProvider):
+    """
+    Get a token that was saved to a file.
+    """
     def __init__(self, domain):
         self.domain = domain
 
@@ -95,7 +102,46 @@ class SavedTokenProvider(TokenProvider):
             config.save()
 
 
+class SavedCloudTokenProvider(TokenProvider):
+    """
+    Use a cloud token to attempt authentication with a node.
+    """
+    def __init__(self, auth_url, domain):
+        self.auth_url = auth_url
+        self.domain = domain
+
+    def get_token(self):
+        config = PdtoolsConfig.load()
+        cloud_token = config.getAccessToken(self.domain)
+        data = {
+            "token": cloud_token
+        }
+
+        url_parts = urlparse(self.auth_url)
+        res = requests.post(self.auth_url, json=data)
+        try:
+            data = res.json()
+            self.token = data['token']
+            self.username = data['username']
+            return self.token
+        except:
+            return None
+
+    def is_applicable(self):
+        return True
+
+    def update(self, token, success):
+        if success and token == self.token:
+            url_parts = urlparse(self.auth_url)
+            config = PdtoolsConfig.load()
+            config.addAccessToken(url_parts.netloc, self.username, token)
+            config.save()
+
+
 class DefaultLoginTokenProvider(TokenProvider):
+    """
+    Attempt login with a default username and password.
+    """
     def __init__(self, auth_url, param_map):
         self.auth_url = auth_url
         self.param_map = param_map
@@ -119,6 +165,9 @@ class DefaultLoginTokenProvider(TokenProvider):
 
 
 class LoginPromptTokenProvider(TokenProvider):
+    """
+    Prompt the user for username and password.
+    """
     def __init__(self, auth_url, param_map):
         self.auth_url = auth_url
         self.param_map = param_map

@@ -31,7 +31,7 @@ class TokenManager(object):
         """
         return jwt.decode(token, self.secret, algorithms=['HS256'])
 
-    def issue(self, subject, expires=2592000):
+    def issue(self, subject, expires=2592000, **claims):
         """
         Issue a signed token.
 
@@ -40,11 +40,10 @@ class TokenManager(object):
         time after which the token will expire.  The default is 30 days
         (2592000 seconds).
         """
-        data = {
-            'iat': int(time.time()),
-            'iss': nexus.core.info.pdid,
-            'sub': subject
-        }
+        data = claims
+        data['iat'] = int(time.time())
+        data['iss'] = nexus.core.info.pdid
+        data['sub'] = subject
         if expires is not None:
             data['exp'] = int(time.time()) + expires
         return jwt.encode(data, self.secret, algorithm='HS256')

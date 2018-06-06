@@ -5,6 +5,7 @@ import json
 from klein import Klein
 
 from paradrop.base.output import out
+from paradrop.core.agent.http import PDServerRequest
 from paradrop.core.chute.chute_storage import ChuteStorage
 from . import cors
 
@@ -53,11 +54,17 @@ def get_allowed_bearer():
     return allowed
 
 
-def check_auth(password_manager, token_manager, auth_header):
+def check_auth(request, password_manager, token_manager):
+    auth_header = request.getHeader('Authorization')
+    if auth_header is None:
+        return False
+
     parts = auth_header.split()
     if parts[0] == "Basic":
-        userpass = parts[1]
-        return verify_password(password_manager, userpass)
+        username, password = get_username_password(parts[1])
+        request.user = username
+        request.role = "admin"
+        return password_manager.verify_password(username, password)
     elif parts[0] == "Bearer":
         token = parts[1]
 
@@ -76,7 +83,9 @@ def check_auth(password_manager, token_manager, auth_header):
         # allowing user access to the router, etc. In that case we will
         # need to examine the subject, issuer, and audience claims.
         try:
-            token_manager.decode(token)
+            data = token_manager.decode(token)
+            request.user = data.get("sub", "paradrop")
+            request.role = data.get("role", "user")
             return True
         except token_manager.InvalidTokenError:
             pass
@@ -93,15 +102,25 @@ def requires_auth(func):
     """
     @functools.wraps(func)
     def decorated(self, request, *args, **kwargs):
-        auth_header = request.getHeader('Authorization')
-        if not auth_header or not check_auth(self.password_manager,
-                self.token_manager, auth_header):
+        if not check_auth(request, self.password_manager, self.token_manager):
             out.warn('Failed to authenticate')
             request.setResponseCode(401)
             request.setHeader("WWW-Authenticate", "Basic realm=\"Login Required\"")
             return
         return func(self, request, *args, **kwargs)
     return decorated
+
+
+def verify_cloud_token(token):
+    headers = {
+        "Authorization": "Bearer {}".format(token)
+    }
+
+    # Pass custom Authorization header and setAuthHeader=False to prevent
+    # PDServerRequest from using the node's own authorization token.
+    request = PDServerRequest("/api/users/me", headers=headers,
+            setAuthHeader=False)
+    return request.get()
 
 
 class AuthApi(object):
@@ -136,3 +155,44 @@ class AuthApi(object):
             request.setResponseCode(401)
 
         return json.dumps(result)
+
+    @routes.route('/cloud', methods=['POST'])
+    def auth_cloud(self, request):
+        """
+        Login using credentials from the cloud controller.
+
+        This is an experimental new login method that lets users
+        present a token that they received from the cloud controller
+        as a login credential for a node. The idea is to enable easy
+        access for multiple developers to share a node, for example,
+        during a tutorial.
+
+        Instead of a username/password, the user presents a token received
+        from the cloud controller. The verify_cloud_token function
+        verifies the validity of the token with the controller, and if
+        successful, retrieves information about the bearer, particularly
+        the username and role. Finally, we generate a new token that
+        enables the user to authenticate with local API endpoints.
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        body = json.loads(request.content.read())
+        token = body.get('token', '')
+
+        def token_verified(response):
+            if not response.success or response.data is None:
+                request.setResponseCode(401)
+                return
+
+            bearer_info = response.data
+            result = {
+                'token': self.token_manager.issue(bearer_info['email'],
+                    role=bearer_info['role']),
+                'username': bearer_info['email']
+            }
+            return json.dumps(result)
+
+        d = verify_cloud_token(token)
+        d.addCallback(token_verified)
+        return d

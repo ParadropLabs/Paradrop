@@ -2,6 +2,7 @@ from six.moves.urllib.parse import urlparse
 
 import requests
 
+from . import token_provider
 from .config import PdtoolsConfig
 from .token_provider import EnvironmentVariableTokenProvider, SavedTokenProvider, DefaultLoginTokenProvider, LoginPromptTokenProvider
 
@@ -46,27 +47,34 @@ class AuthenticatedClient(object):
         # parameterized based on the API spec. For example, the node and cloud
         # APIs have a different format for the authentication URL.
         self.token_providers = [
-            EnvironmentVariableTokenProvider(),
-            SavedTokenProvider(self.auth_domain),
-            DefaultLoginTokenProvider(self.auth_url, self.api_spec['param_map']),
-            LoginPromptTokenProvider(self.auth_url, self.api_spec['param_map'])
+            token_provider.EnvironmentVariableTokenProvider(),
+            token_provider.SavedTokenProvider(self.auth_domain),
+            token_provider.DefaultLoginTokenProvider(self.auth_url,
+                self.api_spec['param_map']),
+            token_provider.LoginPromptTokenProvider(self.auth_url,
+                self.api_spec['param_map'])
         ]
+        if api_spec == "node":
+            provider = token_provider.SavedCloudTokenProvider(
+                    "{scheme}://{netloc}/api/v1/auth/cloud".format(
+                        scheme=url_parts.scheme,
+                        netloc=url_parts.netloc),
+                    "paradrop.org")
+            self.token_providers.insert(2, provider)
 
         self.debug = debug
 
     def login(self):
-        config = PdtoolsConfig.load()
-        token = config.getAccessToken(self.auth_domain)
-        if token is not None:
-            return token
+        for provider in self.token_providers:
+            if not provider.is_applicable():
+                continue
 
-        provider = LoginPromptTokenProvider(self.auth_url, self.api_spec['param_map'])
-        token = provider.get_token()
-        if token is not None:
-            # If the token is non-empty, we assume it must be valid.  Call
-            # provider.update to make sure it gets saved.
-            provider.update(token, True)
-        return token
+            token = provider.get_token()
+            if token is not None:
+                # If the token is non-empty, we assume it must be valid.  Call
+                # provider.update to make sure it gets saved.
+                provider.update(token, True)
+                return token
 
     def logout(self):
         config = PdtoolsConfig.load()

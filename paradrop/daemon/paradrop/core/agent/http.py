@@ -1,6 +1,7 @@
 import json
 import pycurl
 import re
+import six
 import urllib
 
 from StringIO import StringIO
@@ -304,9 +305,10 @@ class PDServerRequest(object):
     # requests.
     token = None
 
-    def __init__(self, path, driver=TwistedRequestDriver, setAuthHeader=True):
+    def __init__(self, path, driver=TwistedRequestDriver, headers={}, setAuthHeader=True):
         self.path = path
         self.driver = driver
+        self.headers = headers
         self.setAuthHeader = setAuthHeader
         self.transportRetries = 0
 
@@ -360,6 +362,8 @@ class PDServerRequest(object):
         if self.setAuthHeader and PDServerRequest.token is not None:
             auth = 'Bearer {}'.format(PDServerRequest.token)
             driver.setHeader('Authorization', auth)
+        for key, value in six.iteritems(self.headers):
+            driver.setHeader(key, value)
         return driver.request(self.method, self.url, self.body)
 
     def receiveResponse(self, response):

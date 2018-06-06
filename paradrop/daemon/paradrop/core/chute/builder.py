@@ -133,6 +133,7 @@ class SingleServiceChuteBuilder(ChuteBuilder):
         self.chute = Chute()
         self.chute.name = spec.get("name")
         self.chute.description = spec.get("description", None)
+        self.chute.owner = spec.get("owner", None)
         self.chute.version = spec.get("version", None)
 
         config = spec.get("config", {})
@@ -245,7 +246,7 @@ class MultiServiceChuteBuilder(ChuteBuilder):
     def create_chute(self, spec):
         self.chute = Chute({})
 
-        for field in ["name", "version", "description"]:
+        for field in ["name", "version", "description", "owner"]:
             value = spec.get(field, "unknown")
             setattr(self.chute, field, value)
 

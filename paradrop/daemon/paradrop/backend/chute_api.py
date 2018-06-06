@@ -85,6 +85,30 @@ def extract_tarred_chute(data):
     return (tempdir, paradrop_yaml)
 
 
+def chute_access_allowed(request, chute):
+    # Allow caller to pass either chute object or the name of a chute.
+    if isinstance(chute, basestring):
+        chute = ChuteStorage.chuteList.get(chute, None)
+
+    # All users are allowed to install a chute if it does not conflict with an
+    # existing one.
+    if chute is None:
+        return True
+
+    # Only an admin or a chute owner are allowed to modify an existing chute.
+    if request.role == "admin" or request.user == chute.get_owner():
+        return True
+    else:
+        return False
+
+
+def permission_denied(request):
+    request.setResponseCode(403)
+    return json.dumps({
+        "error": "You do not have permission to access the requested chute."
+    })
+
+
 class ChuteApi(object):
     routes = Klein()
 
@@ -138,6 +162,7 @@ class ChuteApi(object):
             # TODO Return information about all of the chute's services.
             result.append({
                 'name': chute.name,
+                'owner': chute.get_owner(),
                 'state': container.getStatus(),
                 'version': getattr(chute, 'version', None),
                 'allocation': allocation.get(chute.name, None),
@@ -153,6 +178,7 @@ class ChuteApi(object):
 
         update = dict(updateClass='CHUTE',
                       updateType='create',
+                      owner=request.user,
                       tok=pdutils.timeint())
 
         ctype = request.requestHeaders.getRawHeaders('Content-Type',
@@ -236,6 +262,9 @@ class ChuteApi(object):
             request.setResponseCode(404)
             return "{}"
 
+        if not chute_access_allowed(request, chute_obj):
+            return permission_denied(request)
+
         chuteStorage = ChuteStorage()
         allocation = resource.computeResourceAllocation(
                 chuteStorage.getChuteList())
@@ -255,6 +284,9 @@ class ChuteApi(object):
     @routes.route('/<chute>', methods=['PUT'])
     def update_chute(self, request, chute):
         cors.config_cors(request)
+
+        if not chute_access_allowed(request, chute):
+            return permission_denied(request)
 
         update = dict(updateClass='CHUTE',
                       updateType='update',
@@ -306,6 +338,9 @@ class ChuteApi(object):
     def delete_chute(self, request, chute):
         cors.config_cors(request)
 
+        if not chute_access_allowed(request, chute):
+            return permission_denied(request)
+
         update = dict(updateClass='CHUTE',
                       updateType='delete',
                       tok=pdutils.timeint(),
@@ -327,9 +362,13 @@ class ChuteApi(object):
     def stop_chute(self, request, chute):
         cors.config_cors(request)
 
+        if not chute_access_allowed(request, chute):
+            return permission_denied(request)
+
         update = dict(updateClass='CHUTE',
                       updateType='stop',
                       tok=pdutils.timeint(),
+                      owner=request.user,
                       name=chute)
 
         # We will return the change ID to the caller for tracking and log
@@ -347,6 +386,9 @@ class ChuteApi(object):
     @routes.route('/<chute>/start', methods=['POST'])
     def start_chute(self, request, chute):
         cors.config_cors(request)
+
+        if not chute_access_allowed(request, chute):
+            return permission_denied(request)
 
         update = dict(updateClass='CHUTE',
                       updateType='start',
@@ -376,6 +418,9 @@ class ChuteApi(object):
     @routes.route('/<chute>/restart', methods=['POST'])
     def restart_chute(self, request, chute):
         cors.config_cors(request)
+
+        if not chute_access_allowed(request, chute):
+            return permission_denied(request)
 
         update = dict(updateClass='CHUTE',
                       updateType='restart',
@@ -415,6 +460,9 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
+
             result = chute_obj.getCacheContents()
             return json.dumps(result, cls=ChuteCacheEncoder)
         except KeyError:
@@ -462,6 +510,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             config = chute_obj.getConfiguration()
             return json.dumps(config)
         except KeyError:
@@ -511,6 +561,9 @@ class ChuteApi(object):
         """
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
+
+        if not chute_access_allowed(request, chute):
+            return permission_denied(request)
 
         update = dict(updateClass='CHUTE',
                       updateType='restart',
@@ -565,6 +618,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)
@@ -610,6 +665,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)
@@ -674,6 +731,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             externalSystemDir = chute_obj.getCache('externalSystemDir')
         except KeyError:
             request.setResponseCode(404)
@@ -728,6 +787,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)
@@ -777,6 +838,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)
@@ -845,6 +908,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)
@@ -905,6 +970,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)
@@ -984,6 +1051,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)
@@ -1022,6 +1091,8 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)
@@ -1047,6 +1118,8 @@ class ChuteApi(object):
     def hostapd_control(self, request, chute, network):
         try:
             chute_obj = ChuteStorage.chuteList[chute]
+            if not chute_access_allowed(request, chute_obj):
+                return permission_denied(request)
             networkInterfaces = chute_obj.getCache('networkInterfaces')
         except KeyError:
             request.setResponseCode(404)

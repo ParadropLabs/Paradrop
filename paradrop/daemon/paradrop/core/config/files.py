@@ -39,6 +39,10 @@ def load_chute_configuration(update):
     if hasattr(update, "build"):
         config.update(update.build)
 
+    # Try to set the owner of the chute.
+    if hasattr(update, "owner"):
+        config['owner'] = update.owner
+
     update.new = build_chute(config)
 
 

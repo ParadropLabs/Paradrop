@@ -28,6 +28,7 @@ class Chute(object):
     def __init__(self,
                  name=None,
                  description=None,
+                 owner=None,
                  state="running",
                  version=None,
                  config=None):
@@ -43,6 +44,7 @@ class Chute(object):
         """
         self.name = name
         self.description = description
+        self.owner = owner
         self.state = state
         self.version = version
 
@@ -169,6 +171,12 @@ class Chute(object):
         # Sort by name and return the first one.
         name = min(self.services)
         return self.services[name]
+
+    def get_owner(self):
+        """
+        Get the name of the user who owns this installed chute.
+        """
+        return getattr(self, "owner", None)
 
     def get_service(self, name):
         """
