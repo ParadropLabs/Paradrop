@@ -38,9 +38,14 @@ def validate_change(update):
         update.failure = "Chute is already stopped."
         return False
 
-    if update.updateType == "update" and update.new.version <= update.old.version:
+    if update.old is None:
+        old_version = 0
+    else:
+        old_version = update.old.version
+
+    if update.updateType == "update" and update.new.version <= old_version:
         update.failure = "Version {} of the chute is already installed.".format(
-            update.old.version)
+            old_version)
         return False
 
     return True

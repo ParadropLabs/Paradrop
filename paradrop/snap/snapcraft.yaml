@@ -71,6 +71,7 @@ parts:
     plugin: nil
     stage-packages:
       - dnsmasq
+      - git
       - haproxy
       - iw
       - kmod
@@ -82,6 +83,7 @@ parts:
         - bin/systemctl
         - sbin/iw
         - sbin/modprobe
+        - usr/bin/git
         - usr/sbin/dnsmasq
         - usr/sbin/haproxy
         - usr/sbin/parprouted

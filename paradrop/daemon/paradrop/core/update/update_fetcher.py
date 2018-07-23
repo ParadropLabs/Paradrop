@@ -48,7 +48,6 @@ class UpdateFetcher(object):
                 elif response.code == 404:
                     self.use_long_poll = False
 
-    @inlineCallbacks
     def start_polling(self):
         # Long polling is a more recent addition. If the server supports it, it
         # will only respond to our GET request after an update is available or a

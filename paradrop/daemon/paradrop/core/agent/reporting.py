@@ -5,12 +5,13 @@
 #
 
 import json
+import os
 import time
 
 from twisted.internet import reactor
 
 from paradrop.base.output import out
-from paradrop.base import nexus
+from paradrop.base import nexus, settings
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config import devices, hostconfig, resource, zerotier
 from paradrop.core.container.chutecontainer import ChuteContainer
@@ -190,6 +191,50 @@ class ReportSender(object):
         d.addCallback(cbresponse)
         d.addErrback(cberror)
         return d
+
+
+class NodeIdentitySender(ReportSender):
+    def send(self, report):
+        request = PDServerRequest('/api/routers/{router_id}')
+        d = request.patch(*report)
+
+        # Check for error code and retry.
+        def cbresponse(response):
+            if not response.success:
+                out.warn('{} to {} returned code {}'.format(request.method,
+                    request.url, response.code))
+                if self.max_retries is None or self.retries < self.max_retries:
+                    reactor.callLater(self.retryDelay, self.send, report)
+                    self.retries += 1
+                    self.increaseDelay()
+                nexus.core.jwt_valid = False
+            else:
+                nexus.core.jwt_valid = True
+
+        # Check for connection failures and retry.
+        def cberror(ignored):
+            out.warn('{} to {} failed'.format(request.method, request.url))
+            if self.max_retries is None or self.retries < self.max_retries:
+                reactor.callLater(self.retryDelay, self.send, report)
+                self.retries += 1
+                self.increaseDelay()
+            nexus.core.jwt_valid = False
+
+        d.addCallback(cbresponse)
+        d.addErrback(cberror)
+        return d
+
+
+def sendNodeIdentity():
+    path = os.path.join(settings.KEY_DIR, "node.pub")
+    with open(path, "r") as source:
+        public_key = source.read().strip()
+
+    report = [
+        {"op": "add", "path": "/ssh_public_key", "value": public_key}
+    ]
+    sender = NodeIdentitySender()
+    return sender.send(report)
 
 
 def sendStateReport():

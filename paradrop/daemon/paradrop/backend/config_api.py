@@ -14,7 +14,7 @@ from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.core.config import hostconfig
 from paradrop.core.agent.http import PDServerRequest
-from paradrop.core.agent.reporting import sendStateReport
+from paradrop.core.agent.reporting import sendNodeIdentity, sendStateReport
 from paradrop.core.agent.wamp_session import WampSession
 from paradrop.confd import client as pdconf_client
 from paradrop.lib.misc import ssh_keys
@@ -247,7 +247,10 @@ class ConfigApi(object):
             httpDeferred = sendStateReport()
             httpDeferred.addCallback(start_polling)
 
-            dl = DeferredList([wampDeferred, httpDeferred], consumeErrors=True)
+            identDeferred = sendNodeIdentity()
+
+            dl = DeferredList([wampDeferred, httpDeferred, identDeferred],
+                    consumeErrors=True)
             dl.addBoth(send_response)
             reactor.callLater(6, dl.cancel)
             return dl

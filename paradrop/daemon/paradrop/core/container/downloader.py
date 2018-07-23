@@ -17,6 +17,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import tarfile
 import tempfile
 
@@ -102,6 +103,41 @@ class Downloader(object):
         relRunDir = os.path.dirname(runPath)
         runDir = os.path.join(self.workDir, relRunDir)
         return runDir
+
+
+class GitSSHDownloader(Downloader):
+    def __init__(self, url, checkout="master", **kwargs):
+        """
+        checkout: branch, tag, or commit hash to checkout (default: "master").
+        """
+        super(GitSSHDownloader, self).__init__(url, **kwargs)
+
+        if checkout:
+            self.checkout = checkout
+        else:
+            # Interpret None or empty string as the default, "master".
+            self.checkout = "master"
+
+    def download(self):
+        env = os.environ.copy()
+        key_file = os.path.join(settings.KEY_DIR, "node.key")
+
+        if os.path.isfile(key_file):
+            # TODO: Set up a way for the node to securely retrieve the host key
+            # from the server and add it to the known hosts file. This would
+            # probably need to go through the web server, which uses HTTPS.
+            env['GIT_SSH_COMMAND'] = "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i {}".format(key_file)
+
+        cmd = ["git", "clone", self.url, self.workDir]
+        subprocess.call(cmd, env=env)
+
+        cmd = ["git", "-C", self.workDir, "checkout", self.checkout]
+        subprocess.call(cmd)
+
+        return self.workDir
+
+    def meta(self):
+        return {}
 
 
 class GithubDownloader(Downloader):
@@ -257,5 +293,8 @@ def downloader(url, user=None, secret=None, **kwargs):
         return GithubDownloader(url, user=user, secret=secret,
                 repo_owner=repo_owner, repo_name=repo_name, **kwargs)
 
-    else:
-        return WebDownloader(url, user=user, secret=secret, **kwargs)
+    # If the URL starts with ssh://, then use the git SSH download method.
+    if url.startswith("ssh://"):
+        return GitSSHDownloader(url, **kwargs)
+
+    return WebDownloader(url, user=user, secret=secret, **kwargs)
