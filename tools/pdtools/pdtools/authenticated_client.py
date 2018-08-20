@@ -1,3 +1,4 @@
+import os
 from six.moves.urllib.parse import urlparse
 
 import requests
@@ -5,6 +6,14 @@ import requests
 from . import token_provider
 from .config import PdtoolsConfig
 from .token_provider import EnvironmentVariableTokenProvider, SavedTokenProvider, DefaultLoginTokenProvider, LoginPromptTokenProvider
+
+
+PDSERVER_URL = os.environ.get('PDSERVER_URL', 'https://paradrop.org')
+
+
+def get_controller_domain():
+    url_parts = urlparse(PDSERVER_URL)
+    return url_parts.netloc
 
 
 class AuthenticatedClient(object):
@@ -59,7 +68,7 @@ class AuthenticatedClient(object):
                     "{scheme}://{netloc}/api/v1/auth/cloud".format(
                         scheme=url_parts.scheme,
                         netloc=url_parts.netloc),
-                    "paradrop.org")
+                    get_controller_domain())
             self.token_providers.insert(2, provider)
 
         self.debug = debug
