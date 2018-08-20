@@ -54,17 +54,14 @@ class StateReportBuilder(object):
         # We can get the paradrop version from the installed python package.
         report.paradropVersion = system_info.getPackageVersion('paradrop')
 
-        # TODO: Get pdinstall version - we will have to work with snappy or
-        # devise some other mechanism, since it installs as a completely
-        # separate snap.
-
         report.chutes = []
         chuteStore = ChuteStorage()
         chutes = chuteStore.getChuteList()
         allocation = resource.computeResourceAllocation(chutes)
 
         for chute in chutes:
-            container = ChuteContainer(chute.name)
+            service = chute.get_default_service()
+            container = ChuteContainer(service.get_container_name())
 
             report.chutes.append({
                 'name': chute.name,
