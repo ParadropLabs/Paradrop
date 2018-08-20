@@ -117,7 +117,10 @@ class UpdateFetcher(object):
             #
             # If we skip updates with started=True, we will not retry updates
             # in case #1.
-            if item['_id'] in self.updates_in_progress or item.get('started', False):
+            if item['_id'] in self.updates_in_progress:
+                continue
+            elif item.get('started', False):
+                yield self._update_ignored(item)
                 continue
             else:
                 self.updates_in_progress.add(item['_id'])
@@ -176,3 +179,17 @@ class UpdateFetcher(object):
         #
         # Not catching errors here so we see a stack trace if there is an
         # error.  This is an omission that will need to be dealt with.
+
+    def _update_ignored(self, update):
+        """
+        Internal: callback for an update that we are ignoring because
+        it was started previously and never completed.
+        """
+        update_id = update['_id']
+        request = PDServerRequest('/api/routers/{router_id}/updates/' +
+                str(update_id))
+        d = request.patch(
+            {'op': 'replace', 'path': '/completed', 'value': True},
+            {'op': 'replace', 'path': '/success', 'value': False}
+        )
+        return d
