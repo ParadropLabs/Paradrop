@@ -6,6 +6,7 @@ from twisted.internet import task
 from twisted.internet.defer import inlineCallbacks
 
 from paradrop.core.agent.http import PDServerRequest
+from paradrop.core.auth.user import User
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint
 
@@ -121,8 +122,13 @@ class UpdateFetcher(object):
             else:
                 self.updates_in_progress.add(item['_id'])
 
+            creator = item.get('creator', {})
+            username = creator.get("name", "paradrop")
+            role = creator.get("access_level", "trusted")
+
             update = dict(updateClass=item['updateClass'],
                           updateType=item['updateType'],
+                          user=User(username, "paradrop.org", role=role),
                           tok=timeint())
 
             # Save fields that relate to external management of this chute.

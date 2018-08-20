@@ -3,9 +3,12 @@ import functools
 import json
 
 from klein import Klein
+from twisted.internet import defer
 
+from paradrop.base import nexus
 from paradrop.base.output import out
 from paradrop.core.agent.http import PDServerRequest
+from paradrop.core.auth.user import User
 from paradrop.core.chute.chute_storage import ChuteStorage
 from . import cors
 
@@ -62,8 +65,7 @@ def check_auth(request, password_manager, token_manager):
     parts = auth_header.split()
     if parts[0] == "Basic":
         username, password = get_username_password(parts[1])
-        request.user = username
-        request.role = "admin"
+        request.user = User(username, "localhost", role="admin")
         return password_manager.verify_password(username, password)
     elif parts[0] == "Bearer":
         token = parts[1]
@@ -84,8 +86,10 @@ def check_auth(request, password_manager, token_manager):
         # need to examine the subject, issuer, and audience claims.
         try:
             data = token_manager.decode(token)
-            request.user = data.get("sub", "paradrop")
-            request.role = data.get("role", "user")
+            domain = data.get("domain", "localhost")
+            username = data.get("sub", "paradrop")
+            role = data.get("role", "user")
+            request.user = User(username, domain, role=role)
             return True
         except token_manager.InvalidTokenError:
             pass
@@ -123,6 +127,17 @@ def verify_cloud_token(token):
     return request.get()
 
 
+def get_access_level(user, node):
+    access_rights = node.get('access_rights', [])
+
+    roles = ["guest"]
+    for item in access_rights:
+        if item['user_id'] == user['_id']:
+            roles.append(item['role'])
+
+    return User.get_highest_role(roles)
+
+
 class AuthApi(object):
     routes = Klein()
 
@@ -149,7 +164,8 @@ class AuthApi(object):
         }
 
         if success:
-            token = self.token_manager.issue(username)
+            token = self.token_manager.issue(username, domain="localhost",
+                    role="admin")
             result['token'] = token
         else:
             request.setResponseCode(401)
@@ -180,19 +196,42 @@ class AuthApi(object):
         body = json.loads(request.content.read())
         token = body.get('token', '')
 
-        def token_verified(response):
-            if not response.success or response.data is None:
-                request.setResponseCode(401)
-                return
+        headers = {
+            "Authorization": "Bearer {}".format(token)
+        }
+        node_id = nexus.core.info.pdid
 
-            bearer_info = response.data
+        # Pass custom Authorization header and setAuthHeader=False to prevent
+        # PDServerRequest from using the node's own authorization token.
+        d1 = PDServerRequest("/api/users/me",
+                headers=headers,
+                setAuthHeader=False
+            ).get()
+        d2 = PDServerRequest("/api/routers/{}".format(node_id),
+                headers=headers,
+                setAuthHeader=False
+            ).get()
+
+        def token_verified(responses):
+            for response in responses:
+                if not response.success or response.data is None:
+                    request.setResponseCode(401)
+                    return
+
+            remote_user = responses[0].data
+            node_info = responses[1].data
+
+            role = get_access_level(remote_user, node_info)
+
+            token = self.token_manager.issue(remote_user['email'],
+                    domain="paradrop.org", role=role)
+
             result = {
-                'token': self.token_manager.issue(bearer_info['email'],
-                    role=bearer_info['role']),
-                'username': bearer_info['email']
+                'token': token,
+                'username': remote_user['email']
             }
             return json.dumps(result)
 
-        d = verify_cloud_token(token)
+        d = defer.gatherResults([d1, d2])
         d.addCallback(token_verified)
         return d

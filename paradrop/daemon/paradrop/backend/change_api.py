@@ -28,26 +28,24 @@ class ChangeApi(object):
 
         changes = []
 
+        def dump_update(update, status):
+            result = {
+                'id': update.change_id,
+                'updateClass': update.updateClass,
+                'updateType': update.updateType,
+                'user': update.user.__dict__,
+                'name': getattr(update, 'name', None),
+                'version': getattr(update, 'version', None),
+                'status': status
+            }
+            return result
+
         update = self.update_manager.active_change
         if update is not None:
-            changes.append({
-                'id': update.change_id,
-                'updateClass': update.updateClass,
-                'updateType': update.updateType,
-                'name': getattr(update, 'name', None),
-                'version': getattr(update, 'version', None),
-                'status': 'processing'
-            })
+            changes.append(dump_update(update, 'processing'))
 
         for update in self.update_manager.updateQueue:
-            changes.append({
-                'id': update.change_id,
-                'updateClass': update.updateClass,
-                'updateType': update.updateType,
-                'name': getattr(update, 'name', None),
-                'version': getattr(update, 'version', None),
-                'status': 'queued'
-            })
+            changes.append(dump_update(update, 'queued'))
 
         return json.dumps(changes)
 

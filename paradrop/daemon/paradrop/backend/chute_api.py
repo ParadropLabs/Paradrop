@@ -40,6 +40,14 @@ class ChuteCacheEncoder(json.JSONEncoder):
             return repr(o)
 
 
+class ChuteEncoder(json.JSONEncoder):
+    def default(self, o):
+        try:
+            return json.JSONEncoder.default(self, o)
+        except TypeError:
+            return o.__dict__
+
+
 class UpdateEncoder(json.JSONEncoder):
     def default(self, o):
         result = {
@@ -96,7 +104,7 @@ def chute_access_allowed(request, chute):
         return True
 
     # Only an admin or a chute owner are allowed to modify an existing chute.
-    if request.role == "admin" or request.user == chute.get_owner():
+    if request.user == chute.get_owner() or request.user.role in ["owner", "admin"]:
         return True
     else:
         return False
@@ -170,7 +178,7 @@ class ChuteApi(object):
                 'resources': getattr(chute, 'resources', None)
             })
 
-        return json.dumps(result)
+        return json.dumps(result, cls=ChuteEncoder)
 
     @routes.route('/', methods=['POST'])
     def create_chute(self, request):
@@ -178,7 +186,7 @@ class ChuteApi(object):
 
         update = dict(updateClass='CHUTE',
                       updateType='create',
-                      owner=request.user,
+                      user=request.user,
                       tok=pdutils.timeint())
 
         ctype = request.requestHeaders.getRawHeaders('Content-Type',
@@ -279,7 +287,7 @@ class ChuteApi(object):
             'resources': getattr(chute_obj, 'resources', None)
         }
 
-        return json.dumps(result)
+        return json.dumps(result, cls=ChuteEncoder)
 
     @routes.route('/<chute>', methods=['PUT'])
     def update_chute(self, request, chute):
@@ -291,6 +299,7 @@ class ChuteApi(object):
         update = dict(updateClass='CHUTE',
                       updateType='update',
                       tok=pdutils.timeint(),
+                      user=request.user,
                       name=chute)
 
         ctype = request.requestHeaders.getRawHeaders('Content-Type',
@@ -344,6 +353,7 @@ class ChuteApi(object):
         update = dict(updateClass='CHUTE',
                       updateType='delete',
                       tok=pdutils.timeint(),
+                      user=request.user,
                       name=chute)
 
         # We will return the change ID to the caller for tracking and log
@@ -368,7 +378,7 @@ class ChuteApi(object):
         update = dict(updateClass='CHUTE',
                       updateType='stop',
                       tok=pdutils.timeint(),
-                      owner=request.user,
+                      user=request.user,
                       name=chute)
 
         # We will return the change ID to the caller for tracking and log
@@ -393,6 +403,7 @@ class ChuteApi(object):
         update = dict(updateClass='CHUTE',
                       updateType='start',
                       tok=pdutils.timeint(),
+                      user=request.user,
                       name=chute)
 
         try:
@@ -425,6 +436,7 @@ class ChuteApi(object):
         update = dict(updateClass='CHUTE',
                       updateType='restart',
                       tok=pdutils.timeint(),
+                      user=request.user,
                       name=chute)
 
         try:
@@ -568,6 +580,7 @@ class ChuteApi(object):
         update = dict(updateClass='CHUTE',
                       updateType='restart',
                       tok=pdutils.timeint(),
+                      user=request.user,
                       name=chute)
 
         try:

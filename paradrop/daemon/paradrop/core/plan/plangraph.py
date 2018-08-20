@@ -16,11 +16,7 @@ import heapq
 
 ###############################################################################
 # Security Checks
-STRUCT_SECURITY_CHECK           = 1
-TRAFFIC_SECURITY_CHECK          = 2
-RESOURCE_SECURITY_CHECK         = 3
-FILES_SECURITY_CHECK            = 4
-RUNTIME_SECURITY_CHECK          = 5
+ENFORCE_ACCESS_RIGHTS           = 1
 
 ###############################################################################
 # Configuration Generation

@@ -14,6 +14,7 @@ import time
 from paradrop.base.output import out
 from paradrop.base.pdutils import str2json, timeint
 from paradrop.base import settings
+from paradrop.core.auth.user import User
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config.network import reclaimNetworkResources
 from paradrop.core.update.update_object import UpdateChute
@@ -111,7 +112,8 @@ def reloadChutes():
     # initialization.
     for ch in okChutes:
         update_spec = dict(updateClass='CHUTE', updateType='restart', name=ch,
-                tok=timeint(), func=updateStatus)
+                tok=timeint(), func=updateStatus,
+                user=User.get_internal_user())
         update = UpdateChute(update_spec, reuse_existing=True)
         updates.append(update)
 

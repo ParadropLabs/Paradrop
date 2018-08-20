@@ -6,6 +6,7 @@ from mock import MagicMock, patch
 from nose.tools import assert_raises
 
 from paradrop.backend import chute_api
+from paradrop.core.auth.user import User
 from paradrop.core.chute.chute import Chute
 
 
@@ -172,7 +173,7 @@ def test_ChuteApi_create_chute_tarfile(extract_tarred_chute):
 
     request = MagicMock()
     request.requestHeaders.getRawHeaders.return_value = ["application/x-tar"]
-    request.role = "admin"
+    request.user = User.get_internal_user()
 
     workdir = "/tmp/test"
     paradrop_yaml = {
@@ -217,7 +218,7 @@ def test_ChuteApi_get_chute(ChuteStorage, ChuteContainer):
     api = chute_api.ChuteApi(update_manager)
 
     request = MagicMock()
-    request.role = "admin"
+    request.user = User.get_internal_user()
 
     container = MagicMock()
     container.getStatus.return_value = "running"
@@ -250,7 +251,7 @@ def test_ChuteApi_update_chute_tarfile(extract_tarred_chute):
 
     request = MagicMock()
     request.requestHeaders.getRawHeaders.return_value = ["application/x-tar"]
-    request.role = "admin"
+    request.user = User.get_internal_user()
 
     # Case 1: should work normally.
     workdir = "/tmp/test"
@@ -300,7 +301,7 @@ def test_ChuteApi_operations():
 
     request = MagicMock()
     request.content.read.return_value = json.dumps(body)
-    request.role = "admin"
+    request.user = User.get_internal_user()
 
     functions = [
         api.update_chute,
@@ -334,7 +335,7 @@ def test_ChuteApi_get_chute_cache(ChuteStorage):
     }
 
     request = MagicMock()
-    request.role = "admin"
+    request.user = User.get_internal_user()
 
     result = api.get_chute_cache(request, "test")
     assert result == "{}"
@@ -361,7 +362,7 @@ def test_ChuteApi_get_networks(ChuteStorage):
     }
 
     request = MagicMock()
-    request.role = "admin"
+    request.user = User.get_internal_user()
 
     result = api.get_networks(request, "test")
     data = json.loads(result)
@@ -392,7 +393,7 @@ def test_ChuteApi_get_network(ChuteStorage):
     }
 
     request = MagicMock()
-    request.role = "admin"
+    request.user = User.get_internal_user()
 
     result = api.get_network(request, "test", "nomatch")
     assert result == "{}"
@@ -436,7 +437,7 @@ class TestChuteApi(object):
         }
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
 
         with open("/tmp/dnsmasq-testing.leases", "w") as output:
             output.write("1512058246 00:0d:b9:40:30:80 10.42.0.213 * *")
@@ -456,7 +457,7 @@ class TestChuteApi(object):
         execute.return_value = "OK"
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
         result = self.api.get_ssid(request, self.chute.name, self.interface['name'])
         assert result == "OK"
 
@@ -469,7 +470,7 @@ class TestChuteApi(object):
         execute.return_value = "OK"
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
 
         body = {}
         request.content.read.return_value = json.dumps(body)
@@ -494,7 +495,7 @@ class TestChuteApi(object):
         execute.return_value = "OK"
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
 
         result = self.api.get_hostapd_status(request, self.chute.name,
                 self.interface['name'])
@@ -521,7 +522,7 @@ class TestChuteApi(object):
         ]
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
 
         result = self.api.get_stations(request, self.chute.name,
                 self.interface['name'])
@@ -553,7 +554,7 @@ class TestChuteApi(object):
         ]
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
 
         result = self.api.get_station(request, self.chute.name,
                 self.interface['name'], '12:34:56:78:9a:bc')
@@ -577,7 +578,7 @@ class TestChuteApi(object):
         ]
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
 
         result = self.api.delete_station(request, self.chute.name,
                 self.interface['name'], '12:34:56:78:9a:bc')
@@ -593,7 +594,7 @@ class TestChuteApi(object):
         }
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
 
         self.api.hostapd_control(request, self.chute.name,
                 self.interface['name'])
@@ -606,7 +607,7 @@ class TestChuteApi(object):
         }
 
         request = MagicMock()
-        request.role = "admin"
+        request.user = User.get_internal_user()
 
         result = self.api.set_chute_config(request, self.chute.name)
         change = json.loads(result)

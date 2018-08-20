@@ -54,6 +54,7 @@ class UpdateObject(object):
     updateModuleList = []
 
     def __init__(self, obj):
+        self.change_id = None
         self.pkg = None
 
         # Pull in all the keys from the obj identified
