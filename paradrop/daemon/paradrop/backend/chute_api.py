@@ -206,16 +206,16 @@ class ChuteApi(object):
                 raise Exception("Chute name not found in configuration file.")
 
             update['workdir'] = workdir
-            update['version'] = "x{}".format(update['tok'])
             update.update(config)
         else:
             # TODO: this case is not tested
             body = json.loads(request.content.read())
             config = body['config']
             update.update(config)
-            # Set a time-based version number for side-loaded chutes because we do
-            # not expect they to receive it from the config file.
-            update['version'] = "x{}".format(update['tok'])
+
+        # Set a time-based version number for side-loaded chutes because we do
+        # not expect the to receive it from the config file.
+        update['version'] = "x{}".format(update['tok'])
 
         # We will return the change ID to the caller for tracking and log
         # retrieval.
@@ -319,7 +319,6 @@ class ChuteApi(object):
                 raise Exception("Chute name not found in configuration file.")
 
             update['workdir'] = workdir
-            update['version'] = "x{}".format(update['tok'])
             update.update(config)
         else:
             body = json.loads(request.content.read())
