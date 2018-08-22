@@ -142,6 +142,13 @@ class ControllerClient(AuthenticatedClient):
                 return node
         return None
 
+    def find_update(self, node_id, update_id):
+        """
+        Find a node update.
+        """
+        url = "{}/routers/{}/updates/{}".format(self.base_url, node_id, update_id)
+        return self.request("GET", url)
+
     def group_add_node(self, group_name, node_name):
         """
         Add a node to a group.
@@ -221,6 +228,14 @@ class ControllerClient(AuthenticatedClient):
         List nodes that the user owns or has access to.
         """
         url = self.base_url + "/routers"
+        return self.request("GET", url)
+
+    def list_update_messages(self, node_id, update_id):
+        """
+        List messages from an update.
+        """
+        url = "{}/routers/{}/updates/{}/messages".format(self.base_url,
+                node_id, update_id)
         return self.request("GET", url)
 
     def list_versions(self, name):

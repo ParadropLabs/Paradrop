@@ -2,6 +2,7 @@ import builtins
 import click
 import operator
 import os
+import time
 import yaml
 
 from . import util
@@ -92,6 +93,11 @@ def install_chute(ctx, chute, node, version):
     client = ControllerClient()
     result = client.install_chute(chute, node, select_version=version)
     click.echo(util.format_result(result))
+
+    click.echo("Streaming messages until the update has completed.")
+    click.echo("Ending output with Ctrl+C will not cancel the update.\n")
+
+    ctx.invoke(watch_update_messages, node_id=result['router_id'], update_id=result['_id'])
     return result
 
 
@@ -167,3 +173,32 @@ def register(ctx, public):
         click.echo(util.format_result(result))
     else:
         click.echo("Operation cancelled.")
+
+
+@root.command('watch-update-messages')
+@click.argument('node_id')
+@click.argument('update_id')
+@click.option('--interval', type=float, default=0.2, help='Interval to check for new messages')
+@click.pass_context
+def watch_update_messages(ctx, node_id, update_id, interval):
+    """
+    Stream log messages from an in-progress update.
+
+    NODE must be the name or ID of a node that you control.  UPDATE_ID must be
+    the ID associated with an in-progress update.
+    """
+    client = ControllerClient()
+
+    displayed = set()
+    while True:
+        update = client.find_update(node_id, update_id)
+
+        result = client.list_update_messages(node_id, update_id)
+        for line in result:
+            if line['_id'] not in displayed:
+                click.echo(line['message'])
+                displayed.add(line['_id'])
+
+        if update['completed']:
+            break
+        time.sleep(interval)
