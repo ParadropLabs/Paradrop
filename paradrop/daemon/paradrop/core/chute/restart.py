@@ -13,7 +13,7 @@ import time
 
 from paradrop.base.output import out
 from paradrop.base.pdutils import str2json, timeint
-from paradrop.base import settings
+from paradrop.base import constants, settings
 from paradrop.core.auth.user import User
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config.network import reclaimNetworkResources
@@ -81,7 +81,7 @@ def reloadChutes():
     for iface in confdInfo:
         if iface.get('success') is False:
             failedChuteName = iface.get('comment')
-            if failedChuteName == settings.RESERVED_CHUTE:
+            if failedChuteName == constants.RESERVED_CHUTE_NAME:
                 out.warn('Failed to load a system config section')
             elif failedChuteName in okChutes:
                 # This was a chute that we are supposed to restart, but one of

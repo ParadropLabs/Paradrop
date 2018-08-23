@@ -9,7 +9,7 @@ from klein import Klein
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList, inlineCallbacks, returnValue
 
-from paradrop.base import nexus, settings
+from paradrop.base import constants, nexus
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.core.config import hostconfig
@@ -77,7 +77,7 @@ class ConfigApi(object):
 
         update = dict(updateClass='ROUTER',
                       updateType='sethostconfig',
-                      name=settings.RESERVED_CHUTE,
+                      name=constants.RESERVED_CHUTE,
                       tok=timeint(),
                       hostconfig=config)
 

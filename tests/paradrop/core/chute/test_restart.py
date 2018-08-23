@@ -44,12 +44,11 @@ def test_reloadChutes(mock_getChuteList, getChute, mockSettings, mResources, mWa
     #Test that if pdconfd is enabled we do our job
     mTimeint.return_value = 'Now'
     mockSettings.PDCONFD_ENABLED = True
-    mockSettings.RESERVED_CHUTE = 'PDROP'
     ch1 = Chute(name="ch1", state="running")
     ch2 = Chute(name="ch2", state="stopped")
     ch3 = Chute(name="ch3", state="running")
     mock_getChuteList.return_value = [ch1, ch2, ch3]
-    mWait.side_effect = [None, None, '[{"success": false, "comment": "PDROP"},{"success": false, "comment": "ch1"},{"success": false, "comment": "ch2"},{"success": true, "comment": "ch3"},{"success": true, "comment": "error"}]']
+    mWait.side_effect = [None, None, '[{"success": false, "comment": "__PARADROP__"},{"success": false, "comment": "ch1"},{"success": false, "comment": "ch2"},{"success": true, "comment": "ch3"},{"success": true, "comment": "error"}]']
 
     chutes = {ch.name: ch for ch in [ch1, ch2, ch3]}
     def mock_getChute(name):

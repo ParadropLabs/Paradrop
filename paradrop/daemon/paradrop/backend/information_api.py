@@ -10,7 +10,7 @@ import platform
 from psutil import virtual_memory
 from klein import Klein
 
-from paradrop.base import settings
+from paradrop.base import constants
 from paradrop.core.config.devices import detectSystemDevices
 from paradrop.core.system.system_info import getOSVersion, getPackageVersion
 from paradrop.core.agent.reporting import TelemetryReportBuilder
@@ -223,7 +223,7 @@ class InformationApi:
         """
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
-        features = settings.DAEMON_FEATURES.split()
+        features = constants.DAEMON_FEATURES.split()
         return json.dumps(features)
 
     @routes.route('/telemetry', methods=['GET'])

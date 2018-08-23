@@ -18,7 +18,7 @@ import time
 
 from paradrop.base.exceptions import ChuteNotFound
 from paradrop.base.output import out
-from paradrop.base import nexus, settings
+from paradrop.base import constants, nexus, settings
 from paradrop.core.config.devices import resetWirelessDevice
 
 from .chutecontainer import ChuteContainer
@@ -671,7 +671,7 @@ def prepare_environment(update, service):
     env = service.environment.copy()
 
     env['PARADROP_CHUTE_NAME'] = update.new.name
-    env['PARADROP_FEATURES'] = settings.DAEMON_FEATURES
+    env['PARADROP_FEATURES'] = constants.DAEMON_FEATURES
     env['PARADROP_ROUTER_ID'] = nexus.core.info.pdid
     env['PARADROP_DATA_DIR'] = update.cache_get('internalDataDir')
     env['PARADROP_SYSTEM_DIR'] = update.cache_get('internalSystemDir')

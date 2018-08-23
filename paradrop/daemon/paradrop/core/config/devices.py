@@ -17,7 +17,7 @@ import re
 import subprocess
 
 from paradrop.base.output import out
-from paradrop.base import settings
+from paradrop.base import constants, settings
 from paradrop.base.exceptions import DeviceNotFoundException
 from paradrop.lib.utils import datastruct, pdos, uci
 
@@ -610,7 +610,7 @@ class UCIBuilder(object):
         Write all of the configuration sections to files.
         """
         for f in UCIBuilder.FILES:
-            setConfig(settings.RESERVED_CHUTE, self.contents[f],
+            setConfig(constants.RESERVED_CHUTE_NAME, self.contents[f],
                     uci.getSystemPath(f))
 
 

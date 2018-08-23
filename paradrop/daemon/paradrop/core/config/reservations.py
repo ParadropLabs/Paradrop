@@ -14,7 +14,7 @@ import collections
 import ipaddress
 
 
-from paradrop.base import settings
+from paradrop.base import constants
 from paradrop.core.config.devices import getWirelessPhyName
 from paradrop.core.config.hostconfig import prepareHostConfig
 from paradrop.core.chute.chute_storage import ChuteStorage
@@ -63,7 +63,7 @@ def getDeviceReservations(exclude=None):
     """
     reservations = collections.defaultdict(DeviceReservations)
 
-    if exclude != settings.RESERVED_CHUTE:
+    if exclude != constants.RESERVED_CHUTE_NAME:
         hostConfig = prepareHostConfig()
 
         wifiInterfaces = hostConfig.get('wifi-interfaces', [])
@@ -79,12 +79,12 @@ def getDeviceReservations(exclude=None):
                 # there that use e.g. wlan0 instead of phy0 in their hostconfig.
                 dev = phy
 
-            reservations[dev].add(settings.RESERVED_CHUTE, 'wifi',
+            reservations[dev].add(constants.RESERVED_CHUTE_NAME, 'wifi',
                     iface.get('mode', 'ap'))
 
         lanInterfaces = datastruct.getValue(hostConfig, 'lan.interfaces', [])
         for iface in lanInterfaces:
-            reservations[iface].add(settings.RESERVED_CHUTE, 'lan', None)
+            reservations[iface].add(constants.RESERVED_CHUTE_NAME, 'lan', None)
 
     for chute in ChuteStorage.chuteList.values():
         if chute.name == exclude:
@@ -127,7 +127,7 @@ def getInterfaceReservations(exclude=None):
     """
     reservations = InterfaceReservationSet()
 
-    if exclude != settings.RESERVED_CHUTE:
+    if exclude != constants.RESERVED_CHUTE_NAME:
         hostConfig = prepareHostConfig()
         wifiInterfaces = hostConfig.get('wifi-interfaces', [])
         for iface in wifiInterfaces:
@@ -178,7 +178,7 @@ def getSubnetReservations(exclude=None):
     """
     reservations = SubnetReservationSet()
 
-    if exclude != settings.RESERVED_CHUTE:
+    if exclude != constants.RESERVED_CHUTE_NAME:
         hostConfig = prepareHostConfig()
         ipaddr = datastruct.getValue(hostConfig, 'lan.ipaddr', None)
         netmask = datastruct.getValue(hostConfig, 'lan.netmask', None)

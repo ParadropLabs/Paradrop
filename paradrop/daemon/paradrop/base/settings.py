@@ -60,7 +60,6 @@ PDCONFD_ENABLED = True
 FC_CHUTESTORAGE_FILE = CONFIG_HOME_DIR + "chutes"
 FC_CHUTESTORAGE_SAVE_TIMER = 0
 FC_BOUNCE_UPDATE = None
-RESERVED_CHUTE = "__PARADROP__"
 DYNAMIC_NETWORK_POOL = "10.128.0.0/9"
 
 #
@@ -145,12 +144,6 @@ CONTAINER_UID = 999
 # Directory containing Airshark installation ('airshark' binary and
 # 'run_airshark.sh' script).
 AIRSHARK_INSTALL_DIR = "/snap/airshark/current"
-
-# Space-separated list of features that will be passed to chutes through
-# environment variable or API call. This allows chutes to check the features of
-# the host on which they are running. Update this when significant features are
-# added.
-DAEMON_FEATURES = "audio hostapd-control"
 
 ###############################################################################
 # Helper functions

@@ -9,7 +9,7 @@ from twisted.internet import defer, threads
 
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint
-from paradrop.base import nexus, settings
+from paradrop.base import constants, nexus, settings
 from paradrop.core.agent import reporting
 from paradrop.lib.misc.procmon import dockerMonitor, containerdMonitor
 from paradrop.core.chute.restart import reloadChutes
@@ -129,7 +129,7 @@ class UpdateManager:
         """
         update = dict(updateClass='ROUTER',
                     updateType=updateType,
-                    name=settings.RESERVED_CHUTE,
+                    name=constants.RESERVED_CHUTE_NAME,
                     tok=timeint())
         return update_object.parse(update)
 
