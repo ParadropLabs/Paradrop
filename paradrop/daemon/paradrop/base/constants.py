@@ -34,6 +34,9 @@ behavior would be undefined, so this value belongs in constants rather
 than settings.
 """
 
+# Name of section in the settings file for paradrop.base.settings values.
+BASE_SETTINGS_SECTION = "base"
+
 # Space-separated list of features that will be passed to chutes through
 # environment variable or API call. This allows chutes to check the features of
 # the host on which they are running. Update this when significant features are
@@ -43,3 +46,6 @@ DAEMON_FEATURES = "audio hostapd-control"
 # This is not actually a chute, but a reserved name that is used to mark
 # settings and changes that belong to the system rather than a chute.
 RESERVED_CHUTE_NAME = "__PARADROP__"
+
+# Name of settings file used by paradrop.base.settings.
+SETTINGS_FILE_NAME = "settings.ini"

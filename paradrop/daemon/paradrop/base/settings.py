@@ -22,6 +22,11 @@
 
 import os
 import sys
+import types
+import ConfigParser
+
+from . import constants
+
 
 DEBUG_MODE = False
 # VERBOSE = False
@@ -146,6 +151,36 @@ AIRSHARK_INSTALL_DIR = "/snap/airshark/current"
 # Helper functions
 ###############################################################################
 
+
+def load_from_file(path):
+    """
+    Load settings from an INI file.
+
+    This will check the configuration file for a lowercase version of all of
+    the settings in this module. It will look in a section called "base".
+
+    The example below will set PORTAL_SERVER_PORT.
+
+        [base]
+        portal_server_port = 4444
+    """
+    config = ConfigParser.SafeConfigParser()
+    config.read(path)
+
+    mod = sys.modules[__name__]
+    for m in dir(mod):
+        a = getattr(mod, m)
+        # Look for just variable defs
+        if(not hasattr(a, '__call__') and not isinstance(a, types.ModuleType)):
+            if(not m.startswith('__')):
+                # Check if lowercase version exists in the file and load the
+                # appropriately-typed value.
+                key = m.lower()
+                if config.has_option(constants.BASE_SETTINGS_SECTION, key):
+                    value = config.get(constants.BASE_SETTINGS_SECTION, key)
+                    setattr(mod, m, parseValue(value))
+
+
 def parseValue(key):
     """
     Attempts to parse the key value, so if the string is 'False' it will parse a boolean false.
@@ -218,13 +253,15 @@ def loadSettings(mode="local", slist=[]):
     :returns: None
     """
 
-    from types import ModuleType
     # Get a handle to our settings defined above
     mod = sys.modules[__name__]
 
     # Adjust default paths if we are running under ubuntu snappy
     snapCommonPath = os.environ.get("SNAP_COMMON", None)
     snapDataPath = os.environ.get("SNAP_DATA", None)
+
+    # Directories where we might find a settings.ini file.
+    settings_file_dirs = [".", "/etc"]
 
     if mode == "local":
         updatePaths(os.path.join(os.path.expanduser("~"), ".paradrop/"),
@@ -234,6 +271,7 @@ def loadSettings(mode="local", slist=[]):
         updatePaths("/tmp/.paradrop-test/", "/tmp/.paradrop-test/")
         mod.HOST_DATA_PARTITION = mod.CONFIG_HOME_DIR
     elif snapCommonPath is not None:
+        settings_file_dirs.append(snapCommonPath)
         updatePaths(snapCommonPath, snapDataPath)
         mod.HOST_DATA_PARTITION = "/writable"
         mod.DOCKER_BIN_DIR = "/snap/bin"
@@ -248,11 +286,18 @@ def loadSettings(mode="local", slist=[]):
         # We can either replace an existing setting, or set a new value, we don't care
         setattr(mod, k, parseValue(v))
 
-    # Now search through our settings and look for environment variable matches they defined
+    # Next check for settings from file(s) which may be located in a few
+    # different directories.
+    for d in settings_file_dirs:
+        path = os.path.join(d, constants.SETTINGS_FILE_NAME)
+        load_from_file(path)
+
+    # Now search through our settings and look for environment variable matches
+    # they defined. Environment variables override all other sources.
     for m in dir(mod):
         a = getattr(mod, m)
         # Look for just variable defs
-        if(not hasattr(a, '__call__') and not isinstance(a, ModuleType)):
+        if(not hasattr(a, '__call__') and not isinstance(a, types.ModuleType)):
             if(not m.startswith('__')):
                 # Found one of our vars, check environ for a match
                 match = os.environ.get(m, None)
