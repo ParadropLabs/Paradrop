@@ -39,8 +39,8 @@ def test_load_settings():
     """
     from paradrop.base import settings
 
-    with patch.dict(os.environ, {'PDFCD_PORT': '-1'}):
+    with patch.dict(os.environ, {'DEBUG_MODE': 'true'}):
         settings.loadSettings("unittest", ["PD_TEST_VAR:stuff"])
 
         assert settings.PD_TEST_VAR == "stuff"
-        assert settings.PDFCD_PORT == -1
+        assert settings.DEBUG_MODE is True

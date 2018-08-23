@@ -48,9 +48,6 @@ WAMP_ROUTER = "ws://paradrop.org:9086/ws"
 #
 # pdfcd
 #
-PDFCD_PORT = 14321
-PDFCD_HEADER_VALUE = "*"
-DBAPI_FAILURE_THRESH = float("inf")
 PDCONFD_WRITE_DIR = RUNTIME_HOME_DIR + 'pdconfd/'
 PDCONFD_ENABLED = True
 
