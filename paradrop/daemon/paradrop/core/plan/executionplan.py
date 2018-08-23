@@ -16,6 +16,8 @@
 
 import traceback
 
+from twisted.internet.defer import Deferred
+
 from paradrop.base.output import out
 
 
@@ -92,12 +94,20 @@ def executePlans(update):
             update.failure = str(e)
             return True
 
-        # The functions we call here can return other functions, if they do these are functions that should
-        # be skipped later on (for instance a set* function discovering it didn't change anything, later on
-        # we shouldn't call the corresponding reload function)
-        if(skipme):
-            # These functions can return individual functions to skip, or a list of multiple functions
-            if (not isinstance(skipme, list)):
+        # The functions we call here can return other functions, if they do
+        # these are functions that should be skipped later on (for instance a
+        # set* function discovering it didn't change anything, later on we
+        # shouldn't call the corresponding reload function)
+        if skipme is not None:
+            # If the function returned a Deferred, we will drop out of the
+            # execution pipeline and resume later.
+            if isinstance(skipme, Deferred):
+                out.verbose('Function {} returned a Deferred'.format(func))
+                return skipme
+
+            # These functions can return individual functions to skip, or a
+            # list of multiple functions
+            elif callable(skipme):
                 skipme = [skipme]
 
             for skip in skipme:

@@ -33,7 +33,9 @@ class UpdateManager:
 
         self.updateLock = threading.Lock()
         self.updateQueue = []
-        self.active_change = None
+
+        # Map update_id -> update object.
+        self.active_changes = {}
 
         # TODO: Ideally, load this from file so that change IDs are unique
         # across system reboots.
@@ -113,9 +115,8 @@ class UpdateManager:
 
         Returns an Update object or None.
         """
-        if self.active_change is not None:
-            if self.active_change.change_id == change_id:
-                return self.active_change
+        if change_id in self.active_changes:
+            return self.active_changes[change_id]
 
         for update in self.updateQueue:
             if update.change_id == change_id:
@@ -167,18 +168,17 @@ class UpdateManager:
         # Always perform this work
         while self.reactor.running:
             # Check for new updates
-            self.active_change = self._get_next_update()
-            if self.active_change is None:
+            change = self._get_next_update()
+            if change is None:
                 time.sleep(1)
                 continue
 
-            self._perform_update(self.active_change)
-            self.active_change = None
+            self._perform_update(change)
 
             # Apply a batch of updates and when the queue is empty, send a
             # state report.  We're not reacquiring the mutex here because the
             # worst case is we send out an extra state update.
-            if len(self.updateQueue) == 0 and nexus.core.provisioned():
+            if len(self.active_changes) == 0 and nexus.core.provisioned():
                 threads.blockingCallFromThread(self.reactor,
                         reporting.sendStateReport)
 
@@ -188,6 +188,11 @@ class UpdateManager:
 
         This is split from perform_updates for easier unit testing.
         """
+        # Add to the active set when processing starts. It is a dictionary, so
+        # it does not matter if this is the first time we see this update or
+        # if we are resuming it.
+        self.active_changes[change.change_id] = change
+
         try:
             # Mark update as having been started.
             update.started()
@@ -203,7 +208,16 @@ class UpdateManager:
             # TESTING end
 
             # Based on each update type execute could be different
-            update.execute()
+            result = update.execute()
+            if isinstance(result, defer.Deferred):
+                # Update is not done, but it is yielding. When the deferred
+                # fires, add it back to the work queue to resume it.
+                def resume(result):
+                    self.updateQueue.append(update)
+                result.addCallback(resume)
+            elif update.change_id in self.active_changes:
+                # Update is done, so remove it from the active list.
+                del self.active_changes[update.change_id]
 
         except Exception as e:
             out.exception(e, True)

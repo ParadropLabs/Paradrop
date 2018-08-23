@@ -34,8 +34,9 @@ def test_getPortList():
 @patch('paradrop.core.container.downloader.downloader')
 @patch('paradrop.core.container.dockerapi._pull_image')
 @patch('paradrop.core.container.dockerapi._build_image')
+@patch('paradrop.core.container.dockerapi.settings')
 @patch('docker.APIClient')
-def test_prepare_image(Client, _build_image, _pull_image, downloader):
+def test_prepare_image(Client, settings, _build_image, _pull_image, downloader):
     client = MagicMock()
     Client.return_value = client
 
@@ -49,6 +50,10 @@ def test_prepare_image(Client, _build_image, _pull_image, downloader):
     update = MagicMock()
     del update.download
 
+    # Disable concurrent builds so that prepare_image calls _build_image
+    # directly, rather than trying to push it off to a worker thread.
+    settings.CONCURRENT_BUILDS = False
+
     # Test with dockerfile set.
     update.dockerfile = MagicMock()
     dockerapi.prepare_image(update, service)
@@ -57,11 +62,6 @@ def test_prepare_image(Client, _build_image, _pull_image, downloader):
     # Test with neither dockerfile nor download.
     del update.dockerfile
     del update.workdir
-    assert_raises(Exception, dockerapi.prepare_image, update, service)
-
-    # Test where build worker function fails.
-    update = MagicMock()
-    _build_image.return_value = False
     assert_raises(Exception, dockerapi.prepare_image, update, service)
 
 
@@ -77,7 +77,7 @@ def test_buildImage_worker():
     ]
 
     res = dockerapi._build_image(update, service, client, True)
-    assert res is True
+    assert res is None
 
     # The second message should be suppressed as well as the whitespace after Message3.
     update.progress.assert_has_calls([call("Message1"), call("Message3")])

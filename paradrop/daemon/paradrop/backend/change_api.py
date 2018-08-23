@@ -40,8 +40,7 @@ class ChangeApi(object):
             }
             return result
 
-        update = self.update_manager.active_change
-        if update is not None:
+        for update in self.update_manager.active_changes.values():
             changes.append(dump_update(update, 'processing'))
 
         for update in self.update_manager.updateQueue:

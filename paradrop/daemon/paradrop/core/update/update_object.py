@@ -4,7 +4,7 @@ It allows us to easily abstract away different update types and provide a unifor
 way to interpret the results through a set of basic actionable functions.
 '''
 import time
-from twisted.internet import reactor
+from twisted.internet import defer, reactor
 from twisted.python.failure import Failure
 
 from paradrop.base import nexus, settings
@@ -94,6 +94,10 @@ class UpdateObject(object):
         # configuration change.
         self.cache = {}
 
+        # Set by the execute function on the first call and used to detect
+        # whether its new or has been resumed.
+        self.execute_called = False
+
     def __repr__(self):
         return "<Update({}) :: {} - {} @ {}>".format(self.updateClass, self.name, self.updateType, self.tok)
 
@@ -116,7 +120,7 @@ class UpdateObject(object):
 
         # The external field is set for updates from pdserver but not for
         # locally-initiated (sideloaded) updates.
-        if hasattr(self, 'external'):
+        if not self.execute_called and hasattr(self, 'external'):
             update_id = self.external['update_id']
             request = PDServerRequest('/api/routers/{router_id}/updates/' + str(update_id))
             request.patch({'op': 'replace', 'path': '/started', 'value': True})
@@ -230,20 +234,26 @@ class UpdateObject(object):
         If at any point we fail then this function will directly take care of completing
         the update process with an error state and will close the API connection.
         """
-        # Save a timestamp from when we started execution.
-        self.startTime = time.time()
+        if not self.execute_called:
+            # Save a timestamp from when we started execution.
+            self.startTime = time.time()
 
-        # Generate the plans we need to setup the chute
-        if(executionplan.generatePlans(self)):
-            out.warn('Failed to generate plans\n')
-            self.complete(success=False, message=self.failure)
-            return
+            # Generate the plans we need to setup the chute
+            if(executionplan.generatePlans(self)):
+                out.warn('Failed to generate plans\n')
+                self.complete(success=False, message=self.failure)
+                return
 
-        # Aggregate those plans
-        executionplan.aggregatePlans(self)
+            # Aggregate those plans
+            executionplan.aggregatePlans(self)
+
+            self.execute_called = True
 
         # Execute on those plans
-        if(executionplan.executePlans(self)):
+        exec_result = executionplan.executePlans(self)
+        if isinstance(exec_result, defer.Deferred):
+            return exec_result
+        elif exec_result is True:
             # Getting here means we need to abort what we did
             res = executionplan.abortPlans(self)
 

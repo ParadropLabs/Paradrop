@@ -147,6 +147,12 @@ CONTAINER_UID = 999
 # 'run_airshark.sh' script).
 AIRSHARK_INSTALL_DIR = "/snap/airshark/current"
 
+# Boolean flag to enable/disable concurrent builds for Docker images.  If
+# enabled, the update pipeline will yield during a build to allow another
+# update to make progress. This should improve the experience for multi-user
+# access, but the interleaving of updates could cause subtle issues.
+CONCURRENT_BUILDS = True
+
 ###############################################################################
 # Helper functions
 ###############################################################################

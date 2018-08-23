@@ -16,6 +16,8 @@ import six
 import subprocess
 import time
 
+from twisted.internet.threads import deferToThread
+
 from paradrop.base.exceptions import ChuteNotFound
 from paradrop.base.output import out
 from paradrop.base import constants, nexus, settings
@@ -116,27 +118,34 @@ def writeDockerConfig():
 def prepare_image(update, service):
     """
     Prepare a Docker image for execution.
+
+    This is usually the longest operation during a chute installation, so
+    instead of running this step in the update thread, we spin off a worker
+    thread and return a Deferred. This will suspend processing of the current
+    update until the worker thread finishes.
     """
     client = docker.APIClient(base_url="unix://var/run/docker.sock", version='auto')
 
     image_name = service.get_image_name()
 
+    def call(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    if settings.CONCURRENT_BUILDS:
+        wrapper = deferToThread
+    else:
+        wrapper = call
+
     if service.type == "image":
-        success = _pull_image(update, client, image_name)
-        if not success:
-            raise Exception("Pulling Docker image failed.")
+        return wrapper(_pull_image, update, client, image_name)
 
     elif service.type == "inline":
-        success = _build_image(update, service, client, True, rm=True,
-                tag=image_name, fileobj=service.dockerfile)
-        if not success:
-            raise Exception("Building Docker image failed.")
+        return wrapper(_build_image, update, service, client, True,
+                rm=True, tag=image_name, fileobj=service.dockerfile)
 
     else:
-        success = _build_image(update, service, client, False, rm=True,
-                tag=image_name, path=update.workdir)
-        if not success:
-            raise Exception("Building Docker image failed.")
+        return wrapper(_build_image, update, service, client, False,
+                rm=True, tag=image_name, path=update.workdir)
 
 
 def remove_image(update, service):
@@ -236,8 +245,6 @@ def _build_image(update, service, client, inline, **buildArgs):
 
     inline: whether Dockerfile is specified as a string or a file in the
     working path.
-
-    Returns True on success, False on failure.
     """
     # If this is a light chute, generate a Dockerfile.
     if service.type == "light":
@@ -272,7 +279,8 @@ def _build_image(update, service, client, inline, **buildArgs):
                 if len(msg) > 0 and suppress_re.match(msg) is None:
                     update.progress(msg)
 
-    return buildSuccess
+    if not buildSuccess:
+        raise Exception("Error building Docker image")
 
 
 def _pull_image(update, client, image_name):
@@ -312,7 +320,8 @@ def _pull_image(update, client, image_name):
                 complete += 1
 
     update.progress("Finished pulling {} / {} layers".format(complete, layers))
-    return (complete >= layers)
+    if complete < layers:
+        raise Exception("Error pulling Docker image")
 
 
 def stopChute(update):
