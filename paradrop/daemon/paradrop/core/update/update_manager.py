@@ -191,7 +191,7 @@ class UpdateManager:
         # Add to the active set when processing starts. It is a dictionary, so
         # it does not matter if this is the first time we see this update or
         # if we are resuming it.
-        self.active_changes[change.change_id] = change
+        self.active_changes[update.change_id] = update
 
         try:
             # Mark update as having been started.

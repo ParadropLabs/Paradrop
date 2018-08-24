@@ -9,7 +9,7 @@ from klein import Klein
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList, inlineCallbacks, returnValue
 
-from paradrop.base import constants, nexus
+from paradrop.base import constants, nexus, settings
 from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.core.config import hostconfig
@@ -258,7 +258,6 @@ class ConfigApi(object):
             return json.dumps({'success': False,
                                'message': 'No change on the provision parameters'})
 
-
     @routes.route('/provision', methods=['GET'])
     def get_provision(self, request):
         """
@@ -277,6 +276,32 @@ class ConfigApi(object):
         request.setHeader('Content-Type', 'application/json')
         return json.dumps(result)
 
+    @routes.route('/settings', methods=['GET'])
+    def get_settings(self, request):
+        """
+        Get current values of system settings.
+
+        These are the values from paradrop.base.settings. Settings are loaded
+        at system initialization from the settings.ini file and environment
+        variables. They are intended to be read-only after initialization.
+
+        This endpoint returns the settings as a dictionary with lowercase field
+        names.
+
+        Example:
+        {
+            "portal_server_port": 8080,
+            ...
+        }
+        """
+        cors.config_cors(request)
+        request.setHeader('Content-Type', 'application/json')
+
+        result = {}
+        for name, value in settings.iterate_module_attributes(settings):
+            result[name.lower()] = value
+
+        return json.dumps(result)
 
     @routes.route('/startUpdate', methods=['POST'])
     def start_update(self, request):

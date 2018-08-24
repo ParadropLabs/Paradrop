@@ -158,6 +158,28 @@ CONCURRENT_BUILDS = True
 ###############################################################################
 
 
+def iterate_module_attributes(module):
+    """
+    Iterate over the attributes in a module.
+
+    This is a generator function.
+
+    Returns (name, value) tuples.
+    """
+    for name in dir(module):
+        # Ignore fields marked as private or builtin.
+        if name.startswith('_'):
+            continue
+
+        value = getattr(module, name)
+
+        # Ignore callable objects (functions) and loaded modules.
+        if callable(value) or isinstance(value, types.ModuleType):
+            continue
+
+        yield (name, value)
+
+
 def load_from_file(path):
     """
     Load settings from an INI file.
@@ -174,17 +196,13 @@ def load_from_file(path):
     config.read(path)
 
     mod = sys.modules[__name__]
-    for m in dir(mod):
-        a = getattr(mod, m)
-        # Look for just variable defs
-        if(not hasattr(a, '__call__') and not isinstance(a, types.ModuleType)):
-            if(not m.startswith('__')):
-                # Check if lowercase version exists in the file and load the
-                # appropriately-typed value.
-                key = m.lower()
-                if config.has_option(constants.BASE_SETTINGS_SECTION, key):
-                    value = config.get(constants.BASE_SETTINGS_SECTION, key)
-                    setattr(mod, m, parseValue(value))
+    for name, _ in iterate_module_attributes(mod):
+        # Check if lowercase version exists in the file and load the
+        # appropriately-typed value.
+        key = name.lower()
+        if config.has_option(constants.BASE_SETTINGS_SECTION, key):
+            value = config.get(constants.BASE_SETTINGS_SECTION, key)
+            setattr(mod, name, parseValue(value))
 
 
 def parseValue(key):
@@ -300,12 +318,8 @@ def loadSettings(mode="local", slist=[]):
 
     # Now search through our settings and look for environment variable matches
     # they defined. Environment variables override all other sources.
-    for m in dir(mod):
-        a = getattr(mod, m)
-        # Look for just variable defs
-        if(not hasattr(a, '__call__') and not isinstance(a, types.ModuleType)):
-            if(not m.startswith('__')):
-                # Found one of our vars, check environ for a match
-                match = os.environ.get(m, None)
-                if(match):
-                    setattr(mod, m, parseValue(match))
+    for name, _ in iterate_module_attributes(mod):
+        # Check for an environment variable matching the setting.
+        value = os.environ.get(name, None)
+        if value is not None:
+            setattr(mod, name, parseValue(value))

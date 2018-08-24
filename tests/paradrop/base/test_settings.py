@@ -6,6 +6,15 @@ from mock import patch
 from paradrop.base import settings
 
 
+def test_iterate_module_attributes():
+    count = 0
+    for name, value in settings.iterate_module_attributes(settings):
+        assert getattr(settings, name) == value
+        count += 1
+
+    assert count > 0
+
+
 def test_parse_value():
     """
     Test parseValue function
