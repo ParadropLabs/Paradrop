@@ -179,8 +179,8 @@ class ConfigDnsmasq(ConfigObject):
 
         # Clean up leases and pid files.
         commands.append((-self.PRIO_START_DAEMON,
-            FunctionCommand(self, os.remove, self.__leasefile)))
+            FunctionCommand(self, pdosq.safe_remove, self.__leasefile)))
         commands.append((-self.PRIO_START_DAEMON,
-            FunctionCommand(self, os.remove, self.pidFile)))
+            FunctionCommand(self, pdosq.safe_remove, self.pidFile)))
 
         return commands

@@ -23,3 +23,24 @@ def makedirs(p):
         if e.errno != errno.EEXIST:
             raise e
     return False
+
+
+def safe_remove(path):
+    """
+    Remove a file or silently pass if the file does not exist.
+
+    This function has the same effect as os.remove but suppresses the error if
+    the file did not exist. Notably, it must not be used to remove directories.
+
+    Returns True if a file was removed or False if no file was removed.
+    """
+    try:
+        os.remove(path)
+        return True
+    except OSError as err:
+        # Suppress the exception if it is a file not found error.
+        # Otherwise, re-raise the exception.
+        if err.errno != errno.ENOENT:
+            raise
+
+    return False
