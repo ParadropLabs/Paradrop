@@ -11,6 +11,16 @@ from paradrop.confd import client
 from paradrop.base.output import out
 
 
+def reload_placeholder(update):
+    """
+    This function successfully does nothing.
+
+    It serves as a placeholder so that we can attach an abort function to a
+    specific point in the update pipeline.
+    """
+    pass
+
+
 def reloadAll(update):
     """
     Reload pdconf configuration files.

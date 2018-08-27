@@ -31,7 +31,7 @@ def generatePlans(update):
 
     # Combine rules from above two fucntions, save to file
     todoPlan = (firewall.setOSFirewallRules, )
-    abtPlan = (osconfig.revertConfig, "firewall")
+    abtPlan = (firewall.revert_os_firewall_rules, )
     update.plans.addPlans(plangraph.TRAFFIC_SET_OS_FIREWALL, todoPlan, abtPlan)
 
     update.plans.addPlans(plangraph.RECONFIGURE_PROXY,

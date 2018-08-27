@@ -148,6 +148,19 @@ def prepare_image(update, service):
                 rm=True, tag=image_name, path=update.workdir)
 
 
+def check_image(update, service):
+    """
+    Check if image exists.
+    """
+    image_name = service.get_image_name()
+
+    client = docker.DockerClient(base_url="unix://var/run/docker.sock",
+            version='auto')
+
+    # Raises an exception if the image does not exist.
+    client.images.get(image_name)
+
+
 def remove_image(update, service):
     """
     Remove a Docker image.

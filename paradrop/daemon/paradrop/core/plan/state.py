@@ -108,6 +108,9 @@ def generate_service_plans(update):
                                   (dockerapi.prepare_image, service),
                                   (dockerapi.remove_image, service))
 
+            update.plans.addPlans(plangraph.STATE_CHECK_IMAGE,
+                                  (dockerapi.check_image, service))
+
         if update.new.isRunning():
             update.plans.addPlans(plangraph.STATE_CALL_START,
                                   (dockerapi.start_container, service),

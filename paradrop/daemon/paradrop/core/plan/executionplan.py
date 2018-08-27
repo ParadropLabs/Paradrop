@@ -142,6 +142,9 @@ def abortPlans(update):
 
         # We are in a try-except block so if func isn't callable that will catch it
         try:
+            out.verbose('Calling {}\n'.format(func))
+            update.progress('Calling {}'.format(func.__name__))
+
             func(*((update, ) + args))
 
             # If the func is called without exception then clear the @sameError flag for the next function call

@@ -212,9 +212,16 @@ class UpdateManager:
             if isinstance(result, defer.Deferred):
                 # Update is not done, but it is yielding. When the deferred
                 # fires, add it back to the work queue to resume it.
+                #
+                # TODO: We could handle errors separately and use that to break
+                # the update pipeline, but then we need to propagate that
+                # through the update.execute, executionplan chain.  For now,
+                # we have an update stage right after prepare_image that checks
+                # if the build was successful or throws an exception. That
+                # should work but is not very general.
                 def resume(result):
                     self.updateQueue.append(update)
-                result.addCallback(resume)
+                result.addBoth(resume)
             elif update.change_id in self.active_changes:
                 # Update is done, so remove it from the active list.
                 del self.active_changes[update.change_id]

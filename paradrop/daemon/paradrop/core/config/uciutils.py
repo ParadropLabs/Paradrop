@@ -12,31 +12,34 @@ def setConfig(chute, old, cacheKeys, filepath):
     """
     # First pull out all the cache keys from the @new chute
     newconfigs = []
-    for c in cacheKeys:
-        t = chute.getCache(c)
-        if(t):
-            newconfigs += t
 
-    if(len(newconfigs) == 0):
-        out.info('no settings to add %r\n' % (chute))
-        # We are no longer returning because we need to remove the old configs if necessary
-        # return False
+    # chute may be None if a chute installation failed and we are backing out.
+    # In that case, newconfigs should be an empty list, meaning there should be
+    # nothing left of the chute in the configuration file after we are done.
+    if chute is not None:
+        for c in cacheKeys:
+            t = chute.getCache(c)
+            if(t):
+                newconfigs += t
 
-    # add comment to each config so we can differentiate between different chute specific configs
+    # Get the chute name. At least one of chute or old should be valid.
+    chute_name = chute.name if chute is not None else old.name
+
+    # Add comment to each config so we can differentiate between different
+    # chute specific configs.
     for e in newconfigs:
         c, o = e
-        c['comment'] = chute.name
+        c['comment'] = chute_name
 
-    # Get the old configs from the file for this chuteid
-
-    # Find the config file
+    # Get the old configs from the file for this chute.
     cfgFile = uci.UCIConfig(filepath)
 
-    # Get all the configs that existed in the old version
-    # Note we are getting the old configs from the etc/config/ file instead of the chute object
-    # This is to improve reliability  - sometimes the file isn't changed it should be
-    # because we have reset the board, messed with chutes, etc. and the new/old chuteobjects are identical
-    oldconfigs = cfgFile.getChuteConfigs(chute.name)
+    # Get all the configs that existed in the old version. Note we are getting
+    # the old configs from the etc/config/ file instead of the chute object.
+    # This is to improve reliability  - sometimes the file isn't changed it
+    # should be because we have reset the board, messed with chutes, etc. and
+    # the new/old chuteobjects are identical.
+    oldconfigs = cfgFile.getChuteConfigs(chute_name)
 
     if (uci.chuteConfigsMatch(oldconfigs, newconfigs)):
         # configs match, skipping reloading
@@ -48,7 +51,7 @@ def setConfig(chute, old, cacheKeys, filepath):
         # configs don't match, changing chutes and reloading
         cfgFile.delConfigs(oldconfigs)
         cfgFile.addConfigs(newconfigs)
-        cfgFile.save(backupToken="paradrop", internalid=chute.name)
+        cfgFile.save(backupToken="paradrop", internalid=chute_name)
         return True
 
 

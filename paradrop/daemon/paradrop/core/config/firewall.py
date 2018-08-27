@@ -157,3 +157,9 @@ def setOSFirewallRules(update):
     uciutils.setConfig(update.new, update.old,
             cacheKeys=['osFirewallRules', 'developerFirewallRules'],
             filepath=uci.getSystemPath("firewall"))
+
+
+def revert_os_firewall_rules(update):
+    uciutils.setConfig(update.old, update.new,
+            cacheKeys=['osFirewallRules', 'developerFirewallRules'],
+            filepath=uci.getSystemPath("firewall"))

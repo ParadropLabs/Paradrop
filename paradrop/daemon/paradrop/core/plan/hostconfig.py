@@ -88,9 +88,11 @@ def generatePlans(update):
 
         # Reload configuration files
         todoPlan = (configservice.reloadAll, )
-        abtPlan = [(osconfig.revertConfig, "dhcp"),
-                   (osconfig.revertConfig, "firewall"),
-                   (osconfig.revertConfig, "network"),
-                   (osconfig.revertConfig, "wireless"),
-                   (configservice.reloadAll, )]
-        update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan, abtPlan)
+        update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG, todoPlan)
+
+        # Reload configuration files if aborting.  This needs to happen at the
+        # right place in the update pipeline such that UCI files have been
+        # restored to their previous contents.
+        todoPlan = (configservice.reload_placeholder, )
+        abtPlan = (configservice.reloadAll, )
+        update.plans.addPlans(plangraph.RUNTIME_RELOAD_CONFIG_BACKOUT, todoPlan, abtPlan)

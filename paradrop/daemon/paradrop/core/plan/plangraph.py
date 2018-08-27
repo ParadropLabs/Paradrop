@@ -40,7 +40,8 @@ STATE_GENERATE_SERVICE_PLANS    = 23
 ###############################################################################
 # Build Docker Image
 STATE_BUILD_IMAGE               = 30
-STATE_CALL_STOP                 = 40
+STATE_CHECK_IMAGE               = 31
+STATE_CALL_STOP                 = 35
 
 ###############################################################################
 # System Validation
@@ -48,6 +49,7 @@ CHECK_SYSTEM_DEVICES            = 40
 
 ###############################################################################
 # Write Configuration Data
+RUNTIME_RELOAD_CONFIG_BACKOUT   = 45
 CREATE_VOLUME_DIRS              = 50
 STRUCT_SET_SYSTEM_DEVICES       = 51
 STRUCT_SET_HOST_CONFIG          = 52

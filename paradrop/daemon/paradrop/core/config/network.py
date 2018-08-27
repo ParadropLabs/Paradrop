@@ -548,6 +548,14 @@ def setOSNetworkConfig(update):
         filepath=uci.getSystemPath("network"))
 
 
+def revert_os_network_config(update):
+    uciutils.setConfig(
+        update.old,
+        update.new,
+        cacheKeys=['osNetworkConfig'],
+        filepath=uci.getSystemPath("network"))
+
+
 def getL3BridgeConfig(update):
     """
     Creates configuration sections for layer 3 bridging.
@@ -575,5 +583,13 @@ def setL3BridgeConfig(update):
     uciutils.setConfig(
         update.new,
         update.old,
+        cacheKeys=['parproutedConfig'],
+        filepath=uci.getSystemPath("parprouted"))
+
+
+def revert_l3_bridge_config(update):
+    uciutils.setConfig(
+        update.old,
+        update.new,
         cacheKeys=['parproutedConfig'],
         filepath=uci.getSystemPath("parprouted"))

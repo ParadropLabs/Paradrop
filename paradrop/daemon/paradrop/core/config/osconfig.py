@@ -51,8 +51,6 @@ def applyWaitOnlineFix(update):
 
 def revertConfig(update, theType):
     """
-    Basically the UCI system saves a backup of the original config file, if
-    we need to revert changes at all, we can just tell our UCI module to
-    revert back using that backup copy.
+    Tell the UCI module to revert changes to the old state of the chute.
     """
     restoreConfigFile(update.new, theType)
