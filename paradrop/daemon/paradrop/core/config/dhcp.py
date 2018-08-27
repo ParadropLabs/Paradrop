@@ -115,3 +115,9 @@ def setVirtDHCPSettings(update):
     uciutils.setConfig(update.new, update.old,
             cacheKeys=['virtDHCPSettings'],
             filepath=uci.getSystemPath("dhcp"))
+
+
+def revert_dhcp_settings(update):
+    uciutils.setConfig(update.old, update.new,
+            cacheKeys=['virtDHCPSettings'],
+            filepath=uci.getSystemPath("dhcp"))
