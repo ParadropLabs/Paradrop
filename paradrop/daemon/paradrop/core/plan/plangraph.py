@@ -29,7 +29,6 @@ STRUCT_GET_INT_NETWORK          = 11
 STRUCT_GET_OS_NETWORK           = 12
 STRUCT_GET_OS_WIRELESS          = 13
 STRUCT_GET_L3BRIDGE_CONFIG      = 14
-RESOURCE_GET_ALLOCATION         = 15
 TRAFFIC_GET_OS_FIREWALL         = 18
 TRAFFIC_GET_DEVELOPER_FIREWALL  = 19
 RUNTIME_GET_VIRT_PREAMBLE       = 20
@@ -46,6 +45,7 @@ STATE_CALL_STOP                 = 35
 ###############################################################################
 # System Validation
 CHECK_SYSTEM_DEVICES            = 40
+RESOURCE_GET_ALLOCATION         = 41
 
 ###############################################################################
 # Write Configuration Data
