@@ -4,7 +4,7 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.core.config import firewall, haproxy, osconfig
+from paradrop.core.config import firewall, haproxy
 
 from . import plangraph
 

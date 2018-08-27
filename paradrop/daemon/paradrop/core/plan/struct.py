@@ -4,7 +4,7 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.core.config import devices, files, network, hostconfig, osconfig, reservations, wifi
+from paradrop.core.config import devices, files, network, hostconfig, reservations, wifi
 
 from . import plangraph
 

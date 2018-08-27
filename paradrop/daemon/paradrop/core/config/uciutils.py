@@ -1,5 +1,4 @@
 from paradrop.lib.utils import uci
-from paradrop.base.output import out
 
 
 def setConfig(chute, old, cacheKeys, filepath):

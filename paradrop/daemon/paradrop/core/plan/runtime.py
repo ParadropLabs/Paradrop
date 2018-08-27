@@ -4,7 +4,7 @@
 ###################################################################
 
 from paradrop.base.output import out
-from paradrop.core.config import dockerconfig, osconfig, configservice, dhcp
+from paradrop.core.config import dockerconfig, configservice, dhcp
 from . import plangraph
 
 
