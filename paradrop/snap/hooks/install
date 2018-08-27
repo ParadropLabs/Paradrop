@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# This script does some one-time tasks when the snap is installed for the first
+# time.  After the first install, it will not be run again for version upgrades
+# unless the snap is completely removed and reinstalled.
+#
+
+
+KEY_DIR="$SNAP_COMMON/keys"
+
+
+# Generate a private key for the node. This will be used for SSH access to git
+# repositories and other authentication purposes.
+if [ ! -f "$KEY_DIR/node.key" ]; then
+    openssl genrsa -out "$KEY_DIR/node.key" 4096
+    chmod 400 "$KEY_DIR/node.key"
+
+    ssh-keygen -y -f "$KEY_DIR/node.key" >"$KEY_DIR/node.pub"
+fi
+
+
+# Initialize snap settings.
+#
+# These commands set some state for snapd, which will be used later on
+# by our configure hook to initialize the settings.ini file.
+snapctl set base.concurrent-builds=true
+snapctl set base.debug-mode=false
+snapctl set base.dynamic-network-pool=10.128.0.0/9
+snapctl set base.local-domain=paradrop.io

@@ -1,0 +1,52 @@
+#!/usr/bin/python3
+
+import configparser
+import os
+import subprocess
+
+
+SNAP_COMMON = os.environ['SNAP_COMMON']
+SETTINGS_FILE = "settings.ini"
+
+# List of settings to apply.  Each item is a tuple:
+# (snap option, ini section, name).
+#
+# Apparently, snapctl does not allow underscores in the option names,
+# so we need to do some translation for now.
+#
+# Example:
+#
+#   snap set paradrop-daemon base.concurrent-builds=false
+#
+# Results in:
+#
+#   [base]
+#   concurrent_builds = false
+#   ...
+#
+SETTINGS = [
+    ("base.concurrent-builds",      "base",     "concurrent_builds"),
+    ("base.debug-mode",             "base",     "debug_mode"),
+    ("base.dynamic-network-pool",   "base",     "dynamic_network_pool"),
+    ("base.local-domain",           "base",     "local_domain")
+]
+
+
+if __name__ == "__main__":
+    path = os.path.join(SNAP_COMMON, SETTINGS_FILE)
+
+    config = configparser.ConfigParser()
+    config.read(path)
+
+    for option, section, name in SETTINGS:
+        cmd = ["snapctl", "get", option]
+        try:
+            result = subprocess.check_output(cmd)
+            if len(result) > 0:
+                value = result.decode('ascii', 'ignore').strip()
+                config.set(section, name, value)
+        except subprocess.CalledProcessError:
+            pass
+
+    with open(path, 'w') as output:
+        config.write(output)
