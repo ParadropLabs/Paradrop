@@ -12,6 +12,8 @@ KEY_DIR="$SNAP_COMMON/keys"
 # Generate a private key for the node. This will be used for SSH access to git
 # repositories and other authentication purposes.
 if [ ! -f "$KEY_DIR/node.key" ]; then
+    mkdir -p "$KEY_DIR"
+
     openssl genrsa -out "$KEY_DIR/node.key" 4096
     chmod 400 "$KEY_DIR/node.key"
 
@@ -21,9 +23,12 @@ fi
 
 # Initialize snap settings.
 #
-# These commands set some state for snapd, which will be used later on
+# This command sets some state for snapd, which will be used later on
 # by our configure hook to initialize the settings.ini file.
-snapctl set base.concurrent-builds=true
-snapctl set base.debug-mode=false
-snapctl set base.dynamic-network-pool=10.128.0.0/9
-snapctl set base.local-domain=paradrop.io
+#
+# It is better to call snapctl once with all of the settings rather than
+# multiple times. That way only triggers our configure hook once.
+snapctl set base.concurrent-builds=true \
+            base.debug-mode=false \
+            base.dynamic-network-pool=10.128.0.0/9 \
+            base.local-domain=paradrop.io

@@ -15,8 +15,8 @@ if __name__ == "__main__":
 
     for snap in seed['snaps']:
         if snap['name'] == snap_name:
-            print("Changed snap {} channel {} to {}".format(snap['name'],
-                snap['channel'], channel))
+            print("Changed snap {} channel {} to {}".format(snap_name,
+                snap.get('channel', None), channel))
             snap['channel'] = channel
 
     with open(path, 'w') as output:

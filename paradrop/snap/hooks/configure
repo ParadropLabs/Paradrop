@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import configparser
 import os
@@ -37,6 +37,11 @@ if __name__ == "__main__":
 
     config = configparser.ConfigParser()
     config.read(path)
+
+    # We expect the [base] section to exist. If it does not exist and we call
+    # config.set, it will raise a NoSection exception.
+    if not config.has_section('base'):
+        config.add_section('base')
 
     for option, section, name in SETTINGS:
         cmd = ["snapctl", "get", option]
