@@ -1,0 +1,116 @@
+name: paradrop-agent
+version: 0.11.2
+summary: Paradrop agent for managing an edge computing node
+description: |
+  The Paradrop agent manages hardware resources for an edge computing
+  node and enables easy deployment of services to a virtualized runtime
+  environment using Docker containers.
+
+  Visit https://paradrop.org to learn more.
+
+grade: stable
+confinement: devmode
+
+plugs:
+  zerotier-control:
+    interface: content
+    target: $SNAP_COMMON
+
+apps:
+  paradrop:
+    command: paradrop
+    daemon: simple
+    plugs:
+      - account-control
+      - docker
+      - firewall-control
+      - hardware-observe
+        # I think we added kernel-module-control, not because we load kernel
+        # modules but because of some other capability that is bundled with it.
+        # However, it triggers manual review.
+        # - kernel-module-control
+      - network
+      - network-bind
+      - network-control
+      - ppp
+      - process-control
+      - shutdown
+        # Desired, but triggers manual review...
+        # - snapd-control
+      - system-observe
+
+  pdlog:
+    command: pdlog
+
+parts:
+  localweb:
+    plugin: dump
+    source: paradrop/localweb
+
+  pdlog:
+    plugin: python
+    python-version: python2
+    source: paradrop/tools/pdlog
+
+  paradrop:
+    plugin: python
+    python-version: python2
+    source: paradrop/daemon
+    build-packages:
+      - python-dev
+      - libffi-dev
+    stage-packages:
+      - libcurl4-openssl-dev
+      - libpulse0
+      - python-openssl
+      - python-pyasn1
+      - python-pyasn1-modules
+    organize:
+      # For some reason, the libpulsecommon .so file could not be found in its
+      # default install location, so move it to a place where it can be found.
+      usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-8.0.so: usr/lib/x86_64-linux-gnu/libpulsecommon-8.0.so
+
+  dependencies:
+    plugin: nil
+    stage-packages:
+      - dnsmasq
+      - git
+      - haproxy
+      - iw
+      - kmod
+      - parprouted
+      - systemd
+    filesets:
+      binaries:
+        - bin/kmod
+        - bin/systemctl
+        - sbin/iw
+        - sbin/modprobe
+        - usr/bin/git
+        - usr/sbin/dnsmasq
+        - usr/sbin/haproxy
+        - usr/sbin/parprouted
+      libraries:
+        - usr/lib/x86_64-linux-gnu/liblua5.3.so.*
+    stage:
+      - $binaries
+      - $libraries
+    prime:
+      - $binaries
+      - $libraries
+
+  hostapd:
+    plugin: dump
+    source: https://paradrop.org/release/packages/hostapd-2.6.tar.bz2
+    source-type: tar
+    organize:
+      hostapd: bin/hostapd
+      hostapd_cli: bin/hostapd_cli
+    filesets:
+      binaries:
+        - bin/hostapd
+        - bin/hostapd_cli
+    stage:
+      - $binaries
+    prime:
+      - $binaries
