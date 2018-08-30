@@ -46,7 +46,7 @@ def claim(ctx, token):
         print("Please check that your claim token is correct.")
 
 
-@routers.command()
+@server.command()
 @click.pass_context
 @click.argument('name')
 @click.option('--orphaned/--not-orphaned', default=False)

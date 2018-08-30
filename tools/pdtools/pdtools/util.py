@@ -6,6 +6,10 @@ import builtins
 import yaml
 
 
+LOCAL_DEFAULT_USERNAME = "paradrop"
+LOCAL_DEFAULT_PASSWORD = ""
+
+
 def format_result(data):
     """
     Format a result from an API call for printing.

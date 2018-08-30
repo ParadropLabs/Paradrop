@@ -117,7 +117,6 @@ class SavedCloudTokenProvider(TokenProvider):
             "token": cloud_token
         }
 
-        url_parts = urlparse(self.auth_url)
         res = requests.post(self.auth_url, json=data)
         try:
             data = res.json()
@@ -147,8 +146,6 @@ class DefaultLoginTokenProvider(TokenProvider):
         self.param_map = param_map
 
     def get_token(self):
-        url_parts = urlparse(self.auth_url)
-
         data = {
             self.param_map['username']: 'paradrop',
             self.param_map['password']: ''

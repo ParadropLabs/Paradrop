@@ -6,7 +6,6 @@ import requests
 from . import token_provider
 from .config import PdtoolsConfig
 from .errors import ParadropConnectionError
-from .token_provider import EnvironmentVariableTokenProvider, SavedTokenProvider, DefaultLoginTokenProvider, LoginPromptTokenProvider
 
 
 PDSERVER_URL = os.environ.get('PDSERVER_URL', 'https://paradrop.org')
@@ -118,10 +117,6 @@ class AuthenticatedClient(object):
         session = requests.Session()
         request = requests.Request(method, url, json=json, headers=headers,
                 data=data, **kwargs)
-
-        # Extract just the hostname from the controller URL.  This will be the
-        # authentication domain.
-        url_parts = urlparse(url)
 
         # If data is a file or file-like stream, then every time we read from it,
         # the read pointer moves to the end, and we will need to reset it if we are

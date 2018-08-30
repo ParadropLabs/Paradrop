@@ -1,11 +1,7 @@
 import os
-from six.moves.urllib.parse import urlparse
 
 from .authenticated_client import AuthenticatedClient
-from .config import PdtoolsConfig
-from .devices.camera import Camera
 from .errors import ControllerConnectionError
-from .util import LoginGatherer
 
 
 LOCAL_DEFAULT_USERNAME = "paradrop"

@@ -113,10 +113,10 @@ def sink(ctx, sink_name):
     ctx.obj['sink_url'] = url
 
 
-@sink.command()
+@sink.command('volume')
 @click.pass_context
 @click.argument('channel_volume', nargs=-1)
-def volume(ctx, channel_volume):
+def sink_volume(ctx, channel_volume):
     """
     Set sink volume.
     """
@@ -150,10 +150,10 @@ def source(ctx, source_name):
     ctx.obj['source_url'] = url
 
 
-@source.command()
+@source.command('volume')
 @click.pass_context
 @click.argument('channel_volume', nargs=-1)
-def volume(ctx, channel_volume):
+def source_volume(ctx, channel_volume):
     """
     Set source volume.
     """
@@ -192,16 +192,6 @@ def watch(ctx, change_id):
         print("{}: {}".format(time, msg))
 
     router_ws_request(url, on_message=on_message)
-
-
-@device.command()
-@click.pass_context
-def changes(ctx):
-    """
-    List changes in the working queue.
-    """
-    url = "{}/changes/".format(ctx.obj['base_url'])
-    router_request("GET", url)
 
 
 @device.group()
@@ -362,9 +352,9 @@ def delete(ctx):
     ctx.invoke(watch, change_id=data['change_id'])
 
 
-@chute.command()
+@chute.command('info')
 @click.pass_context
-def info(ctx):
+def chute_info(ctx):
     """
     Get information about the chute.
     """
@@ -433,9 +423,7 @@ def config(ctx):
     Get the chute's current configuration.
     """
     url = ctx.obj['chute_url'] + "/config"
-    headers = {'Content-Type': 'application/x-tar'}
-
-    res = router_request("GET", url)
+    router_request("GET", url)
 
 
 @chute.command()
@@ -445,7 +433,6 @@ def reconfigure(ctx):
     Reconfigure the chute without rebuilding.
     """
     url = ctx.obj['chute_url'] + "/config"
-    headers = {'Content-Type': 'application/x-tar'}
 
     if not os.path.exists("paradrop.yaml"):
         raise Exception("No paradrop.yaml file found in working directory.")
@@ -525,9 +512,9 @@ def show(ctx):
     router_request("GET", ctx.obj['station_url'])
 
 
-@station.command()
+@station.command('delete')
 @click.pass_context
-def delete(ctx):
+def station_delete(ctx):
     """
     Kick a station off the network.
     """
@@ -656,9 +643,9 @@ def add(ctx, path):
             print("Added: " + data.get('key', ''))
 
 
-@sshkeys.command()
+@sshkeys.command('list')
 @click.pass_context
-def list(ctx):
+def sshkeys_list(ctx):
     """
     List authorized keys.
     """
@@ -740,9 +727,9 @@ def pdconf(ctx):
     pass
 
 
-@pdconf.command()
+@pdconf.command('show')
 @click.pass_context
-def show(ctx):
+def pdconf_show(ctx):
     """
     Show status of pdconf subsystem.
     """

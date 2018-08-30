@@ -1,7 +1,5 @@
-import builtins
 import click
 import json
-import operator
 import os
 import pkg_resources
 
@@ -9,7 +7,6 @@ import git
 import jsonschema
 import yaml
 
-from .controller_client import ControllerClient
 from .helpers.chute import build_chute
 from .util import update_object
 
