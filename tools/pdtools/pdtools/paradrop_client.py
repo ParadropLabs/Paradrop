@@ -142,6 +142,13 @@ class ParadropClient(AuthenticatedClient):
         url = self.base_url + "/config/provision"
         return self.request("GET", url)
 
+    def get_settings(self):
+        """
+        Get node settings.
+        """
+        url = self.base_url + "/config/settings"
+        return self.request("GET", url)
+
     def install_tar(self, data, name=None):
         """
         Install a chute from a tar file.

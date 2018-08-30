@@ -239,6 +239,22 @@ def describe_provision(ctx):
     return result
 
 
+@root.command('describe-settings')
+@click.pass_context
+def describe_settings(ctx):
+    """
+    Show node settings.
+
+    These are settings that paradrop reads during startup and configure
+    certain behaviors. They can only be modified through environment
+    variables or the settings.ini file.
+    """
+    client = ParadropClient(ctx.obj['target'])
+    result = client.get_settings()
+    click.echo(util.format_result(result))
+    return result
+
+
 @root.command('edit-configuration')
 @click.pass_context
 def edit_configuration(ctx):
