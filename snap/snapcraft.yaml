@@ -62,7 +62,7 @@ parts:
     stage-packages:
       - libcurl4-openssl-dev
       - libpulse0
-        libssl-dev
+      - libssl-dev
       - python-openssl
       - python-pyasn1
       - python-pyasn1-modules
