@@ -5,6 +5,7 @@ import requests
 
 from . import token_provider
 from .config import PdtoolsConfig
+from .errors import ParadropConnectionError
 from .token_provider import EnvironmentVariableTokenProvider, SavedTokenProvider, DefaultLoginTokenProvider, LoginPromptTokenProvider
 
 
@@ -36,6 +37,10 @@ class AuthenticatedClient(object):
         }
     }
 
+    # Subclasses can override this to alter connection errors resulting from
+    # requests.
+    connection_error_type = ParadropConnectionError
+
     def __init__(self, api_spec, url, debug=False):
         """
         Initialize AuthenticatedClient object.
@@ -45,7 +50,8 @@ class AuthenticatedClient(object):
         self.api_spec = AuthenticatedClient.ApiSpecs[api_spec]
 
         url_parts = urlparse(url)
-        self.auth_domain = url_parts.netloc
+        self.authority = url_parts.netloc
+        self.auth_domain = url_parts.netloc # deprecate: authority is preferred
 
         auth_template = self.api_spec['auth_url']
         self.auth_url = auth_template.format(scheme=url_parts.scheme,
@@ -57,7 +63,7 @@ class AuthenticatedClient(object):
         # APIs have a different format for the authentication URL.
         self.token_providers = [
             token_provider.EnvironmentVariableTokenProvider(),
-            token_provider.SavedTokenProvider(self.auth_domain),
+            token_provider.SavedTokenProvider(self.authority),
             token_provider.DefaultLoginTokenProvider(self.auth_url,
                 self.api_spec['param_map']),
             token_provider.LoginPromptTokenProvider(self.auth_url,
@@ -93,7 +99,7 @@ class AuthenticatedClient(object):
         # tokens.  The loop makes sure we remove them all.
         removed = 0
         while True:
-            token = config.getAccessToken(self.auth_domain)
+            token = config.getAccessToken(self.authority)
             if token is None:
                 break
             else:
@@ -147,7 +153,12 @@ class AuthenticatedClient(object):
             if pos is not None:
                 prepped.body.seek(pos)
 
-            res = session.send(prepped)
+            try:
+                res = session.send(prepped)
+            except requests.exceptions.ConnectionError as error:
+                raise self.connection_error_type(error.message, error.request,
+                        self.authority)
+
             if res.status_code in self.api_spec['auth_failure_codes']:
                 # The status code indicates an authorization failure.  That
                 # could mean the token is expired, the password is incorrect,

@@ -41,6 +41,8 @@ from . import node
 from . import store
 from . import wizard
 
+from . import errors
+
 
 PDSERVER_URL = os.environ.get("PDSERVER_URL", "https://paradrop.org")
 
@@ -88,11 +90,45 @@ root.add_command(store.root)
 root.add_command(wizard.root)
 
 
+def handle_controller_connection_error(error):
+    click.echo("Connecting to the controller at {} failed.".format(
+        error.target))
+
+    if error.target in os.environ.get('PDSERVER_URL', ''):
+        click.echo('Please ensure that you have configured the PDSERVER_URL ' +
+                   'environment variable correctly.')
+        click.echo('It is currently set to "{}".'.format(
+            os.environ.get('PDSERVER_URL', None)))
+
+    else:
+        click.echo('Please check your network connection.')
+
+
+def handle_node_connection_error(error):
+    click.echo("Connecting to the node at {} failed.".format(
+        error.target))
+
+    if error.target == os.environ.get('PDTOOLS_NODE_TARGET', ''):
+        click.echo('Please ensure that you have configured the ' +
+                   'PDTOOLS_NODE_TARGET environment variable correctly.')
+        click.echo('It is currently set to "{}".'.format(
+            os.environ.get('PDTOOLS_NODE_TARGET', None)))
+
+    else:
+        click.echo('Please ensure you have the correct address ' +
+                   'for the node and that your network connection is up.')
+
+
 def main():
     """
     Entry point for the pdtools Python package.
     """
-    root()
+    try:
+        root()
+    except errors.ControllerConnectionError as error:
+        handle_controller_connection_error(error)
+    except errors.NodeConnectionError as error:
+        handle_node_connection_error(error)
 
 
 if __name__ == "__main__":

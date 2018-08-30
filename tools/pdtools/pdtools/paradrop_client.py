@@ -3,6 +3,7 @@ import re
 
 from .authenticated_client import AuthenticatedClient
 from .devices.camera import Camera
+from .errors import NodeConnectionError
 
 
 LOCAL_DEFAULT_USERNAME = "paradrop"
@@ -23,6 +24,9 @@ class ParadropClient(AuthenticatedClient):
     for camera in client.get_cameras():
         img = camera.get_image()
     """
+
+    connection_error_type = NodeConnectionError
+
     def __init__(self, host=None, debug=False):
         if host is None:
             host = "172.17.0.1"

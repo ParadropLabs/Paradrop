@@ -4,6 +4,7 @@ from six.moves.urllib.parse import urlparse
 from .authenticated_client import AuthenticatedClient
 from .config import PdtoolsConfig
 from .devices.camera import Camera
+from .errors import ControllerConnectionError
 from .util import LoginGatherer
 
 
@@ -20,6 +21,9 @@ class ControllerClient(AuthenticatedClient):
     """
     Client for interacting with a cloud controller.
     """
+
+    connection_error_type = ControllerConnectionError
+
     def __init__(self, host=PDSERVER_URL):
         super(ControllerClient, self).__init__("cloud", PDSERVER_URL)
         self.host = host
