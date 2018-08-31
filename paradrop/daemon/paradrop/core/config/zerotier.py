@@ -2,11 +2,19 @@ import httplib
 import json
 import os
 
+from paradrop.base.output import out
 from paradrop.lib.misc.snapd import SnapdClient
 from paradrop.lib.utils import datastruct
 
 
 def configure(update):
+    snap_name = os.environ.get('SNAP_NAME', None)
+    if snap_name is None:
+        # It seems we are not running as a snap, so this code is not going to
+        # work.
+        out.info("SNAP_NAME environment variable not found.")
+        return
+
     hostConfig = update.cache_get('hostConfig')
 
     snapd = SnapdClient(logging=True, wait_async=True)
@@ -21,7 +29,7 @@ def configure(update):
         # These interfaces are not automatically connected, so take care of that.
         snapd.connect('zerotier-one', 'network-control', 'core',
                 'network-control')
-        snapd.connect('paradrop-daemon', 'zerotier-control', 'zerotier-one',
+        snapd.connect(snap_name, 'zerotier-control', 'zerotier-one',
                 'zerotier-control')
 
         old_networks = set()

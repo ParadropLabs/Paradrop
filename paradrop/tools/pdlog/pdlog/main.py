@@ -1,11 +1,13 @@
-import sys
 import argparse
 import json
-import urllib
+import os
 import subprocess
+import sys
+import urllib
 from time import sleep
 
-LOG_FILE = "/var/snap/paradrop-daemon/common/logs/log"
+SNAP_COMMON = os.environ['SNAP_COMMON']
+LOG_FILE = os.path.join(SNAP_COMMON, "logs", "log")
 
 def parseLine(line):
     try:

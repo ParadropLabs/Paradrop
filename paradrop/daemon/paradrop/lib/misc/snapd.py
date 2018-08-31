@@ -1,9 +1,13 @@
 import json
+import os
 import time
 
 from paradrop.base import settings
 from paradrop.base.output import out
 from paradrop.lib.utils.uhttp import UHTTPConnection
+
+
+SNAP_NAME = os.environ.get('SNAP_NAME', None)
 
 
 class SnapdClient(object):
@@ -41,7 +45,7 @@ class SnapdClient(object):
                 return change
             time.sleep(1)
 
-    def connect(self, plug_snap="paradrop-daemon", plug=None, slot_snap="core", slot=None):
+    def connect(self, plug_snap=SNAP_NAME, plug=None, slot_snap="core", slot=None):
         """
         Connect an interface.
         """

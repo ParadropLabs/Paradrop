@@ -4,6 +4,7 @@ Manage audio input and output.
 Endpoints for these functions can be found under /api/v1/audio.
 """
 
+import os
 import json
 
 from klein import Klein
@@ -11,6 +12,9 @@ from klein import Klein
 import pulsectl
 
 from . import cors
+
+
+PULSE_CLIENT_NAME = os.environ.get('SNAP_NAME', 'paradrop')
 
 
 class AudioApi(object):
@@ -46,7 +50,7 @@ class AudioApi(object):
         cors.config_cors(request)
         request.setHeader('Content-Type', 'application/json')
 
-        with pulsectl.Pulse('paradrop-daemon') as pulse:
+        with pulsectl.Pulse(PULSE_CLIENT_NAME) as pulse:
             info = pulse.server_info()
 
         result = {
