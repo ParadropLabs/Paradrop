@@ -18,6 +18,7 @@ apps:
       - hardware-observe
       - network
       - network-bind
+      - network-control
       - network-observe
       - network-setup-observe
       - system-observe
