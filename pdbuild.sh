@@ -4,6 +4,8 @@
 # in the case of errors
 COLOR='\033[01;33m'
 
+SNAP_NAME="paradrop-agent"
+
 # Perhaps overkill, but preps the local environment for snappy testing
 
 printhelp() {
@@ -126,26 +128,25 @@ image() {
         exit 1
     fi
 
-    echo "Select the paradrop-daemon snap to use (1 for snap store):"
-    select pdsnap in paradrop-daemon paradrop/*.snap;
-    do
-        break
-    done
+    echo "Select the $SNAP_NAME snap to use (1 for snap store):"
+    select pdsnap in $SNAP_NAME *.snap paradrop/*.snap;
+    do break; done
 
-    echo "Select the channel to track for paradrop-daemon:"
+    echo "Select the channel to track for $SNAP_NAME:"
     select channel in stable candidate beta edge;
-    do
-        break
-    done
+    do break; done
 
     echo "Select the channel to track for all other snaps (recommended: stable):"
     select other_channel in stable candidate beta edge;
-    do
-        break
-    done
+    do break; done
 
-    sudo ubuntu-image -o $image \
+    echo "Select the gadget snap to use:"
+    select gadget in paradrop-amd64 gadgets/*/*.snap;
+    do break; done
+
+    sudo ubuntu-image snap -o $image \
         --channel "$other_channel" \
+        --extra-snaps "$gadget" \
         --extra-snaps "$pdsnap" \
         --image-size 4G \
         assertions/paradrop-amd64.model
@@ -156,7 +157,7 @@ image() {
     if [ "$channel" != "$other_channel" ]; then
         sudo mkdir -p /mnt/paradrop-amd64
         sudo mount -o loop,offset=$((106496*512)) $image /mnt/paradrop-amd64
-        sudo python utils/set_seed_channel.py /mnt/paradrop-amd64/system-data/var/lib/snapd/seed/seed.yaml paradrop-daemon $channel
+        sudo python utils/set_seed_channel.py /mnt/paradrop-amd64/system-data/var/lib/snapd/seed/seed.yaml $SNAP_NAME $channel
         sudo umount /mnt/paradrop-amd64
         sudo rmdir /mnt/paradrop-amd64
     fi

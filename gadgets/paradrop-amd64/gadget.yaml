@@ -23,6 +23,7 @@ connections:
 
   # Connect paradrop-snmpd
   - plug: gbyL7I0uTULcmxEqRRkqPlX40FeBgYzd:hardware-observe
+  - plug: gbyL7I0uTULcmxEqRRkqPlX40FeBgYzd:network-control
   - plug: gbyL7I0uTULcmxEqRRkqPlX40FeBgYzd:network-observe
   - plug: gbyL7I0uTULcmxEqRRkqPlX40FeBgYzd:network-setup-observe
   - plug: gbyL7I0uTULcmxEqRRkqPlX40FeBgYzd:system-observe

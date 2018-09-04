@@ -42,6 +42,10 @@ apps:
   pdlog:
     command: pdlog
 
+hooks:
+  configure:
+    plugs: [network, network-control]
+
 parts:
   localweb:
     plugin: dump

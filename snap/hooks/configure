@@ -53,5 +53,14 @@ if __name__ == "__main__":
         except subprocess.CalledProcessError:
             pass
 
-    with open(path, 'w') as output:
-        config.write(output)
+    # Catch and ignore exceptions for now because the whole snapd configure
+    # workflow seems buggy. It occasionally gives an error like the one below
+    # which can block installation of the snap. For now it seems better to
+    # ignore the problem and have the user edit the file directly if need be.
+    #
+    # OSError: [Errno 30] Read-only file system: '/var/snap/paradrop-agent/common/settings.ini'
+    try:
+        with open(path, 'w') as output:
+            config.write(output)
+    except OSError as error:
+        print(error)

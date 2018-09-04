@@ -5,18 +5,18 @@
     "series": "16",
     "model": "paradrop-amd64",
     "architecture": "amd64",
-    "gadget": "pc",
+    "gadget": "paradrop-amd64",
     "kernel": "pc-kernel",
     "required-snaps": [
         "airshark",
         "bluez",
         "docker",
-        "paradrop-daemon",
+        "paradrop-agent",
         "paradrop-snmpd",
         "pulseaudio",
         "zerotier-one"
     ],
-    "timestamp": "2017-07-26T21:21:48+00:00"
+    "timestamp": "2018-08-31T17:56:55+00:00"
 }
 
 
