@@ -77,7 +77,7 @@ class ConfigApi(object):
 
         update = dict(updateClass='ROUTER',
                       updateType='sethostconfig',
-                      name=constants.RESERVED_CHUTE,
+                      name=constants.RESERVED_CHUTE_NAME,
                       tok=timeint(),
                       hostconfig=config)
 
