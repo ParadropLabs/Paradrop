@@ -629,8 +629,9 @@ def logout(ctx):
 
 @root.command('open-chute-shell')
 @click.argument('chute')
+@click.option('--service', '-s', default="main", help="Service belonging to the chute")
 @click.pass_context
-def open_chute_shell(ctx, chute):
+def open_chute_shell(ctx, chute, service):
     """
     Open a shell inside the running chute.
 
@@ -643,8 +644,9 @@ def open_chute_shell(ctx, chute):
     chute or the node is restarted. Only changes to files in the "/data"
     directory will be preserved.
     """
+    container_name = "{}-{}".format(chute, service)
     cmd = ["ssh", "-t", "paradrop@{}".format(ctx.obj['target']), "sudo", "docker",
-            "exec", "-it", chute, "/bin/bash"]
+            "exec", "-it", container_name, "/bin/bash"]
     os.spawnvpe(os.P_WAIT, "ssh", cmd, os.environ)
 
 
