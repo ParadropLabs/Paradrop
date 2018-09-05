@@ -9,11 +9,6 @@ def saveChute(update):
     if update.updateType == "delete":
         chuteStore.deleteChute(update.old)
     else:
-        # Before saving the chute, store all of the cache values from the
-        # installation process because certain functions that read the chute
-        # list depend on the cache being there.
-        update.new.updateCache(update.cache)
-
         chuteStore.saveChute(update.new)
 
 

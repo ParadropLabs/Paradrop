@@ -65,6 +65,12 @@ def getVirtPreamble(update):
         token = generateToken()
     update.cache_set('apiToken', token)
 
+    # Deprecated: we set these values in the chute cache here because there is
+    # still code that depends on reading this from the chute storage.  This can
+    # be removed when the corresponding call to getCache is removed.
+    update.new.setCache('externalSystemDir', extSystemDir)
+    update.new.setCache('apiToken', token)
+
     if not hasattr(update, 'dockerfile'):
         return
     if update.dockerfile is None:

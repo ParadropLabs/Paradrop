@@ -306,11 +306,6 @@ class UpdateObject(object):
         """
         self.cache[key] = value
 
-        # Temporary fix for issues with Docker code (setup_net_interfaces).
-        # Remove this after fixing sections of code that rely on the chute
-        # cache during chute installation.
-        self.new.setCache(key, value)
-
 
 # This gives the new chute state if an update of a given type succeeds.
 NEW_CHUTE_STATE = {

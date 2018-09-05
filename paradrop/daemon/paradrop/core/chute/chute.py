@@ -94,6 +94,18 @@ class Chute(object):
     def setCache(self, key, value):
         """
         Set a value in the cache.
+
+        Deprecated: Most of the cache functionality has been moved to the
+        Update object because they are values that are used as temporary
+        storage between one update step and the following steps. However, there
+        are a few instances of cache values that we do still read from chute
+        storage. Any calls to the getCache method throughout the project are
+        still depending on this functionality, so we have corresponding calls
+        to setCache that ensure the required information is present in the
+        chute cache and not just in the update cache. Eventually, we should
+        remove this dependency either by using a less stateful design or by
+        formalizing the process for storing persistent chute state, such as the
+        networkInterfaces list.
         """
         self._cache[key] = value
 

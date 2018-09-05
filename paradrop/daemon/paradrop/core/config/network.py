@@ -415,6 +415,11 @@ def getNetworkConfig(update):
     # care of what made it into the list.
     update.cache_set('networkInterfaces', interfaces)
 
+    # Deprecated: we set this value in the chute cache here because there is
+    # still code that depends on reading this from the chute storage.  This can
+    # be removed when the corresponding call to getCache is removed.
+    update.new.setCache('networkInterfaces', interfaces)
+
     # Make sure we only assign interfaces to running chutes.
     if not update.new.isRunning():
         return None
@@ -476,6 +481,11 @@ def getNetworkConfig(update):
             interfaces.append(iface)
 
     update.cache_set('networkInterfaces', interfaces)
+
+    # Deprecated: we set this value in the chute cache here because there is
+    # still code that depends on reading this from the chute storage.  This can
+    # be removed when the corresponding call to getCache is removed.
+    update.new.setCache('networkInterfaces', interfaces)
 
 
 def abortNetworkConfig(update):
