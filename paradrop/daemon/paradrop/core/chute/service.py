@@ -59,7 +59,9 @@ class Service(object):
         """
         Get the name of the image to be used.
         """
-        if self.image is not None:
-            return self.image
-        else:
+        # Light chute services have a shorthand image name like "python2" that
+        # should not be interpreted as an actual Docker image name.
+        if self.image is None or self.type == "light":
             return "{}:{}".format(self.get_container_name(), self.chute.version)
+        else:
+            return self.image
