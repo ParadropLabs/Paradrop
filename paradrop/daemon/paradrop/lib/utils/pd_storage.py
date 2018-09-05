@@ -9,6 +9,7 @@ from twisted.internet.task import LoopingCall
 
 from paradrop.base.output import out
 from paradrop.lib.utils import pdos
+from paradrop.lib.utils.yaml import yaml
 
 
 class PDStorage(object):
@@ -75,9 +76,14 @@ class PDStorage(object):
             with open(self.filename, 'wb') as output:
                 pickle.dump(pyld, output)
                 os.fsync(output.fileno())
-
         except Exception as e:
             out.err('Error writing to disk %s\n' % (str(e)))
+
+        try:
+            with open(self.filename + ".yaml", "w") as output:
+                yaml.dump(pyld, output)
+        except Exception as error:
+            out.err("Error writing yaml file: {}".format(error))
 
     def attrSaveable(self):
         """THIS SHOULD BE OVERRIDEN BY THE IMPLEMENTER."""

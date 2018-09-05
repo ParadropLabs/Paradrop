@@ -35,6 +35,8 @@ PyJWT==1.5.3
 pyOpenSSL==16.0.0
 PyYAML==3.11
 requests==2.15.1
+ruamel.ordereddict==0.4.13
+ruamel.yaml==0.15.60
 service-identity==16.0.0
 setuptools==28.8.0
 six==1.10.0
