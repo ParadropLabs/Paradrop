@@ -133,6 +133,7 @@ class SingleServiceChuteBuilder(ChuteBuilder):
         self.chute = Chute()
         self.chute.name = spec.get("name")
         self.chute.description = spec.get("description", None)
+        self.chute.environment = spec.get("environment", {})
         self.chute.owner = spec.get("owner", None)
         self.chute.version = spec.get("version", None)
 
@@ -180,7 +181,6 @@ class SingleServiceChuteBuilder(ChuteBuilder):
                 build[key] = config[key]
 
         service.build = build
-        service.environment = config.get("environment", {})
         service.interfaces = interfaces
         service.requests = requests
 
@@ -250,6 +250,7 @@ class MultiServiceChuteBuilder(ChuteBuilder):
             value = spec.get(field, "unknown")
             setattr(self.chute, field, value)
 
+        self.chute.environment = spec.get("environment", {})
         self.chute.web = spec.get("web", {})
 
     def create_services(self, spec):
@@ -283,3 +284,11 @@ def build_chute(spec):
     builder.create_services(spec)
 
     return builder.get_chute()
+
+
+def rebuild_chute(spec, updates):
+    for field in ["name", "version", "description", "owner", "environment", "web"]:
+        if field in updates:
+            spec[field] = updates[field]
+
+    return build_chute(spec)

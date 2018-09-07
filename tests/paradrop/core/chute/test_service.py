@@ -1,6 +1,7 @@
 from paradrop.core.chute.chute import Chute
 from paradrop.core.chute.service import Service
 
+
 def test_Service():
     chute = Chute(name="test", version="1")
 
@@ -16,3 +17,11 @@ def test_Service():
     # Test a service that pulls an external image.
     service = Service(chute=chute, type="image", image="mongo:3.0")
     assert service.get_image_name() == "mongo:3.0"
+
+
+def test_Service_create_specification():
+    service = Service()
+
+    spec = service.create_specification()
+    assert spec['type'] == 'normal'
+    assert 'environment' in spec

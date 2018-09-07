@@ -105,6 +105,7 @@ def test_prepare_environment(core):
     chute = MagicMock()
     chute.name = "test"
     chute.version = 5
+    chute.get_environment.return_value = {"CHUTE_VARIABLE": "test"}
 
     core.info.pdid = 'halo42'
 
@@ -119,6 +120,7 @@ def test_prepare_environment(core):
     assert env['PARADROP_CHUTE_VERSION'] == chute.version
     assert env['PARADROP_ROUTER_ID'] == core.info.pdid
     assert env['CUSTOM_VARIABLE'] == 42
+    assert env['CHUTE_VARIABLE'] == 'test'
 
 @patch('paradrop.core.container.dockerapi.subprocess')
 @patch('paradrop.core.container.dockerapi.ChuteContainer.getPID')

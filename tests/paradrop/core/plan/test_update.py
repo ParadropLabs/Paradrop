@@ -48,8 +48,6 @@ def test_update_chute(getChute):
         'name': 'Test',
         'updateClass': 'CHUTE',
         'updateType': 'restart',
-        'new': Mock(),
-        'old': Mock(),
         'tok': 'tok'
     }
 

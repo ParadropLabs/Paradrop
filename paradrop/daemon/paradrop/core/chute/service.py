@@ -7,6 +7,7 @@ class Service(object):
                  chute=None,
                  name=None,
                  type="normal",
+                 source=None,
                  image=None,
                  command=None,
                  dockerfile=None,
@@ -18,6 +19,7 @@ class Service(object):
         self.name = name
 
         self.type = type
+        self.source = source
         self.image = image
         self.command = command
         self.dockerfile = dockerfile
@@ -41,6 +43,26 @@ class Service(object):
             self.requests = {}
         else:
             self.requests = requests
+
+    def create_specification(self):
+        """
+        Create a new service specification.
+
+        This is a completely clean copy of all information necessary to rebuild
+        the Service object. It should contain only primitive types, which can
+        easily be serialized as JSON or YAML.
+        """
+        spec = {
+            "type": self.type,
+            "source": self.source,
+            "image": self.image,
+            "command": self.command,
+            "build": self.build.copy(),
+            "environment": self.environment.copy(),
+            "interfaces": self.interfaces.copy(),
+            "requests": self.requests.copy()
+        }
+        return spec
 
     def get_container_name(self):
         """

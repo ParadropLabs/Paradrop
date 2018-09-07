@@ -10,7 +10,7 @@ from twisted.python.failure import Failure
 from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.core import plan
-from paradrop.core.chute.builder import build_chute
+from paradrop.core.chute.builder import build_chute, rebuild_chute
 from paradrop.core.chute.chute import Chute
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.agent.http import PDServerRequest
@@ -355,7 +355,8 @@ class UpdateChute(UpdateObject):
         if reuse_existing:
             self.new = self.old
         elif self.old is not None:
-            self.new.inherit_attributes(self.old)
+            old_spec = self.old.create_specification()
+            self.new = rebuild_chute(old_spec, obj)
 
         self.new.state = NEW_CHUTE_STATE.get(updateType, Chute.STATE_INVALID)
 

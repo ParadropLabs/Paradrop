@@ -523,7 +523,7 @@ class ChuteApi(object):
             chute_obj = ChuteStorage.chuteList[chute]
             if not chute_access_allowed(request, chute_obj):
                 return permission_denied(request)
-            config = chute_obj.getConfiguration()
+            config = chute_obj.create_specification()
             return json.dumps(config)
         except KeyError:
             request.setResponseCode(404)

@@ -3,6 +3,7 @@
 # Authors: The Paradrop Team
 ###################################################################
 
+import six
 
 from paradrop.base.exceptions import ServiceNotFound
 
@@ -31,6 +32,8 @@ class Chute(object):
                  owner=None,
                  state="running",
                  version=None,
+                 environment=None,
+                 web=None,
                  config=None):
         """
         Initialize a Chute object.
@@ -41,6 +44,7 @@ class Chute(object):
             state (str): Desired run state of the chute ("running", "stopped").
             version (str): The version of the chute.
             config (dict): Configuration settings for the chute.
+            environment (dict): Environment variables to set for all chute services.
         """
         self.name = name
         self.description = description
@@ -54,6 +58,16 @@ class Chute(object):
             self.config = config
 
         self.services = {}
+
+        if environment is None:
+            self.environment = {}
+        else:
+            self.environment = environment
+
+        if web is None:
+            self.web = {}
+        else:
+            self.web = web
 
         # The cache as a working storage of intermediate values has been moved
         # to the update object. Here, we set the cache right before saving the
@@ -167,6 +181,28 @@ class Chute(object):
         """
         self.services[service.name] = service
 
+    def create_specification(self):
+        """
+        Create a new chute specification from the existing chute.
+
+        This is a completely clean copy of all information necessary to rebuild
+        the Chute object. It should contain only primitive types, which can
+        easily be serialized as JSON or YAML.
+        """
+        services = {}
+        for name, service in six.iteritems(self.services):
+            services[name] = service.create_specification()
+
+        spec = {
+            "name": self.name,
+            "description": self.description,
+            "version": self.version,
+            "services": services,
+            "environment": self.environment.copy(),
+            "web": self.web.copy()
+        }
+        return spec
+
     def get_default_service(self):
         """
         Get one of the chute's services designated as the default one.
@@ -183,6 +219,15 @@ class Chute(object):
         # Sort by name and return the first one.
         name = min(self.services)
         return self.services[name]
+
+    def get_environment(self):
+        """
+        Get the chute environment variables.
+
+        These are defined by the developer or administrator and passed to all
+        services that belong to the chute.
+        """
+        return getattr(self, "environment", {})
 
     def get_owner(self):
         """

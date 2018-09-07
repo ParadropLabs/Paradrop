@@ -690,7 +690,11 @@ def prepare_environment(update, service):
     """
     # Make a copy so that we do not alter the original, which only contains
     # user-specified environment variables.
-    env = service.environment.copy()
+    #
+    # Start with the chute environment variables, then apply service-specific
+    # variables on top of that.
+    env = update.new.get_environment().copy()
+    env.update(service.environment)
 
     env['PARADROP_CHUTE_NAME'] = update.new.name
     env['PARADROP_FEATURES'] = constants.DAEMON_FEATURES
