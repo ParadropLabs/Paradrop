@@ -30,5 +30,7 @@ def test_Chute_create_specification():
     spec = mychute.create_specification()
     assert spec['name'] == mychute.name
     assert 'environment' in spec
+    assert 'owner' in spec
     assert 'services' in spec
+    assert 'state' in spec
     assert 'web' in spec

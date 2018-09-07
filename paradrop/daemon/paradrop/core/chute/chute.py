@@ -196,6 +196,8 @@ class Chute(object):
         spec = {
             "name": self.name,
             "description": self.description,
+            "owner": self.owner,
+            "state": self.state,
             "version": self.version,
             "services": services,
             "environment": self.environment.copy(),
