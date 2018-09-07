@@ -24,7 +24,6 @@ import click
 import yaml
 
 from . import util
-from .comm import router_ws_request
 from .paradrop_client import ParadropClient
 
 
@@ -960,7 +959,8 @@ def watch_change_logs(ctx, change_id):
         msg = data['message'].rstrip()
         print("{}: {}".format(time, msg))
 
-    router_ws_request(url, on_message=on_message)
+    client = ParadropClient(ctx.obj['target'])
+    client.ws_request(url, on_message=on_message)
 
 
 @root.command('watch-chute-logs')
@@ -981,7 +981,8 @@ def watch_chute_logs(ctx, chute):
         service = data.get("service", chute)
         click.echo("[{}] {}: {}".format(service, time, msg))
 
-    router_ws_request(url, on_message=on_message)
+    client = ParadropClient(ctx.obj['target'])
+    client.ws_request(url, on_message=on_message)
 
 
 @root.command('watch-logs')
@@ -995,4 +996,5 @@ def watch_logs(ctx):
     def on_message(ws, message):
         print(message)
 
-    router_ws_request(url, on_message=on_message)
+    client = ParadropClient(ctx.obj['target'])
+    client.ws_request(url, on_message=on_message)

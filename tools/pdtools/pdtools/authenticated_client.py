@@ -2,6 +2,7 @@ import os
 from six.moves.urllib.parse import urlparse
 
 import requests
+import websocket
 
 from . import token_provider
 from .config import PdtoolsConfig
@@ -165,3 +166,34 @@ class AuthenticatedClient(object):
                     return None
                 else:
                     return res.json()
+
+    def ws_request(self, url, headers=None, **kwargs):
+        if self.debug:
+            print("Open {}".format(url))
+
+        if headers is None:
+            headers = {}
+        else:
+            headers = headers.copy()
+
+        def on_error(ws, x):
+            ws.error = x
+
+        for provider in self.token_providers:
+            if not provider.is_applicable():
+                continue
+
+            token = provider.get_token()
+            headers.update({'Authorization': 'Bearer {}'.format(token)})
+
+            ws = websocket.WebSocketApp(url, header=headers, **kwargs)
+            ws.error = None
+            ws.on_error = on_error
+            ws.run_forever()
+
+            if ws.error is None:
+                # Websocket connection was terminated cleanly.
+                break
+            elif isinstance(ws.error, KeyboardInterrupt):
+                # User used Ctrl+C to terminate the session.
+                break
