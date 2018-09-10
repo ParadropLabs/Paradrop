@@ -154,12 +154,12 @@ def setOSFirewallRules(update):
     """
     Takes a list of tuples (config, opts) and saves it to the firewall config file.
     """
-    uciutils.setConfig(update.new, update.old,
+    uciutils.setConfig(update,
             cacheKeys=['osFirewallRules', 'developerFirewallRules'],
             filepath=uci.getSystemPath("firewall"))
 
 
 def revert_os_firewall_rules(update):
-    uciutils.setConfig(update.old, update.new,
+    uciutils.setConfig(update,
             cacheKeys=['osFirewallRules', 'developerFirewallRules'],
             filepath=uci.getSystemPath("firewall"))

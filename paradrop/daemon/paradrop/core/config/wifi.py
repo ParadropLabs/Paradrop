@@ -49,12 +49,12 @@ def setOSWirelessConfig(update):
     """
     Write settings from osWirelessConfig out to UCI files.
     """
-    uciutils.setConfig(update.new, update.old,
+    uciutils.setConfig(update,
             cacheKeys=['osWirelessConfig'],
             filepath=uci.getSystemPath("wireless"))
 
 
 def revert_os_wireless_config(update):
-    uciutils.setConfig(update.old, update.new,
+    uciutils.setConfig(update,
             cacheKeys=['osWirelessConfig'],
             filepath=uci.getSystemPath("wireless"))

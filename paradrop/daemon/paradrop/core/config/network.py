@@ -552,16 +552,14 @@ def setOSNetworkConfig(update):
     # old code under lib.internal.chs.chutelxc same function name
 
     uciutils.setConfig(
-        update.new,
-        update.old,
+        update,
         cacheKeys=['osNetworkConfig'],
         filepath=uci.getSystemPath("network"))
 
 
 def revert_os_network_config(update):
     uciutils.setConfig(
-        update.old,
-        update.new,
+        update,
         cacheKeys=['osNetworkConfig'],
         filepath=uci.getSystemPath("network"))
 
@@ -591,15 +589,13 @@ def setL3BridgeConfig(update):
     Apply configuration for layer 3 bridging.
     """
     uciutils.setConfig(
-        update.new,
-        update.old,
+        update,
         cacheKeys=['parproutedConfig'],
         filepath=uci.getSystemPath("parprouted"))
 
 
 def revert_l3_bridge_config(update):
     uciutils.setConfig(
-        update.old,
-        update.new,
+        update,
         cacheKeys=['parproutedConfig'],
         filepath=uci.getSystemPath("parprouted"))

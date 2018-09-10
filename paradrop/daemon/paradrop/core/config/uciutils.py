@@ -1,7 +1,7 @@
 from paradrop.lib.utils import uci
 
 
-def setConfig(chute, old, cacheKeys, filepath):
+def setConfig(update, cacheKeys, filepath):
     """
     Helper function used to modify config file of each various setting in /etc/config/
     Returns:
@@ -15,19 +15,18 @@ def setConfig(chute, old, cacheKeys, filepath):
     # chute may be None if a chute installation failed and we are backing out.
     # In that case, newconfigs should be an empty list, meaning there should be
     # nothing left of the chute in the configuration file after we are done.
-    if chute is not None:
+    if update.new is not None:
         for c in cacheKeys:
-            t = chute.getCache(c)
-            if(t):
-                newconfigs += t
+            t = update.cache_get(c)
+            if t is not None:
+                newconfigs.extend(t)
 
     # Get the chute name. At least one of chute or old should be valid.
-    chute_name = chute.name if chute is not None else old.name
+    chute_name = update.new.name if update.new is not None else update.old.name
 
     # Add comment to each config so we can differentiate between different
     # chute specific configs.
-    for e in newconfigs:
-        c, o = e
+    for c, o in newconfigs:
         c['comment'] = chute_name
 
     # Get the old configs from the file for this chute.

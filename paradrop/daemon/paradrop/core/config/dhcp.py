@@ -112,12 +112,12 @@ def setVirtDHCPSettings(update):
     """
     Takes a list of tuples (config, opts) and saves it to the dhcp config file.
     """
-    uciutils.setConfig(update.new, update.old,
+    uciutils.setConfig(update,
             cacheKeys=['virtDHCPSettings'],
             filepath=uci.getSystemPath("dhcp"))
 
 
 def revert_dhcp_settings(update):
-    uciutils.setConfig(update.old, update.new,
+    uciutils.setConfig(update,
             cacheKeys=['virtDHCPSettings'],
             filepath=uci.getSystemPath("dhcp"))
