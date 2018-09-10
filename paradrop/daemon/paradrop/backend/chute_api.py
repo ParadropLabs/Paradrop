@@ -10,6 +10,7 @@ import re
 import subprocess
 import tarfile
 import tempfile
+
 import yaml
 
 from autobahn.twisted.resource import WebSocketResource
@@ -164,19 +165,28 @@ class ChuteApi(object):
 
         result = []
         for chute in chutes:
-            service = chute.get_default_service()
-            container = ChuteContainer(service.get_container_name())
+            service_info = {}
+            for service in chute.get_services():
+                container_name = service.get_container_name()
+                container = ChuteContainer(container_name)
+
+                service_info[service.name] = {
+                    'allocation': allocation.get(container_name, None),
+                    'state': container.getStatus()
+                }
 
             # TODO Return information about all of the chute's services.
-            result.append({
+            chute_info = {
                 'name': chute.name,
                 'owner': chute.get_owner(),
-                'state': container.getStatus(),
+                'state': chute.state,
+                'services': service_info,
                 'version': getattr(chute, 'version', None),
-                'allocation': allocation.get(chute.name, None),
                 'environment': getattr(chute, 'environment', None),
                 'resources': getattr(chute, 'resources', None)
-            })
+            }
+
+            result.append(chute_info)
 
         return json.dumps(result, cls=ChuteEncoder)
 
@@ -264,8 +274,6 @@ class ChuteApi(object):
 
         try:
             chute_obj = ChuteStorage.chuteList[chute]
-            service = chute_obj.get_default_service()
-            container = ChuteContainer(service.get_container_name())
         except KeyError:
             request.setResponseCode(404)
             return "{}"
@@ -277,12 +285,22 @@ class ChuteApi(object):
         allocation = resource.computeResourceAllocation(
                 chuteStorage.getChuteList())
 
+        service_info = {}
+        for service in chute_obj.get_services():
+            container_name = service.get_container_name()
+            container = ChuteContainer(container_name)
+
+            service_info[service.name] = {
+                'allocation': allocation.get(container_name, None),
+                'state': container.getStatus()
+            }
+
         # TODO Return information about all of the chute's services.
         result = {
             'name': chute,
-            'state': container.getStatus(),
+            'state': chute_obj.state,
+            'services': service_info,
             'version': getattr(chute_obj, 'version', None),
-            'allocation': allocation.get(chute, None),
             'environment': getattr(chute_obj, 'environment', None),
             'resources': getattr(chute_obj, 'resources', None)
         }

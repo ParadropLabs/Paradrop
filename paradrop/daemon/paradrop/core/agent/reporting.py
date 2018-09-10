@@ -60,6 +60,18 @@ class StateReportBuilder(object):
         allocation = resource.computeResourceAllocation(chutes)
 
         for chute in chutes:
+            service_info = {}
+            for service in chute.get_services():
+                container_name = service.get_container_name()
+                container = ChuteContainer(container_name)
+
+                service_info[service.name] = {
+                    'allocation': allocation.get(container_name, None),
+                    'state': container.getStatus()
+                }
+
+            # Use the default service (e.g. "main") to report the chute's
+            # current state.
             service = chute.get_default_service()
             container = ChuteContainer(service.get_container_name())
 
@@ -67,9 +79,10 @@ class StateReportBuilder(object):
                 'name': chute.name,
                 'desired': chute.state,
                 'state': container.getStatus(),
+                'services': service_info,
                 'warning': None,
                 'version': getattr(chute, 'version', None),
-                'allocation': allocation.get(chute.name, None),
+                'allocation': None,  # deprecated
                 'environment': getattr(chute, 'environment', None),
                 'external': getattr(chute, 'external', None),
                 'resources': getattr(chute, 'resources', None)

@@ -128,6 +128,7 @@ def test_ChuteApi_get_chutes(ChuteStorage, ChuteContainer):
     chute = MagicMock()
     chute.environment = {}
     chute.name = "test"
+    chute.state = "running"
     chute.resources = {}
     chute.version = 5
     chute.get_owner.return_value = "paradrop"
@@ -226,6 +227,7 @@ def test_ChuteApi_get_chute(ChuteStorage, ChuteContainer):
 
     chute = MagicMock()
     chute.name = "test"
+    chute.state = "running"
     chute.version = 5
     chute.environment = {}
     chute.resources = {}
