@@ -27,6 +27,8 @@ def generatePlans(update):
             (dockerconfig.abortCreateVolumeDirs, ))
 
     # If the user specifies DHCP then we need to generate the config and store it to disk
+    update.plans.addPlans(plangraph.RUNTIME_GET_VIRT_DHCP, (dhcp.getVirtDHCPSettings, ))
+
     todoPlan = (dhcp.setVirtDHCPSettings, )
     abtPlan = (dhcp.revert_dhcp_settings, )
     update.plans.addPlans(plangraph.RUNTIME_SET_VIRT_DHCP, todoPlan, abtPlan)
