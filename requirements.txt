@@ -1,6 +1,6 @@
 appdirs==1.4.3
 arrow==0.10.0
-attrs==16.0.0
+attrs==18.2.0
 autobahn==0.15.0
 backports.ssl-match-hostname==3.5.0.1
 bcrypt==3.1.0

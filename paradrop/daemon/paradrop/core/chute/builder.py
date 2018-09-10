@@ -146,7 +146,7 @@ class SingleServiceChuteBuilder(ChuteBuilder):
             self.chute.web['service'] = "main"
 
     def create_services(self, spec):
-        service = Service(self.chute, "main")
+        service = Service(chute=self.chute, name="main")
 
         service.command = spec.get("command", None)
         service.image = spec.get("use", None)

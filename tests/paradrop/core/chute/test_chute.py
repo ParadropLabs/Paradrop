@@ -34,3 +34,6 @@ def test_Chute_create_specification():
     assert 'services' in spec
     assert 'state' in spec
     assert 'web' in spec
+
+    # Private field should not be present.
+    assert '_cache' not in spec

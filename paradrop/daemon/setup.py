@@ -9,7 +9,7 @@ setup(
     url="http://paradrop.org",
     packages=find_packages(),
     install_requires=[
-        'attrs==18.1.0',
+        'attrs==18.2.0',
         'autobahn==18.8.1',
         'bcrypt==3.1.4',
         'colorama==0.3.9',

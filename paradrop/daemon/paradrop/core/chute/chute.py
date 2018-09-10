@@ -3,11 +3,12 @@
 # Authors: The Paradrop Team
 ###################################################################
 
-import six
+import attr
 
 from paradrop.base.exceptions import ServiceNotFound
 
 
+@attr.s
 class Chute(object):
     """
     This Chute class provides the internal representation of a Paradrop chute.
@@ -19,6 +20,14 @@ class Chute(object):
     The Chute class has minimal external dependencies, e.g. no dependency on
     the Docker API. Chute objects should be immutable, since they describe a
     desired software state at a fixed point in time.
+
+    Args:
+        name (str): The name of the chute.
+        description (str): The human-friendly description of the chute.
+        state (str): Desired run state of the chute ("running", "stopped").
+        version (str): The version of the chute.
+        config (dict): Configuration settings for the chute.
+        environment (dict): Environment variables to set for all chute services.
     """
     STATE_INVALID = "invalid"
     STATE_DISABLED = "disabled"
@@ -26,54 +35,21 @@ class Chute(object):
     STATE_FROZEN = "frozen"
     STATE_STOPPED = "stopped"
 
-    def __init__(self,
-                 name=None,
-                 description=None,
-                 owner=None,
-                 state="running",
-                 version=None,
-                 environment=None,
-                 web=None,
-                 config=None):
-        """
-        Initialize a Chute object.
+    description = attr.ib(default=None)
+    name        = attr.ib(default=None)
+    owner       = attr.ib(default=None)
+    state       = attr.ib(default="running")
+    version     = attr.ib(default=None)
+    config      = attr.ib(default=attr.Factory(dict))
+    environment = attr.ib(default=attr.Factory(dict))
+    services    = attr.ib(default=attr.Factory(dict))
+    web         = attr.ib(default=attr.Factory(dict))
 
-        Args:
-            name (str): The name of the chute.
-            description (str): The human-friendly description of the chute.
-            state (str): Desired run state of the chute ("running", "stopped").
-            version (str): The version of the chute.
-            config (dict): Configuration settings for the chute.
-            environment (dict): Environment variables to set for all chute services.
-        """
-        self.name = name
-        self.description = description
-        self.owner = owner
-        self.state = state
-        self.version = version
-
-        if config is None:
-            self.config = {}
-        else:
-            self.config = config
-
-        self.services = {}
-
-        if environment is None:
-            self.environment = {}
-        else:
-            self.environment = environment
-
-        if web is None:
-            self.web = {}
-        else:
-            self.web = web
-
-        # The cache as a working storage of intermediate values has been moved
-        # to the update object. Here, we set the cache right before saving the
-        # chute to disk so that the values can be retrieved with the chute
-        # list.
-        self._cache = {}
+    # The cache as a working storage of intermediate values has been moved
+    # to the update object. Here, we set the cache right before saving the
+    # chute to disk so that the values can be retrieved with the chute
+    # list.
+    _cache      = attr.ib(default=attr.Factory(dict))
 
     def __repr__(self):
         return "<Chute {} - {}>".format(self.name, self.state)
@@ -189,21 +165,10 @@ class Chute(object):
         the Chute object. It should contain only primitive types, which can
         easily be serialized as JSON or YAML.
         """
-        services = {}
-        for name, service in six.iteritems(self.services):
-            services[name] = service.create_specification()
+        def no_privates(a, _):
+            return not a.name.startswith('_')
 
-        spec = {
-            "name": self.name,
-            "description": self.description,
-            "owner": self.owner,
-            "state": self.state,
-            "version": self.version,
-            "services": services,
-            "environment": self.environment.copy(),
-            "web": self.web.copy()
-        }
-        return spec
+        return attr.asdict(self, filter=no_privates)
 
     def get_default_service(self):
         """

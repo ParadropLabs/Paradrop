@@ -393,8 +393,9 @@ def prepare_port_bindings(service):
     # whether there is a host port binding associated with it.
     # If not, we will add blank one so that Docker dynamically
     # assigns a port in the host to forward to the container.
-    web_port = service.chute.web.get("port", None)
-    web_service = service.chute.web.get("service", None)
+    chute = service.get_chute()
+    web_port = chute.web.get("port", None)
+    web_service = chute.web.get("service", None)
     if web_port is not None and web_service == service.name:
         # The port could appear in multiple formats, e.g. 80, 80/tcp.
         # If any of them are present, we do not need to add anything.

@@ -168,8 +168,7 @@ def test_prepare_port_bindings(ChuteContainer):
         "port": 80
     }
 
-    service = Service(name="main")
-    service.chute = chute
+    service = Service(name="main", chute=chute)
     chute.add_service(service)
 
     container = MagicMock()

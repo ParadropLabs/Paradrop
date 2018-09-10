@@ -1,3 +1,7 @@
+import attr
+
+
+@attr.s
 class User(object):
     role_priorities = {
         "guest": 0,
@@ -7,10 +11,10 @@ class User(object):
         "owner": 4
     }
 
-    def __init__(self, name, domain, role="user"):
-        self.name = name
-        self.domain = domain
-        self.role = role
+    # User attributes
+    name = attr.ib()
+    domain = attr.ib()
+    role = attr.ib(default="user")
 
     def __eq__(self, other):
         if isinstance(other, User):
