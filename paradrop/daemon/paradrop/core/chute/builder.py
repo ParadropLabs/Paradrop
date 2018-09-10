@@ -181,6 +181,7 @@ class SingleServiceChuteBuilder(ChuteBuilder):
                 build[key] = config[key]
 
         service.build = build
+        service.environment = config.get("environment", {})
         service.interfaces = interfaces
         service.requests = requests
 
