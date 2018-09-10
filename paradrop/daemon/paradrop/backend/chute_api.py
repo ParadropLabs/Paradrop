@@ -175,7 +175,6 @@ class ChuteApi(object):
                     'state': container.getStatus()
                 }
 
-            # TODO Return information about all of the chute's services.
             chute_info = {
                 'name': chute.name,
                 'owner': chute.get_owner(),
@@ -295,7 +294,6 @@ class ChuteApi(object):
                 'state': container.getStatus()
             }
 
-        # TODO Return information about all of the chute's services.
         result = {
             'name': chute,
             'state': chute_obj.state,

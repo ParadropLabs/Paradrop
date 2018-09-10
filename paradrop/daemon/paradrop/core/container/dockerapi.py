@@ -524,8 +524,7 @@ def setup_net_interfaces(update):
     borrowedInterfaces = []
 
     for iface in interfaces:
-        itype = iface.get('type', 'wifi')
-        mode = iface.get('mode', 'ap')
+        itype = iface.get('type', 'wifi-ap')
 
         service = update.new.get_service(iface['service'])
 
@@ -533,7 +532,7 @@ def setup_net_interfaces(update):
         container = ChuteContainer(service.get_container_name())
         pid = container.getPID()
 
-        if itype == 'lan' or itype == 'vlan' or (itype == 'wifi' and mode == 'ap'):
+        if itype == 'lan' or itype == 'vlan' or itype == 'wifi-ap':
             IP = iface['ipaddrWithPrefix']
             internalIntf = iface['internalIntf']
             externalIntf = iface['externalIntf']
@@ -568,7 +567,7 @@ def setup_net_interfaces(update):
             cmd = ['ip', 'link', 'set', internalIntf, 'up']
             call_in_netns(service, env, cmd)
 
-        elif itype == 'wifi' and mode == 'monitor':
+        elif itype == 'wifi-monitor':
             internalIntf = iface['internalIntf']
             externalIntf = iface['externalIntf']
             phyname = iface['phy']
@@ -606,6 +605,9 @@ def setup_net_interfaces(update):
                 'internal': internalIntf,
                 'external': externalIntf
             })
+
+        else:
+            raise Exception("Unrecognized interface type: {}".format(itype))
 
     update.cache_set('borrowedInterfaces', borrowedInterfaces)
 
