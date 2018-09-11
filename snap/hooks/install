@@ -28,7 +28,8 @@ fi
 #
 # It is better to call snapctl once with all of the settings rather than
 # multiple times. That way only triggers our configure hook once.
-snapctl set base.concurrent-builds=true \
+snapctl set base.allow-monitor-mode=false \
+            base.concurrent-builds=true \
             base.debug-mode=false \
             base.dynamic-network-pool=10.128.0.0/9 \
             base.local-domain=paradrop.io

@@ -3,7 +3,7 @@ import ipaddress
 import six
 
 from paradrop.base.output import out
-from paradrop.base import pdutils
+from paradrop.base import pdutils, settings
 from paradrop.lib.utils import datastruct, uci
 
 from . import uciutils
@@ -518,6 +518,9 @@ def getOSNetworkConfig(update):
         config = {'type': 'interface', 'name': iface['externalIntf']}
 
         if iface['type'] == "wifi-monitor":
+            if not settings.ALLOW_MONITOR_MODE:
+                raise Exception("Monitor mode interfaces are disallowed by the system settings.")
+
             # Monitor mode is a special case - do not configure an IP address
             # for it.
             options = {'proto': 'none', 'ifname': iface['externalIntf']}

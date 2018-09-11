@@ -292,3 +292,30 @@ def test_select_chute_subnet_pool(ifaddresses):
     host_config['system']['chuteSubnetPool'] = '192.168.128.0/17'
     pool = network.select_chute_subnet_pool(host_config)
     assert pool == '192.168.128.0/17'
+
+
+@patch("paradrop.core.config.network.settings")
+def test_getOSNetworkConfig(settings):
+    interfaces = []
+    interfaces.append({
+        'type': 'wifi-monitor',
+        'externalIntf': 'wlan0'
+    })
+    interfaces.append({
+        'type': 'wifi-ap',
+        'externalIpaddr': '192.0.2.1',
+        'netmask': '255.255.255.0',
+        'externalIntf': 'wlan1'
+    })
+
+    update = MagicMock()
+    update.cache_get.return_value = interfaces
+
+    # Test with monitor mode not allowed, should raise an exception.
+    settings.ALLOW_MONITOR_MODE = False
+    assert_raises(Exception, network.getOSNetworkConfig, update)
+
+    # Test with monitor mode allowed.
+    settings.ALLOW_MONITOR_MODE = True
+    network.getOSNetworkConfig(update)
+    assert update.cache_set.called_once

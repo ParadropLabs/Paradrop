@@ -25,6 +25,7 @@ SETTINGS_FILE = "settings.ini"
 #   ...
 #
 SETTINGS = [
+    ("base.allow-monitor-mode",     "base",     "allow_monitor_mode"),
     ("base.concurrent-builds",      "base",     "concurrent_builds"),
     ("base.debug-mode",             "base",     "debug_mode"),
     ("base.dynamic-network-pool",   "base",     "dynamic_network_pool"),

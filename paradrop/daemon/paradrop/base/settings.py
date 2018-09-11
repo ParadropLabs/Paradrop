@@ -153,6 +153,13 @@ AIRSHARK_INSTALL_DIR = "/snap/airshark/current"
 # access, but the interleaving of updates could cause subtle issues.
 CONCURRENT_BUILDS = True
 
+# Boolean flag to enable/disable monitor mode interfaces for chutes. This is by
+# default disabled because monitor mode interfaces are dangerous.  They enable
+# malicious chutes to record network traffic, and furthermore, the feature
+# itself is experimental. There may be issues with kernel drivers or our
+# implementation that cause system instability.
+ALLOW_MONITOR_MODE = False
+
 ###############################################################################
 # Helper functions
 ###############################################################################
