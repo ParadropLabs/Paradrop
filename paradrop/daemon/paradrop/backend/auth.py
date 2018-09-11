@@ -107,7 +107,8 @@ def requires_auth(func):
     @functools.wraps(func)
     def decorated(self, request, *args, **kwargs):
         if not check_auth(request, self.password_manager, self.token_manager):
-            out.warn('Failed to authenticate')
+            out.info('HTTP {} {} {} {}'.format(request.getClientIP(),
+                request.method, request.path, 401))
             request.setResponseCode(401)
             request.setHeader("WWW-Authenticate", "Basic realm=\"Login Required\"")
             return

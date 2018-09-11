@@ -3,15 +3,13 @@ import ipaddress
 import six
 
 from paradrop.base.output import out
-from paradrop.base import pdutils, settings
+from paradrop.base import constants, pdutils, settings
 from paradrop.lib.utils import datastruct, uci
 
 from . import uciutils
 
 # TODO: Instead of being a constant, look at device capabilities.
 MAX_AP_INTERFACES = 8
-
-MAX_INTERFACE_NAME_LEN = 15
 
 # We use a 4-digit hex string, which gives us this maximum.
 MAX_INTERFACE_NUMBERS = 65536
@@ -211,7 +209,7 @@ def getNetworkConfigWifi(update, name, cfg, iface):
 
     # Generate a name for the new interface in the host.
     iface['externalIntf'] = chooseExternalIntf(update, iface)
-    if len(iface['externalIntf']) > MAX_INTERFACE_NAME_LEN:
+    if len(iface['externalIntf']) > constants.MAX_INTERFACE_NAME_LEN:
         out.warn("Interface name ({}) is too long\n".format(
             iface['externalIntf']))
         raise Exception("Interface name is too long")

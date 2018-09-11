@@ -43,6 +43,10 @@ BASE_SETTINGS_SECTION = "base"
 # added.
 DAEMON_FEATURES = "audio hostapd-control"
 
+# Character limit for network interface names. The limit is imposed by the
+# operating system.
+MAX_INTERFACE_NAME_LEN = 15
+
 # This is not actually a chute, but a reserved name that is used to mark
 # settings and changes that belong to the system rather than a chute.
 RESERVED_CHUTE_NAME = "__PARADROP__"
