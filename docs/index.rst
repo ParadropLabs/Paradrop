@@ -9,8 +9,8 @@
 
    overview/index
    architecture/index
-   manual/index
    device/index
+   manual/index
    application/index
    faq
    development/index
@@ -22,7 +22,7 @@
 ParaDrop - Enabling Edge Computing at the Extreme Edge
 =======================================================
 
-ParaDrop is an open source edge computing platform developed by the `WiNGS Lab <http://www.cs.wisc.edu/content/wings-lab-uw>`_
+ParaDrop is an open source edge computing platform developed by the `WiNGS Lab <https://wingslab.cs.wisc.edu/>`_
 at the University of Wisconsin-Madison.
 We built the ParaDrop platform with WiFi routers, so that we can "paradrop" services from the cloud
 to the extreme wireless edge - just one hop from user's mobile devices, data sources, and actuators of IoT applications.

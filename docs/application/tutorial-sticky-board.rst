@@ -253,10 +253,19 @@ Preparing the Chute
 
 Create a file called paradrop.yaml with the following contents::
 
+    name: sticky-board
+    description: Run a local bulletin board where guests can post images.
     version: 1
-    type: light
-    use: node
-    command: node index.js
+
+    services:
+      main:
+        type: light
+        use: node
+        command: node index.js
+
+    web:
+      service: main
+      port: 3000
 
 This file tells ParaDrop a few things about how to run your code
 on a ParaDrop gateway.

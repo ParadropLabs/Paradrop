@@ -5,18 +5,19 @@ This section describes some of the important architectural features of
 ParaDrop.  Our discussion will cover three major aspects of the ParaDrop
 design.
 
-- The ParaDrop router
+- The ParaDrop WiFi router
 - The ParaDrop cloud controller
 - The ParaDrop API
 
-ParaDrop router
+ParaDrop WiFi router
 --------------------
 
-The ParaDrop router is the key part of the ParaDrop platform.  In addition to
-being a WiFi access point, it provides the substrate on which edge computing
-services can be deployed.  We have built the reference ParaDrop routers based
-on the `PC Engines APU <https://pcengines.ch/apu.htm>`_ and APU2 single board
-computer.  The image below shows a router built with a PC Engines APU board.
+The ParaDrop router is the key part of the ParaDrop platform.  In addition
+to being a WiFi access point, it provides the substrate on which edge
+computing services can be deployed.  We have built the reference ParaDrop
+routers based on the `PC Engines APU2 <https://pcengines.ch/apu2.htm>`_
+single board computer.  The image below shows a router built with a PC
+Engines APU board.
 
 .. image:: ../images/paradrop_router.png
    :align: center
@@ -32,12 +33,20 @@ ParaDrop cloud controller
 The ParaDrop cloud controller is hosted at `paradrop.org
 <https://paradrop.org>`_ and provides a central location for tracking and
 managing ParaDrop routers as well as a Chute Store for software distribution.
-Users can sign up for a free account.  For end users and administrators, it
-provides a dashboard to configure and monitor the ParaDrop routers under their
-control.  The dashboard enables users to manage the services (called *chutes*)
-running on their routers.  For developers, it provides the interface through
-which applications can be registered as ParaDrop chutes available for
-installation on routers.
+Users and developers can sign up for a free account.  For end users
+and administrators, it provides a dashboard to configure and monitor
+the ParaDrop routers under their control.  The dashboard enables users
+to manage the services (called *chutes*) running on their routers.
+For developers, it provides the interface through which applications can
+be registered as ParaDrop chutes available for installation on routers.
+
+Due to the highly distributed nature of edge computing, the central
+cloud controller is not strictly required for edge applications to work.
+Each ParaDrop edge node has a publicly-documented local API and can be
+directly managed using the `pdtools <https://pypi.org/project/pdtools/>`_
+command line utility. Considering this, we have elected not to release
+the source code for the cloud controller at this time. If this would
+have an impact on your decision to use ParaDrop, please contact us.
 
 ParaDrop API
 ----------------

@@ -1,11 +1,13 @@
 Developing Light Chutes
 =============================
 
-Light chutes build and install the same way as normal chutes and can do
-many of the same things.  However, they make use of prebuilt base images
-that are optimized for different programming languages.
+Light chutes build and install the same way as normal chutes and can
+do many of the same things.  However, they make use of prebuilt base
+images that are optimized for different programming languages. We offer
+light chutes as a convenience for projects that only rely on one of the
+supported languages and do not need to install other system packages.
 
-Light chutes offer these advantages over normal chutes.
+Light chutes offer a few advantages over normal chutes.
 
 * **Safety:** Light chutes have stronger confinement properties, so
   you can feel safer installing a light chute written by a third party
@@ -47,33 +49,41 @@ The paradrop.yaml file contains information that ParaDrop needs
 in order to run the chute.  Here are the contents for the hello-world
 example::
 
-    version: 1
+    name: node-hello-world
+    description: This chute demonstrates a simple web service.
+    source:
+      type: git
+      url: https://github.com/ParadropLabs/node-hello-world
     type: light
     use: node
     command: node index.js
+    config:
+      web:
+        port: 3000
 
-All of these fields are required and very simple to use.
-
-**version: 1**
-
-This specifies the version of the paradrop.yaml schema in order to allow
-future changes without breaking existing chutes.  You should specify
-version *1*.
+Most of these fields are self-explanatory and covered in the
+:doc:`introduction` section.
 
 **type: light**
 
-This indicates that we are building a *light* chute.
+This indicates that we are building a *light* chute as opposed
+to a *normal* chute, which would require a Dockerfile be present.
 
 **use: node**
 
 This indicates that we are using the *node* base image for this
 chute.  You should choose the base image appropriate for your
-project.  Supported images are: *node* and *python2*.
+project.  Examples of supported images are *node* and *python2*.
+
+This is handled in an interesting way by ParaDrop. ParaDrop does
+not use one single *node* image. Rather, the execution engine
+considers the architecture of the underlying hardware and uses
+a *node* image built for that architecture.
 
 **command: node index.js**
 
 This line indicates the command for starting your application.  You can
-either specified it this way, as a string with spaces between the
+either specify it this way, as a string with spaces between the
 parameters, or you can use a list of strings.  The latter format would
 be particularly useful if your parameters include spaces.  Here is an
 example::

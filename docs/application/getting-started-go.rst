@@ -12,7 +12,7 @@ or newer).
 
 ::
 
-    pip install pdtools~=0.11.2
+    pip install pdtools>=0.11.2
 
 Set up
 ------

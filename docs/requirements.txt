@@ -27,6 +27,7 @@ ipaddress==1.0.16
 Jinja2==2.10
 jsonpatch==1.15
 jsonpointer==1.10
+jsonschema==2.6.0
 klein==16.12.0
 MarkupSafe==1.0
 mock==2.0.0

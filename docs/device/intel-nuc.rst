@@ -26,7 +26,7 @@ Hardware and software requirements
 * An `Ubuntu Desktop 16.04.1 LTS image
   <http://releases.ubuntu.com/16.04.1/ubuntu-16.04.1-desktop-amd64.iso>`_.
 * A `ParaDrop disk image
-  <https://paradrop.org/release/2017-01-09/paradrop_router.img.gz>`_.
+  <https://paradrop.org/release/latest/paradrop-amd64.img.gz>`_.
 
 Preparing for installation
 --------------------------
@@ -69,7 +69,8 @@ First boot
    attached to your account.  Otherwise, if you do not have an Ubuntu One
    account or do not wish to use it, you may enter "info@paradrop.io" as your
    email address.  You will still be able to manage your router and install
-   chutes through paradrop.org either way.
+   chutes through paradrop.org either way, but using our email address
+   ensures consistency with the instructions.
 5. Take note of the IP address displayed on the screen.  You will need this
    address for the next step, activating the router.  For example, the message
    below indicates that the router has IP address 10.42.0.162. ::

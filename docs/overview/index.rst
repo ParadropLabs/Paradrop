@@ -32,10 +32,12 @@ responsiveness and user experience as well as conserve network bandwidth.
 Where is the vantage point for edge computing?
 ------------------------------------------------
 
-There are various options for placing edge computing nodes within the network.
-ParaDrop takes the approach of placing the edge computing substrate within the
-WiFi access points (APs). The WiFi AP is uniquely suitable for edge computing
-for multiple reasons:
+There are various options for placing edge computing nodes within the
+network.  Hosting options include dedicated compute nodes in the home
+or office or on server racks within the ISP network.  ParaDrop takes the
+approach of placing the edge computing substrate within the WiFi access
+points (APs). The WiFi AP is uniquely suitable for edge computing for
+multiple reasons:
 
 - WiFi APs are ubiquitous in homes and businesses and inexpensive to replace.
 - WiFi APs are always on and available.

@@ -46,7 +46,19 @@ Monitor-mode Interface Configuration (Experimental)
 
 A monitor-mode interface enables a chute to observe all detected WiFi
 traffic with RadioTap headers. A monitor-mode interface is created by
-setting *type=monitor*.
+setting *type=wifi-monitor*.
+
+Monitor-mode interfaces are disallowed by default but can be enabled if
+you have administrative access to a node. This is because monitor-mode
+interfaces are potentially dangerous. They enable malicious chutes
+to record network traffic, and furthermore, the feature itself
+is experimental.  There may be issues with kernel drivers or our
+implementation that cause system instability.
+
+If you understand the risks and wish to enable monitor-mode interfaces,
+connect to your node using SSH and run the following command.::
+
+    snap set paradrop-daemon base.allow-monitor-mode=true
 
 VLAN Interface Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

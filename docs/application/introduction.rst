@@ -30,12 +30,52 @@ Our hello-world chute is a git project with the following files::
     chute/index.html
     Dockerfile
     README.md
+    paradrop.yaml
 
-The top-level contains a README and a special file called "Dockerfile",
-which will be discussed below.  As a convention, we place files that
-will be used by the running application in a subdirectory called "chute".
-This is not necessary but helps keep the project organized.  Valid
-alternatives include "src" or "app".
+The top-level contains a README, a Dockerfile, and a special file called
+"paradrop.yaml", which will be discussed below.  As a convention,
+we place files that will be used by the running application in a
+subdirectory called "chute".  This is not necessary but helps keep the
+project organized.  Valid alternatives include "src" or "app".
+
+paradrop.yaml
+-----------------------
+
+The paradrop.yaml file, which is unique to the ParaDrop platform, contains
+important metadata about the project. ParaDrop uses this information
+to run the chute on an edge node and also determine what to present to
+the user.
+
+Here is an example from the hello-world chute::
+
+    name: hello-world
+    description: This project demonstrates a very simple...
+    version: 1
+    type: normal
+    config:
+      web:
+        port: 80
+
+This example is fairly self-explanatory. It shows a name, description,
+and version for the chute, which will be shown on interfaces that present
+the running software on the node.
+
+This example is based on an older, more limited syntax, which can only
+run one service per chute. For a more complete example and documentation,
+refer to :doc:`../api/chute-configuration`.
+
+**type: normal**
+
+This declaration indicates the type of the chute, which tells ParaDrop
+how to build and install it. *Normal* chutes build from a Dockerfile, which
+we see is present in this project. This is in contrast with *light* chutes
+described in :doc:`lightchutes`.
+
+**port: 80**
+
+This declaration indicates that the chute runs a web server on port 80.
+ParaDrop will use this information to expose the service externally
+to users.
 
 Dockerfile
 -----------------------

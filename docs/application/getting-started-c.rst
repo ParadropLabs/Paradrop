@@ -11,7 +11,7 @@ Please make sure you have pdtools v0.11.2 or newer installed.
 
 ::
 
-    pip install pdtools~=0.11.2
+    pip install pdtools>=0.11.2
 
 Set up
 ------

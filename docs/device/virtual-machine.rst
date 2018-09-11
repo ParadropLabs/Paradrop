@@ -37,18 +37,20 @@ This sets up a user account on the router called `paradrop` and prepares the
 router to receive software upgrades.  Allow the router 1-2 minutes to complete
 its setup before proceeding.
 
-Please note: there is no username/password to log into the system console.
-Please follow the steps in the next sections to access your router through
-paradrop.org or through SSH.
+Please note: other than the first boot setup, the system console is not
+interactive. There is no username/password to log in through the system
+console. Instead, please follow the steps in the next sections to access
+your router through paradrop.org or through SSH.
 
 
 Connecting to your Router with SSH
 ----------------------------------
 
-The router is running an SSH server, which is forwarded from localhost port
-8022 with the kvm command above.  The router does not accept password login by
-default, so you will need to have an RSA key pair available, and you can use
-the router configuration page to upload the public key and authorize it.
+The router is running an SSH server, which we forwarded from localhost port
+8022 with the options to the kvm command above.  The router does not
+accept password login by default, so you will need to have an RSA key
+pair available, and you can use the router configuration page to upload
+the public key and authorize it.
 
 1. Open tools page on the router (`http://localhost:8080/#!/tools
    <http://localhost:8080/#!/tools>`_). The page might prompt you for
@@ -63,8 +65,8 @@ the router configuration page to upload the public key and authorize it.
    command `ssh -p 8022 paradrop@localhost`.
 
 
-Managing Virtual Machines Using virt-manager
---------------------------------------------
+Alternative Setup Using virt-manager
+------------------------------------
 
 Even though many developers prefer command line tools to manage virtual
 machines, some developers likes to use GUI tools.  In addition, GUI tools are
@@ -101,7 +103,7 @@ that, we need to disable the WiFi device for Host.  We can do that with
 
   rflist list
 
-Suppose the number of the WiFi device we want to assign to the ParaDrop VM is
+Suppose the index of the WiFi device we want to assign to the ParaDrop VM is
 2, then run below command to disable it for host OS::
 
   rflist block 2

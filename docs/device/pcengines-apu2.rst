@@ -25,8 +25,8 @@ reliable, but you may also prefer a larger SD card.
 Preparing the SD card
 ---------------------
 
-1. Download the latest build of the Paradrop disk image.
-   https://paradrop.org/release/|version|/paradrop-amd64.img.xz
+1. Download the latest build of the Paradrop
+   `disk image <https://paradrop.org/release/latest/paradrop-amd64.img.xz>`_
 2. Insert the SD card into the machine you used to download the image and find
    the device node for the card.  This is often "/dev/sdb", but please make
    sure, as the next command will overwrite the contents of whatever device you
@@ -51,7 +51,8 @@ and follow the instructions on the console to configure Ubuntu Core.  If you
 have an Ubuntu One account, you can enter the email address here.  For
 consistency with the rest of the instructions, we recommend using the address
 `info@paradrop.io`.  You will be able to manage your router and install chutes
-through paradrop.org either way.
+through paradrop.org either way, but using our email address ensures consistency
+with the instructions.
 
 Take note of the IP address displayed in the console.  You will need
 this address for the next step, activating the router.  For example,
