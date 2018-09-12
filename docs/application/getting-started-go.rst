@@ -7,12 +7,12 @@ using Go.
 Prerequisites
 -------------
 
-Make sure you have Go installed as well as ParaDrop pdtools (v0.11.2
+Make sure you have Go installed as well as ParaDrop pdtools (v0.12.0
 or newer).
 
 ::
 
-    pip install pdtools>=0.11.2
+    pip install pdtools~=0.12
 
 Set up
 ------
@@ -50,12 +50,14 @@ The end result should be a paradrop.yaml file similar to the following.
 
 ::
 
-    command: app
-    config: {}
     description: Hello World chute for ParaDrop using Go.
     name: go-hello-world
-    type: light
-    use: go
+    services:
+      main:
+        command: app
+        image: go
+        source: .
+        type: light
     version: 1
 
 Develop the Application
@@ -99,7 +101,7 @@ following command to alter the configuration file.
 
 ::
 
-    python -m pdtools chute set config.web.port 8000
+    python -m pdtools chute enable-web-service 8000
 
 After that, you can continue developing the chute and install it
 on a ParaDrop node.

@@ -8,11 +8,11 @@ Prerequisites
 -------------
 
 Make sure you have Node.js (v6 or newer) installed as well as ParaDrop
-pdtools (v0.11.2 or newer).
+pdtools (v0.12.0 or newer).
 
 ::
 
-    pip install pdtools>=0.11.2
+    pip install pdtools~=0.12
 
 Set up
 ------
@@ -50,12 +50,14 @@ The end result should be a paradrop.yaml file similar to the following.
 
 ::
 
-    command: node index.js
-    config: {}
     description: Hello World chute for ParaDrop using Node.js.
     name: node-hello-world
-    type: light
-    use: node
+    services:
+      main:
+        command: node index.js
+        image: node
+        source: .
+        type: light
     version: 1
 
 The ``pdtools chute init`` command will also create a package.json file
@@ -111,7 +113,7 @@ following command to alter the configuration file.
 
 ::
 
-    python -m pdtools chute set config.web.port 3000
+    python -m pdtools chute enable-web-service 3000
 
 After that, you can continue developing the chute and install it
 on a ParaDrop node.

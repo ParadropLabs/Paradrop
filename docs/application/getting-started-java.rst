@@ -8,11 +8,11 @@ Prerequisites
 -------------
 
 Make sure you have Java 1.8+, Maven 3.0+, as well as ParaDrop pdtools
-(v0.11.2 or newer).
+(v0.12.0 or newer).
 
 ::
 
-    pip install pdtools>=0.11.2
+    pip install pdtools~=0.12
 
 Set up
 ------
@@ -50,12 +50,14 @@ The end result should be a paradrop.yaml file similar to the following.
 
 ::
 
-    command: java -cp target/java-hello-world-1.0-SNAPSHOT.jar org.paradrop.app.App
-    config: {}
     description: Hello World chute for ParaDrop using Java.
     name: java-hello-world
-    type: light
-    use: maven
+    services:
+      main:
+        command: java -cp target/java-hello-world-1.0-SNAPSHOT.jar org.paradrop.app.App
+        image: maven
+        source: .
+        type: light
     version: 1
 
 Develop the Application
@@ -114,7 +116,7 @@ following command to alter the configuration file.
 
 ::
 
-    python -m pdtools chute set config.web.port 8000
+    python -m pdtools chute enable-web-service 8000
 
 After that, you can continue developing the chute and install it
 on a ParaDrop node.

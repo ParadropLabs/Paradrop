@@ -7,11 +7,11 @@ using C and the microhttpd library.
 Prerequisites
 -------------
 
-Please make sure you have pdtools v0.11.2 or newer installed.
+Please make sure you have pdtools v0.12.0 or newer installed.
 
 ::
 
-    pip install pdtools>=0.11.2
+    pip install pdtools~=0.12
 
 Set up
 ------
@@ -47,10 +47,12 @@ The end result should be a paradrop.yaml file similar to the following.
 
 ::
 
-    config: {}
     description: Hello World chute for ParaDrop using C.
     name: c-hello-world
-    type: normal
+    services:
+      main:
+        source: .
+        type: normal
     version: 1
 
 Develop the Application
@@ -167,7 +169,7 @@ following command to alter the configuration file.
 
 ::
 
-    python -m pdtools chute set config.web.port 8888
+    python -m pdtools chute enable-web-service 8888
 
 After that, you can continue developing the chute and install it
 on a ParaDrop node.

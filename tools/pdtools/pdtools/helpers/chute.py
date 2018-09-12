@@ -1,3 +1,4 @@
+import os
 import re
 
 from six.moves import input
@@ -19,10 +20,14 @@ def get_name():
     print("This name will be used on the router status page and chute store.")
     print("Please use only lowercase letters, numbers, and hypens.")
     print("")
+
+    # Guess the project name based on the directory we are in.
+    default_name = os.path.basename(os.getcwd())
+
     while True:
-        name = input("name: ")
+        name = input("name [{}]: ".format(default_name))
         if len(name) == 0:
-            continue
+            name = default_name
 
         match = re.match("[a-z][a-z0-9\-]*", name)
         if match is None:
@@ -126,6 +131,29 @@ def get_command(name="my-app", use=None):
 
 
 def build_chute():
+    main = {}
+
+    chute = {
+        'version': 1,
+        'services': {
+            'main': main
+        }
+    }
+
+    chute['name'] = get_name()
+    chute['description'] = get_description()
+
+    main['type'] = get_chute_type()
+    main['source'] = "."
+
+    if main['type'] == "light":
+        main['image'] = get_base_name()
+        main['command'] = get_command(name=chute['name'], use=main['image'])
+
+    return chute
+
+
+def build_legacy_chute():
     chute = {
         'version': 1,
         'config': {}

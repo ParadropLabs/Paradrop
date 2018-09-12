@@ -8,11 +8,11 @@ Prerequisites
 -------------
 
 Make sure you have Python 2 installed as well as ParaDrop
-pdtools (v0.11.2 or newer).
+pdtools (v0.12.0 or newer).
 
 ::
 
-    pip install pdtools>=0.11.2
+    pip install pdtools~=0.12
 
 Set up
 ------
@@ -50,12 +50,14 @@ The end result should be a paradrop.yaml file similar to the following.
 
 ::
 
-    command: python2 -u main.py
-    config: {}
     description: Hello World chute for ParaDrop using Python.
     name: python-hello-world
-    type: light
-    use: python2
+    services:
+      main:
+        command: python2 -u main.py
+        image: python2
+        source: .
+        type: light
     version: 1
 
 Install Dependencies
@@ -121,7 +123,7 @@ following command to alter the configuration file.
 
 ::
 
-    python -m pdtools chute set config.web.port 5000
+    python -m pdtools chute enable-web-service 5000
 
 After that, you can continue developing the chute and install it
 on a ParaDrop node.

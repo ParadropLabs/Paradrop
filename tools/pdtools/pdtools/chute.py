@@ -7,7 +7,7 @@ import git
 import jsonschema
 import yaml
 
-from .helpers.chute import build_chute
+from .helpers.chute import build_chute, build_legacy_chute
 from .util import update_object
 
 
@@ -56,6 +56,19 @@ def chute_resolve_source(source, config):
 
     else:
         raise Exception("Invalid source type {}".format(source_type))
+
+
+def value_setter(path, value):
+    def set_value(parent, key, created):
+        if created:
+            click.echo("Creating new field {} = {}".format(path, value))
+        else:
+            current = parent[key]
+            click.echo("Changing {} from {} to {}".format(path, current, value))
+
+        parent[key] = value
+
+    return set_value
 
 
 @click.group('chute')
@@ -124,6 +137,47 @@ def add_wifi_ap(ctx, essid, password, force):
         yaml.safe_dump(chute, output, default_flow_style=False)
 
 
+@root.command('enable-web-service')
+@click.argument('port', type=int)
+@click.option('--service', '-s', default='main',
+        help="Name of service in chute which runs the web server.")
+@click.pass_context
+def enable_web_service(ctx, port, service):
+    """
+    Configure chute for providing a web service.
+
+    This command adds information to the paradrop.yaml file about a web
+    server that runs as part of the chute.  PORT should be the port that
+    the chute code listens on.  Paradrop will forward external requests
+    to this port.  If the chute runs multiple services, then SERVICE
+    should be used to indicate the name of the service that runs the
+    web server. For most chutes, the default "main" will be appropriate.
+    """
+    if not os.path.exists('paradrop.yaml'):
+        click.echo("Error: paradrop.yaml was not found in the working directory.")
+        return
+
+    with open('paradrop.yaml', 'r') as source:
+        chute = yaml.safe_load(source)
+
+    # Empty paradrop.yaml file?
+    if chute is None:
+        chute = {}
+
+    if 'services' not in chute or 'config' in chute:
+        click.echo("This command only works with multi-service paradrop.yaml files.")
+        return
+
+    if service not in chute['services']:
+        click.echo("Warning: service {} is not defined in paradrop.yaml.".format(service))
+
+    update_object(chute, "web.port", value_setter("web.port", port))
+    update_object(chute, "web.service", value_setter("web.service", service))
+
+    with open('paradrop.yaml', 'w') as output:
+        yaml.safe_dump(chute, output, default_flow_style=False)
+
+
 @root.command('export-configuration')
 @click.option('--format', '-f', default='json',
         help="Format (json or yaml)")
@@ -167,18 +221,26 @@ def export_configuration(ctx, format):
 
 
 @root.command('initialize')
+@click.option('--legacy', default=False, is_flag=True,
+        help='Create a single-service chute using older syntax.')
 @click.pass_context
-def initialize(ctx):
+def initialize(ctx, legacy):
     """
     Interactively create a paradrop.yaml file.
     """
-    chute = build_chute()
+    if legacy:
+        chute = build_legacy_chute()
+        using = chute.get('use', None)
+    else:
+        chute = build_chute()
+        using = chute['services']['main'].get('image', None)
+
     with open("paradrop.yaml", "w") as output:
         yaml.safe_dump(chute, output, default_flow_style=False)
 
     # If this is a node.js chute, generate a package.json file from the
     # information that the user provided.
-    if chute.get('use', None) == 'node':
+    if using == 'node':
         if not os.path.isfile('package.json'):
             data = {
                 'name': chute['name'],
@@ -218,16 +280,7 @@ def set_config(ctx, path, value):
     # other structures.
     value = yaml.safe_load(value)
 
-    def set_value(parent, key, created):
-        if created:
-            click.echo("Creating new field {} = {}".format(path, value))
-        else:
-            current = parent[key]
-            click.echo("Changing {} from {} to {}".format(path, current, value))
-
-        parent[key] = value
-
-    update_object(chute, path, set_value)
+    update_object(chute, path, value_setter(path, value))
 
     with open('paradrop.yaml', 'w') as output:
         yaml.safe_dump(chute, output, default_flow_style=False)
