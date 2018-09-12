@@ -165,7 +165,10 @@ class AuthenticatedClient(object):
                 if res.status_code == 204:
                     return None
                 else:
-                    return res.json()
+                    try:
+                        return res.json()
+                    except Exception:
+                        return None
 
     def ws_request(self, url, headers=None, **kwargs):
         if self.debug:

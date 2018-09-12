@@ -111,7 +111,13 @@ def list_chutes(ctx):
     if len(result) > 0:
         click.echo("Name                             Ver Description")
     for chute in sorted(result, key=operator.itemgetter('name')):
-        click.echo("{name:32s} {current_version:3d} {description}".format(**chute))
+        # Show the summary if available. This is intended to be
+        # a shorter description than the description field.
+        summary = chute.get('summary', None)
+        if summary is None:
+            summary = chute.get('description', '')
+        click.echo("{:32s} {:3d} {}".format(chute['name'],
+            chute['current_version'], summary))
     return result
 
 

@@ -21,8 +21,9 @@ def root(ctx):
 
 @root.command('claim-node')
 @click.argument('token')
+@click.option('--name', '-n', default=None, help='Name of the node')
 @click.pass_context
-def claim_node(ctx, token):
+def claim_node(ctx, token, name):
     """
     Take ownership of a node by using a claim token.
 
@@ -30,7 +31,7 @@ def claim_node(ctx, token):
     configured when setting the node's status as orphaned.
     """
     client = ControllerClient()
-    result = client.claim_node(token)
+    result = client.claim_node(token, name=name)
     if result is not None:
         click.echo("Claimed node with name {}".format(result['name']))
     else:

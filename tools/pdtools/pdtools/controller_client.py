@@ -26,7 +26,7 @@ class ControllerClient(AuthenticatedClient):
         self.base_url = host + "/api"
         #self.base_url = "http://{}/api".format(host)
 
-    def claim_node(self, token):
+    def claim_node(self, token, name=None):
         """
         Claim ownership of a node using a claim token.
         """
@@ -34,6 +34,8 @@ class ControllerClient(AuthenticatedClient):
         data = {
             "claim_token": token
         }
+        if name is not None:
+            data['name'] = name
         return self.request("POST", url, json=data)
 
     def create_chute(self, name, description, public=False):
