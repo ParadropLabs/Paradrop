@@ -202,8 +202,8 @@ def describe_chute_network_client(ctx, chute, network, client):
     will be "wifi".  CLIENT identifies the network client, such as a
     MAC address.
     """
-    client = ParadropClient(ctx.obj['target'])
-    result = client.get_chute_client(chute, network, client)
+    pdclient = ParadropClient(ctx.obj['target'])
+    result = pdclient.get_chute_client(chute, network, client)
     click.echo(util.format_result(result))
     return result
 
@@ -717,8 +717,8 @@ def remove_chute_network_client(ctx, chute, network, client):
     Only implemented for wireless clients, this effectively kicks the
     client off the network.
     """
-    client = ParadropClient(ctx.obj['target'])
-    result = client.remove_chute_client(chute, network, client)
+    pdclient = ParadropClient(ctx.obj['target'])
+    result = pdclient.remove_chute_client(chute, network, client)
     click.echo(util.format_result(result))
     return result
 
