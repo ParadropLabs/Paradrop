@@ -2,11 +2,16 @@
 
 import configparser
 import os
+import stat
 import subprocess
 
 
 SNAP_COMMON = os.environ['SNAP_COMMON']
 SETTINGS_FILE = "settings.ini"
+
+KEY_DIR_NAME = "keys"
+PRIVATE_KEY_FILE = "node.key"
+PUBLIC_KEY_FILE = "node.pub"
 
 # List of settings to apply.  Each item is a tuple:
 # (snap option, ini section, name).
@@ -33,7 +38,29 @@ SETTINGS = [
 ]
 
 
-if __name__ == "__main__":
+def prepare_ssh_key():
+    key_dir = os.path.join(SNAP_COMMON, KEY_DIR_NAME)
+    if not os.path.isdir(key_dir):
+        os.mkdir(key_dir)
+
+    private_key_path = os.path.join(key_dir, PRIVATE_KEY_FILE)
+    if not os.path.isfile(private_key_path):
+        cmd = ["openssl", "genrsa", "-out", private_key_path, "4096"]
+        subprocess.call(cmd)
+
+        os.chmod(private_key_path, stat.S_IRUSR)
+
+    public_key_path = os.path.join(key_dir, PUBLIC_KEY_FILE)
+    if not os.path.isfile(public_key_path):
+        cmd = ["ssh-keygen", "-y", "-f", private_key_path]
+        result = subprocess.check_output(cmd)
+        pubkey = result.decode('ascii', 'ignore').strip()
+
+        with open(public_key_path, "w") as output:
+            output.write(pubkey)
+
+
+def prepare_settings_file():
     path = os.path.join(SNAP_COMMON, SETTINGS_FILE)
 
     config = configparser.ConfigParser()
@@ -50,7 +77,8 @@ if __name__ == "__main__":
             result = subprocess.check_output(cmd)
             if len(result) > 0:
                 value = result.decode('ascii', 'ignore').strip()
-                config.set(section, name, value)
+                if len(value) > 0:
+                    config.set(section, name, value)
         except subprocess.CalledProcessError:
             pass
 
@@ -65,3 +93,8 @@ if __name__ == "__main__":
             config.write(output)
     except OSError as error:
         print(error)
+
+
+if __name__ == "__main__":
+    prepare_ssh_key()
+    prepare_settings_file()

@@ -5,21 +5,11 @@
 # unless the snap is completely removed and reinstalled.
 #
 
-
-KEY_DIR="$SNAP_COMMON/keys"
-
-
-# Generate a private key for the node. This will be used for SSH access to git
-# repositories and other authentication purposes.
-if [ ! -f "$KEY_DIR/node.key" ]; then
-    mkdir -p "$KEY_DIR"
-
-    openssl genrsa -out "$KEY_DIR/node.key" 4096
-    chmod 400 "$KEY_DIR/node.key"
-
-    ssh-keygen -y -f "$KEY_DIR/node.key" >"$KEY_DIR/node.pub"
-fi
-
+# Warning: do not touch files or directories in the SNAP_COMMON directory using
+# this install script. Even though the install script would seem like a logical
+# place to initialize that directory, it seems to interact strangely with
+# snap's unique filesystem layout. I believe this was the cause of write
+# failures with a "read-only filesystem" error message.
 
 # Initialize snap settings.
 #
