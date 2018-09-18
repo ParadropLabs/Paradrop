@@ -18,9 +18,14 @@ def makedirs(p):
         os.makedirs(p)
         return True
     except OSError as e:
-        # EEXIST is fine (directory already existed).  Anything else would be
-        # problematic.
-        if e.errno != errno.EEXIST:
+        # EEXIST is fine (directory already existed).  We also occasionally get
+        # EROFS when making directories in SNAP_COMMON. I am not quite sure
+        # what is going on there. Re-raise any other errors.
+        if e.errno == errno.EEXIST:
+            pass
+        elif e.errno == errno.EROFS:
+            print("Read-only filesystem error occurred while making {}".format(p))
+        else:
             raise e
     return False
 

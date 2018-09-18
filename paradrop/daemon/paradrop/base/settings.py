@@ -26,6 +26,7 @@ import types
 import ConfigParser
 
 from . import constants
+from paradrop.lib.utils import pdosq
 
 
 DEBUG_MODE = False
@@ -308,8 +309,7 @@ def loadSettings(mode="local", slist=[]):
         mod.DOCKER_BIN_DIR = "/snap/bin"
 
     for x in [mod.LOG_DIR, mod.KEY_DIR, mod.MISC_DIR]:
-        if not os.path.exists(x):
-            os.makedirs(x)
+        pdosq.makedirs(x)
 
     # First overwrite settings they may have provided with the arg list
     for kv in slist:
