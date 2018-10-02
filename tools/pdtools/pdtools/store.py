@@ -79,10 +79,12 @@ def help(ctx):
 @root.command('install-chute')
 @click.argument('chute')
 @click.argument('node')
+@click.option('--follow', '-f',
+        help='Follow chute updates.', is_flag=True)
 @click.option('--version', '-v',
         help='Version of the chute to install.')
 @click.pass_context
-def install_chute(ctx, chute, node, version):
+def install_chute(ctx, chute, node, follow, version):
     """
     Install a chute from the store.
 
@@ -92,6 +94,10 @@ def install_chute(ctx, chute, node, version):
     client = ControllerClient()
     result = client.install_chute(chute, node, select_version=version)
     click.echo(util.format_result(result))
+
+    if follow:
+        result2 = client.follow_chute(chute, node)
+        click.echo(util.format_result(result2))
 
     click.echo("Streaming messages until the update has completed.")
     click.echo("Ending output with Ctrl+C will not cancel the update.\n")

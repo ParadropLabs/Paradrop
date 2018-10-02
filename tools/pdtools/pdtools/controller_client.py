@@ -151,6 +151,27 @@ class ControllerClient(AuthenticatedClient):
         url = "{}/routers/{}/updates/{}".format(self.base_url, node_id, update_id)
         return self.request("GET", url)
 
+    def follow_chute(self, chute_name, node_name):
+        """
+        Follow updates to a chute.
+
+        The node will automatically update when new versions of the chute are
+        created.
+        """
+        chute = self.find_chute(chute_name)
+        if chute is None:
+            raise Exception("Chute was not found")
+        node = self.find_node(node_name)
+        if node is None:
+            raise Exception("Node was not found")
+
+        data = {
+            "node_id": node['_id']
+        }
+
+        url = "{}/chutes/{}/watchers".format(self.base_url, chute['_id'])
+        return self.request("POST", url, json=data)
+
     def group_add_node(self, group_name, node_name):
         """
         Add a node to a group.
