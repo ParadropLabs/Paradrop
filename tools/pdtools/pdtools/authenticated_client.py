@@ -167,8 +167,8 @@ class AuthenticatedClient(object):
                 else:
                     try:
                         return res.json()
-                    except Exception:
-                        return None
+                    except ValueError:
+                        return {"message": res.content}
 
     def ws_request(self, url, headers=None, **kwargs):
         if self.debug:
