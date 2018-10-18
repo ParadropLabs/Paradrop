@@ -74,8 +74,9 @@ def root(ctx):
         click.echo("")
 
         while click.confirm("Do you have a claim token for a node not listed above"):
+            name = click.prompt("Node Name (leave blank if unknown)", default="").strip()
             token = click.prompt("Claim token").strip()
-            ctx.invoke(cloud.claim_node, token=token)
+            ctx.invoke(cloud.claim_node, token=token, name=name)
             click.echo("")
 
     click.echo("If you have network access to a node, you can use the "

@@ -32,8 +32,10 @@ def claim_node(ctx, token, name):
     """
     client = ControllerClient()
     result = client.claim_node(token, name=name)
-    if result is not None:
+    if result is not None and 'name' in result:
         click.echo("Claimed node with name {}".format(result['name']))
+    elif result is not None and 'message' in result:
+        click.echo(result['message'])
     else:
         click.echo("No node was found with that claim token.")
     return result

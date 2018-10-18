@@ -34,7 +34,7 @@ class ControllerClient(AuthenticatedClient):
         data = {
             "claim_token": token
         }
-        if name is not None:
+        if name is not None and len(name) > 0:
             data['name'] = name
         return self.request("POST", url, json=data)
 
