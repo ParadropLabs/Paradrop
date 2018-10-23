@@ -11,7 +11,7 @@ from twisted.internet.defer import inlineCallbacks
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
 from paradrop.lib.misc.procmon import ProcessMonitor
-from paradrop.core.agent.reporting import sendStateReport
+from paradrop.core.agent.reporting import sendNodeIdentity, sendStateReport
 from paradrop.core.agent.wamp_session import WampSession
 from paradrop.core.update.update_fetcher import UpdateFetcher
 from paradrop.core.update.update_manager import UpdateManager
@@ -39,9 +39,11 @@ class Nexus(nexus.NexusBase):
             try:
                 # Set up communication with pdserver.
                 # 1. Create a report of the current system state and send that.
-                # 2. Poll for a list of updates that should be applied.
-                # 3. Open WAMP session.
+                # 2. Send the node public key.
+                # 3. Poll for a list of updates that should be applied.
+                # 4. Open WAMP session.
                 yield sendStateReport()
+                yield sendNodeIdentity()
                 yield self.update_fetcher.start_polling()
                 yield self.connect(WampSession)
             except Exception:
