@@ -26,6 +26,11 @@ To enable tab completion, add the following line to your .bashrc file:
 """
 import os
 
+# Import readline for its side-effect: it wraps stdin and handles special
+# characters such as the arrow keys (^[[D and ^[[C), backspace in SSH from
+# Windows Powershell (^H), etc.
+import readline
+
 import click
 
 # Deprecated command groups to be removed prior to 1.0 release
