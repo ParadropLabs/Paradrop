@@ -26,6 +26,19 @@ class ControllerClient(AuthenticatedClient):
         self.base_url = host + "/api"
         #self.base_url = "http://{}/api".format(host)
 
+    def add_ssh_key(self, key_text, name="default"):
+        """
+        Add an authorized key for SSH access.
+        """
+        user = self.get_current_user()
+
+        url = "{}/users/{}/sshKeys".format(self.base_url, user['_id'])
+        data = {
+            'key': key_text,
+            'name': name
+        }
+        return self.request("POST", url, json=data)
+
     def claim_node(self, token, name=None):
         """
         Claim ownership of a node using a claim token.
@@ -171,6 +184,13 @@ class ControllerClient(AuthenticatedClient):
 
         url = "{}/chutes/{}/watchers".format(self.base_url, chute['_id'])
         return self.request("POST", url, json=data)
+
+    def get_current_user(self):
+        """
+        Get the logged in user.
+        """
+        url = "{}/users/me".format(self.base_url)
+        return self.request("GET", url)
 
     def group_add_node(self, group_name, node_name):
         """

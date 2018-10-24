@@ -1,4 +1,6 @@
 import getpass
+import platform
+import re
 
 import builtins
 import click
@@ -145,6 +147,40 @@ def help(ctx):
     Show this message and exit.
     """
     click.echo(ctx.parent.get_help())
+
+
+@root.command('import-ssh-key')
+@click.argument('path', type=click.Path(exists=True))
+@click.pass_context
+def import_ssh_key(ctx, path):
+    """
+    Add an authorized key from a public key file.
+
+    PATH must be a path to a public key file, which corresponds to
+    a private key that SSH can use for authentication. Typically,
+    ssh-keygen will place the public key in "~/.ssh/id_rsa.pub".
+    """
+    client = ControllerClient()
+    with open(path, 'r') as source:
+        key_string = source.read().strip()
+
+    match = re.search("-----BEGIN \w+ PRIVATE KEY-----", key_string)
+    if match is not None:
+        print("The path ({}) contains a private key.".format(path))
+        print("Please provide the path to your public key.")
+        return None
+
+    match = re.search("ssh-\S+ \S+ (\S+)", key_string)
+    if match is not None:
+        name = match.group(1)
+    else:
+        name = "{}@{}".format(getpass.getuser(), platform.node())
+
+    result = client.add_ssh_key(key_string, name=name)
+    if result is not None:
+        print("Added public key from {}".format(path))
+
+    return result
 
 
 @root.command('list-groups')
