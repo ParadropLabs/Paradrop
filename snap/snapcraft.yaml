@@ -73,7 +73,7 @@ parts:
     organize:
       # For some reason, the libpulsecommon .so file could not be found in its
       # default install location, so move it to a place where it can be found.
-      usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-8.0.so: usr/lib/x86_64-linux-gnu/libpulsecommon-8.0.so
+      usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio/libpulsecommon-8.0.so: usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libpulsecommon-8.0.so
 
   dependencies:
     plugin: nil
@@ -96,7 +96,7 @@ parts:
         - usr/sbin/haproxy
         - usr/sbin/parprouted
       libraries:
-        - usr/lib/x86_64-linux-gnu/liblua5.3.so.*
+        - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/liblua5.3.so.*
     stage:
       - $binaries
       - $libraries
@@ -126,6 +126,7 @@ parts:
       - hostapd
     override-build: |
       mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
 
       # Depending on the build architecture, either copy our hostapd 2.6
       # binaries or use the binaries from the distribution package.
@@ -138,6 +139,9 @@ parts:
         cp -v /usr/sbin/hostapd_cli $SNAPCRAFT_PART_INSTALL/bin/
       fi
 
+      cp -v /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnl-route-3.so.* $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/
+      cp -v /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdb-5.3.so $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/
+
       # Print the version of the hostapd binary installed.
       $SNAPCRAFT_PART_INSTALL/bin/hostapd -v || true
     organize:
@@ -147,7 +151,12 @@ parts:
       binaries:
         - bin/hostapd
         - bin/hostapd_cli
+      libraries:
+        - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnl-route-3.so.*
+        - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdb-5.3.so
     stage:
       - $binaries
+      - $libraries
     prime:
       - $binaries
+      - $libraries
