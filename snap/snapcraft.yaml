@@ -78,7 +78,6 @@ parts:
   dependencies:
     plugin: nil
     stage-packages:
-      - dnsmasq
       - git
       - haproxy
       - iw
@@ -92,7 +91,6 @@ parts:
         - sbin/iw
         - sbin/modprobe
         - usr/bin/git
-        - usr/sbin/dnsmasq
         - usr/sbin/haproxy
         - usr/sbin/parprouted
       libraries:
@@ -104,59 +102,46 @@ parts:
       - $binaries
       - $libraries
 
-  # This section exists because Ubuntu 16.04 is still distributing an old
-  # version of hostapd (2.4), and there are changes in version 2.6 that we
-  # would really like to have including bug fixes and support for the
-  # no_probe_resp_if_max_sta option.
-  #
-  # We have compiled the hostapd 2.6 source code for the x86_64 architecture
-  # and host a binary package at paradrop.org. When building an x86_64 snap
-  # (common case), we will download and install those binaries. When building a
-  # snap for other architectures, we still need hostapd, so we fall back to
-  # using the distribution package (version 2.4, unfortunately).
-  #
-  # When hostapd 2.6 or higher becomes available as a distribution package, we
-  # can remove this section entirely and simply add hostapd to the
-  # stage-packages list and the binaries list in the "dependencies" part above.
-  hostapd:
-    plugin: dump
-    source: https://paradrop.org/release/packages/hostapd-2.6.tar.bz2
-    source-type: tar
+  # Build dnsmasq from the snappy team's source code because they implemented a
+  # fix for failure under confinement. They removed code that tries to change
+  # dnsmasq's running group.
+  dnsmasq:
+    plugin: make
+    source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
+    source-type: git
+    source-branch: dnsmasq/2.75
     build-packages:
-      - hostapd
-    override-build: |
-      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET
-
-      # Depending on the build architecture, either copy our hostapd 2.6
-      # binaries or use the binaries from the distribution package.
-      if [ `arch` = "x86_64" ]; then
-        echo "Using pre-built hostapd 2.6 binaries for x86_64..."
-        cp -v hostapd hostapd_cli $SNAPCRAFT_PART_INSTALL/bin/
-      else
-        echo "Using hostapd distribution package..."
-        cp -v /usr/sbin/hostapd $SNAPCRAFT_PART_INSTALL/bin/
-        cp -v /usr/sbin/hostapd_cli $SNAPCRAFT_PART_INSTALL/bin/
-      fi
-
-      cp -v /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnl-route-3.so.* $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/
-      cp -v /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdb-5.3.so $SNAPCRAFT_PART_INSTALL/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/
-
-      # Print the version of the hostapd binary installed.
-      $SNAPCRAFT_PART_INSTALL/bin/hostapd -v || true
+      - build-essential
+    make-parameters:
+      - PREFIX=/
     organize:
-      hostapd: bin/hostapd
-      hostapd_cli: bin/hostapd_cli
+      sbin/dnsmasq: bin/dnsmasq
+    filesets:
+      binaries:
+        - bin/dnsmasq
+    prime:
+      - $binaries
+
+  # Build hostapd from the snappy team's source code. This builds hostapd 2.6,
+  # with some bug fixes, vulnerability patches, and support for the
+  # no_probe_resp_if_max_sta option.
+  hostapd:
+    plugin: make
+    source: https://git.launchpad.net/~snappy-hwe-team/snappy-hwe-snaps/+git/wifi-ap
+    source-type: git
+    source-branch: hostapd/2.6
+    build-packages:
+      - build-essential
+      - pkg-config
+      - libnl-3-dev
+      - libnl-genl-3-dev
+      - libnl-route-3-dev
+      - libssl-dev
+    make-parameters:
+      - BINDIR=/bin
     filesets:
       binaries:
         - bin/hostapd
         - bin/hostapd_cli
-      libraries:
-        - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libnl-route-3.so.*
-        - usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libdb-5.3.so
-    stage:
-      - $binaries
-      - $libraries
     prime:
       - $binaries
-      - $libraries
