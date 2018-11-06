@@ -9,7 +9,7 @@ description: |
   Visit https://paradrop.org to learn more.
 
 grade: stable
-confinement: devmode
+confinement: strict
 
 plugs:
   zerotier-control:
