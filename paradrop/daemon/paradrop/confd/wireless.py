@@ -663,7 +663,10 @@ class HostapdConfGenerator(ConfGenerator):
 
         control_dir = os.path.join(self.wifiIface.manager.writeDir, "hostapd")
         options.append(("ctrl_interface", control_dir))
-        options.append(("ctrl_interface_group", 0))
+
+        # Do not set ctrl_interface_group because it triggers behavior
+        # that breaks under snap confinement.
+        #options.append(("ctrl_interface_group", 0))
 
         options.append(("ssid", self.wifiIface.ssid))
 
