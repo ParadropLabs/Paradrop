@@ -25,15 +25,19 @@ apps:
       - docker
       - firewall-control
       - hardware-observe
+      - home
         # I think we added kernel-module-control, not because we load kernel
         # modules but because of some other capability that is bundled with it.
         # However, it triggers manual review.
         # - kernel-module-control
+      - mount-observe
       - network
       - network-bind
       - network-control
       - ppp
       - process-control
+      - ssh-keys
+      - ssh-public-keys
       - shutdown
         # Desired, but triggers manual review...
         # - snapd-control
@@ -44,7 +48,7 @@ apps:
 
 hooks:
   configure:
-    plugs: [network, network-control]
+    plugs: [network]
 
 parts:
   localweb:

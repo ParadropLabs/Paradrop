@@ -134,7 +134,7 @@ class UpdateManager:
                     tok=timeint())
         return update_object.parse(update)
 
-    def _perform_updates(self, checkDocker=True):
+    def _perform_updates(self):
         """This is the main working function of the PDConfigurer class.
             It should be executed as a separate thread, it does the following:
                 checks for any updates to perform
@@ -145,7 +145,7 @@ class UpdateManager:
                     if more exist it calls itself again more quickly
                     else it puts itself to sleep for a little while
         """
-        if checkDocker:
+        if settings.CHECK_DOCKER:
             ready = dockerMonitor.ensureReady()
             if not ready:
                 out.warn("Docker does not appear to be running.  "

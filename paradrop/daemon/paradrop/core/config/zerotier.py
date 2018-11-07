@@ -3,7 +3,6 @@ import json
 import os
 
 from paradrop.base.output import out
-from paradrop.lib.misc.snapd import SnapdClient
 from paradrop.lib.utils import datastruct
 
 
@@ -17,37 +16,22 @@ def configure(update):
 
     hostConfig = update.cache_get('hostConfig')
 
-    snapd = SnapdClient(logging=True, wait_async=True)
-
     enabled = datastruct.getValue(hostConfig, "zerotier.enabled", False)
     if enabled:
-        if not os.path.exists("/snap/zerotier-one"):
-            snapd.installSnap('zerotier-one')
-
-        snapd.updateSnap('zerotier-one', {'action': 'enable'})
-
-        # These interfaces are not automatically connected, so take care of that.
-        snapd.connect('zerotier-one', 'network-control', 'core',
-                'network-control')
-        snapd.connect(snap_name, 'zerotier-control', 'zerotier-one',
-                'zerotier-control')
-
-        old_networks = set()
-        for network in get_networks():
-            old_networks.add(network['id'])
-
         new_networks = set(datastruct.getValue(hostConfig,
                 "zerotier.networks", []))
-
-        # Leave old networks and join new networks.
-        for net in (old_networks - new_networks):
-            manage_network(net, action="leave")
-        for net in (new_networks - old_networks):
-            manage_network(net, action="join")
-
     else:
-        # Disable the zerotier service.
-        snapd.updateSnap('zerotier-one', {'action': 'disable'})
+        new_networks = set()
+
+    old_networks = set()
+    for network in get_networks():
+        old_networks.add(network['id'])
+
+    # Leave old networks and join new networks.
+    for net in (old_networks - new_networks):
+        manage_network(net, action="leave")
+    for net in (new_networks - old_networks):
+        manage_network(net, action="join")
 
 
 def getAddress():

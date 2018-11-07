@@ -161,6 +161,10 @@ CONCURRENT_BUILDS = True
 # implementation that cause system instability.
 ALLOW_MONITOR_MODE = False
 
+# Check if Docker daemon is in a bad state (process not running but pid file
+# exists).  This does not work in strict confinement.
+CHECK_DOCKER = False
+
 ###############################################################################
 # Helper functions
 ###############################################################################
