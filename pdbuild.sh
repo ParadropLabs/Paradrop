@@ -120,8 +120,28 @@ build() {
     (cd paradrop; snapcraft clean; snapcraft)
 }
 
+mount() {
+    image=$1
+    mntpath=${2:-/mnt/$image}
+
+    sudo mkdir -p "$mntpath"
+
+    dname=$(sudo kpartx -avs "$image" | grep -oE "loop[0-9]+p[0-9]+" | tail -n 1)
+    sudo mount /dev/mapper/$dname "$mntpath"
+}
+
+umount() {
+    image=$1
+    mntpath=${2:-/mnt/$image}
+
+    sudo umount "$mntpath"
+    sudo kpartx -dvs "$image"
+    sudo rmdir "$mntpath"
+}
+
 image() {
-    image="paradrop-amd64.img"
+    model=${1:-amd64}
+    image="paradrop-$model.img"
 
     if [ -e "$image" ]; then
         echo "Output file $image already exists."
@@ -141,26 +161,27 @@ image() {
     select other_channel in stable candidate beta edge;
     do break; done
 
-    echo "Select the gadget snap to use:"
-    select gadget in paradrop-amd64 gadgets/*/*.snap;
-    do break; done
+    # Custom gadget snap is not working very well right now.
+    # For now, rely on pulling official gadgets from the store.
+#    echo "Select the gadget snap to use:"
+#    echo "Selecting $model will pull the official $model snap from the store."
+#    echo "Selecting paradrop-$model will pull the paradrop-$model snap from the store."
+#    select gadget in "$model" "paradrop-$model" gadgets/*/*.snap;
+#    do break; done
 
     sudo ubuntu-image snap -o $image \
         --channel "$other_channel" \
-        --extra-snaps "$gadget" \
         --extra-snaps "$pdsnap" \
         --image-size 4G \
-        assertions/paradrop-amd64.model
+        "assertions/paradrop-$model.model"
 
     # The ubuntu-image command only takes a single channel argument and applies
     # it to all snaps.  If we we want to use a different channel for
     # paradrop-daemon, we can mount the image and modify seed.yaml.
     if [ "$channel" != "$other_channel" ]; then
-        sudo mkdir -p /mnt/paradrop-amd64
-        sudo mount -o loop,offset=$((106496*512)) $image /mnt/paradrop-amd64
-        sudo python utils/set_seed_channel.py /mnt/paradrop-amd64/system-data/var/lib/snapd/seed/seed.yaml $SNAP_NAME $channel
-        sudo umount /mnt/paradrop-amd64
-        sudo rmdir /mnt/paradrop-amd64
+        mount $image "/mnt/paradrop-$model"
+        sudo python utils/set_seed_channel.py "/mnt/paradrop-$model/system-data/var/lib/snapd/seed/seed.yaml" $SNAP_NAME $channel
+        umount $image "/mnt/paradrop-$model"
     fi
 
     echo "Created image $image, compressing..."
@@ -211,7 +232,9 @@ case "$1" in
     "setup") setup;;
     "test") test;;
     "build") build;;
-    "image") image;;
+    "mount") mount $2 $3;;
+    "umount") umount $2 $3;;
+    "image") image $2;;
     "clean") clean;;
     "run") run;;
     "docs") docs;;

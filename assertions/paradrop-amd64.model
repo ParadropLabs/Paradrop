@@ -4,7 +4,7 @@ series: 16
 brand-id: V5LQUvE6qno21yFrcGAM7posL78I816Q
 model: paradrop-amd64
 architecture: amd64
-gadget: paradrop-amd64
+gadget: pc
 kernel: pc-kernel
 required-snaps:
   - airshark
@@ -14,16 +14,16 @@ required-snaps:
   - paradrop-snmpd
   - pulseaudio
   - zerotier-one
-timestamp: 2018-08-31T17:56:55+00:00
+timestamp: 2018-11-07T17:30:01+00:00
 sign-key-sha3-384: iUMCtK2MzvBVgtbG_U-Ro2Up0L6ebWbuNdE8Z3cfTseJ3ofs3pdCOdB2Qwc3hxYV
 
-AcLBXAQAAQoABgUCW4mBdwAKCRBUnqzo0CNkCZleEACg3OoIZqM65YefVPP8Ho0nLXrTwGPyeblj
-gl09435jSaL3heytIkEXNIYuThe+8SeHJbQm43hiBoNZsBVta46f4t01aZ4ROQAyZPeWkhGukxwr
-6145QVBqYbMEVWBVRg7Fy44taPE6uveDDqGSThdCsy4TD1spwHeoXxxzjbAGj/sFp3qXTAxRUXwp
-GGE3NCPTB5hTsIMZM+rp2aZrTLzaZ+onLkD+mm1HdyXsA/G7Zmu6cM+/yPVFrdIp1CsDF/GRc/xH
-FH0urof1S2QsR/dp9/zDj/7IOgNiu3rgthnLu1+vMsyZmY+GhtgTkWpMDvU/pEJOQ2qKy0usBkU0
-Qj+BkAs44qkXR/Ja/i2PafxWhqp+tdyxAm7EGhgDc1dkviAC/ytGM5qzDFuKVoB824rk4P9bzbr9
-cUjU/pvBboMwNjz8S9MOzZfEZUlIidbPUtUf48YOWdLUd7AEc0djN6TDWH4bDFfWBZeihUlq8Krn
-QDPY4LvfrzAVLpmqA4wS1q5AGWyNlaVE22n2DMJfWtxQe7/YNQL1KKy86gB42xIE83+WWVjyCdpL
-ponUK6apiAXXtywG4DNHV020oVP6AkCdwbP+iYh+qd/UNj92zpHmrwHiQCU128g3hPWAPRI6kz33
-4UBbzKLeXshGvlCRzgAehi85uRqxOaWop+f8nJ7FNQ==
+AcLBXAQAAQoABgUCW+MhMAAKCRBUnqzo0CNkCYpGD/92D4gYqWtzauIYAZvvgOCTfmoAj7n1TuX8
+8sh4nln0JXkPGhLbT6OffTiqUUUt5bkpxH6n3DyaatoTnPCpKlFHEG5lW1qRnmYX34JD1+I89Zde
+WZZv6YkPNxWsf6EoI6rCvPqoZsfXeb3fxYsCmQo0m3ev5Ns3xAxzrDyxRF+xOWf14vWO/u7S5J5W
+8q5yvLsUKWNdBQjFaGjPrQ0D47spaWpQqGB1I4lhbZkx76HaohhLyoVdj05m19WwkIz7VGQqD9xj
+i5VRpTGHYRvbH7eMOrlXhTGo56FsdlOsj8TRM4e1zuxhKkhTHre5wfhMYJwyjMfN5SQP8faQ69Se
+XVGSRrVtHRi0eAWQ2GwV6dhNFMwP3wO7JOyMiWsc6egHjXrY253ufCqiTU6LjdD3CoeTqVXuyYl+
+fIhWnTjKqp/ZNEkULXN5K0hC3inIaSjfzIHGs5nJROaafK89TXSFszBk7TJ5Wvwcv5cwLl5n1RX3
++gpnJ3p+nKWlA4IIDBekRn5UuxF59l7GR/2se+rLD5gaWokvilfOo6NhSASgloNfU3sFHKq+NNku
+3dXfGv5HP6SwkOFeM0DbVSHpBwtaoGEz3HYmZ4bCDFqyU0SvLG70LH2gXP/isvV+pqV5+sb2FMoW
+fnJMpdy42yEUliI8TiyBvwcJoE0uw3MidzXlyLSuqQ==
