@@ -44,6 +44,8 @@ apps:
 hooks:
   configure:
     plugs: [network]
+  install:
+    plugs: [network]
 
 parts:
   localweb:
@@ -81,6 +83,7 @@ parts:
       - haproxy
       - iw
       - kmod
+      - openssh-client
       - parprouted
       - systemd
     filesets:
@@ -90,6 +93,7 @@ parts:
         - sbin/iw
         - sbin/modprobe
         - usr/bin/git
+        - usr/bin/ssh-keygen
         - usr/sbin/haproxy
         - usr/sbin/parprouted
       libraries:

@@ -5,7 +5,7 @@
     "series": "16",
     "model": "paradrop-amd64",
     "architecture": "amd64",
-    "gadget": "pc",
+    "gadget": "paradrop-amd64",
     "kernel": "pc-kernel",
     "required-snaps": [
         "airshark",
@@ -16,7 +16,7 @@
         "pulseaudio",
         "zerotier-one"
     ],
-    "timestamp": "2018-11-07T17:30:01+00:00"
+    "timestamp": "2018-11-08T19:34:39+00:00"
 }
 
 

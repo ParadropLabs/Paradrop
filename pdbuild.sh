@@ -141,6 +141,7 @@ umount() {
 
 image() {
     model=${1:-amd64}
+    gadget=${2:-pc}
     image="paradrop-$model.img"
 
     if [ -e "$image" ]; then
@@ -148,6 +149,11 @@ image() {
         echo "Remove it before building a new image."
         exit 1
     fi
+
+    echo "Select the gadget snap to use:"
+    echo "Selecting $gadget will pull the official $gadget snap from the store."
+    select gadget in "$gadget" gadgets/paradrop-$model/*.snap;
+    do break; done
 
     echo "Select the $SNAP_NAME snap to use (1 for snap store):"
     select pdsnap in $SNAP_NAME *.snap paradrop/*.snap;
@@ -161,16 +167,9 @@ image() {
     select other_channel in stable candidate beta edge;
     do break; done
 
-    # Custom gadget snap is not working very well right now.
-    # For now, rely on pulling official gadgets from the store.
-#    echo "Select the gadget snap to use:"
-#    echo "Selecting $model will pull the official $model snap from the store."
-#    echo "Selecting paradrop-$model will pull the paradrop-$model snap from the store."
-#    select gadget in "$model" "paradrop-$model" gadgets/*/*.snap;
-#    do break; done
-
     sudo ubuntu-image snap -o $image \
         --channel "$other_channel" \
+        --extra-snaps "$gadget" \
         --extra-snaps "$pdsnap" \
         --image-size 4G \
         "assertions/paradrop-$model.model"
