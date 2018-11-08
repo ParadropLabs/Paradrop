@@ -2,18 +2,12 @@ import httplib
 import json
 import os
 
+from paradrop.base import settings
 from paradrop.base.output import out
 from paradrop.lib.utils import datastruct
 
 
 def configure(update):
-    snap_name = os.environ.get('SNAP_NAME', None)
-    if snap_name is None:
-        # It seems we are not running as a snap, so this code is not going to
-        # work.
-        out.info("SNAP_NAME environment variable not found.")
-        return
-
     hostConfig = update.cache_get('hostConfig')
 
     enabled = datastruct.getValue(hostConfig, "zerotier.enabled", False)
@@ -38,8 +32,9 @@ def getAddress():
     """
     Return the zerotier address for this device or None if unavailable.
     """
+    path = os.path.join(settings.ZEROTIER_LIB_DIR, "identity.public")
     try:
-        with open("/var/snap/zerotier-one/common/identity.public", "r") as source:
+        with open(path, "r") as source:
             return source.read().strip()
     except:
         return None
@@ -49,7 +44,8 @@ def get_auth_token():
     """
     Return the zerotier auth token for accessing its API.
     """
-    with open("/var/snap/zerotier-one/common/authtoken.secret", "r") as source:
+    path = os.path.join(settings.ZEROTIER_LIB_DIR, "authtoken.secret")
+    with open(path, "r") as source:
         return source.read().strip()
 
 

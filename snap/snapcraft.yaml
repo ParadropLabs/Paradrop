@@ -11,11 +11,6 @@ description: |
 grade: stable
 confinement: strict
 
-plugs:
-  zerotier-control:
-    interface: content
-    target: $SNAP_COMMON
-
 apps:
   paradrop:
     command: paradrop
@@ -149,3 +144,9 @@ parts:
         - bin/hostapd_cli
     prime:
       - $binaries
+
+plugs:
+  zerotier-control:
+    default-provider: zerotier-one
+    interface: content
+    target: $SNAP/zerotier-one
