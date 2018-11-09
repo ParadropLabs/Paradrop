@@ -1,5 +1,5 @@
 name: paradrop-agent
-version: 0.12.6
+version: 0.12.7
 summary: Paradrop agent for managing an edge computing node
 description: |
   The Paradrop agent manages hardware resources for an edge computing
