@@ -3,7 +3,6 @@ import json
 import os
 
 from paradrop.base import settings
-from paradrop.base.output import out
 from paradrop.lib.utils import datastruct
 
 
