@@ -1,5 +1,5 @@
 name: paradrop-amd64
-version: 0.11.2
+version: 0.12.6
 type: gadget
 summary: Paradrop amd64 Gadget
 description: This gadget runs Paradrop on a generic amd64 system.

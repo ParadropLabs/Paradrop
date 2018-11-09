@@ -91,8 +91,14 @@ class StateReportBuilder(object):
         report.devices = devices.listSystemDevices()
         report.hostConfig = hostconfig.prepareHostConfig(write=False)
 
-        client = SnapdClient()
-        report.snaps = client.listSnaps()
+        try:
+            client = SnapdClient()
+            report.snaps = client.listSnaps()
+        except:
+            # This will fail in strict confinement, because we cannot get
+            # access to the snapd API. I am not sure if we can still get a list
+            # of installed snaps in that case.
+            pass
 
         report.zerotierAddress = zerotier.getAddress()
         report.dmi = system_info.getDMI()

@@ -93,7 +93,13 @@ def createVolumeDirs(update):
     else:
         pdosq.makedirs(extDataDir)
         pdosq.makedirs(extSystemDir)
-        os.chown(extDataDir, settings.CONTAINER_UID, -1)
+        try:
+            os.chown(extDataDir, settings.CONTAINER_UID, -1)
+        except:
+            # chown is not permitted in strict confinement.
+            # TODO: do we need to chmod the data directory, or does it work
+            # fine regardless?
+            pass
 
 
 def abortCreateVolumeDirs(update):

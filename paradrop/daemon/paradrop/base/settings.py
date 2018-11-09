@@ -161,6 +161,14 @@ CONCURRENT_BUILDS = True
 # implementation that cause system instability.
 ALLOW_MONITOR_MODE = False
 
+# Check if Docker daemon is in a bad state (process not running but pid file
+# exists).  This does not work in strict confinement.
+CHECK_DOCKER = False
+
+# Directory for ZeroTier runtime files. We can find the API authtoken in a file
+# in this directory.
+ZEROTIER_LIB_DIR = "/var/lib/zerotier-one"
+
 ###############################################################################
 # Helper functions
 ###############################################################################
@@ -289,6 +297,7 @@ def loadSettings(mode="local", slist=[]):
     mod = sys.modules[__name__]
 
     # Adjust default paths if we are running under ubuntu snappy
+    snapPath = os.environ.get("SNAP", None)
     snapCommonPath = os.environ.get("SNAP_COMMON", None)
     snapDataPath = os.environ.get("SNAP_DATA", None)
 
@@ -307,6 +316,7 @@ def loadSettings(mode="local", slist=[]):
         updatePaths(snapCommonPath, snapDataPath)
         mod.HOST_DATA_PARTITION = "/writable"
         mod.DOCKER_BIN_DIR = "/snap/bin"
+        mod.ZEROTIER_LIB_DIR = os.path.join(snapPath, "zerotier-one")
 
     for x in [mod.LOG_DIR, mod.KEY_DIR, mod.MISC_DIR]:
         pdosq.makedirs(x)

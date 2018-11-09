@@ -132,7 +132,7 @@ def reconfigureProxy(update):
     with open(confFile, "w") as output:
         writeConfigFile(output)
 
-    cmd = ["haproxy", "-f", confFile, "-D", "-p", pidFile]
+    cmd = ["haproxy", "-f", confFile, "-p", pidFile]
 
     if os.path.exists(pidFile):
         with open(pidFile, "r") as source:

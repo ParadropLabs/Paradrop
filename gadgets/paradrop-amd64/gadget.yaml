@@ -13,9 +13,17 @@ connections:
     slot: sLCsFAO8PKM5Z0fAKNszUOX0YASjQfeZ:docker-daemon
   - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:firewall-control
   - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:hardware-observe
+  - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:home
+  - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:mount-observe
+  - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:network
+  - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:network-bind
   - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:network-control
   - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:ppp
   - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:process-control
+  - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:pulseaudio
+    slot: yKf8b7vKzpN9FXYKV7Ff1BPSUCdsevYA:service
+  - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:ssh-keys
+  - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:ssh-public-keys
   - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:shutdown
   - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:system-observe
   - plug: EQMWFJmChQFXYSZ84X9llemoyIPe7shC:zerotier-control
