@@ -1,3 +1,4 @@
+import errno
 import httplib
 import json
 import os
@@ -35,27 +36,40 @@ def getAddress():
     try:
         with open(path, "r") as source:
             return source.read().strip()
-    except:
-        return None
+    except IOError as error:
+        if error.errno == errno.ENOENT:
+            return None
+        else:
+            raise
 
 
 def get_auth_token():
     """
-    Return the zerotier auth token for accessing its API.
+    Return the zerotier auth token for accessing its API or None if unavailable.
     """
     path = os.path.join(settings.ZEROTIER_LIB_DIR, "authtoken.secret")
-    with open(path, "r") as source:
-        return source.read().strip()
+    try:
+        with open(path, "r") as source:
+            return source.read().strip()
+    except IOError as error:
+        if error.errno == errno.ENOENT:
+            return None
+        else:
+            raise
 
 
 def get_networks():
     """
     Get list of active ZeroTier networks.
     """
+    auth_token = get_auth_token()
+    if auth_token is None:
+        return []
+
     conn = httplib.HTTPConnection("localhost", 9993)
     path = "/network"
     headers = {
-        "X-ZT1-Auth": get_auth_token()
+        "X-ZT1-Auth": auth_token
     }
     conn.request("GET", path, "", headers)
     res = conn.getresponse()
