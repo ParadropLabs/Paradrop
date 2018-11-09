@@ -31,6 +31,7 @@ apps:
       - network-control
       - ppp
       - process-control
+      - pulseaudio
       - ssh-keys
       - ssh-public-keys
       - shutdown

@@ -45,8 +45,13 @@ def applyWaitOnlineFix(update):
     ifname = datastruct.getValue(hostConfig, 'wan.interface', None)
 
     if ifname is not None:
-        with open(WAIT_ONLINE_FILE, "w") as output:
-            output.write(WAIT_ONLINE_TEMPLATE.format(interface=ifname))
+        try:
+            with open(WAIT_ONLINE_FILE, "w") as output:
+                output.write(WAIT_ONLINE_TEMPLATE.format(interface=ifname))
+        except:
+            # This fails in strict confinement. Perhaps look for
+            # a different way to add the fix to the disk image.
+            pass
 
 
 def revertConfig(update, theType):
