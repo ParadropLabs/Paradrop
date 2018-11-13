@@ -31,11 +31,20 @@ Preparing the SD card
    the device node for the card.  This is often "/dev/sdb", but please make
    sure, as the next command will overwrite the contents of whatever device you
    pass.
-3. Copy the Paradrop image to the SD card.::
+3. Copy ("flash") the Paradrop image to the SD card.::
 
     xzcat paradrop-amd64.img.xz | sudo dd of=<DEVICE> bs=32M status=progress; sync
 
 4. Remove the SD card and proceed to assemble the router.
+
+Please note that in order to make the SD card bootable, it is not
+enough to copy the disk image file to an existing filesystem on
+the SD card. Instead, one must overwrite the contents of the SD
+card including MBR, partition table, and data with the provided
+disk image.  In Linux, you can do this with the `dd` command. If
+you are using Windows, we suggest using the `win32-image-writer
+<https://launchpad.net/win32-image-writer>`_ tool. Follow the
+Sourceforge link to download the installer.
 
 First Boot
 ----------
@@ -44,15 +53,20 @@ If you know the IP address of the router, e.g. because you have access to the
 DHCP server upstream from the router, then you can skip this step and proceed
 with activating the router as described in the section :doc:`../manual/index`_.
 
-The first time you boot the Paradrop router, you can optionally connect a
-serial cable to complete the Ubuntu Core setup process.  The default
-configuration is 9600 8N1.  After the router boots, press Enter when prompted
-and follow the instructions on the console to configure Ubuntu Core.  If you
-have an Ubuntu One account, you can enter the email address here.  For
-consistency with the rest of the instructions, we recommend using the address
-`info@paradrop.io`.  You will be able to manage your router and install chutes
-through paradrop.org either way, but using our email address ensures consistency
-with the instructions.
+The first time you boot the Paradrop router, you can optionally connect
+a serial cable to complete the Ubuntu Core setup process.  The default
+configuration is 9600 8N1. If you are using PuTTY under Windows, make
+sure that you have entered the correct COM port for your serial cable. It
+may not be "COM1". You can use the `chgport` command or open the Windows
+Device Manager tool to find the correct COM port.
+
+After the router boots, press Enter when prompted and follow the
+instructions on the console to configure Ubuntu Core.  If you
+have an Ubuntu One account, you can enter the email address here.
+For consistency with the rest of the instructions, we recommend using
+the address `info@paradrop.io`.  You will be able to manage your router
+and install chutes through paradrop.org either way, but using our email
+address ensures consistency with the instructions.
 
 Take note of the IP address displayed in the console.  You will need
 this address for the next step, activating the router.  For example,
