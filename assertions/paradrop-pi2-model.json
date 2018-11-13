@@ -1,0 +1,18 @@
+{
+    "type": "model",
+    "authority-id": "V5LQUvE6qno21yFrcGAM7posL78I816Q",
+    "brand-id": "V5LQUvE6qno21yFrcGAM7posL78I816Q",
+    "series": "16",
+    "model": "paradrop-pi2",
+    "architecture": "armhf",
+    "gadget": "paradrop-pi2",
+    "kernel": "pi2-kernel",
+    "required-snaps": [
+        "bluez",
+        "docker",
+        "paradrop-agent",
+        "pulseaudio",
+        "zerotier-one"
+    ],
+    "timestamp": "2018-11-12T18:04:37+00:00"
+}

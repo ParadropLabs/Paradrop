@@ -1,0 +1,27 @@
+type: model
+authority-id: V5LQUvE6qno21yFrcGAM7posL78I816Q
+series: 16
+brand-id: V5LQUvE6qno21yFrcGAM7posL78I816Q
+model: paradrop-pi2
+architecture: armhf
+gadget: paradrop-pi2
+kernel: pi2-kernel
+required-snaps:
+  - bluez
+  - docker
+  - paradrop-agent
+  - pulseaudio
+  - zerotier-one
+timestamp: 2018-11-12T18:04:37+00:00
+sign-key-sha3-384: iUMCtK2MzvBVgtbG_U-Ro2Up0L6ebWbuNdE8Z3cfTseJ3ofs3pdCOdB2Qwc3hxYV
+
+AcLBXAQAAQoABgUCW+nAzgAKCRBUnqzo0CNkCe1FD/9OJ/RDL4TdmYyC8JCfKwU03vdptnbeXZiu
+nIWakIavPw2GaC83XXxe6BuhAjpt27KCUBKlbynN9jf7hV4MHV9UeTkQvWnpodn6KLS3/ZmDtZTq
+fseYb+HwUVlypNNE0CyiIYQ7OjI18G3HdjTjXy0GoPtrE4J1hOGzniRWVfy6YZhb/gBr2hZrV0mJ
+fUicL99mUy4SmPA1Nn0Ta1AAcu9CpxwXnxUMql+FW01prORjSfEL6BhHoEh+NCsPtQgXpmVPwkyn
+AvquPEyXF5D/EKL24aHLNxGljGDuo0k6kVWHyOSjBynGFUHjdkvEYjmpn82R048WVeeYR449FDYG
+tns0sTmv5fz5353vDP/1IFpxwG3gRveN0bsGBo9BS5ZGbrdS89/z3J+4qJIBmIpVVbt+w/1DZODk
+eKbkTitVvImOlD8u7t3wWDXLH51Zn2zNMA7ldzQhgxZpjGtXZffNrH698Gws3HgbolkMLLYJfJ3j
+A7qXvn6rRDg574SvABE6ruAhkTs90xvIw9YEpIwefkC5gTer0hkspq8rdso4TiT42TTf/j+s43aa
+ZUf1rh+/EHd7q1ML4GDzSFCEb8BENBaWmhOwuH0wDOlMV/4u/0dCpfrQKbnS1CPFi2EhmJPKv4lp
+iHWapiA66BkkfHQo2GmD8RXF5orkJvS4xXE0g9nAiA==

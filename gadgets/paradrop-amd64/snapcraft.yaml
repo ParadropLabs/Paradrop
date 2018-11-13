@@ -6,6 +6,8 @@ description: This gadget runs Paradrop on a generic amd64 system.
 grade: stable
 confinement: strict
 icon: icon.png
+architectures:
+  - amd64
 
 parts:
   grub-prepare:

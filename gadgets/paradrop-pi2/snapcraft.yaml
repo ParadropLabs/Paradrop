@@ -1,0 +1,171 @@
+name: paradrop-pi2
+version: 0.12.7
+summary: Paradrop Raspberry Pi 2 gadget
+description: This gadget runs Paradrop on a Raspberry Pi 2.
+type: gadget
+architectures:
+  - armhf
+confinement: strict
+grade: stable
+parts:
+  uboot:
+    plugin: nil
+    source: git://git.denx.de/u-boot.git
+    source-branch: v2017.05
+    prepare: |
+      git apply ../../../uboot.patch
+      make rpi_2_defconfig
+    build: |
+      if [ "$(arch)" = "x86_64" ]; then
+        CROSS_COMPILE=arm-linux-gnueabihf- make
+      else
+        make
+      fi
+    install: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/boot-assets
+      cp u-boot.bin $SNAPCRAFT_PART_INSTALL/boot-assets/uboot.bin
+      tools/mkenvimage -r -s 131072 -o $SNAPCRAFT_PART_INSTALL/uboot.env ../../../uboot.env.in
+      ln -s uboot.env $SNAPCRAFT_PART_INSTALL/uboot.conf
+    build-packages:
+      - bc
+      - build-essential
+      - device-tree-compiler
+      - libpython2.7-dev
+      - python-minimal
+      - on amd64 to armhf:
+          - gcc-arm-linux-gnueabihf:amd64
+  boot-firmware:
+    plugin: nil
+    source: .
+    after:
+      - uboot
+    prepare: |
+      git clone --depth=1 https://github.com/raspberrypi/firmware.git -b "1.20170515"
+    install: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/boot-assets
+      for file in fixup start bootcode LICENCE COPYING; do
+        cp firmware/boot/${file}* $SNAPCRAFT_PART_INSTALL/boot-assets
+      done
+  configs:
+    plugin: dump
+    source: configs
+    after:
+      - boot-firmware
+    organize:
+      config.txt: boot-assets/config.txt
+      cmdline.txt: boot-assets/cmdline.txt
+  devicetrees:
+    plugin: nil
+    source: .
+    after:
+      - configs
+    prepare: |
+      PACKAGES="http://ports.ubuntu.com/ubuntu-ports/dists/xenial-updates/universe/binary-armhf/Packages.gz"
+      PKGPATH="$(wget -q -O- $PACKAGES|zcat|grep-dctrl linux-raspi2 |\
+        grep linux-image|grep Filename|tail -1| sed 's/^Filename: //')"
+      wget http://ports.ubuntu.com/ubuntu-ports/$PKGPATH
+      dpkg -x $(basename $PKGPATH) unpack/
+    install: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/boot-assets
+      cp -a unpack/lib/firmware/*/device-tree/* $SNAPCRAFT_PART_INSTALL/boot-assets
+      rm -rf unpack
+    build-packages:
+      - coreutils
+      - dctrl-tools
+      - sed
+      - wget
+
+slots:
+  bcm-gpio-0:
+    interface: gpio
+    number: 0
+  bcm-gpio-1:
+    interface: gpio
+    number: 1
+  bcm-gpio-2:
+    interface: gpio
+    number: 2
+  bcm-gpio-3:
+    interface: gpio
+    number: 3
+  bcm-gpio-4:
+    interface: gpio
+    number: 4
+  bcm-gpio-5:
+    interface: gpio
+    number: 5
+  bcm-gpio-6:
+    interface: gpio
+    number: 6
+  bcm-gpio-7:
+    interface: gpio
+    number: 7
+  bcm-gpio-8:
+    interface: gpio
+    number: 8
+  bcm-gpio-9:
+    interface: gpio
+    number: 9
+  bcm-gpio-10:
+    interface: gpio
+    number: 10
+  bcm-gpio-11:
+    interface: gpio
+    number: 11
+  bcm-gpio-12:
+    interface: gpio
+    number: 12
+  bcm-gpio-13:
+    interface: gpio
+    number: 13
+  bcm-gpio-14:
+    interface: gpio
+    number: 14
+  bcm-gpio-15:
+    interface: gpio
+    number: 15
+  bcm-gpio-16:
+    interface: gpio
+    number: 16
+  bcm-gpio-17:
+    interface: gpio
+    number: 17
+  bcm-gpio-18:
+    interface: gpio
+    number: 18
+  bcm-gpio-19:
+    interface: gpio
+    number: 19
+  bcm-gpio-20:
+    interface: gpio
+    number: 20
+  bcm-gpio-21:
+    interface: gpio
+    number: 21
+  bcm-gpio-22:
+    interface: gpio
+    number: 22
+  bcm-gpio-23:
+    interface: gpio
+    number: 23
+  bcm-gpio-24:
+    interface: gpio
+    number: 24
+  bcm-gpio-25:
+    interface: gpio
+    number: 25
+  bcm-gpio-26:
+    interface: gpio
+    number: 26
+  bcm-gpio-27:
+    interface: gpio
+    number: 27
+  i2c-0:
+    interface: i2c
+    path: /dev/i2c-0
+  i2c-1:
+    interface: i2c
+    path: /dev/i2c-1
+  i2c-2:
+    interface: i2c
+    path: /dev/i2c-2

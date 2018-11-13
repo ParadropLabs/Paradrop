@@ -13,6 +13,15 @@ There is also the possibility of future support for disabling the first
 boot console-conf, better device provisioning, and other features through
 the gadget snap.
 
+Source
+------
+
+These gadget snaps are derived from the generic gadgets that Canonical
+published.
+
+* https://github.com/snapcore/pc-amd64-gadget
+* https://github.com/snapcore/pi2-gadget
+
 Building
 --------
 
@@ -20,3 +29,6 @@ Gadget snaps are built using snapcraft.
 
     cd paradrop-amd64
     snapcraft
+
+    cd paradrop-pi2
+    snapcraft --target-arch=armhf
