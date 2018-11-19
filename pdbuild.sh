@@ -172,6 +172,7 @@ image() {
         --extra-snaps "$gadget" \
         --extra-snaps "$pdsnap" \
         --image-size 4G \
+        --cloud-init cloud.conf \
         "assertions/paradrop-$model.model"
 
     # The ubuntu-image command only takes a single channel argument and applies
