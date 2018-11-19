@@ -1,9 +1,24 @@
 import httplib
 import json
 import os
+import time
 
 from paradrop.base import settings
+from paradrop.base.output import out
 from paradrop.lib.utils import datastruct
+
+
+def wait_for_zerotier(max_delay=120):
+    """
+    Wait for ZeroTier to start up and create the authtoken file.
+    """
+    path = os.path.join(settings.ZEROTIER_LIB_DIR, "authtoken.secret")
+
+    if not os.path.isfile(path):
+        out.info("Waiting up to {} seconds for ZeroTier authtoken\n".format(max_delay))
+
+    while not os.path.isfile(path):
+        time.sleep(1)
 
 
 def configure(update):
@@ -13,11 +28,12 @@ def configure(update):
     if enabled:
         new_networks = set(datastruct.getValue(hostConfig,
                 "zerotier.networks", []))
+        wait_for_zerotier()
     else:
         new_networks = set()
 
     old_networks = set()
-    for network in get_networks():
+    for network in get_networks(ignore_error=not enabled):
         old_networks.add(network['id'])
 
     # Leave old networks and join new networks.
@@ -48,18 +64,25 @@ def get_auth_token():
         return source.read().strip()
 
 
-def get_networks():
+def get_networks(ignore_error=False):
     """
     Get list of active ZeroTier networks.
     """
-    conn = httplib.HTTPConnection("localhost", 9993)
-    path = "/network"
-    headers = {
-        "X-ZT1-Auth": get_auth_token()
-    }
-    conn.request("GET", path, "", headers)
-    res = conn.getresponse()
-    data = json.loads(res.read())
+    try:
+        conn = httplib.HTTPConnection("localhost", 9993)
+        path = "/network"
+        headers = {
+            "X-ZT1-Auth": get_auth_token()
+        }
+        conn.request("GET", path, "", headers)
+        res = conn.getresponse()
+        data = json.loads(res.read())
+    except:
+        if ignore_error:
+            out.info("An error occurred reading ZeroTier networks.")
+            return []
+        else:
+            raise
 
     # nwid field is deprecated, so make sure id field exists.
     for network in data:
