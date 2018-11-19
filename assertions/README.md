@@ -1,10 +1,15 @@
 Updating the model assertion
 ----------------------------
 
-1. Make changes to paradrop-amd64-model.json
-2. Use the output of `date -Iseconds --utc` to update the timestamp field.
-3. Sign the model assertion.  You must be logged in with an Ubuntu One account.
-   `cat paradrop-amd64-model.json | snap sign -k default &>paradrop-amd64.model`
+Make changes to the json file, then run the following commands to update the
+signed assertion. You must have created and registered a signing key through
+snapcraft before running these commands.
+
+```bash
+TIMESTAMP=$(date -Iseconds --utc)
+sed s/%TIMESTAMP%/$TIMESTAMP/ paradrop-amd64.json | snap sign -k default &>paradrop-amd64.model
+sed s/%TIMESTAMP%/$TIMESTAMP/ paradrop-pi2.json | snap sign -k default &>paradrop-pi2.model
+```
 
 Related documentation:
 https://docs.ubuntu.com/core/en/guides/build-device/image-building

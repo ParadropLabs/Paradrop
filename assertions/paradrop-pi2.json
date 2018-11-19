@@ -14,5 +14,5 @@
         "pulseaudio",
         "zerotier-one"
     ],
-    "timestamp": "2018-11-12T18:04:37+00:00"
+    "timestamp": "%TIMESTAMP%"
 }
