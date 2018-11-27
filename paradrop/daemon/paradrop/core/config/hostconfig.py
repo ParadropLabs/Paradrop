@@ -13,7 +13,6 @@ provisioning or first chute creation and allow him to change settings.
 settings.
 """
 
-import itertools
 import jsonpatch
 import subprocess
 import yaml
@@ -24,7 +23,48 @@ from paradrop.lib.utils import datastruct
 from . import devices as config_devices
 
 
-CHANNELS = [1, 6, 11]
+CHANNELS_24G = [1, 6, 11]
+CHANNELS_5G  = [36, 40, 44, 48, 149, 153, 157, 161, 165]
+
+
+WIFI_DEVICE_CAPS = {
+    # WLE200NX
+    ("0x168c", "0x002a"): {
+        "hwmode": ["11a", "11g"]
+    },
+
+    # WLE600VX
+    ("0x168c", "0x003c"): {
+        "hwmode": ["11a", "11g"]
+    },
+
+    "default": {
+        "hwmode": ["11g"]
+    }
+}
+
+WIFI_DEVICE_PROFILE = {
+    # WLE200NX
+    ("0x168c", "0x002a"): {
+        "htmode": "HT20",
+        "tx_stbc": 1,
+        "rx_stbc": 1,
+        "short_gi_40": True,
+    },
+
+    # WLE600VX
+    ("0x168c", "0x003c"): {
+        "htmode": "VHT20",
+        "tx_stbc": 1,
+        "rx_stbc": 1,
+        "short_gi_20": True,
+        "short_gi_40": True,
+        "short_gi_80": True
+    },
+
+    "default": {}
+}
+
 
 def save(config, path=None):
     """
@@ -111,10 +151,6 @@ def generateHostConfig(devices):
         'networks': []
     }
 
-    # Cycle through the channel list to assign different channels to
-    # WiFi interfaces.
-    channels = itertools.cycle(CHANNELS)
-
     if len(devices['wan']) > 0:
         wanDev = devices['wan'][0]
         config['wan'] = {
@@ -144,13 +180,39 @@ def generateHostConfig(devices):
     for lanDev in devices['lan']:
         config['lan']['interfaces'].append(lanDev['name'])
 
+    # Counters to help with channel assignment.
+    serial = config_devices.get_hardware_serial()
+    wifi_24_assigned = 0
+    wifi_5_assigned = 0
+
     for wifiDev in devices['wifi']:
-        config['wifi'].append({
-            'id': wifiDev['id'],
-            'channel': channels.next(),
-            'hwmode': '11g',
-            'htmode': 'NONE'
-        })
+        pair = (wifiDev['vendor'], wifiDev['device'])
+        if pair in WIFI_DEVICE_PROFILE:
+            new_config = WIFI_DEVICE_PROFILE[pair].copy()
+            wifi_caps = WIFI_DEVICE_CAPS[pair]
+        else:
+            new_config = WIFI_DEVICE_PROFILE['default'].copy()
+            wifi_caps = WIFI_DEVICE_CAPS["default"]
+
+        new_config['id'] = wifiDev['id']
+
+        # This logic will assign a 5 Ghz channel to the first 5 Ghz-capable
+        # device.  It will then alternate between 2.4 Ghz and 5 Ghz.
+        choose_5g = "11a" in wifi_caps.get('hwmode', []) and \
+                wifi_5_assigned <= wifi_24_assigned
+
+        if choose_5g:
+            chan_index = (serial + wifi_5_assigned) % len(CHANNELS_5G)
+            new_config['channel'] = CHANNELS_5G[chan_index]
+            new_config['hwmode'] = "11a"
+            wifi_5_assigned += 1
+        else:
+            chan_index = (serial + wifi_24_assigned) % len(CHANNELS_24G)
+            new_config['channel'] = CHANNELS_24G[chan_index]
+            new_config['hwmode'] = "11g"
+            wifi_24_assigned += 1
+
+        config['wifi'].append(new_config)
 
     if len(config['wifi']) > 0:
         # If we detect WiFi devices now, configure the system to warn if they

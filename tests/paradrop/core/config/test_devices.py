@@ -131,3 +131,12 @@ def test_select_brlan_address(ifaddresses):
     addr, netmask = devices.select_brlan_address(host_config)
     assert addr == '192.168.1.1'
     assert netmask == '255.255.255.0'
+
+
+def test_get_hardware_serial():
+    serial = devices.get_hardware_serial()
+    assert isinstance(serial, int) or isinstance(serial, long)
+
+    # Should be constant.
+    serial2 = devices.get_hardware_serial()
+    assert serial == serial2

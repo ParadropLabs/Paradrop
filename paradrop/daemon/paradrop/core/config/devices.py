@@ -794,3 +794,19 @@ def setSystemDevices(update):
 
     # Write all of the changes to UCI files at once.
     builder.write()
+
+
+def get_hardware_serial():
+    """
+    Get hardware serial number.
+
+    The most reliable way we have that works across many hardware platforms is
+    to check the eth0 MAC address.
+
+    Returns a numeric serial number.
+    """
+    addr = getMACAddress("eth0")
+    if addr is None:
+        return 0
+    else:
+        return int(addr.translate(None, ":.- "), 16)
