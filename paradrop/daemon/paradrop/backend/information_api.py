@@ -22,9 +22,9 @@ class InformationApi:
     routes = Klein()
 
     def __init__(self):
-        self.vendor = pdos.readFile('/sys/devices/virtual/dmi/id/sys_vendor')[0]
-        self.board = pdos.readFile('/sys/devices/virtual/dmi/id/product_name')[0] \
-                     + ' ' + pdos.readFile('/sys/devices/virtual/dmi/id/product_version')[0]
+        self.vendor = pdos.read_sys_file('/sys/devices/virtual/dmi/id/sys_vendor')
+        self.board = pdos.read_sys_file('/sys/devices/virtual/dmi/id/product_name', default='') \
+                     + ' ' + pdos.read_sys_file('/sys/devices/virtual/dmi/id/product_version', default='')
         self.cpu = platform.processor()
         self.memory = virtual_memory().total
 
@@ -39,13 +39,13 @@ class InformationApi:
                 'slot': wifiDev['slot']
             })
 
-        self.biosVendor = pdos.readFile('/sys/devices/virtual/dmi/id/bios_vendor')[0]
-        self.biosVersion = pdos.readFile('/sys/devices/virtual/dmi/id/bios_version')[0]
-        self.biosDate = pdos.readFile('/sys/devices/virtual/dmi/id/bios_date')[0]
+        self.biosVendor = pdos.read_sys_file('/sys/devices/virtual/dmi/id/bios_vendor')
+        self.biosVersion = pdos.read_sys_file('/sys/devices/virtual/dmi/id/bios_version')
+        self.biosDate = pdos.read_sys_file('/sys/devices/virtual/dmi/id/bios_date')
         self.osVersion = getOSVersion()
         self.kernelVersion = platform.system() + '-' + platform.release()
         self.pdVersion = getPackageVersion('paradrop')
-        self.uptime = int(float(pdos.readFile('/proc/uptime')[0].split()[0]))
+        self.uptime = int(float(pdos.read_sys_file('/proc/uptime', default='0').split()[0]))
 
     @routes.route('/hardware', methods=['GET'])
     def hardware_info(self, request):

@@ -189,3 +189,19 @@ def readFile(filename, array=True, delimiter="\n"):
         return lines
     else:
         return delimiter.join(lines)
+
+
+def read_sys_file(path, default=None):
+    """
+    Read a file and return the contents as a string.
+
+    This is best suited for files that store a single line of text such as
+    files in /sys/.
+
+    Returns the default value if an error occurs.
+    """
+    try:
+        with open(path, 'r') as source:
+            return source.read().strip()
+    except:
+        return default
