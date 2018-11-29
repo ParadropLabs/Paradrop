@@ -2,6 +2,21 @@ from paradrop.core.container.dockerfile import Dockerfile
 from paradrop.core.chute.service import Service
 
 
+def test_get_target_image():
+    from paradrop.core.container import dockerfile
+    assert dockerfile.get_target_image("go").startswith("golang:")
+    assert dockerfile.get_target_image("node").startswith("node:")
+    assert dockerfile.get_target_image("python2").startswith("python:2")
+    assert dockerfile.get_target_image("python3").startswith("python:3")
+    assert dockerfile.get_target_image("xxx").startswith("xxx:")
+
+
+def test_get_target_machine():
+    from paradrop.core.container import dockerfile
+    result = dockerfile.get_target_machine()
+    assert isinstance(result, basestring) and len(result) > 0
+
+
 def test_getString():
     service = Service(image="python2", command="python")
     dockerfile = Dockerfile(service)

@@ -274,7 +274,10 @@ def _build_image(update, service, client, inline, **buildArgs):
         else:
             # Write it out to a file in the working directory.
             path = os.path.join(buildArgs['path'], "Dockerfile")
-            dockerfile.writeFile(path)
+            try:
+                dockerfile.writeFile(path)
+            except Exception as error:
+                update.progress(str(error))
 
     output = client.build(**buildArgs)
 

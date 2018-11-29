@@ -110,7 +110,7 @@ def get_command(name="my-app", use=None):
     elif use == "gradle":
         print("For Java applications, you can accept the default and update")
         print("paradrop.yaml after you have decided on the structure of your project.")
-        default = "java -cp build/libs/gradle-{name}-1.0-SNAPSHOT.jar com.mycompany.{name}.Main".format(name=name)
+        default = "java -jar build/libs/{name}-0.1.0.jar".format(name=name)
     elif use == "maven":
         print("For Java applications, you can accept the default and update")
         print("paradrop.yaml after you have decided on the structure of your project.")
