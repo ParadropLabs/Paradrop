@@ -8,7 +8,7 @@ def test_get_target_image():
     assert dockerfile.get_target_image("node").startswith("node:")
     assert dockerfile.get_target_image("python2").startswith("python:2")
     assert dockerfile.get_target_image("python3").startswith("python:3")
-    assert dockerfile.get_target_image("xxx").startswith("xxx:")
+    assert dockerfile.get_target_image("unknown").startswith("unknown")
 
 
 def test_get_target_machine():
