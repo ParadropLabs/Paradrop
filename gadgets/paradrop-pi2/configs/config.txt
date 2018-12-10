@@ -4,6 +4,12 @@
 
 kernel=uboot.bin
 
+# Constrain GPU memory for smaller Raspberry Pi models, since we probably
+# need the memory more for applications.
+gpu_mem_256=16
+gpu_mem_512=32
+gpu_mem_1024=64
+
 # uncomment if you get no picture on HDMI for a default "safe" mode
 #hdmi_safe=1
 
