@@ -62,16 +62,10 @@ parts:
     plugin: python
     python-version: python2
     source: paradrop/daemon
-    build-packages:
-      - python-dev
-      - libffi-dev
     stage-packages:
       - libcurl4-openssl-dev
       - libpulse0
       - libssl-dev
-      - python-openssl
-      - python-pyasn1
-      - python-pyasn1-modules
     organize:
       # For some reason, the libpulsecommon .so file could not be found in its
       # default install location, so move it to a place where it can be found.

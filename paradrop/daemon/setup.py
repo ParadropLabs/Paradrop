@@ -15,7 +15,6 @@ setup(
         'colorama==0.3.9',
         'docker==2.5.1',
         'enum34',
-        'idna>=2.0',
         'ipaddress>=1.0.16',
         'jsonpatch==1.15',
         'klein==16.12.0',
