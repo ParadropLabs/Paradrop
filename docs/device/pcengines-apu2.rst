@@ -51,7 +51,7 @@ First Boot
 
 If you know the IP address of the router, e.g. because you have access to the
 DHCP server upstream from the router, then you can skip this step and proceed
-with activating the router as described in the section :doc:`../manual/index`_.
+with activating the router as described in the section :doc:`../manual/index`.
 
 The first time you boot the Paradrop router, you can optionally connect
 a serial cable to complete the Ubuntu Core setup process.  The default

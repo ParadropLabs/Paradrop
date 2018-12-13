@@ -16,5 +16,6 @@ activate the node with the cloud controller at paradrop.org. The page
    :maxdepth: 2
 
    virtual-machine
-   pcengines-apu2
    intel-nuc
+   pcengines-apu2
+   raspberry-pi2
