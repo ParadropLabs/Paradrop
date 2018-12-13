@@ -25,7 +25,7 @@ setup(
         'pycurl',
         'PyJWT==1.6.4',
         'PyYAML==3.13',
-        'requests==2.15.1', # Fix requests version until we can get idna>=2.5.
+        'requests>=2.20.0',
         'ruamel.ordereddict==0.4.13',
         'ruamel.yaml==0.15.60',
         'service_identity==17.0.0',
