@@ -6,9 +6,6 @@ from paradrop.base import settings
 from paradrop.lib.utils import pdos
 
 class PasswordManager(object):
-    DEFAULT_USER_NAME = 'paradrop'
-    DEFAULT_PASSWORD = ''
-
     def __init__(self):
         self.password_file = os.path.join(settings.CONFIG_HOME_DIR, 'password')
 
@@ -67,8 +64,8 @@ class PasswordManager(object):
     def reset(self):
         self.records = []
         self.records.append({
-            'user_name': PasswordManager.DEFAULT_USER_NAME,
-            'password_hash': self._hash_password(PasswordManager.DEFAULT_PASSWORD)
+            'user_name': settings.DEFAULT_PANEL_USERNAME,
+            'password_hash': self._hash_password(settings.DEFAULT_PANEL_PASSWORD)
         })
 
         self._sync_password_file()
@@ -109,7 +106,7 @@ class PasswordManager(object):
     # We need to verify the user with the old password first
     def change_password(self, user_name, newPassword):
         if not user_name:
-            user_name = PasswordManager.DEFAULT_USER_NAME
+            user_name = settings.DEFAULT_PANEL_USERNAME
 
         for i in self.records:
             if i['user_name'] == user_name:

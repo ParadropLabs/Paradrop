@@ -169,6 +169,17 @@ CHECK_DOCKER = False
 # in this directory.
 ZEROTIER_LIB_DIR = "/var/lib/zerotier-one"
 
+# Default username and password for the admin panel.
+DEFAULT_PANEL_USERNAME = "paradrop"
+DEFAULT_PANEL_PASSWORD = ""
+
+# Default wireless settings used for hostconfig generation.  If
+# DEFAULT_WIRELESS_ENABLED is set to False, we will not create an access point
+# by default.
+DEFAULT_WIRELESS_ENABLED = True
+DEFAULT_WIRELESS_ESSID = "Paradrop"
+DEFAULT_WIRELESS_KEY = None
+
 ###############################################################################
 # Helper functions
 ###############################################################################

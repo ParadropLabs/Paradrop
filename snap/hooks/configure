@@ -30,11 +30,16 @@ PUBLIC_KEY_FILE = "node.pub"
 #   ...
 #
 SETTINGS = [
-    ("base.allow-monitor-mode",     "base",     "allow_monitor_mode"),
-    ("base.concurrent-builds",      "base",     "concurrent_builds"),
-    ("base.debug-mode",             "base",     "debug_mode"),
-    ("base.dynamic-network-pool",   "base",     "dynamic_network_pool"),
-    ("base.local-domain",           "base",     "local_domain")
+    ("base.allow-monitor-mode",       "base", "allow_monitor_mode"),
+    ("base.concurrent-builds",        "base", "concurrent_builds"),
+    ("base.debug-mode",               "base", "debug_mode"),
+    ("base.default-panel-password",   "base", "default_panel_password"),
+    ("base.default-panel-username",   "base", "default_panel_username"),
+    ("base.default-wireless-enabled", "base", "default_wireless_enabled"),
+    ("base.default-wireless-essid",   "base", "default_wireless_essid"),
+    ("base.default-wireless-key",     "base", "default_wireless_key"),
+    ("base.dynamic-network-pool",     "base", "dynamic_network_pool"),
+    ("base.local-domain",             "base", "local_domain")
 ]
 
 

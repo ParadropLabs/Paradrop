@@ -214,19 +214,25 @@ def generateHostConfig(devices):
 
         config['wifi'].append(new_config)
 
-    if len(config['wifi']) > 0:
+    if len(config['wifi']) > 0 and settings.DEFAULT_WIRELESS_ENABLED:
         # If we detect WiFi devices now, configure the system to warn if they
         # are missing later.  Production systems should be configured with
         # "reboot".
         config['system']['onMissingWiFi'] = "warn"
 
         # Add a default WiFi AP for usability.
-        config['wifi-interfaces'].append({
+        new_iface = {
             'device': devices['wifi'][0]['id'],
-            'ssid': 'ParaDrop',
+            'ssid': settings.DEFAULT_WIRELESS_ESSID,
             'mode': 'ap',
             'network': 'lan'
-        })
+        }
+
+        if settings.DEFAULT_WIRELESS_KEY:
+            new_iface['encryption'] = "psk2"
+            new_iface['key'] = settings.DEFAULT_WIRELESS_KEY
+
+        config['wifi-interfaces'].append(new_iface)
 
     return config
 

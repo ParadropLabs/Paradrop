@@ -5,7 +5,7 @@ import json
 from klein import Klein
 from twisted.internet import defer
 
-from paradrop.base import nexus
+from paradrop.base import nexus, settings
 from paradrop.base.output import out
 from paradrop.core.agent.http import PDServerRequest
 from paradrop.core.auth.user import User
@@ -155,8 +155,13 @@ class AuthApi(object):
         request.setHeader('Content-Type', 'application/json')
 
         body = json.loads(request.content.read())
-        username = body.get('username', self.password_manager.DEFAULT_USER_NAME)
-        password = body.get('password', self.password_manager.DEFAULT_PASSWORD)
+
+        # If username is missing in the body, automatically fill in the
+        # default.  If password is missing, assume empty string regardless of
+        # the default.  The caller can only login without a password if the
+        # current password is empty.
+        username = body.get('username', settings.DEFAULT_PANEL_USERNAME)
+        password = body.get('password', '')
 
         success = self.password_manager.verify_password(username, password)
         result = {
