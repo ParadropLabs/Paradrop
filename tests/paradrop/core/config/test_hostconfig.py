@@ -56,6 +56,8 @@ def test_prepareHostConfig(settings, detectSystemDevices):
     source.flush()
 
     settings.HOST_CONFIG_FILE = source.name
+    settings.DEFAULT_LAN_ADDRESS = "1.2.3.4"
+    settings.DEFAULT_LAN_NETWORK = "1.0.0.0/24"
 
     config = prepareHostConfig()
     assert config['test'] == 'value'
@@ -66,6 +68,8 @@ def test_prepareHostConfig(settings, detectSystemDevices):
 
         config = prepareHostConfig()
         assert config['wan']['interface'] == 'eth0'
+        assert config['lan']['ipaddr'] == "1.2.3.4"
+        assert config['lan']['netmask'] == "255.255.255.0"
 
         # Now simulate failure to write to file.
         yaml.safe_dump.side_effect = IOError()

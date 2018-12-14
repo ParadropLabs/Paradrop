@@ -4,22 +4,3 @@
 # time.  After the first install, it will not be run again for version upgrades
 # unless the snap is completely removed and reinstalled.
 #
-
-# Warning: do not touch files or directories in the SNAP_COMMON directory using
-# this install script. Even though the install script would seem like a logical
-# place to initialize that directory, it seems to interact strangely with
-# snap's unique filesystem layout. I believe this was the cause of write
-# failures with a "read-only filesystem" error message.
-
-# Initialize snap settings.
-#
-# This command sets some state for snapd, which will be used later on
-# by our configure hook to initialize the settings.ini file.
-#
-# It is better to call snapctl once with all of the settings rather than
-# multiple times. That way only triggers our configure hook once.
-snapctl set base.allow-monitor-mode=false \
-            base.concurrent-builds=true \
-            base.debug-mode=false \
-            base.dynamic-network-pool=10.128.0.0/9 \
-            base.local-domain=paradrop.io

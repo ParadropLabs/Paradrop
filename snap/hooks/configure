@@ -33,6 +33,8 @@ SETTINGS = [
     ("base.allow-monitor-mode",       "base", "allow_monitor_mode"),
     ("base.concurrent-builds",        "base", "concurrent_builds"),
     ("base.debug-mode",               "base", "debug_mode"),
+    ("base.default-lan-address",      "base", "default_lan_address"),
+    ("base.default-lan-network",      "base", "default_lan_network"),
     ("base.default-panel-password",   "base", "default_panel_password"),
     ("base.default-panel-username",   "base", "default_panel_username"),
     ("base.default-wireless-enabled", "base", "default_wireless_enabled"),
@@ -90,6 +92,15 @@ def prepare_settings_file():
                 value = result.decode('ascii', 'ignore').strip()
                 if len(value) > 0:
                     config.set(section, name, value)
+
+            elif config.has_option(section, name):
+                # Value exists in settings file but not snapd state.
+                # Call "snapctl set" so that users will see the value
+                # if they call "snap get".
+                value = config.get(section, name)
+                cmd = ["snapctl", "set", option, value]
+                subprocess.call(cmd, env=subprocess_env)
+
         except subprocess.CalledProcessError:
             pass
 

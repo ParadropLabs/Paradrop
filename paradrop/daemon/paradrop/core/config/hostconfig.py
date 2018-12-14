@@ -13,8 +13,10 @@ provisioning or first chute creation and allow him to change settings.
 settings.
 """
 
-import jsonpatch
 import subprocess
+
+import ipaddress
+import jsonpatch
 import yaml
 
 from paradrop.base import settings
@@ -107,6 +109,8 @@ def generateHostConfig(devices):
     """
     config = dict()
 
+    default_lan_network = ipaddress.ip_network(unicode(settings.DEFAULT_LAN_NETWORK))
+
     config['firewall'] = {
         'defaults': {
             'input': 'ACCEPT',
@@ -117,8 +121,8 @@ def generateHostConfig(devices):
     config['lan'] = {
         'interfaces': list(),
         'proto': 'static',
-        'ipaddr': '10.0.0.1',
-        'netmask': '255.255.255.0',
+        'ipaddr': settings.DEFAULT_LAN_ADDRESS,
+        'netmask': str(default_lan_network.netmask),
         'dhcp': {
             'start': 100,
             'limit': 100,
@@ -147,7 +151,7 @@ def generateHostConfig(devices):
         'interval': 60
     }
     config['zerotier'] = {
-        'enabled': False,
+        'enabled': True,
         'networks': []
     }
 
@@ -164,7 +168,7 @@ def generateHostConfig(devices):
                     'output': 'ACCEPT',
                     'forward': 'ACCEPT',
                     'masq_src': [
-                        '10.0.0.0/24',
+                        settings.DEFAULT_LAN_NETWORK,
                         settings.DYNAMIC_NETWORK_POOL
                     ]
                 }
