@@ -62,6 +62,8 @@ parts:
     plugin: python
     python-version: python2
     source: paradrop/daemon
+    build-packages:
+      - libffi-dev
     stage-packages:
       - libcurl4-openssl-dev
       - libpulse0
