@@ -167,12 +167,16 @@ image() {
     select other_channel in stable candidate beta edge;
     do break; done
 
+    echo "Select the cloud.conf file:"
+    select cloud_conf in *.conf;
+    do break; done
+
     sudo ubuntu-image snap -o $image \
         --channel "$other_channel" \
         --extra-snaps "$gadget" \
         --extra-snaps "$pdsnap" \
         --image-size 4G \
-        --cloud-init cloud.conf \
+        --cloud-init "$cloud_conf" \
         "assertions/paradrop-$model.model"
 
     # The ubuntu-image command only takes a single channel argument and applies
