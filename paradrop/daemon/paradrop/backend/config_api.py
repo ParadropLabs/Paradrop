@@ -14,6 +14,7 @@ from paradrop.base.output import out
 from paradrop.base.pdutils import timeint, str2json
 from paradrop.core.config import hostconfig
 from paradrop.core.agent.http import PDServerRequest
+from paradrop.core.agent.provisioning import read_provisioning_result
 from paradrop.core.agent.reporting import sendNodeIdentity, sendStateReport
 from paradrop.core.agent.wamp_session import WampSession
 from paradrop.confd import client as pdconf_client
@@ -264,7 +265,9 @@ class ConfigApi(object):
         Get the provision status of the device.
         """
         cors.config_cors(request)
-        result = dict()
+        request.setHeader('Content-Type', 'application/json')
+
+        result = read_provisioning_result()
         result['routerId'] = nexus.core.info.pdid
         result['pdserver'] = nexus.core.info.pdserver
         result['wampRouter'] = nexus.core.info.wampRouter
@@ -273,7 +276,6 @@ class ConfigApi(object):
                                  apitoken is not None)
         result['httpConnected'] = nexus.core.jwt_valid
         result['wampConnected'] = nexus.core.wamp_connected
-        request.setHeader('Content-Type', 'application/json')
         return json.dumps(result)
 
     @routes.route('/settings', methods=['GET'])

@@ -62,19 +62,6 @@ def test_prepareHostConfig(settings, detectSystemDevices):
     config = prepareHostConfig()
     assert config['test'] == 'value'
 
-    with patch("paradrop.core.config.hostconfig.yaml") as yaml:
-        yaml.safe_load.side_effect = IOError()
-        yaml.safe_dump.return_value = "{test: value}"
-
-        config = prepareHostConfig()
-        assert config['wan']['interface'] == 'eth0'
-        assert config['lan']['ipaddr'] == "1.2.3.4"
-        assert config['lan']['netmask'] == "255.255.255.0"
-
-        # Now simulate failure to write to file.
-        yaml.safe_dump.side_effect = IOError()
-        assert_raises(Exception, prepareHostConfig)
-
 
 @patch("paradrop.core.config.hostconfig.prepareHostConfig")
 def test_getHostconfig(prepareHostConfig):

@@ -99,6 +99,19 @@ class UpdateManager:
 
         return d
 
+    def add_provision_update(self, hostconfig_patch, zerotier_networks):
+        update = self._make_router_update("patchhostconfig")
+        update.patch = list(hostconfig_patch)
+
+        for network in zerotier_networks:
+            update.patch.append({
+                "op": "add",
+                "path": "/zerotier/networks/-",
+                "value": network
+            })
+
+        self.updateQueue.append(update)
+
     def assign_change_id(self):
         """
         Get a unique change ID for an update.

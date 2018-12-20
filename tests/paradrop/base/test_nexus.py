@@ -2,7 +2,7 @@ import os
 import shutil
 
 from nose.tools import assert_raises
-from paradrop.lib.utils import pdos
+from paradrop.lib.utils import pdos, pdosq
 from paradrop.base import nexus, settings
 
 
@@ -91,6 +91,6 @@ def testSaveUpdatesYaml():
     nex = TestingNexus()
     nex.info.a = 1
 
-    dic = nexus.loadYaml(settings.CONFIG_FILE)
+    dic = pdosq.read_yaml_file(settings.CONFIG_FILE)
     assert dic['a'] == 1
 

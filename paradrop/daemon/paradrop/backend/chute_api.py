@@ -11,8 +11,6 @@ import subprocess
 import tarfile
 import tempfile
 
-import yaml
-
 from autobahn.twisted.resource import WebSocketResource
 from klein import Klein
 
@@ -21,6 +19,7 @@ from paradrop.base.output import out
 from paradrop.core.chute.chute_storage import ChuteStorage
 from paradrop.core.config import resource
 from paradrop.core.container.chutecontainer import ChuteContainer
+from paradrop.lib.utils import pdosq
 
 from . import cors
 from . import hostapd_control
@@ -88,8 +87,7 @@ def extract_tarred_chute(data):
     if not os.path.isfile(configfile):
         raise Exception("No paradrop.yaml file found in chute source")
 
-    with open(configfile, "r") as source:
-        paradrop_yaml = yaml.safe_load(source)
+    paradrop_yaml = pdosq.read_yaml_file(configfile, default={})
 
     return (tempdir, paradrop_yaml)
 

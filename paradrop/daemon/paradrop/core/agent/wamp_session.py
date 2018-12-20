@@ -1,8 +1,6 @@
 '''
 The WAMP session of the paradrop daemon
 '''
-import six
-
 from twisted.internet.defer import inlineCallbacks
 from autobahn.wamp import auth
 
@@ -10,6 +8,13 @@ from paradrop.lib.misc import pdinstall
 from paradrop.base.output import out
 from paradrop.base import nexus
 from paradrop.base.cxbr import BaseSession
+
+
+def ensure_unicode(s):
+    if hasattr(s, 'decode'):
+        return s.decode('ascii')
+    else:
+        return s
 
 
 class WampSession(BaseSession):
@@ -28,7 +33,7 @@ class WampSession(BaseSession):
             out.info('Starting WAMP-CRA authentication on realm "{}" as user "{}"...'\
                      .format(self.config.realm, nexus.core.info.pdid))
             self.join(self.config.realm, [u'wampcra'],
-                    six.u(nexus.core.info.pdid))
+                    ensure_unicode(nexus.core.info.pdid))
 
     def onChallenge(self, challenge):
         if challenge.method == u"wampcra":

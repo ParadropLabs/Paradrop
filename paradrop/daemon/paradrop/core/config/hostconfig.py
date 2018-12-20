@@ -20,7 +20,7 @@ import jsonpatch
 import yaml
 
 from paradrop.base import settings
-from paradrop.lib.utils import datastruct
+from paradrop.lib.utils import datastruct, pdosq
 
 from . import devices as config_devices
 
@@ -93,14 +93,7 @@ def load(path=None):
     if path is None:
         path = settings.HOST_CONFIG_FILE
 
-    try:
-        with open(path, 'r') as source:
-            data = yaml.safe_load(source.read())
-            return data
-    except IOError:
-        pass
-
-    return None
+    return pdosq.read_yaml_file(path, default=None)
 
 
 def generateHostConfig(devices):

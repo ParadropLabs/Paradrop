@@ -11,6 +11,7 @@ from twisted.internet.defer import inlineCallbacks
 from paradrop.base.output import out
 from paradrop.base import nexus, settings
 from paradrop.lib.misc.procmon import ProcessMonitor
+from paradrop.core.agent import provisioning
 from paradrop.core.agent.reporting import sendNodeIdentity, sendStateReport
 from paradrop.core.agent.wamp_session import WampSession
 from paradrop.core.update.update_fetcher import UpdateFetcher
@@ -22,8 +23,9 @@ from paradrop import confd
 
 
 class Nexus(nexus.NexusBase):
-    def __init__(self, update_fetcher):
+    def __init__(self, update_fetcher, update_manager):
         self.update_fetcher = update_fetcher
+        self.update_manager = update_manager
         # Want to change logging functionality? See optional args on the base class and pass them here
         super(Nexus, self).__init__(stealStdio=True, printToConsole=True)
 
@@ -33,23 +35,23 @@ class Nexus(nexus.NexusBase):
         super(Nexus, self).onStart()
         # onStart is called when the reactor starts, not when the connection is made.
         # Check for provisioning keys and attempt to connect
-        if not self.provisioned():
-            out.warn('Router has no keys or identity. Waiting to connect to to server.')
+        while not self.provisioned() and provisioning.can_provision():
+            yield provisioning.provision_self(self.update_manager)
+
+        try:
+            # Set up communication with pdserver.
+            # 1. Create a report of the current system state and send that.
+            # 2. Send the node public key.
+            # 3. Poll for a list of updates that should be applied.
+            # 4. Open WAMP session.
+            yield sendStateReport()
+            yield sendNodeIdentity()
+            yield self.update_fetcher.start_polling()
+            yield self.connect(WampSession)
+        except Exception:
+            out.warn('The router ID or password is invalid!')
         else:
-            try:
-                # Set up communication with pdserver.
-                # 1. Create a report of the current system state and send that.
-                # 2. Send the node public key.
-                # 3. Poll for a list of updates that should be applied.
-                # 4. Open WAMP session.
-                yield sendStateReport()
-                yield sendNodeIdentity()
-                yield self.update_fetcher.start_polling()
-                yield self.connect(WampSession)
-            except Exception:
-                out.warn('The router ID or password is invalid!')
-            else:
-                out.info('WAMP session is ready!')
+            out.info('WAMP session is ready!')
 
     def onStop(self):
         if self.session is not None:
@@ -85,7 +87,7 @@ def main():
     airshark_manager = AirsharkManager()
 
     # Globally assign the nexus object so anyone else can access it.
-    nexus.core = Nexus(update_fetcher)
+    nexus.core = Nexus(update_fetcher, update_manager)
     http_server = HttpServer(update_manager, update_fetcher, airshark_manager, args.portal)
     setup_http_server(http_server, '0.0.0.0', settings.PORTAL_SERVER_PORT)
     reactor.listenMulticast(1900, SsdpResponder(), listenMultiple=True)

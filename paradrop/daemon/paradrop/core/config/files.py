@@ -1,11 +1,10 @@
 import os
 import shutil
 
-import yaml
-
 from paradrop.base import settings
 from paradrop.core.chute.builder import build_chute
 from paradrop.core.container.downloader import downloader
+from paradrop.lib.utils import pdosq
 
 
 def download_chute_files(update):
@@ -31,8 +30,7 @@ def load_chute_configuration(update):
     workdir = getattr(update, "workdir", None)
     if workdir is not None:
         conf_path = os.path.join(workdir, settings.CHUTE_CONFIG_FILE)
-        with open(conf_path, "r") as source:
-            config = yaml.safe_load(source)
+        config = pdosq.read_yaml_file(conf_path, default={})
 
     # Look for additional build information from the update object
     # and merge with the configuration file.

@@ -19,6 +19,7 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 from . import output, settings
+from paradrop.lib.utils import pdosq
 
 # Global access. Assign this wherever you instantiate the Nexus object:
 #       nexus.core = MyNexusSubclass()
@@ -219,14 +220,14 @@ def resolveInfo(nexus, path):
     if not os.path.isfile(path):
         createDefaultInfo(path)
 
-    contents = loadYaml(path)
+    contents = pdosq.read_yaml_file(path)
 
     # Sanity check contents of info and throw it out if bad
     if not validateInfo(contents):
         output.out.err('Saved configuration data invalid, destroying it.')
         os.remove(path)
         createDefaultInfo(path)
-        contents = loadYaml(path)
+        contents = pdosq.read_yaml_file(path, default={})
         writeYaml(contents, path)
 
     nexus.info.pdid = contents['pdid']
@@ -275,13 +276,4 @@ def writeYaml(contents, path):
     # print 'Writing ' + str(contents) + ' to path ' + str(path)
 
     with open(path, 'w') as f:
-        f.write(yaml.dump(contents, default_flow_style=False))
-
-
-def loadYaml(path):
-    ''' Return dict from YAML found at path '''
-    with open(path, 'r') as f:
-        contents = yaml.load(f.read())
-
-    # print 'Loaded ' + str(contents) + ' from path ' + str(path)
-    return contents
+        f.write(yaml.safe_dump(contents, default_flow_style=False))
