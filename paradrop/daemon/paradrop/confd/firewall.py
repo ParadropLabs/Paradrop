@@ -7,6 +7,10 @@ from .command import Command
 IPTABLES_WAIT = "5"
 
 
+def start_iptables_command(cmd, *args):
+    return [cmd, "--wait", IPTABLES_WAIT] + list(args)
+
+
 class ConfigDefaults(ConfigObject):
     typename = "defaults"
 
@@ -37,52 +41,52 @@ class ConfigDefaults(ConfigObject):
         for iptables in self.get_iptables():
             for path in ["input", "output", "forward"]:
                 # Create the delegate_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--new", "delegate_"+path]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Jump to delegate_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--append", path.upper(), "--jump",
                         "delegate_"+path]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Create the X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--new", path+"_rule"]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Jump to X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--append", path.upper(), "--jump",
                         path+"_rule"]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Add a rule at the end with the default policy.
-                cmd = [iptables, "--wait", IPTABLES_WAIT, "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--append", path.upper(), "--jump",
                         getattr(self, path)]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
             for path in ["prerouting", "postrouting"]:
                 # Create the delegate_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--new", "delegate_"+path]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Jump to delegate_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--append", path.upper(), "--jump",
                         "delegate_"+path]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Create the X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--new", path+"_rule"]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Jump to X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--append", path.upper(), "--jump",
                         path+"_rule"]
                 commands.append((self.PRIO_IPTABLES_TOP, Command(cmd, self)))
@@ -95,72 +99,72 @@ class ConfigDefaults(ConfigObject):
         for iptables in self.get_iptables():
             for path in ["prerouting", "postrouting"]:
                 # Jump to X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--delete", path.upper(), "--jump",
                         path+"_rule"]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Flush the X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--flush", path+"_rule"]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Delete the X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--delete-chain", path+"_rule"]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Jump to delegate_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--delete", path.upper(), "--jump",
                         "delegate_"+path]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Flush the delegate_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--flush", "delegate_"+path]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Delete the delegate_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "nat", "--delete-chain", "delegate_"+path]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
             for path in ["input", "output", "forward"]:
                 # Jump to X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--delete", path.upper(), "--jump",
                         path+"_rule"]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Flush the X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--flush", path+"_rule"]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Delete the X_rule chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--delete-chain", path+"_rule"]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Jump to paradrop_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--delete", path.upper(), "--jump",
                         "delegate_"+path]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Flush the paradrop_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--flush", "delegate_"+path]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Delete the paradrop_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,  "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--delete-chain", "delegate_"+path]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
 
                 # Delete the default rule.
-                cmd = [iptables, "--wait", IPTABLES_WAIT, "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--delete", path.upper(), "--jump",
                         getattr(self, path)]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
@@ -177,7 +181,7 @@ class ConfigDefaults(ConfigObject):
                     continue
 
                 # Add the new default rule.
-                cmd = [iptables, "--wait", IPTABLES_WAIT, "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--append", path.upper(), "--jump",
                         getattr(new, path)]
                 commands.append((new.PRIO_IPTABLES_TOP, Command(cmd, new)))
@@ -194,7 +198,7 @@ class ConfigDefaults(ConfigObject):
                     continue
 
                 # Delete the old default rule.
-                cmd = [iptables, "--wait", IPTABLES_WAIT, "--table",
+                cmd = start_iptables_command(iptables) + ["--table",
                         "filter", "--delete", path.upper(), "--jump",
                         getattr(self, path)]
                 commands.append((-self.PRIO_IPTABLES_TOP, Command(cmd, self)))
@@ -239,7 +243,7 @@ class ConfigZone(ConfigObject):
             for iptables in self.get_iptables():
                 # Jump to zone input chain.
                 chain = "zone_{}_input".format(self.name)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "filter",
                         action, "delegate_input",
                         "--in-interface", interface.config_ifname,
@@ -250,7 +254,7 @@ class ConfigZone(ConfigObject):
                 # associated with allowed outgoing traffic.
                 if self.conntrack:
                     comment = "zone {} conntrack".format(self.name)
-                    cmd = [iptables, "--wait", IPTABLES_WAIT,
+                    cmd = start_iptables_command(iptables) + [
                             "--table", "filter",
                             action, "input_rule",
                             "--in-interface", interface.config_ifname,
@@ -261,7 +265,7 @@ class ConfigZone(ConfigObject):
 
                 # Implement default policy for zone.
                 comment = "zone {} default".format(self.name)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "filter",
                         action, "input_rule",
                         "--in-interface", interface.config_ifname,
@@ -271,7 +275,7 @@ class ConfigZone(ConfigObject):
 
                 # Jump to zone output chain.
                 chain = "zone_{}_output".format(self.name)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "filter",
                         action, "delegate_output",
                         "--out-interface", interface.config_ifname,
@@ -279,7 +283,7 @@ class ConfigZone(ConfigObject):
                 commands.append((prio, Command(cmd, self)))
 
                 # Implement default policy for zone.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "filter",
                         action, "output_rule",
                         "--out-interface", interface.config_ifname,
@@ -289,7 +293,7 @@ class ConfigZone(ConfigObject):
 
                 # Jump to zone forward chain.
                 chain = "zone_{}_forward".format(self.name)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "filter",
                         action, "delegate_forward",
                         "--in-interface", interface.config_ifname,
@@ -297,7 +301,7 @@ class ConfigZone(ConfigObject):
                 commands.append((prio, Command(cmd, self)))
 
                 # Implement default policy for zone.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "filter",
                         action, "forward_rule",
                         "--in-interface", interface.config_ifname,
@@ -307,7 +311,7 @@ class ConfigZone(ConfigObject):
 
                 # Jump to zone prerouting chain.
                 chain = "zone_{}_prerouting".format(self.name)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "nat",
                         action, "delegate_prerouting",
                         "--in-interface", interface.config_ifname,
@@ -316,7 +320,7 @@ class ConfigZone(ConfigObject):
 
                 # Jump to zone postrouting chain.
                 chain = "zone_{}_postrouting".format(self.name)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "nat",
                         action, "delegate_postrouting",
                         "--out-interface", interface.config_ifname,
@@ -329,7 +333,7 @@ class ConfigZone(ConfigObject):
                 for src in self.masq_src:
                     for dest in self.masq_dest:
                         comment = "zone {} masq".format(self.name)
-                        cmd = ["iptables", "--wait", IPTABLES_WAIT,
+                        cmd = start_iptables_command(iptables) + [
                                 "--table", "nat",
                                action, "POSTROUTING",
                                "--out-interface", interface.config_ifname,
@@ -356,7 +360,7 @@ class ConfigZone(ConfigObject):
             for path in ["input", "output", "forward"]:
                 # Create the zone_NAME_X chain.
                 chain = "zone_{}_{}".format(self.name, path)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "filter",
                         "--new", chain]
                 commands.append((self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
@@ -364,7 +368,7 @@ class ConfigZone(ConfigObject):
             for path in ["prerouting", "postrouting"]:
                 # Create the zone_NAME_X chain.
                 chain = "zone_{}_{}".format(self.name, path)
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", "nat",
                         "--new", chain]
                 commands.append((self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
@@ -421,13 +425,13 @@ class ConfigZone(ConfigObject):
 
                 # Flush the zone_NAME_X chain, so that we do not get an error
                 # with the delete command.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", table,
                         "--flush", chain]
                 commands.append((-self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
 
                 # Delete the zone_NAME_X chain.
-                cmd = [iptables, "--wait", IPTABLES_WAIT,
+                cmd = start_iptables_command(iptables) + [
                         "--table", table,
                         "--delete-chain", chain]
                 commands.append((-self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
@@ -452,7 +456,7 @@ class ConfigForwarding(ConfigObject):
         chain = "zone_{}_forward".format(self.src)
         for dest_iface in self.dest_interfaces:
             comment = "forwarding {} -> {}".format(self.src, self.dest)
-            cmd = ["iptables", "--wait", IPTABLES_WAIT,
+            cmd = start_iptables_command("iptables") + [
                     "--table", "filter",
                     action, chain,
                     "--out-interface", dest_iface.config_ifname,
@@ -521,7 +525,7 @@ class ConfigRedirect(ConfigObject):
 
         for proto in protocols:
             chain = "zone_{}_prerouting".format(self.src)
-            cmd = ["iptables", "--wait", IPTABLES_WAIT,  "--table", "nat",
+            cmd = start_iptables_command("iptables") + ["--table", "nat",
                    action, chain]
 
             if self.src_ip is not None:
@@ -661,7 +665,7 @@ class ConfigRule(ConfigObject):
 
         for iptables in self.get_iptables():
             # Put together the common options for rules.
-            cmd = [iptables,
+            cmd = start_iptables_command(iptables) + [
                     "--wait", IPTABLES_WAIT,
                     "--table", "filter",
                     action, chain]
