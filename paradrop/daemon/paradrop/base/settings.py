@@ -183,6 +183,8 @@ DEFAULT_WIRELESS_ENABLED = True
 DEFAULT_WIRELESS_ESSID = "Paradrop"
 DEFAULT_WIRELESS_KEY = None
 
+GOVERNOR_INTERFACE = "/var/run/governor.socket"
+
 ###############################################################################
 # Helper functions
 ###############################################################################
@@ -330,6 +332,7 @@ def loadSettings(mode="local", slist=[]):
         updatePaths(snapCommonPath, snapDataPath)
         mod.HOST_DATA_PARTITION = "/writable"
         mod.DOCKER_BIN_DIR = "/snap/bin"
+        mod.GOVERNOR_INTERFACE = os.path.join(snapPath, "governor", "governor.socket")
         mod.ZEROTIER_LIB_DIR = os.path.join(snapPath, "zerotier-one")
 
     for x in [mod.LOG_DIR, mod.KEY_DIR, mod.MISC_DIR]:

@@ -11,6 +11,7 @@
         "bluez",
         "docker",
         "paradrop-agent",
+        "paradrop-governor",
         "pulseaudio",
         "zerotier-one"
     ],

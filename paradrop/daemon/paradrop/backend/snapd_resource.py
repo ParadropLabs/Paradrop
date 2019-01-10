@@ -1,3 +1,5 @@
+import os
+
 from twisted.internet import reactor
 from twisted.web.resource import Resource
 from twisted.web.server import NOT_DONE_YET
@@ -10,6 +12,9 @@ class SnapdResource(Resource):
     """
     Expose the snapd API by forwarding requests.
 
+    Changed in 0.13: we try to send the request through the governor service so
+    that paradrop can be installed in strict mode.
+
     https://github.com/snapcore/snapd/wiki/REST-API
     """
 
@@ -19,7 +24,13 @@ class SnapdResource(Resource):
         """
         Forward the API request to snapd.
         """
-        path = '/' + '/'.join(request.postpath)
+        if os.path.exists(settings.GOVERNOR_INTERFACE):
+            interface = settings.GOVERNOR_INTERFACE
+            path = '/snapd/' + '/'.join(request.postpath)
+        else:
+            interface = settings.SNAPD_INTERFACE
+            path = '/' + '/'.join(request.postpath)
+
         body = None
         headers = {}
 
@@ -33,7 +44,7 @@ class SnapdResource(Resource):
             body = request.content.read()
 
         # Make the request to snapd using a Unix socket.
-        conn = UHTTPConnection(settings.SNAPD_INTERFACE)
+        conn = UHTTPConnection(interface)
         conn.request(request.method, path, body, headers)
         res = conn.getresponse()
         data = res.read()

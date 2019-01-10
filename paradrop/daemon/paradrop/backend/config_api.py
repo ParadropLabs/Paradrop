@@ -19,6 +19,7 @@ from paradrop.core.agent.reporting import sendNodeIdentity, sendStateReport
 from paradrop.core.agent.wamp_session import WampSession
 from paradrop.confd import client as pdconf_client
 from paradrop.lib.misc import ssh_keys
+from paradrop.lib.misc.governor import GovernorClient
 
 from . import cors
 
@@ -362,7 +363,11 @@ class ConfigApi(object):
 
         if request.method == "GET":
             try:
-                keys = ssh_keys.getAuthorizedKeys(user)
+                if GovernorClient.isAvailable():
+                    client = GovernorClient()
+                    keys = client.listAuthorizedKeys(user)
+                else:
+                    keys = ssh_keys.getAuthorizedKeys(user)
                 return json.dumps(keys)
             except Exception as e:
                 out.warn(str(e))
@@ -373,7 +378,11 @@ class ConfigApi(object):
             key = body['key'].strip()
 
             try:
-                ssh_keys.addAuthorizedKey(key, user)
+                if GovernorClient.isAvailable():
+                    client = GovernorClient()
+                    client.addAuthorizedKey(key, user)
+                else:
+                    ssh_keys.addAuthorizedKey(key, user)
                 return json.dumps(body)
             except Exception as e:
                 out.warn(str(e))

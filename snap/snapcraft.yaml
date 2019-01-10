@@ -8,8 +8,8 @@ description: |
 
   Visit https://paradrop.org to learn more.
 
+confinement: strict
 grade: stable
-confinement: devmode
 
 apps:
   paradrop:
@@ -21,10 +21,6 @@ apps:
       - firewall-control
       - hardware-observe
       - home
-        # I think we added kernel-module-control, not because we load kernel
-        # modules but because of some other capability that is bundled with it.
-        # However, it triggers manual review.
-        # - kernel-module-control
       - mount-observe
       - network
       - network-bind
@@ -32,11 +28,8 @@ apps:
       - ppp
       - process-control
       - pulseaudio
-      - ssh-keys
       - ssh-public-keys
       - shutdown
-        # Desired, but triggers manual review...
-        # - snapd-control
       - system-observe
 
   pdlog:
@@ -147,6 +140,10 @@ parts:
       - $binaries
 
 plugs:
+  governor-control:
+    default-provider: paradrop-governor
+    interface: content
+    target: $SNAP/governor
   zerotier-control:
     default-provider: zerotier-one
     interface: content

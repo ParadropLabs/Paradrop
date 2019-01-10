@@ -159,6 +159,10 @@ image() {
     select pdsnap in $SNAP_NAME *.snap paradrop/*.snap;
     do break; done
 
+    echo "Select the governor snap to use (1 for snap store):"
+    select governor in paradrop-governor*.snap;
+    do break; done
+
     echo "Select the channel to track for $SNAP_NAME:"
     select channel in stable candidate beta edge;
     do break; done
@@ -175,6 +179,7 @@ image() {
         --channel "$other_channel" \
         --extra-snaps "$gadget" \
         --extra-snaps "$pdsnap" \
+        --extra-snaps "$governor" \
         --image-size 4G \
         --cloud-init "$cloud_conf" \
         "assertions/paradrop-$model.model"
