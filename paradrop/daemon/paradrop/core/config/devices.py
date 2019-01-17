@@ -810,3 +810,13 @@ def get_hardware_serial():
         return 0
     else:
         return int(addr.translate(None, ":.- "), 16)
+
+
+def get_machine_id():
+    """
+    Return unique machine identifier.
+
+    This is software-based but fairly standardized from the /etc/machine-id file.
+    We can potentially rely on this for uniquely identifying a node.
+    """
+    return readSysFile("/etc/machine-id")
