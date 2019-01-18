@@ -98,6 +98,7 @@ def generateConfigSections():
         if len(portconf) > 0:
             # TODO: Are there other elements in the list?
             binding = portconf[0]
+            frontend['lines'].append("http-request replace-value Host (.*):(.*) \\1")
             frontend['lines'].append("http-request redirect location http://%[req.hdr(host)]:{}%[var(req.subpath)]%[var(req.querymarker)]%[query] code 302 if path_{}".format(
                 binding['HostPort'], chute.name))
 
