@@ -25,8 +25,11 @@ def wait_for_zerotier(max_delay=120):
 def configure(update):
     hostConfig = update.cache_get('hostConfig')
 
+    # Check if ZeroTier is enabled in the node configuration and also whether
+    # its data directory exists. We prefer not to wait for it if it is not even
+    # installed.
     enabled = datastruct.getValue(hostConfig, "zerotier.enabled", False)
-    if enabled:
+    if enabled and os.path.isdir(settings.ZEROTIER_LIB_DIR):
         new_networks = set(datastruct.getValue(hostConfig,
                 "zerotier.networks", []))
         wait_for_zerotier()
