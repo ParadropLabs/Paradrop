@@ -25,9 +25,11 @@ def getVirtPreamble(update):
     Prepare various settings for Docker containers.
     """
     extDataDir = settings.EXTERNAL_DATA_DIR.format(chute=update.new.name)
+    extDataDir = os.path.expanduser(extDataDir)
     intDataDir = getattr(update.new, 'dataDir', settings.INTERNAL_DATA_DIR)
 
     extSystemDir = settings.EXTERNAL_SYSTEM_DIR.format(chute=update.new.name)
+    extSystemDir = os.path.expanduser(extSystemDir)
     intSystemDir = getattr(update.new, 'systemDir', settings.INTERNAL_SYSTEM_DIR)
 
     volumes = {
