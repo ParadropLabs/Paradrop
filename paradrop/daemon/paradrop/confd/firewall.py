@@ -333,7 +333,7 @@ class ConfigZone(ConfigObject):
                 for src in self.masq_src:
                     for dest in self.masq_dest:
                         comment = "zone {} masq".format(self.name)
-                        cmd = start_iptables_command(iptables) + [
+                        cmd = start_iptables_command("iptables") + [
                                 "--table", "nat",
                                action, "POSTROUTING",
                                "--out-interface", interface.config_ifname,
