@@ -386,12 +386,10 @@ class ConfigZone(ConfigObject):
         if self.masq:
             self.manager.forwardingCount += 1
             if self.manager.forwardingCount == 1:
-                cmd = ["sysctl", "--write",
-                       "net.ipv4.conf.all.forwarding=1"]
+                cmd = ["sysctl", "-w", "net.ipv4.conf.all.forwarding=1"]
                 commands.append((self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
 
-                cmd = ["sysctl", "--write",
-                       "net.ipv6.conf.all.forwarding=1"]
+                cmd = ["sysctl", "-w", "net.ipv6.conf.all.forwarding=1"]
                 commands.append((self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
 
         return commands
@@ -403,12 +401,10 @@ class ConfigZone(ConfigObject):
         if self.masq:
             self.manager.forwardingCount -= 1
             if self.manager.forwardingCount == 0:
-                cmd = ["sysctl", "--write",
-                       "net.ipv4.conf.all.forwarding=0"]
+                cmd = ["sysctl", "-w", "net.ipv4.conf.all.forwarding=0"]
                 commands.append((-self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
 
-                cmd = ["sysctl", "--write",
-                       "net.ipv6.conf.all.forwarding=0"]
+                cmd = ["sysctl", "-w", "net.ipv6.conf.all.forwarding=0"]
                 commands.append((-self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
 
         for iptables in self.get_iptables():
@@ -576,8 +572,7 @@ class ConfigRedirect(ConfigObject):
 
         self.manager.forwardingCount += 1
         if self.manager.forwardingCount == 1:
-            cmd = ["sysctl", "--write",
-                   "net.ipv4.conf.all.forwarding=1"]
+            cmd = ["sysctl", "-w", "net.ipv4.conf.all.forwarding=1"]
             commands.append((self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         return commands
@@ -594,8 +589,7 @@ class ConfigRedirect(ConfigObject):
 
         self.manager.forwardingCount -= 1
         if self.manager.forwardingCount == 0:
-            cmd = ["sysctl", "--write",
-                   "net.ipv4.conf.all.forwarding=0"]
+            cmd = ["sysctl", "-w", "net.ipv4.conf.all.forwarding=0"]
             commands.append((-self.PRIO_CONFIG_IFACE, Command(cmd, self)))
 
         return commands
