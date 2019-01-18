@@ -299,17 +299,6 @@ def getHostConfig(update):
     update.cache_set('hostConfig', config)
 
 
-def setAutoUpdate(enable):
-    if enable:
-        actions = ["enable", "start"]
-    else:
-        actions = ["disable", "stop"]
-
-    for action in actions:
-        cmd = ["systemctl", action, "snapd.refresh.timer"]
-        subprocess.call(cmd)
-
-
 def setHostConfig(update):
     """
     Write host configuration to persistent storage.
@@ -317,7 +306,6 @@ def setHostConfig(update):
     Read host configuration from hostConfig.
     """
     config = update.cache_get('hostConfig')
-    setAutoUpdate(datastruct.getValue(config, "system.autoUpdate", True))
     save(config)
 
 
@@ -328,5 +316,4 @@ def revertHostConfig(update):
     Uses oldHostConfig cache entry.
     """
     config = update.cache_get('oldHostConfig')
-    setAutoUpdate(datastruct.getValue(config, "system.autoUpdate", True))
     save(config)
