@@ -373,13 +373,6 @@ class ConfigZone(ConfigObject):
                         "--new", chain]
                 commands.append((self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
 
-        # Make sure the kernel module is loaded before we add any rules that
-        # rely on it.
-        if self.conntrack and not self.manager.conntrackLoaded:
-            cmd = ["modprobe", "xt_conntrack"]
-            commands.append((self.PRIO_IPTABLES_ZONE, Command(cmd, self)))
-            self.manager.conntrackLoaded = True
-
         commands.extend(self.__commands_iptables(allConfigs, "--append",
                 self.PRIO_IPTABLES_ZONE))
 
