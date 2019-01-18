@@ -13,14 +13,12 @@ provisioning or first chute creation and allow him to change settings.
 settings.
 """
 
-import subprocess
-
 import ipaddress
 import jsonpatch
 import yaml
 
 from paradrop.base import settings
-from paradrop.lib.utils import datastruct, pdosq
+from paradrop.lib.utils import pdosq
 
 from . import devices as config_devices
 
