@@ -35,7 +35,11 @@ class Nexus(nexus.NexusBase):
         super(Nexus, self).onStart()
         # onStart is called when the reactor starts, not when the connection is made.
         # Check for provisioning keys and attempt to connect
-        while not self.provisioned() and provisioning.can_provision():
+        if not self.provisioned() and not provisioning.can_provision():
+            out.warn("The node is not provisioned and is not configured to self-provision.")
+            return
+
+        while not self.provisioned():
             yield provisioning.provision_self(self.update_manager)
 
         try:
