@@ -80,7 +80,7 @@ release() {
 activate_virtual_env() {
     if [ ! -d buildenv ]; then
         virtualenv buildenv/env
-        pip install --requirements requirements.txt
+        pip install --requirement requirements.txt
     fi
     . buildenv/env/bin/activate
 }
