@@ -819,4 +819,9 @@ def get_machine_id():
     This is software-based but fairly standardized from the /etc/machine-id file.
     We can potentially rely on this for uniquely identifying a node.
     """
-    return readSysFile("/etc/machine-id")
+    if os.path.isfile("/etc/machine-id"):
+        return readSysFile("/etc/machine-id")
+    elif os.path.isfile("/var/lib/dbus/machine-id"):
+        return readSysFile("/var/lib/dbus/machine-id")
+    else:
+        return None

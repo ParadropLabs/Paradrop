@@ -144,7 +144,7 @@ def test_get_hardware_serial():
 
 def test_get_machine_id():
     mid = devices.get_machine_id()
-    assert isinstance(mid, basestring) and len(mid) > 0
+    assert isinstance(mid, basestring) or mid is None
 
     # The machine id should be constant.
     mid2 = devices.get_machine_id()
