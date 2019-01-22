@@ -1,0 +1,10 @@
+buildenv
+docs
+extra_snaps
+gadgets
+parts
+prime
+stage
+*.img
+*.img.xz
+*.snap
