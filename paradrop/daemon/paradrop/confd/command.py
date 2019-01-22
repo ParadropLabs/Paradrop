@@ -140,8 +140,12 @@ class Command(object):
             for line in proc.stderr:
                 out.verbose("{} {}: {}".format(self.command[0], self.pid, line))
             self.result = proc.wait()
-            out.info('Command "{}" returned {}\n'.format(
-                     " ".join(self.command), self.result))
+            if self.result == 0:
+                out.verbose('Command "{}" returned {}\n'.format(
+                         " ".join(self.command), self.result))
+            else:
+                out.info('Command "{}" returned {}\n'.format(
+                         " ".join(self.command), self.result))
         except Exception as e:
             out.info('Command "{}" raised exception {}\n'.format(
                      " ".join(self.command), e))
