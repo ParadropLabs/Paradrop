@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/ParadropLabs/Paradrop/badge.svg?branch=master)](https://coveralls.io/github/ParadropLabs/Paradrop?branch=master)
 [![Build Status](https://travis-ci.org/ParadropLabs/Paradrop.svg?branch=master)](https://travis-ci.org/ParadropLabs/Paradrop)
 [![Snap Status](https://build.snapcraft.io/badge/ParadropLabs/Paradrop.svg)](https://build.snapcraft.io/user/ParadropLabs/Paradrop)
-![Docker Image](https://img.shields.io/docker/pulls/paradrop/daemon.svg)(https://hub.docker.com/r/paradrop/daemon)
+[![Docker Image](https://img.shields.io/docker/pulls/paradrop/daemon.svg)](https://hub.docker.com/r/paradrop/daemon)
 
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-white.svg)](https://snapcraft.io/paradrop-agent)
 
