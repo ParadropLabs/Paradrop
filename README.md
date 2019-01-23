@@ -4,6 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/ParadropLabs/Paradrop/badge.svg?branch=master)](https://coveralls.io/github/ParadropLabs/Paradrop?branch=master)
 [![Build Status](https://travis-ci.org/ParadropLabs/Paradrop.svg?branch=master)](https://travis-ci.org/ParadropLabs/Paradrop)
 [![Snap Status](https://build.snapcraft.io/badge/ParadropLabs/Paradrop.svg)](https://build.snapcraft.io/user/ParadropLabs/Paradrop)
+![Docker Image](https://img.shields.io/docker/pulls/paradrop/daemon.svg)(https://hub.docker.com/r/paradrop/daemon)
+
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-white.svg)](https://snapcraft.io/paradrop-agent)
 
 ## What is Paradrop?
@@ -32,7 +34,7 @@ computing functionality.  This will allow you to install and remove
 chutes, experiment with the edge API and connect the node to the cloud
 controller. Since this command creates a container separated from the
 host network, Paradrop will not be able to manage the network interfaces,
-wireless networks, and firewall settings.
+wireless networks, and firewall settings of the host operating system.
 
 ```bash
 docker run --privileged --name paradrop --publish 8080:80 -v /var/run/docker.sock:/var/run/docker.sock paradrop/daemon
