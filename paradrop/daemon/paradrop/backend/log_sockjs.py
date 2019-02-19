@@ -1,12 +1,15 @@
 import json
-from twisted.internet.protocol import Protocol, Factory
+
+from autobahn.twisted.websocket import WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerFactory
 from twisted.internet.task import LoopingCall
 
 from paradrop.base.output import out
 from paradrop.core.container.log_provider import LogProvider
 
-class LogSockJSProtocol(Protocol):
+class LogSockJSProtocol(WebSocketServerProtocol):
     def __init__(self, factory):
+        WebSocketServerProtocol.__init__(self)
         self.factory = factory
         self.loop = LoopingCall(self.check_log)
         self.log_provider = None
@@ -33,8 +36,9 @@ class LogSockJSProtocol(Protocol):
         self.log_provider.detach()
         self.log_provider = None
 
-class LogSockJSFactory(Factory):
+class LogSockJSFactory(WebSocketServerFactory):
     def __init__(self, chute):
+        WebSocketServerFactory.__init__(self)
         self.transports = set()
         self.chute = chute
 

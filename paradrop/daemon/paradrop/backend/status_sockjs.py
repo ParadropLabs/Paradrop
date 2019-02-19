@@ -1,11 +1,14 @@
 import json
-from twisted.internet.protocol import Protocol, Factory
+
+from autobahn.twisted.websocket import WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerFactory
 
 from paradrop.base.output import out
 
 
-class StatusSockJSProtocol(Protocol):
+class StatusSockJSProtocol(WebSocketServerProtocol):
     def __init__(self, factory):
+        WebSocketServerProtocol.__init__(self)
         self.factory = factory
 
     def connectionMade(self):
@@ -23,8 +26,9 @@ class StatusSockJSProtocol(Protocol):
         out.info('sockjs /status disconnected')
 
 
-class StatusSockJSFactory(Factory):
+class StatusSockJSFactory(WebSocketServerFactory):
     def __init__(self, system_status):
+        WebSocketServerFactory.__init__(self)
         self.system_status = system_status
         self.transports = set()
 

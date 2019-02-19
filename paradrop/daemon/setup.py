@@ -33,7 +33,6 @@ setup(
         'Twisted==16.2.0',
         'txdbus==1.1.0',
         'txmsgpackrpc==1.2',
-        'txsockjs==1.2.2',
         'wget==3.2'
     ],
 

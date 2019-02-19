@@ -9,7 +9,6 @@ from twisted.web.static import File
 from twisted.internet import reactor
 from twisted.internet.endpoints import serverFromString
 from klein import Klein
-from txsockjs.factory import SockJSResource
 from autobahn.twisted.resource import WebSocketResource
 
 from paradrop.core.chute.chute_storage import ChuteStorage
@@ -128,25 +127,19 @@ class HttpServer(object):
     @requires_auth
     def logs(self, request, name):
         #cors.config_cors(request)
-        options = {
-            'websocket': True,
-            'heartbeat': 5,
-            'timeout': 2,
-        }
         chute = ChuteStorage.get_chute(name)
-        return SockJSResource(LogSockJSFactory(chute), options)
+        factory = LogSockJSFactory(chute)
+        factory.setProtocolOptions(autoPingInterval=5, autoPingTimeout=2)
+        return WebSocketResource(factory)
 
 
     @app.route('/sockjs/status', branch=True)
     @requires_auth
     def status(self, request):
         #cors.config_cors(request)
-        options = {
-            'websocket': True,
-            'heartbeat': 5,
-            'timeout': 2,
-        }
-        return SockJSResource(StatusSockJSFactory(self.system_status), options)
+        factory = StatusSockJSFactory(self.system_status)
+        factory.setProtocolOptions(autoPingInterval=5, autoPingTimeout=2)
+        return WebSocketResource(factory)
 
 
     @app.route('/ws/chute_logs/<string:name>', branch=True)
