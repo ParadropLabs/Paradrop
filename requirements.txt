@@ -20,7 +20,7 @@ docopt==0.6.2
 docutils==0.14
 enum34==1.1.6
 funcsigs==1.0.2
-functools32==3.2.3.post2
+functools32==3.2.3.post2; python_version < "3.2"
 future==0.16.0
 gitdb2==2.0.5
 GitPython==2.1.5
@@ -53,7 +53,6 @@ python-dateutil==2.7.5
 pytz==2018.7
 PyYAML==3.11
 requests==2.20.1
-ruamel.ordereddict==0.4.13
 ruamel.yaml==0.15.60
 service-identity==16.0.0
 six==1.10.0
