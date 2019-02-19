@@ -7,6 +7,7 @@
 lib.utils.output.
 Helper for formatting output from Paradrop.
 """
+from __future__ import print_function
 
 import time
 import json
@@ -264,4 +265,4 @@ class Timer(object):
         self.secs = self.end - self.start
         self.msecs = self.secs * 1000  # millisecs
         if self.verbose:
-            print self.key + ' elapsed time: %f ms' % self.msecs
+            print(self.key + ' elapsed time: %f ms' % self.msecs)

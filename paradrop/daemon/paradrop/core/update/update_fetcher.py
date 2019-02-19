@@ -1,6 +1,7 @@
 '''
 Fetch new updates from the pdserver and apply the updates
 '''
+from __future__ import print_function
 
 from twisted.internet import task
 from twisted.internet.defer import inlineCallbacks

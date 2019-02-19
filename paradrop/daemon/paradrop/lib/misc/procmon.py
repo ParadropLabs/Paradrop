@@ -5,6 +5,7 @@ file is consistent.
 This addresses an issue we have had with Docker on Ubuntu Snappy, where its
 pid file sometimes persists and prevents the service from starting.
 """
+from __future__ import print_function
 
 import glob
 import os

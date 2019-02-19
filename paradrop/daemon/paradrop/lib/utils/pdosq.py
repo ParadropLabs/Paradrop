@@ -3,6 +3,7 @@ Quiet pdos module.
 Implements utility OS operations without relying on the output module.
 Therefore, this module can be used by output without circular dependency.
 """
+from __future__ import print_function
 
 import errno
 import os

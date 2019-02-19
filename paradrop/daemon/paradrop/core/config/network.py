@@ -192,8 +192,8 @@ def getInterfaceAddress(update, name, cfg, iface):
     hosts = subnet.hosts()
     iface['subnet'] = subnet
     iface['netmask'] = str(subnet.netmask)
-    iface['externalIpaddr'] = str(hosts.next())
-    iface['internalIpaddr'] = str(hosts.next())
+    iface['externalIpaddr'] = str(next(hosts))
+    iface['internalIpaddr'] = str(next(hosts))
 
     # Generate the internal IP address with prefix length (x.x.x.x/y) for
     # convenience of other code that expect that format (e.g. pipework).

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from multiprocessing import Process, Value
 from ctypes import c_bool
 import os
@@ -17,8 +18,7 @@ class Scanner(object):
         self.phy = ""
         self.debugfs_dir = self._find_debugfs_dir()
         if not self.debugfs_dir:
-            raise Exception, \
-                  'Unable to access spectral_scan_ctl file for interface %s' % interface
+            raise Exception('Unable to access spectral_scan_ctl file for interface %s' % interface)
 
         self.ctl_file = '%s/spectral_scan_ctl' % self.debugfs_dir
         self.sample_count_file = '%s/spectral_count' % self.debugfs_dir
@@ -67,7 +67,7 @@ class Scanner(object):
         f.close()
 
     def cmd_set_samplecount(self, count):
-        print "set sample count to %d" % count
+        print("set sample count to %d" % count)
         f = open(self.sample_count_file, 'w')
         f.write("%s" % count)
         f.close()
