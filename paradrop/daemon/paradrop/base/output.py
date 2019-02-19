@@ -13,12 +13,13 @@ keep this file in
 import colorama
 import json
 import os
-import Queue
+import queue
 import sys
 import threading
 import time
 import traceback
 
+import six
 import smokesignal
 
 from enum import Enum
@@ -425,7 +426,7 @@ class Output():
         # original objects.
         self.__dict__['outputMappings'] = {}
 
-        for name, func in kwargs.iteritems():
+        for name, func in six.iteritems(kwargs):
             setattr(self, name, func)
 
     def __getattr__(self, name):
@@ -473,7 +474,7 @@ class Output():
         self.__dict__['logpath'] = None
 
         if filePath is not None:
-            self.__dict__['queue'] = Queue.Queue()
+            self.__dict__['queue'] = queue.Queue()
             self.__dict__['printer'] = PrintLogThread(filePath, self.queue, LOG_NAME)
             self.__dict__['logpath'] = filePath
             self.printer.start()

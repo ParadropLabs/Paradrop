@@ -12,9 +12,10 @@ import json
 import os
 import random
 import re
-import six
 import subprocess
 import time
+
+import six
 
 from twisted.internet.threads import deferToThread
 
@@ -287,7 +288,7 @@ def _build_image(update, service, client, inline, **buildArgs):
         if 'errorDetail' in line:
             buildSuccess = False
 
-        for key, value in json.loads(line).iteritems():
+        for key, value in six.iteritems(json.loads(line)):
             if isinstance(value, dict):
                 continue
             else:
@@ -422,7 +423,7 @@ def prepare_port_bindings(service):
     # The primary effect is that if a user followed a redirect to the web port
     # of a chute, then updated the chute, the port should remain valid after
     # the update.
-    for key, value in bindings.iteritems():
+    for key, value in six.iteritems(bindings):
         if value is None and key in old_bindings:
             port = old_bindings[key][0]['HostPort']
             bindings[key] = port

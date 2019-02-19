@@ -1,6 +1,8 @@
 import attr
 import copy
 
+import six
+
 
 def interpretBoolean(s):
     """
@@ -402,7 +404,7 @@ class ConfigObject(object):
             ConfigObject._assignPriority(config, priorities)
         mult = -1 if reverse else 1
         return [(mult * prio, config) \
-                for (config, prio) in priorities.iteritems()]
+                for (config, prio) in six.iteritems(priorities)]
 
 
 @attr.s(slots=True)

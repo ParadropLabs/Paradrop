@@ -1,8 +1,9 @@
-import httplib
 import socket
 
+from http.client import HTTPConnection
 
-class UHTTPConnection(httplib.HTTPConnection):
+
+class UHTTPConnection(HTTPConnection):
     """
     Subclass of Python library HTTPConnection that uses a unix-domain socket.
 
@@ -10,7 +11,7 @@ class UHTTPConnection(httplib.HTTPConnection):
     """
 
     def __init__(self, path):
-        httplib.HTTPConnection.__init__(self, 'localhost')
+        HTTPConnection.__init__(self, 'localhost')
         self.path = path
 
     def connect(self):

@@ -255,7 +255,7 @@ class MultiServiceChuteBuilder(ChuteBuilder):
         self.chute.web = spec.get("web", {})
 
     def create_services(self, spec):
-        for name, spec in spec.get("services", {}).iteritems():
+        for name, spec in six.iteritems(spec.get("services", {})):
             service = Service(chute=self.chute, name=name)
 
             service.command = spec.get("command", None)

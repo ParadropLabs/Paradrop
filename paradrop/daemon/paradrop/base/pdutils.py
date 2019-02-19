@@ -13,6 +13,8 @@ import time
 import json
 import urllib
 
+import six
+
 timeflt = lambda: time.time()
 timeint = lambda: int(time.time())
 timestr = lambda x=None: time.asctime(time.localtime(x)) if x else time.asctime()
@@ -57,7 +59,7 @@ def convertUnicode(elem):
         Call this function like:
             json.loads(s, object_hook=convertUnicode)"""
     if isinstance(elem, dict):
-        return {convertUnicode(key): convertUnicode(value) for key, value in elem.iteritems()}
+        return {convertUnicode(key): convertUnicode(value) for key, value in six.iteritems(elem)}
     elif isinstance(elem, list):
         return [convertUnicode(element) for element in elem]
     elif isinstance(elem, unicode):
@@ -78,7 +80,7 @@ def urlEncodeMe(elem, safe=' '):
     """
     # What type am I?
     if isinstance(elem, dict):
-        return {urlEncodeMe(key, safe): urlEncodeMe(value, safe) for key, value in elem.iteritems()}
+        return {urlEncodeMe(key, safe): urlEncodeMe(value, safe) for key, value in six.iteritems(elem)}
     elif isinstance(elem, list):
         return [urlEncodeMe(element, safe) for element in elem]
     elif isinstance(elem, str):
@@ -97,7 +99,7 @@ def urlDecodeMe(elem):
     """
     # What type am I?
     if isinstance(elem, dict):
-        return {urlDecodeMe(key): urlDecodeMe(value) for key, value in elem.iteritems()}
+        return {urlDecodeMe(key): urlDecodeMe(value) for key, value in six.iteritems(elem)}
     elif isinstance(elem, list):
         return [urlDecodeMe(element) for element in elem]
     elif isinstance(elem, str):
@@ -199,7 +201,7 @@ def check(pkt, pktType, keyMatches=None, **valMatches):
         else:
             matchObj = valMatches
 
-        for k, v in matchObj.iteritems():
+        for k, v in six.iteritems(matchObj):
             # Check for the key
             if(k not in pkt.keys()):
                 return 'key missing "%s"' % k

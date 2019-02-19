@@ -283,7 +283,7 @@ def satisfies_requirements(obj, requirements):
 
     Returns True/False.
     """
-    for key, value in requirements.iteritems():
+    for key, value in six.iteritems(requirements):
         if key not in obj:
             return False
         if obj[key] != value:
@@ -378,7 +378,7 @@ def getExtraOptions(cfg):
     options = cfg.get('options', {})
 
     # Deprecated: remove after 1.0 release.
-    for key, value in cfg.iteritems():
+    for key, value in six.iteritems(cfg):
         if key in IFACE_EXTRA_OPTIONS:
             options[key] = value
 

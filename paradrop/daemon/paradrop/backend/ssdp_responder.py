@@ -1,7 +1,8 @@
 import ipaddress
 
-from BaseHTTPServer import BaseHTTPRequestHandler
-from StringIO import StringIO
+from http.server import BaseHTTPRequestHandler
+
+import six
 
 from twisted.internet.protocol import DatagramProtocol
 
@@ -27,7 +28,7 @@ PARADROP_URN = "urn:schemas-upnp-org:service:Paradrop:1"
 
 class SsdpRequest(BaseHTTPRequestHandler):
     def __init__(self, request_text):
-        self.rfile = StringIO(request_text)
+        self.rfile = six.StringIO(request_text)
         self.raw_requestline = self.rfile.readline()
         self.error_code = None
         self.error_message = None
