@@ -77,6 +77,15 @@ class ConfigObject(object):
     def __hash__(self):
         return hash(self.getTypeAndName())
 
+    def __lt__(self, other):
+        """
+        Compare ConfigObject instances.
+
+        Currently, it arbitrarily sorts based on the string form of the config
+        section type and name (e.g. "config interface wlan0").
+        """
+        return str(self) < str(other)
+
     def __str__(self):
         if self.name is None:
             return "config {}".format(self.typename)
