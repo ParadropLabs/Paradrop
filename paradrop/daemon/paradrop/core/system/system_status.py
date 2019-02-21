@@ -59,7 +59,7 @@ class SystemStatus(object):
 
 
     def refreshCpuLoad(self):
-        self.cpu_load = map(int, psutil.cpu_percent(percpu=True))
+        self.cpu_load = list(map(int, psutil.cpu_percent(percpu=True)))
 
 
     def refreshMemoryInfo(self):

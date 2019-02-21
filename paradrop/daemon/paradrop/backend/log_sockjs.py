@@ -14,8 +14,7 @@ class LogSockJSProtocol(WebSocketServerProtocol):
         self.loop = LoopingCall(self.check_log)
         self.log_provider = None
 
-    def connectionMade(self):
-        self.factory.transports.add(self.transport)
+    def onOpen(self):
         out.info('sockjs /logs connected')
 
         self.log_provider = LogProvider(self.factory.chute)
@@ -25,11 +24,9 @@ class LogSockJSProtocol(WebSocketServerProtocol):
     def check_log(self):
         logs = self.log_provider.get_logs()
         for log in logs:
-            self.transport.write(json.dumps(log))
+            self.sendMessage(json.dumps(log))
 
-    def connectionLost(self, reason):
-        if self.transport in self.factory.transports:
-            self.factory.transports.remove(self.transport)
+    def onClose(self, wasClean, code, reason):
         out.info('sockjs /logs disconnected')
 
         self.loop.stop()
@@ -39,7 +36,6 @@ class LogSockJSProtocol(WebSocketServerProtocol):
 class LogSockJSFactory(WebSocketServerFactory):
     def __init__(self, chute):
         WebSocketServerFactory.__init__(self)
-        self.transports = set()
         self.chute = chute
 
     def buildProtocol(self, addr):

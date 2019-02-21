@@ -9,10 +9,11 @@ Checks with pdconfd to make sure it was able to properly bring up all interfaces
 starting chutes.
 '''
 
+import json
 import time
 
 from paradrop.base.output import out
-from paradrop.base.pdutils import str2json, timeint
+from paradrop.base.pdutils import timeint
 from paradrop.base import constants, settings
 from paradrop.core.auth.user import User
 from paradrop.core.chute.chute_storage import ChuteStorage
@@ -68,7 +69,7 @@ def reloadChutes():
             time.sleep(1)
             continue
         confdup = True
-        confdInfo = str2json(confdInfo)
+        confdInfo = json.loads(confdInfo)
 
     #Remove any chutes from the restart queue if confd failed to bring up the
     #proper interfaces

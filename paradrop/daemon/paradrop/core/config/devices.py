@@ -246,7 +246,7 @@ def listWiFiDevices():
     # Finally, sort the device list by PCI/USB slot to create an ordering that
     # is stable across device reboots and somewhat stable across hardware
     # swaps.
-    result = devices.values()
+    result = list(devices.values())
     result.sort(key=operator.itemgetter('slot'))
 
     pci_index = 0
