@@ -65,7 +65,7 @@ class GovernorClient(object):
         headers = {"Content-type": "application/json"}
         conn.request("POST", path, body, headers)
         res = conn.getresponse()
-        data = json.loads(res.read())
+        data = json.loads(res.read().decode('utf-8'))
         return self._maybeWait(data)
 
     def connect(self, plug_snap=SNAP_NAME, plug=None, slot_snap="core", slot=None):
@@ -82,7 +82,7 @@ class GovernorClient(object):
         headers = {"Content-type": "application/json"}
         conn.request("POST", path, body, headers)
         res = conn.getresponse()
-        data = json.loads(res.read())
+        data = json.loads(res.read().decode('utf-8'))
         return self._maybeWait(data)
 
     def get_change(self, change_id):
@@ -93,7 +93,7 @@ class GovernorClient(object):
         path = "/snapd/v2/changes/{}".format(change_id)
         conn.request("GET", path)
         res = conn.getresponse()
-        data = json.loads(res.read())
+        data = json.loads(res.read().decode('utf-8'))
         return self._maybeWait(data)
 
     def installSnap(self, snapName):
@@ -109,7 +109,7 @@ class GovernorClient(object):
         headers = {"Content-type": "application/json"}
         conn.request("POST", path, body, headers)
         res = conn.getresponse()
-        data = json.loads(res.read())
+        data = json.loads(res.read().decode('utf-8'))
         return self._maybeWait(data)
 
     def listAuthorizedKeys(self, user="paradrop"):
@@ -120,7 +120,7 @@ class GovernorClient(object):
         conn = UHTTPConnection(settings.GOVERNOR_INTERFACE)
         conn.request("GET", path)
         res = conn.getresponse()
-        data = json.loads(res.read())
+        data = json.loads(res.read().decode('utf-8'))
         return self._maybeWait(data)
 
     def listSnaps(self):
@@ -130,7 +130,7 @@ class GovernorClient(object):
         conn = UHTTPConnection(settings.GOVERNOR_INTERFACE)
         conn.request("GET", "/snapd/v2/snaps")
         res = conn.getresponse()
-        data = json.loads(res.read())
+        data = json.loads(res.read().decode('utf-8'))
         return self._maybeWait(data)
 
     def updateSnap(self, snapName, data):
@@ -148,5 +148,5 @@ class GovernorClient(object):
         headers = {"Content-type": "application/json"}
         conn.request("POST", path, body, headers)
         res = conn.getresponse()
-        data = json.loads(res.read())
+        data = json.loads(res.read().decode('utf-8'))
         return self._maybeWait(data)

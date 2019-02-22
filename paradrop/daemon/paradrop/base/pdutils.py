@@ -115,48 +115,6 @@ def jsonPretty(j):
     """
     return json.dumps(j, sort_keys=True, indent=4, separators=(',', ': '))
 
-'''
-These two methods are outrageously slow.
-
-Example with 50k records in var 'logs':
-    from paradrop.base.lib import pdutils
-    import json
-
-    with pdutils.Timer() as t:
-        [pdutils.str2json(x) for x in logs]
-
-    with pdutils.Timer() as t:
-        [json.loads(x) for x in logs]
-
-    >> time: 12814.471006 ms
-    >> time: 0.007868 ms
-
-Vanilla, sanitized benches do not show the same performance issues. Not sure why, 
-it might have to do with the content of the dictionaries or the complexity of the underlying
-data? They're still slower, but only by one or two magnitudes.
-'''
-
-
-def json2str(j, safe=' '):
-    """
-        Properly converts and encodes all data related to the JSON object into a string format
-        that can be transmitted through a network and stored properly in a database.
-        Arguments:
-            @j    : json to be converted
-            @safe : optional, string of chars to pass to urlEncodeMe that are declared safe (don't encode)
-    """
-    return json.dumps(urlEncodeMe(j, safe), separators=(',', ':'))
-
-
-def str2json(s):
-    t = json.loads(s, object_hook=convertUnicode)
-    # If t is a list, object_hook was never called (by design of json.loads)
-    # deal with that situation here
-    if(isinstance(t, list)):
-        t = [convertUnicode(i) for i in t]
-    # Make sure to still decode any strings
-    return urlDecodeMe(t)
-
 
 class dict2obj(object):
 

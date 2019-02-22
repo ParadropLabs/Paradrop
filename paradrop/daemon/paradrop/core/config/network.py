@@ -2,6 +2,8 @@ import netifaces
 import ipaddress
 import six
 
+from builtins import str
+
 from paradrop.base.output import out
 from paradrop.base import constants, pdutils, settings
 from paradrop.lib.utils import datastruct, uci
@@ -98,7 +100,7 @@ def chooseSubnet(update, cfg, iface):
     # do not fail if it is unavailable.
     requested = cfg.get('ipv4_network', None)
     if requested is not None:
-        network = ipaddress.ip_network(unicode(requested))
+        network = ipaddress.ip_network(str(requested))
         if network in reservations:
             raise Exception(
                 "Could not assign network {}, network already in use".format(
@@ -113,7 +115,7 @@ def chooseSubnet(update, cfg, iface):
     prefix_size = datastruct.getValue(host_config, "system.chutePrefixSize",
                                       SUBNET_SIZE)
 
-    network = ipaddress.ip_network(unicode(network_pool))
+    network = ipaddress.ip_network(str(network_pool))
     if prefix_size < network.prefixlen:
         raise Exception(
             "Router misconfigured: prefix size {} is invalid for network {}".

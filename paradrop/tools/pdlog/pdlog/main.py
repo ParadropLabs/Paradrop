@@ -1,9 +1,12 @@
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 import argparse
 import json
 import os
 import subprocess
 import sys
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from time import sleep
 
 SNAP_COMMON = os.environ['SNAP_COMMON']
@@ -12,7 +15,7 @@ LOG_FILE = os.path.join(SNAP_COMMON, "logs", "log")
 def parseLine(line):
     try:
         data = json.loads(line)
-        msg = urllib.unquote(data['message'])
+        msg = urllib.parse.unquote(data['message'])
         print(msg)
     except:
         pass
@@ -32,7 +35,7 @@ def runTail(logFile):
             proc.stdout.close()
             proc.wait()
         except subprocess.CalledProcessError:
-            print 'Failed to open the log file, will try again...'
+            print('Failed to open the log file, will try again...')
             sleep(1)
             continue
 

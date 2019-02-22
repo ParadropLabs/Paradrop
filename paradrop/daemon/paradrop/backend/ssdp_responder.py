@@ -1,5 +1,6 @@
 import ipaddress
 
+from builtins import str
 from http.server import BaseHTTPRequestHandler
 
 import six
@@ -45,7 +46,7 @@ class SsdpResponder(DatagramProtocol):
 
     def datagramReceived(self, datagram, address):
         request = SsdpRequest(datagram)
-        addr = ipaddress.ip_address(unicode(address[0]))
+        addr = ipaddress.ip_address(str(address[0]))
 
         # Since we really only need to support queries from clients based on
         # pdtools, we can be choosy about what requests we will respond to.

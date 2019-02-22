@@ -382,7 +382,7 @@ class ExceptionOutput(BaseOutput):
         return ret
 
 
-class Output():
+class Output(object):
 
     '''
     Class that allows stdout/stderr trickery.
