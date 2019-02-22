@@ -7,6 +7,9 @@ import errno
 import os
 import subprocess
 import shutil
+
+import six
+
 from distutils import dir_util
 
 # We have to import this for the decorator
@@ -137,7 +140,7 @@ def writeFile(filename, line, mode="a"):
     try:
         if isinstance(line, list):
             data = "\n".join(line) + "\n"
-        elif isinstance(line, basestring):
+        elif isinstance(line, six.string_types):
             data = "%s\n" % line
         else:
             out.err("Bad line provided for %s\n" % filename)

@@ -35,7 +35,7 @@ def stringify(a):
     """
     Recursively convert all primitives in a data structure to strings.
     """
-    if isinstance(a, basestring):
+    if isinstance(a, six.string_types):
         return a
     elif isinstance(a, list):
         return [stringify(v) for v in a]

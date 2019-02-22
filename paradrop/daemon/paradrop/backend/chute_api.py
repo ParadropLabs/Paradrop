@@ -11,6 +11,8 @@ import subprocess
 import tarfile
 import tempfile
 
+import six
+
 from autobahn.twisted.resource import WebSocketResource
 from klein import Klein
 
@@ -94,7 +96,7 @@ def extract_tarred_chute(data):
 
 def chute_access_allowed(request, chute):
     # Allow caller to pass either chute object or the name of a chute.
-    if isinstance(chute, basestring):
+    if isinstance(chute, six.string_types):
         chute = ChuteStorage.chuteList.get(chute, None)
 
     # All users are allowed to install a chute if it does not conflict with an
