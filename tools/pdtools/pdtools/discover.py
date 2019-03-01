@@ -1,6 +1,7 @@
-import httplib
 import socket
-import StringIO
+
+from http.client import HTTPResponse
+from io import BytesIO, StringIO
 
 import click
 
@@ -8,9 +9,9 @@ import click
 PARADROP_URN = "urn:schemas-upnp-org:service:Paradrop:1"
 
 
-class SsdpResponse(httplib.HTTPResponse):
+class SsdpResponse(HTTPResponse):
     def __init__(self, response_text, source):
-        self.fp = StringIO.StringIO(response_text)
+        self.fp = StringIO(response_text)
         self.debuglevel = 0
         self.strict = 0
         self.msg = None
@@ -38,7 +39,7 @@ def perform_ssdp_discovery(service, timeout=5, retries=5, mx=3):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-        sock.sendto(message.format(*group, st=service, mx=mx), group)
+        sock.sendto(message.encode('utf-8'), group)
         while True:
             try:
                 data, addr = sock.recvfrom(1024)
