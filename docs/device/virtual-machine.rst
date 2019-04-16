@@ -99,14 +99,14 @@ portal to upload ssh keys, and then login to it directly with the IP address.
 We can assign the USB WiFi dongle from the Host to the ParaDrop VM so that the
 ParaDrop running on the VM can support features related to WiFi.  Before we do
 that, we need to disable the WiFi device for Host.  We can do that with
-"rflist" command.  Run below command to get the number of the WiFi device::
+"rfkill" command.  Run below command to get the number of the WiFi device::
 
-  rflist list
+  rfkill list
 
 Suppose the index of the WiFi device we want to assign to the ParaDrop VM is
 2, then run below command to disable it for host OS::
 
-  rflist block 2
+  rfkill block 2
 
 Then we can add the USB WiFi dongle to the VM.
 
