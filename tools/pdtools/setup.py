@@ -26,8 +26,8 @@ setup(
         'future~=0.16.0',
         'GitPython~=2.1.5',
         'jsonschema~=2.6.0',
-        'PyYAML~=3.12',
-        'requests>=2.20.0',
+        'PyYAML~=5.1',
+        'requests>=2.21.0',
         'six~=1.10.0',
         'websocket-client~=0.40.0'
     ],

@@ -24,10 +24,11 @@ functools32==3.2.3.post2
 future==0.16.0
 gitdb2==2.0.5
 GitPython==2.1.5
+idna==2.8
 imagesize==1.1.0
 incremental==17.5.0
 ipaddress==1.0.16
-Jinja2==2.10
+Jinja2==2.10.1
 jsl==0.2.4
 jsonpatch==1.15
 jsonpointer==2.0
@@ -51,8 +52,8 @@ PyJWT==1.5.3
 pyOpenSSL==17.5.0
 python-dateutil==2.7.5
 pytz==2018.7
-PyYAML==3.11
-requests==2.20.1
+PyYAML==5.1
+requests==2.21.0
 ruamel.ordereddict==0.4.13
 ruamel.yaml==0.15.60
 service-identity==16.0.0
@@ -69,7 +70,7 @@ txdbus==1.0.13
 txmsgpackrpc==1.1
 txsockjs==1.2.2
 typing==3.6.6
-urllib3==1.24.1
+urllib3==1.24.2
 websocket-client==0.37.0
 Werkzeug==0.14.1
 zope.interface==4.2.0
