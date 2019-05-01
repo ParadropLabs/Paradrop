@@ -1,3 +1,4 @@
+from __future__ import print_function
 import struct
 from datetime import datetime
 
@@ -46,7 +47,7 @@ class SpectrumReader(object):
             (stype, slen) = struct.unpack_from(">BH", data, pos)
 
             if not (stype == 1 and slen == SpectrumReader.pktsize):
-                print "skip malformed packet"
+                print("skip malformed packet")
                 break  # header malformed, discard data. This event is very unlikely (once in ~3h)
                 # On the other hand, if we buffer the sample in a primitive way, we consume too much cpu
                 # for only one or two "rescued" samples every 2-3 hours

@@ -1,4 +1,5 @@
 import attr
+import six
 
 
 @attr.s
@@ -19,7 +20,7 @@ class User(object):
     def __eq__(self, other):
         if isinstance(other, User):
             return (self.name == other.name and self.domain == other.domain)
-        elif isinstance(other, basestring):
+        elif isinstance(other, six.string_types):
             return self.name == other
         else:
             return False

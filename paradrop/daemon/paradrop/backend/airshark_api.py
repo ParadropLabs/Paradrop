@@ -7,7 +7,7 @@ from klein import Klein
 from . import cors
 
 
-class AirsharkApi:
+class AirsharkApi(object):
     routes = Klein()
 
     def __init__(self, airshark_manager):

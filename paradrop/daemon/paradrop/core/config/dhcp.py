@@ -1,5 +1,7 @@
 import os
 
+import six
+
 from paradrop.base.output import out
 from paradrop.base import pdutils
 from paradrop.core.config import uciutils
@@ -95,7 +97,7 @@ def getVirtDHCPSettings(update):
         # Interpret the optional DHCP relay configuration.
         # - string: interpret as the IP address of the relay server.
         # - list: interpret as list of strings to pass to dnsmasq (--dhcp-relay options).
-        if isinstance(relay, basestring):
+        if isinstance(relay, six.string_types):
             # TODO: Set the optional third argument (interface) to the name of
             # the network interface on which we expect DHCP response. This
             # could be the WAN interface or it could be VPN interface.

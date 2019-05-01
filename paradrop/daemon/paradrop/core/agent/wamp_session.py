@@ -1,6 +1,7 @@
 '''
 The WAMP session of the paradrop daemon
 '''
+from __future__ import print_function
 from twisted.internet.defer import inlineCallbacks
 from autobahn.wamp import auth
 

@@ -20,10 +20,10 @@
         settings.updateSettings(settings_array)
 """
 
+import configparser
 import os
 import sys
 import types
-import ConfigParser
 
 from . import constants
 from paradrop.lib.utils import pdosq
@@ -224,7 +224,7 @@ def load_from_file(path):
         [base]
         portal_server_port = 4444
     """
-    config = ConfigParser.SafeConfigParser()
+    config = configparser.SafeConfigParser()
     config.read(path)
 
     mod = sys.modules[__name__]

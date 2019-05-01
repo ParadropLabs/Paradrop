@@ -2,6 +2,8 @@ import netifaces
 import ipaddress
 import six
 
+from builtins import str
+
 from paradrop.base.output import out
 from paradrop.base import constants, pdutils, settings
 from paradrop.lib.utils import datastruct, uci
@@ -98,7 +100,7 @@ def chooseSubnet(update, cfg, iface):
     # do not fail if it is unavailable.
     requested = cfg.get('ipv4_network', None)
     if requested is not None:
-        network = ipaddress.ip_network(unicode(requested))
+        network = ipaddress.ip_network(str(requested))
         if network in reservations:
             raise Exception(
                 "Could not assign network {}, network already in use".format(
@@ -113,7 +115,7 @@ def chooseSubnet(update, cfg, iface):
     prefix_size = datastruct.getValue(host_config, "system.chutePrefixSize",
                                       SUBNET_SIZE)
 
-    network = ipaddress.ip_network(unicode(network_pool))
+    network = ipaddress.ip_network(str(network_pool))
     if prefix_size < network.prefixlen:
         raise Exception(
             "Router misconfigured: prefix size {} is invalid for network {}".
@@ -192,8 +194,8 @@ def getInterfaceAddress(update, name, cfg, iface):
     hosts = subnet.hosts()
     iface['subnet'] = subnet
     iface['netmask'] = str(subnet.netmask)
-    iface['externalIpaddr'] = str(hosts.next())
-    iface['internalIpaddr'] = str(hosts.next())
+    iface['externalIpaddr'] = str(next(hosts))
+    iface['internalIpaddr'] = str(next(hosts))
 
     # Generate the internal IP address with prefix length (x.x.x.x/y) for
     # convenience of other code that expect that format (e.g. pipework).
@@ -283,7 +285,7 @@ def satisfies_requirements(obj, requirements):
 
     Returns True/False.
     """
-    for key, value in requirements.iteritems():
+    for key, value in six.iteritems(requirements):
         if key not in obj:
             return False
         if obj[key] != value:
@@ -378,7 +380,7 @@ def getExtraOptions(cfg):
     options = cfg.get('options', {})
 
     # Deprecated: remove after 1.0 release.
-    for key, value in cfg.iteritems():
+    for key, value in six.iteritems(cfg):
         if key in IFACE_EXTRA_OPTIONS:
             options[key] = value
 

@@ -1,18 +1,20 @@
 import json
-from twisted.internet.protocol import Protocol, Factory
+
+from autobahn.twisted.websocket import WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerFactory
 from twisted.internet.task import LoopingCall
 
 from paradrop.base.output import out
 from paradrop.core.container.log_provider import LogProvider
 
-class LogSockJSProtocol(Protocol):
+class LogSockJSProtocol(WebSocketServerProtocol):
     def __init__(self, factory):
+        WebSocketServerProtocol.__init__(self)
         self.factory = factory
         self.loop = LoopingCall(self.check_log)
         self.log_provider = None
 
-    def connectionMade(self):
-        self.factory.transports.add(self.transport)
+    def onOpen(self):
         out.info('sockjs /logs connected')
 
         self.log_provider = LogProvider(self.factory.chute)
@@ -22,20 +24,18 @@ class LogSockJSProtocol(Protocol):
     def check_log(self):
         logs = self.log_provider.get_logs()
         for log in logs:
-            self.transport.write(json.dumps(log))
+            self.sendMessage(json.dumps(log))
 
-    def connectionLost(self, reason):
-        if self.transport in self.factory.transports:
-            self.factory.transports.remove(self.transport)
+    def onClose(self, wasClean, code, reason):
         out.info('sockjs /logs disconnected')
 
         self.loop.stop()
         self.log_provider.detach()
         self.log_provider = None
 
-class LogSockJSFactory(Factory):
+class LogSockJSFactory(WebSocketServerFactory):
     def __init__(self, chute):
-        self.transports = set()
+        WebSocketServerFactory.__init__(self)
         self.chute = chute
 
     def buildProtocol(self, addr):

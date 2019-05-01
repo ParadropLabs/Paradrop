@@ -12,6 +12,7 @@ cffi==1.7.0
 chardet==3.0.4
 click==6.7
 colorama==0.3.7
+configparser==3.7.1
 coverage==4.1
 cryptography==2.4.2
 docker==2.5.1
@@ -20,7 +21,7 @@ docopt==0.6.2
 docutils==0.14
 enum34==1.1.6
 funcsigs==1.0.2
-functools32==3.2.3.post2
+functools32==3.2.3.post2; python_version < "3.2"
 future==0.16.0
 gitdb2==2.0.5
 GitPython==2.1.5
@@ -68,7 +69,6 @@ Twisted==16.2.0
 txaio==2.5.1
 txdbus==1.0.13
 txmsgpackrpc==1.1
-txsockjs==1.2.2
 typing==3.6.6
 urllib3==1.24.2
 websocket-client==0.37.0

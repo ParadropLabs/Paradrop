@@ -5,6 +5,8 @@
 
 import os
 
+import six
+
 from paradrop.base.output import out
 from paradrop.base import settings
 from paradrop.lib.utils import pdos, pdosq
@@ -33,13 +35,13 @@ def stringify(a):
     """
     Recursively convert all primitives in a data structure to strings.
     """
-    if isinstance(a, basestring):
+    if isinstance(a, six.string_types):
         return a
     elif isinstance(a, list):
         return [stringify(v) for v in a]
     elif isinstance(a, dict):
         result = {}
-        for k, v in a.iteritems():
+        for k, v in six.iteritems(a):
             result[k] = stringify(v)
         return result
     else:
@@ -414,7 +416,7 @@ class UCIConfig:
                 line += " #%s" % c['comment']
             output += "%s\n" % line
 
-            for k, v in o.iteritems():
+            for k, v in six.iteritems(o):
                 if isinstance(v, list):
                     # For list-valued options, emit one line for each item
                     # in the list.

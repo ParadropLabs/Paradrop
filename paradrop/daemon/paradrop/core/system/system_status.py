@@ -1,8 +1,10 @@
 '''
 Get system running status including CPU load, memory usage, network traffic.
 '''
-import psutil
 import time
+
+import psutil
+import six
 
 
 class SystemStatus(object):
@@ -57,7 +59,7 @@ class SystemStatus(object):
 
 
     def refreshCpuLoad(self):
-        self.cpu_load = map(int, psutil.cpu_percent(percpu=True))
+        self.cpu_load = list(map(int, psutil.cpu_percent(percpu=True)))
 
 
     def refreshMemoryInfo(self):
@@ -70,7 +72,7 @@ class SystemStatus(object):
 
 
     def refreshDiskInfo(self):
-        for key, value in self.disk_partitions.iteritems():
+        for key, value in six.iteritems(self.disk_partitions):
             usage = psutil.disk_usage(key)
             self.disk_partitions[key]['total'] = usage.total
             self.disk_partitions[key]['used'] = usage.used
@@ -81,7 +83,7 @@ class SystemStatus(object):
         interfaces = {}
 
         stats = psutil.net_if_stats()
-        for key, value in stats.iteritems():
+        for key, value in six.iteritems(stats):
             if key in excluded_interfaces:
                 continue
 
@@ -97,11 +99,11 @@ class SystemStatus(object):
             interfaces[key] = {
                 'isup': value.isup,
                 'speed': value.speed,
-                'mtu': value.mtu              
+                'mtu': value.mtu
             }
 
         addresses = psutil.net_if_addrs()
-        for key, value in addresses.iteritems():
+        for key, value in six.iteritems(addresses):
             if key not in interfaces:
                 continue
 
@@ -113,7 +115,7 @@ class SystemStatus(object):
                     interfaces[key]['mac'] = i.address
 
         traffic = psutil.net_io_counters(pernic=True)
-        for key, value in traffic.iteritems():
+        for key, value in six.iteritems(traffic):
             if key not in interfaces:
                 continue
 
@@ -133,13 +135,13 @@ class SystemStatus(object):
         interfaces = {}
 
         stats = psutil.net_if_stats()
-        for key, value in stats.iteritems():
+        for key, value in six.iteritems(stats):
             interfaces[key] = value.__dict__
             interfaces[key]['addresses'] = []
             interfaces[key]['io_counters'] = None
 
         addresses = psutil.net_if_addrs()
-        for key, value in addresses.iteritems():
+        for key, value in six.iteritems(addresses):
             if key not in interfaces:
                 continue
 
@@ -147,7 +149,7 @@ class SystemStatus(object):
                 interfaces[key]['addresses'].append(addr.__dict__)
 
         traffic = psutil.net_io_counters(pernic=True)
-        for key, value in traffic.iteritems():
+        for key, value in six.iteritems(traffic):
             if key not in interfaces:
                 continue
 

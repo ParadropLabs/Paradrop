@@ -11,7 +11,7 @@ from twisted.internet.defer import DeferredList, inlineCallbacks, returnValue
 
 from paradrop.base import constants, nexus, settings
 from paradrop.base.output import out
-from paradrop.base.pdutils import timeint, str2json
+from paradrop.base.pdutils import timeint
 from paradrop.core.config import hostconfig
 from paradrop.core.agent.http import PDServerRequest
 from paradrop.core.agent.provisioning import read_provisioning_result
@@ -74,7 +74,7 @@ class ConfigApi(object):
         For a complete example, please see the Host Configuration section.
         """
         cors.config_cors(request)
-        body = str2json(request.content.read())
+        body = json.loads(request.content.read().decode('utf-8'))
         config = body['config']
 
         update = dict(updateClass='ROUTER',
@@ -204,7 +204,7 @@ class ConfigApi(object):
         Provision the device with credentials from a cloud controller.
         """
         cors.config_cors(request)
-        body = str2json(request.content.read())
+        body = json.loads(request.content.read().decode('utf-8'))
         routerId = body['routerId']
         apitoken = body['apitoken']
         pdserver = body['pdserver']
@@ -374,7 +374,7 @@ class ConfigApi(object):
                 request.setResponseCode(404)
                 return json.dumps({'message': str(e)})
         else:
-            body = str2json(request.content.read())
+            body = json.loads(request.content.read().decode('utf-8'))
             key = body['key'].strip()
 
             try:

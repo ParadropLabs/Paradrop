@@ -972,7 +972,7 @@ def watch_chute_logs(ctx, chute):
 
     CHUTE must be the name of a running chute.
     """
-    url = "ws://{}/sockjs/logs/{}/websocket".format(ctx.obj['target'], chute)
+    url = "ws://{}/sockjs/logs/{}".format(ctx.obj['target'], chute)
 
     def on_message(ws, message):
         data = json.loads(message)

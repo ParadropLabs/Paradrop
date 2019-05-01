@@ -111,7 +111,7 @@ class Command(object):
 
         if type(command) == list:
             self.command = [str(v) for v in command]
-        elif isinstance(command, basestring):
+        elif isinstance(command, six.string_types):
             self.command = command.split()
 
         # These are set after execute completes.

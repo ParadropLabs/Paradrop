@@ -4,6 +4,7 @@ execution plan in Paradrop.  Simply run it (python -m paradrop.plan_demo),
 and it will walk through all of the functions that make up a chute creation
 operation.
 """
+from __future__ import print_function
 
 from paradrop.core.update.update_object import UpdateChute
 from paradrop.core.plan import executionplan, plangraph

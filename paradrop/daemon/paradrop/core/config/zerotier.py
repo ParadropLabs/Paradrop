@@ -1,8 +1,9 @@
 import errno
-import httplib
 import json
 import os
 import time
+
+from http.client import HTTPConnection
 
 from paradrop.base import settings
 from paradrop.base.output import out
@@ -85,7 +86,7 @@ def get_networks(ignore_error=False):
     if auth_token is None:
         return []
 
-    conn = httplib.HTTPConnection("localhost", 9993)
+    conn = HTTPConnection("localhost", 9993)
     path = "/network"
     headers = {
         "X-ZT1-Auth": auth_token
@@ -116,7 +117,7 @@ def manage_network(nwid, action="join"):
     else:
         raise Exception("Unsupported action: {}".format(action))
 
-    conn = httplib.HTTPConnection("localhost", 9993)
+    conn = HTTPConnection("localhost", 9993)
     path = "/network/{}".format(nwid)
     body = "{}"
     headers = {

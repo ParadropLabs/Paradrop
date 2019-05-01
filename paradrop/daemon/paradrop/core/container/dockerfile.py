@@ -6,6 +6,8 @@ import os
 import platform
 import re
 
+import six
+
 from io import BytesIO
 
 
@@ -95,7 +97,7 @@ class Dockerfile(object):
         from_image = "{}/{}".format(get_target_machine(),
                 get_target_image(language))
 
-        if isinstance(command, basestring):
+        if isinstance(command, six.string_types):
             cmd_string = command
         elif isinstance(command, list):
             cmd_string = "[{}]".format(",".join(
@@ -126,7 +128,7 @@ class Dockerfile(object):
                 return (False, "Missing required field {}".format(field))
 
         command = self.service.command
-        if not isinstance(command, basestring) and not isinstance(command, list):
+        if not isinstance(command, six.string_types + (list, )):
             return (False, "Command must be either a string or list of strings")
 
         packages = self.service.build.get("packages", [])

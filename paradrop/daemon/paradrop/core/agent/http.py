@@ -1,10 +1,9 @@
+from __future__ import print_function
 import json
 import pycurl
 import re
 import six
 import urllib
-
-from StringIO import StringIO
 
 import twisted
 from twisted.internet import reactor, threads
@@ -73,7 +72,7 @@ def urlEncodeParams(data):
     to convert them to JSON-friendly strings (e.g. None -> 'null').
     """
     copy = dict()
-    for key, value in data.iteritems():
+    for key, value in six.iteritems(data):
         if value is None:
             copy[key] = 'null'
         elif isinstance(value, bool):
@@ -144,7 +143,7 @@ class CurlRequestDriver(HTTPRequestDriver):
         super(CurlRequestDriver, self).__init__()
 
         # Buffer for receiving response.
-        self.buffer = StringIO()
+        self.buffer = six.StringIO()
 
         # Fill in response object.
         self.response = HTTPResponse()
@@ -202,7 +201,7 @@ class CurlRequestDriver(HTTPRequestDriver):
                 curl.setopt(pycurl.POSTFIELDS, body)
 
             headers = []
-            for key, value in self.headers.iteritems():
+            for key, value in six.iteritems(self.headers):
                 headers.append("{}: {}".format(key, value))
             curl.setopt(pycurl.HTTPHEADER, headers)
 
@@ -251,10 +250,10 @@ class TwistedRequestDriver(HTTPRequestDriver):
         def makeRequest(ignored):
             bodyProducer = None
             if body is not None:
-                bodyProducer = FileBodyProducer(StringIO(body))
+                bodyProducer = FileBodyProducer(six.StringIO(body))
 
             headers = {}
-            for key, value in self.headers.iteritems():
+            for key, value in six.iteritems(self.headers):
                 headers[key] = [value]
 
             agent = Agent(reactor, pool=TwistedRequestDriver.pool)

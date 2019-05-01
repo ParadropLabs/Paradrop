@@ -18,7 +18,7 @@ from paradrop.lib.utils import pdos
 from . import cors
 
 
-class InformationApi:
+class InformationApi(object):
     routes = Klein()
 
     def __init__(self):

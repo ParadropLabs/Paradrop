@@ -17,6 +17,8 @@ import ipaddress
 import jsonpatch
 import yaml
 
+from builtins import str
+
 from paradrop.base import settings
 from paradrop.lib.utils import pdosq
 
@@ -100,7 +102,7 @@ def generateHostConfig(devices):
     """
     config = dict()
 
-    default_lan_network = ipaddress.ip_network(unicode(settings.DEFAULT_LAN_NETWORK))
+    default_lan_network = ipaddress.ip_network(str(settings.DEFAULT_LAN_NETWORK))
 
     config['firewall'] = {
         'defaults': {

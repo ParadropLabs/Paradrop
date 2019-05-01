@@ -7,10 +7,13 @@
 lib.utils.output.
 Helper for formatting output from Paradrop.
 """
+from __future__ import print_function
 
 import time
 import json
 import urllib
+
+import six
 
 timeflt = lambda: time.time()
 timeint = lambda: int(time.time())
@@ -56,7 +59,7 @@ def convertUnicode(elem):
         Call this function like:
             json.loads(s, object_hook=convertUnicode)"""
     if isinstance(elem, dict):
-        return {convertUnicode(key): convertUnicode(value) for key, value in elem.iteritems()}
+        return {convertUnicode(key): convertUnicode(value) for key, value in six.iteritems(elem)}
     elif isinstance(elem, list):
         return [convertUnicode(element) for element in elem]
     elif isinstance(elem, unicode):
@@ -77,7 +80,7 @@ def urlEncodeMe(elem, safe=' '):
     """
     # What type am I?
     if isinstance(elem, dict):
-        return {urlEncodeMe(key, safe): urlEncodeMe(value, safe) for key, value in elem.iteritems()}
+        return {urlEncodeMe(key, safe): urlEncodeMe(value, safe) for key, value in six.iteritems(elem)}
     elif isinstance(elem, list):
         return [urlEncodeMe(element, safe) for element in elem]
     elif isinstance(elem, str):
@@ -96,7 +99,7 @@ def urlDecodeMe(elem):
     """
     # What type am I?
     if isinstance(elem, dict):
-        return {urlDecodeMe(key): urlDecodeMe(value) for key, value in elem.iteritems()}
+        return {urlDecodeMe(key): urlDecodeMe(value) for key, value in six.iteritems(elem)}
     elif isinstance(elem, list):
         return [urlDecodeMe(element) for element in elem]
     elif isinstance(elem, str):
@@ -111,48 +114,6 @@ def jsonPretty(j):
         Returns a string of a JSON object in 'pretty print' format fully indented, and sorted.
     """
     return json.dumps(j, sort_keys=True, indent=4, separators=(',', ': '))
-
-'''
-These two methods are outrageously slow.
-
-Example with 50k records in var 'logs':
-    from paradrop.base.lib import pdutils
-    import json
-
-    with pdutils.Timer() as t:
-        [pdutils.str2json(x) for x in logs]
-
-    with pdutils.Timer() as t:
-        [json.loads(x) for x in logs]
-
-    >> time: 12814.471006 ms
-    >> time: 0.007868 ms
-
-Vanilla, sanitized benches do not show the same performance issues. Not sure why, 
-it might have to do with the content of the dictionaries or the complexity of the underlying
-data? They're still slower, but only by one or two magnitudes.
-'''
-
-
-def json2str(j, safe=' '):
-    """
-        Properly converts and encodes all data related to the JSON object into a string format
-        that can be transmitted through a network and stored properly in a database.
-        Arguments:
-            @j    : json to be converted
-            @safe : optional, string of chars to pass to urlEncodeMe that are declared safe (don't encode)
-    """
-    return json.dumps(urlEncodeMe(j, safe), separators=(',', ':'))
-
-
-def str2json(s):
-    t = json.loads(s, object_hook=convertUnicode)
-    # If t is a list, object_hook was never called (by design of json.loads)
-    # deal with that situation here
-    if(isinstance(t, list)):
-        t = [convertUnicode(i) for i in t]
-    # Make sure to still decode any strings
-    return urlDecodeMe(t)
 
 
 class dict2obj(object):
@@ -198,7 +159,7 @@ def check(pkt, pktType, keyMatches=None, **valMatches):
         else:
             matchObj = valMatches
 
-        for k, v in matchObj.iteritems():
+        for k, v in six.iteritems(matchObj):
             # Check for the key
             if(k not in pkt.keys()):
                 return 'key missing "%s"' % k
@@ -264,4 +225,4 @@ class Timer(object):
         self.secs = self.end - self.start
         self.msecs = self.secs * 1000  # millisecs
         if self.verbose:
-            print self.key + ' elapsed time: %f ms' % self.msecs
+            print(self.key + ' elapsed time: %f ms' % self.msecs)

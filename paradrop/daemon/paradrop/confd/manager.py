@@ -3,6 +3,8 @@ import json
 import os
 import threading
 
+import six
+
 from paradrop.base.output import out
 from paradrop.lib.utils import pdosq
 from paradrop.lib.utils.uci import UCIConfig, getSystemConfigDir
@@ -390,7 +392,7 @@ class ConfigManager(object):
         success: True if all setup commands succeeded
         """
         status = list()
-        for key, config in self.currentConfig.iteritems():
+        for key, config in six.iteritems(self.currentConfig):
             success = all(cmd.success() for cmd in config.executed)
             configStatus = {
                 'type': config.typename,

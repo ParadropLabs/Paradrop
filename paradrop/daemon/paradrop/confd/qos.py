@@ -1,3 +1,5 @@
+import six
+
 from .base import ConfigObject, ConfigOption
 from .command import Command
 
@@ -119,7 +121,7 @@ class ConfigInterface(ConfigObject):
         classes = []
         default_classid = None
         classgroup = self.lookup(allConfigs, "qos", "classgroup", self.classgroup)
-        for class_name, class_id in classgroup.class_id_map.iteritems():
+        for class_name, class_id in six.iteritems(classgroup.class_id_map):
             if class_name == classgroup.default:
                 default_classid = class_id
 

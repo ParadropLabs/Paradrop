@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from twisted.internet.task import LoopingCall
 from twisted.internet.reactor import spawnProcess
 
@@ -5,8 +6,8 @@ from paradrop.base.output import out
 from paradrop.base import settings
 from paradrop.lib.utils import pdos
 from paradrop.core.config.airshark import airshark_interface_manager
-from scanner import Scanner
-from analyzer import AnalyzerProcessProtocol
+from .scanner import Scanner
+from .analyzer import AnalyzerProcessProtocol
 
 
 class AirsharkManager(object):

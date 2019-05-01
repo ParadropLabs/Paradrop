@@ -3,7 +3,10 @@ Provides messages from container logs (STDOUT and STDERR).
 '''
 import os
 import signal
+
 import docker
+import six
+
 from multiprocessing import Process, Queue
 
 
@@ -25,7 +28,7 @@ def monitor_logs(service_name, container_name, queue, tail=200):
         # I have grown to distrust Docker streaming functions.  It may
         # return a string; it may return an object.  If it is a string,
         # separate the timestamp portion from the rest of the message.
-        if isinstance(line, basestring):
+        if isinstance(line, six.string_types):
             parts = line.split(" ", 1)
             if len(parts) > 1:
                 queue.put({

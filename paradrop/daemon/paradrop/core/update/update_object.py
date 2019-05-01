@@ -3,6 +3,7 @@ This holds onto the UpdateObject class.
 It allows us to easily abstract away different update types and provide a uniform
 way to interpret the results through a set of basic actionable functions.
 '''
+from __future__ import print_function
 import time
 from twisted.internet import defer, reactor
 from twisted.python.failure import Failure

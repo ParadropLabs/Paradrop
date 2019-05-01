@@ -12,7 +12,6 @@ the owner's private repository.  That part is not implemented here.
 """
 
 import base64
-import cStringIO
 import json
 import os
 import re
@@ -22,6 +21,7 @@ import tarfile
 import tempfile
 
 import pycurl
+import six
 
 
 from paradrop.base import settings
@@ -212,7 +212,7 @@ class GithubDownloader(Downloader):
                 owner=self.repo_owner, repo=self.repo_name, sha=checkout)
         conn = self._create_curl_conn(url)
 
-        response = cStringIO.StringIO()
+        response = six.StringIO()
         conn.setopt(pycurl.WRITEFUNCTION, response.write)
         conn.perform()
 

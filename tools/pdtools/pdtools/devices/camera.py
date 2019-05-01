@@ -1,7 +1,8 @@
 import base64
 
+from io import BytesIO
+
 import requests
-import six
 
 
 class Camera(object):
@@ -22,7 +23,7 @@ class Camera(object):
         """
         Get an image from the camera.
 
-        Returns image data as a BytesIO/StringIO object.
+        Returns image data as a BytesIO object.
         """
         url = "http://{}/image.jpg".format(self.host)
 
@@ -34,7 +35,7 @@ class Camera(object):
 
         result = requests.get(url, headers=headers)
         if result.ok:
-            return six.BytesIO(result.content)
+            return BytesIO(result.content)
 
         else:
             return None

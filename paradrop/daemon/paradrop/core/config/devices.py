@@ -16,6 +16,8 @@ import os
 import re
 import subprocess
 
+import six
+
 from paradrop.base.output import out
 from paradrop.base import constants, settings
 from paradrop.base.exceptions import DeviceNotFoundException
@@ -234,7 +236,7 @@ def listWiFiDevices():
     # Sort by ifindex to identify the primary interface, which is the one that
     # was created when the device was first added.  We make use the fact that
     # Linux uses monotonically increasing ifindex values.
-    for phy, device in devices.iteritems():
+    for phy, device in six.iteritems(devices):
         if len(interfaces[phy]) > 0:
             interfaces[phy].sort(key=operator.itemgetter('ifindex'))
             device['primary_interface'] = interfaces[phy][0]['ifname']
@@ -244,7 +246,7 @@ def listWiFiDevices():
     # Finally, sort the device list by PCI/USB slot to create an ordering that
     # is stable across device reboots and somewhat stable across hardware
     # swaps.
-    result = devices.values()
+    result = list(devices.values())
     result.sort(key=operator.itemgetter('slot'))
 
     pci_index = 0
@@ -655,7 +657,7 @@ def getSystemDevices(update):
     devices = detectSystemDevices()
 
     devicesByName = dict()
-    for dtype, dlist in devices.iteritems():
+    for dtype, dlist in six.iteritems(devices):
         for dev in dlist:
             name = dev['name']
             if name in devicesByName:

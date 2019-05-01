@@ -1,5 +1,7 @@
 import ipaddress
 
+from builtins import str
+
 from .base import ConfigObject, ConfigOption
 from .command import Command
 
@@ -618,7 +620,7 @@ class ConfigRule(ConfigObject):
 
         # If the rule specifies the source address, use that as a hint.
         if self.src_ip is not None:
-            addr = ipaddress.ip_network(unicode(self.src_ip), strict=False)
+            addr = ipaddress.ip_network(str(self.src_ip), strict=False)
             if addr.version == 4:
                 return ["iptables"]
             elif addr.version == 6:
@@ -626,7 +628,7 @@ class ConfigRule(ConfigObject):
 
         # If the rule specifies the destination address, use that as a hint.
         if self.dest_ip is not None:
-            addr = ipaddress.ip_network(unicode(self.dest_ip), strict=False)
+            addr = ipaddress.ip_network(str(self.dest_ip), strict=False)
             if addr.version == 4:
                 return ["iptables"]
             elif addr.version == 6:
