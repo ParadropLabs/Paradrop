@@ -17,12 +17,18 @@ import ipaddress
 import jsonpatch
 import yaml
 
-from builtins import str
-
 from paradrop.base import settings
 from paradrop.lib.utils import pdosq
 
 from . import devices as config_devices
+
+# This patch ensures the "unicode" function exists and behaves consistently
+# between Python 2 and 3. Normally, it is recommended to use "builtins.str" for
+# compatibility, but that uses a different class type not recognized by PyYAML.
+try:
+    unicode('')
+except NameError:
+    unicode = str
 
 
 CHANNELS_24G = [1, 6, 11]
@@ -102,7 +108,7 @@ def generateHostConfig(devices):
     """
     config = dict()
 
-    default_lan_network = ipaddress.ip_network(str(settings.DEFAULT_LAN_NETWORK))
+    default_lan_network = ipaddress.ip_network(unicode(settings.DEFAULT_LAN_NETWORK))
 
     config['firewall'] = {
         'defaults': {
@@ -115,7 +121,7 @@ def generateHostConfig(devices):
         'interfaces': list(),
         'proto': 'static',
         'ipaddr': settings.DEFAULT_LAN_ADDRESS,
-        'netmask': str(default_lan_network.netmask),
+        'netmask': unicode(default_lan_network.netmask),
         'dhcp': {
             'start': 100,
             'limit': 100,
