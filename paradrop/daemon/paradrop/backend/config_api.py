@@ -366,6 +366,11 @@ class ConfigApi(object):
                 if GovernorClient.isAvailable():
                     client = GovernorClient()
                     keys = client.listAuthorizedKeys(user)
+
+                    # Move keys to the root because the API consumer is
+                    # expecting a list, not an object.
+                    if 'keys' in keys:
+                        keys = keys['keys']
                 else:
                     keys = ssh_keys.getAuthorizedKeys(user)
                 return json.dumps(keys)

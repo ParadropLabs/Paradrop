@@ -65,8 +65,7 @@ class GovernorClient(object):
         headers = {"Content-type": "application/json"}
         conn.request("POST", path, body, headers)
         res = conn.getresponse()
-        data = json.loads(res.read().decode('utf-8'))
-        return self._maybeWait(data)
+        return json.loads(res.read().decode('utf-8'))
 
     def connect(self, plug_snap=SNAP_NAME, plug=None, slot_snap="core", slot=None):
         """
@@ -120,8 +119,7 @@ class GovernorClient(object):
         conn = UHTTPConnection(settings.GOVERNOR_INTERFACE)
         conn.request("GET", path)
         res = conn.getresponse()
-        data = json.loads(res.read().decode('utf-8'))
-        return self._maybeWait(data)
+        return json.loads(res.read().decode('utf-8'))
 
     def listSnaps(self):
         """
