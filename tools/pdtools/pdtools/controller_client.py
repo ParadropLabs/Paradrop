@@ -20,8 +20,9 @@ class ControllerClient(AuthenticatedClient):
 
     connection_error_type = ControllerConnectionError
 
-    def __init__(self, host=PDSERVER_URL):
-        super(ControllerClient, self).__init__("cloud", PDSERVER_URL)
+    def __init__(self, host=PDSERVER_URL, auth_methods=None):
+        super(ControllerClient, self).__init__("cloud", PDSERVER_URL,
+                auth_methods=auth_methods)
         self.host = host
         self.base_url = host + "/api"
         #self.base_url = "http://{}/api".format(host)

@@ -41,7 +41,7 @@ class AuthenticatedClient(object):
     # requests.
     connection_error_type = ParadropConnectionError
 
-    def __init__(self, api_spec, url, debug=False):
+    def __init__(self, api_spec, url, auth_methods=None, debug=False):
         """
         Initialize AuthenticatedClient object.
 
@@ -57,25 +57,40 @@ class AuthenticatedClient(object):
         self.auth_url = auth_template.format(scheme=url_parts.scheme,
                 netloc=url_parts.netloc)
 
+        if auth_methods is None:
+            auth_methods = set(["environment", "saved", "default", "prompt"])
+            if api_spec == "node":
+                auth_methods.add("cloud")
+        else:
+            auth_methods = set(auth_methods)
+
         # List of token providers. We will try these in order to obtain a valid
         # auth token in order to fulfill a request. Note that some of these are
         # parameterized based on the API spec. For example, the node and cloud
         # APIs have a different format for the authentication URL.
-        self.token_providers = [
-            token_provider.EnvironmentVariableTokenProvider(),
-            token_provider.SavedTokenProvider(self.authority),
-            token_provider.DefaultLoginTokenProvider(self.auth_url,
-                self.api_spec['param_map']),
-            token_provider.LoginPromptTokenProvider(self.auth_url,
-                self.api_spec['param_map'])
-        ]
-        if api_spec == "node":
+        self.token_providers = []
+
+        if "environment" in auth_methods:
+            provider = token_provider.EnvironmentVariableTokenProvider()
+            self.token_providers.append(provider)
+        if "saved" in auth_methods:
+            provider = token_provider.SavedTokenProvider(self.authority)
+            self.token_providers.append(provider)
+        if "default" in auth_methods:
+            provider = token_provider.DefaultLoginTokenProvider(self.auth_url,
+                    self.api_spec['param_map'])
+            self.token_providers.append(provider)
+        if "cloud" in auth_methods:
             provider = token_provider.SavedCloudTokenProvider(
                     "{scheme}://{netloc}/api/v1/auth/cloud".format(
                         scheme=url_parts.scheme,
                         netloc=url_parts.netloc),
                     get_controller_domain())
-            self.token_providers.insert(2, provider)
+            self.token_providers.append(provider)
+        if "prompt" in auth_methods:
+            provider = token_provider.LoginPromptTokenProvider(self.auth_url,
+                    self.api_spec['param_map'])
+            self.token_providers.append(provider)
 
         self.debug = debug
 

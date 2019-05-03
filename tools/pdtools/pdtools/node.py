@@ -62,8 +62,18 @@ def print_pdconf(data):
 @click.group('node')
 @click.option('--target', '-t', default="172.17.0.1",
         help='Target node name or address')
+@click.option('--with-auth-cloud/--without-auth-cloud', default=True,
+        help='Use a cloud token to authenticate with the node')
+@click.option('--with-auth-default/--without-auth-default', default=True,
+        help='Try the default credentials')
+@click.option('--with-auth-environment/--without-auth-environment', default=True,
+        help='Use a token from the environment variable PARADROP_API_TOKEN')
+@click.option('--with-auth-prompt/--without-auth-prompt', default=True,
+        help='Prompt for a password')
+@click.option('--with-auth-saved/--without-auth-saved', default=True,
+        help='Use a saved token from a previous interaction')
 @click.pass_context
-def root(ctx, target):
+def root(ctx, target, with_auth_cloud, with_auth_default, with_auth_environment, with_auth_prompt, with_auth_saved):
     """
     Manage a Paradrop edge compute node.
 
@@ -71,6 +81,19 @@ def root(ctx, target):
 
     PDTOOLS_NODE_TARGET            Default target node name or address.
     """
+    auth_methods = []
+    if with_auth_cloud:
+        auth_methods.append("cloud")
+    if with_auth_default:
+        auth_methods.append("default")
+    if with_auth_environment:
+        auth_methods.append("environment")
+    if with_auth_prompt:
+        auth_methods.append("prompt")
+    if with_auth_saved:
+        auth_methods.append("saved")
+
+    ctx.obj['client'] = ParadropClient(target, auth_methods=auth_methods)
     ctx.obj['target'] = target
 
 
@@ -80,7 +103,7 @@ def connect_snap_interfaces(ctx):
     """
     Connect all interfaces for installed snaps.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_snap_interfaces()
     for item in result['result']['plugs']:
         connections = item.get('connections', [])
@@ -115,7 +138,7 @@ def create_user(ctx, email):
     on the email address used. If in doubt, use "info@paradrop.io",
     which will result in a user named "paradrop" being created.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.create_user(email)
     click.echo(util.format_result(result))
     return result
@@ -130,7 +153,7 @@ def describe_audio(ctx):
     Display information from the local PulseAudio server such as the
     default source and sink.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.get_audio()
     click.echo(util.format_result(result))
     return result
@@ -145,7 +168,7 @@ def describe_chute(ctx, chute):
 
     CHUTE must be the name of an installed chute.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.get_chute(chute)
     click.echo(util.format_result(result))
     return result
@@ -164,7 +187,7 @@ def describe_chute_cache(ctx, chute):
     debugging purposes. The output is not expected to remain stable
     between Paradrop versions.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.get_chute_cache(chute)
     click.echo(util.format_result(result))
     return result
@@ -182,7 +205,7 @@ def describe_chute_configuration(ctx, chute):
     This information corresponds to the "config" section in a chute's
     paradrop.yaml file.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.get_chute_config(chute)
     click.echo(util.format_result(result))
     return result
@@ -202,7 +225,7 @@ def describe_chute_network_client(ctx, chute, network, client):
     will be "wifi".  CLIENT identifies the network client, such as a
     MAC address.
     """
-    pdclient = ParadropClient(ctx.obj['target'])
+    pdclient = ctx.obj['client']
     result = pdclient.get_chute_client(chute, network, client)
     click.echo(util.format_result(result))
     return result
@@ -217,7 +240,7 @@ def describe_pdconf(ctx):
     This information is intended for Paradrop daemon developers for
     debugging purposes.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.get_pdconf()
     print_pdconf(result)
     return result
@@ -232,7 +255,7 @@ def describe_provision(ctx):
     This shows whether the node is associated with a cloud controller,
     and if so, its identifier.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.get_provision()
     click.echo(util.format_result(result))
     return result
@@ -248,7 +271,7 @@ def describe_settings(ctx):
     certain behaviors. They can only be modified through environment
     variables or the settings.ini file.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.get_settings()
     click.echo(util.format_result(result))
     return result
@@ -264,7 +287,7 @@ def edit_configuration(ctx):
     with the current node configuration. If you save and exit, the new
     configuration will be applied to the node.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     old_data = client.get_config()
     new_data, changed = util.open_yaml_editor(old_data, "node")
     if changed:
@@ -286,7 +309,7 @@ def edit_chute_configuration(ctx, chute):
     with the current chute configuration. If you save and exit, the new
     configuration will be applied and the chute restarted.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     old_data = client.get_chute_config(chute)
     new_data, changed = util.open_yaml_editor(old_data, "chute " + chute)
     if changed:
@@ -308,7 +331,7 @@ def edit_chute_variables(ctx, chute):
     with the current chute environment variables. If you save and exit,
     the new settings will be applied and the chute restarted.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     old_data = client.get_chute(chute).get('environment', {})
     new_data, changed = util.open_yaml_editor(old_data, "chute " + chute)
     if changed:
@@ -325,7 +348,7 @@ def export_configuration(ctx, format):
     """
     Display the node configuration in the desired format.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.get_config()
 
     format = format.lower()
@@ -349,7 +372,7 @@ def generate_configuration(ctx, format):
     The new configuration is not automatically applied.  Rather, you can
     save it to file and use the import-configuration command to apply it.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.generate_config()
 
     format = format.lower()
@@ -383,7 +406,7 @@ def import_configuration(ctx, path):
     with open(path, 'r') as source:
         config = yaml.safe_load(source)
 
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.set_config(config)
     ctx.invoke(watch_change_logs, change_id=result['change_id'])
     return result
@@ -401,7 +424,7 @@ def import_ssh_key(ctx, path, user):
     a private key that SSH can use for authentication. Typically,
     ssh-keygen will place the public key in "~/.ssh/id_rsa.pub".
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     with open(path, 'r') as source:
         key_string = source.read().strip()
 
@@ -433,7 +456,7 @@ def install_chute(ctx, directory):
     if not os.path.exists("paradrop.yaml"):
         raise Exception("No paradrop.yaml file found in chute directory.")
 
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     with tempfile.TemporaryFile() as temp:
         tar = tarfile.open(fileobj=temp, mode="w")
         for dirName, subdirList, fileList in os.walk("."):
@@ -454,7 +477,7 @@ def list_audio_modules(ctx):
     """
     List modules loaded by the audio subsystem.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_audio_modules()
     click.echo(util.format_result(result))
     return result
@@ -466,7 +489,7 @@ def list_audio_sinks(ctx):
     """
     List audio sinks.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_audio_sinks()
     click.echo(util.format_result(result))
     return result
@@ -478,7 +501,7 @@ def list_audio_sources(ctx):
     """
     List audio sources.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_audio_sources()
     click.echo(util.format_result(result))
     return result
@@ -490,7 +513,7 @@ def list_changes(ctx):
     """
     List queued or in progress changes.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_changes()
     click.echo(util.format_result(result))
     return result
@@ -505,7 +528,7 @@ def list_chute_networks(ctx, chute):
 
     CHUTE must be the name of an installed chute.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_chute_networks(chute)
     click.echo(util.format_result(result))
     return result
@@ -523,7 +546,7 @@ def list_chute_network_clients(ctx, chute, network):
     name of one of its configured networks. Typically, this will be called
     "wifi".
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_chute_clients(chute, network)
     click.echo(util.format_result(result))
     return result
@@ -535,7 +558,7 @@ def list_chutes(ctx):
     """
     List chutes installed on the node
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_chutes()
     click.echo(util.format_result(result))
     return result
@@ -547,7 +570,7 @@ def list_devices(ctx):
     """
     List devices connected to the node.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_devices()
     click.echo(util.format_result(result))
     return result
@@ -559,7 +582,7 @@ def list_snap_interfaces(ctx):
     """
     List interfaces for snaps installed on the node.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_snap_interfaces()
     click.echo(util.format_result(result))
     return result
@@ -572,7 +595,7 @@ def list_ssh_keys(ctx, user):
     """
     List keys authorized for SSH access to the node.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.list_ssh_keys(user=user)
     click.echo(util.format_result(result))
     return result
@@ -588,7 +611,7 @@ def load_audio_module(ctx, module):
     MODULE must be the name of a PulseAudio module such as
     "module-loopback".
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.load_audio_module(module)
     click.echo(util.format_result(result))
     return result
@@ -604,7 +627,7 @@ def login(ctx):
     password. Typically, the username will be "paradrop". The password
     can be set with the set-password command.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     token = client.login()
     if token is None:
         click.echo("Login attempt failed.")
@@ -620,7 +643,7 @@ def logout(ctx):
     """
     Log out and remove stored credentials.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     removed = client.logout()
     click.echo("Removed {} token(s).".format(removed))
     return removed
@@ -664,7 +687,7 @@ def provision(ctx, id, key, controller, wamp):
     cloud create-node`.  They may also be referred to as the Router ID
     and the Router Password.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.provision(id, key, controller=controller, wamp=wamp)
     click.echo(util.format_result(result))
     return result
@@ -681,7 +704,7 @@ def reboot(ctx):
         'updateClass': 'ROUTER',
         'updateType': 'reboot'
     }
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.add_change(change)
     ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
@@ -695,7 +718,7 @@ def remove_chute(ctx, chute):
 
     CHUTE must be the name of an installed chute.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.remove_chute(chute)
     ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
@@ -717,7 +740,7 @@ def remove_chute_network_client(ctx, chute, network, client):
     Only implemented for wireless clients, this effectively kicks the
     client off the network.
     """
-    pdclient = ParadropClient(ctx.obj['target'])
+    pdclient = ctx.obj['client']
     result = pdclient.remove_chute_client(chute, network, client)
     click.echo(util.format_result(result))
     return result
@@ -732,7 +755,7 @@ def restart_chute(ctx, chute):
 
     CHUTE must be the name of an installed chute.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.restart_chute(chute)
     ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
@@ -752,7 +775,7 @@ def set_configuration(ctx, path, value):
     Changing values inside a list is not currently supported.
     Use edit-configuration instead.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     config = client.get_config()
 
     # This does some type inference for boolean, numerics, etc.
@@ -784,7 +807,7 @@ def set_sink_volume(ctx, sink, volume):
     (applied to all channels) or multiple (one for each channel) floating
     point values between 0 and 1.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
 
     # Convert to a list of floats. Be aware: the obvious approach
     # list(volume) behaves strangely.
@@ -807,7 +830,7 @@ def set_source_volume(ctx, source, volume):
     (applied to all channels) or multiple (one for each channel) floating
     point values between 0 and 1.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
 
     # Convert to a list of floats. Be aware: the obvious approach
     # list(volume) behaves strangely.
@@ -838,7 +861,7 @@ def set_password(ctx):
             print("Passwords do not match.")
 
     click.echo("Next, if prompted, you should enter the current username and password.")
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.set_password(username, password)
     click.echo(util.format_result(result))
     return result
@@ -855,7 +878,7 @@ def shutdown(ctx):
         'updateClass': 'ROUTER',
         'updateType': 'shutdown'
     }
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.add_change(change)
     ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
@@ -869,7 +892,7 @@ def start_chute(ctx, chute):
 
     CHUTE must be the name of a stopped chute.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.start_chute(chute)
     ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
@@ -883,7 +906,7 @@ def stop_chute(ctx, chute):
 
     CHUTE must be the name of a running chute.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.stop_chute(chute)
     ctx.invoke(watch_change_logs, change_id=result['change_id'])
 
@@ -898,7 +921,7 @@ def trigger_pdconf(ctx):
     debugging purposes. Generally, you should use edit-configuration
     and edit-chute-configuration for making configuration changes.
     """
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     result = client.trigger_pdconf()
     print_pdconf(result)
 
@@ -926,7 +949,7 @@ def update_chute(ctx, directory):
         click.echo('Chute name is not defined in paradrop.yaml.')
         return
 
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     with tempfile.TemporaryFile() as temp:
         tar = tarfile.open(fileobj=temp, mode="w")
         for dirName, subdirList, fileList in os.walk("."):
@@ -959,7 +982,7 @@ def watch_change_logs(ctx, change_id):
         msg = data['message'].rstrip()
         print("{}: {}".format(time, msg))
 
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     client.ws_request(url, on_message=on_message)
 
 
@@ -981,7 +1004,7 @@ def watch_chute_logs(ctx, chute):
         service = data.get("service", chute)
         click.echo("[{}] {}: {}".format(service, time, msg))
 
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     client.ws_request(url, on_message=on_message)
 
 
@@ -996,5 +1019,5 @@ def watch_logs(ctx):
     def on_message(ws, message):
         print(message)
 
-    client = ParadropClient(ctx.obj['target'])
+    client = ctx.obj['client']
     client.ws_request(url, on_message=on_message)

@@ -27,11 +27,12 @@ class ParadropClient(AuthenticatedClient):
 
     connection_error_type = NodeConnectionError
 
-    def __init__(self, host=None, debug=False):
+    def __init__(self, host=None, auth_methods=None, debug=False):
         if host is None:
             host = "172.17.0.1"
 
-        super(ParadropClient, self).__init__("node", "http://"+host, debug=debug)
+        super(ParadropClient, self).__init__("node", "http://"+host,
+                auth_methods=auth_methods, debug=debug)
 
         self.host = host
         self.base_url = "http://{}/api/v1".format(host)
