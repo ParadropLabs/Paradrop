@@ -19,7 +19,7 @@ large storage resources anywhere with Internet access at any time thanks to the
 cloud computing.
 
 Despite all of the benefits of cloud computing, there are some inherent
-trade-offs in the approach. Cloud computing requires developers to host
+trade-offs to the approach. Cloud computing requires developers to host
 services and data on off-site data centers.  That means that the computing and
 storage resources are spatially distant from end-users and out of their
 control, which raises issues related to network latency, security, and privacy.

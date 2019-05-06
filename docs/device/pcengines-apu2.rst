@@ -46,34 +46,19 @@ you are using Windows, we suggest using the `win32-image-writer
 <https://launchpad.net/win32-image-writer>`_ tool. Follow the
 Sourceforge link to download the installer.
 
-First Boot
-----------
+Connecting to the Serial Console
+--------------------------------
 
-If you know the IP address of the router, e.g. because you have access to the
-DHCP server upstream from the router, then you can skip this step and proceed
-with activating the router as described in the section :doc:`../manual/index`.
+If you know the IP address of the router, e.g. because you have access
+to the DHCP server upstream from the router, then you can skip this
+step and proceed with the steps for activating and using your router
+described in the section :doc:`../manual/index`.
 
-The first time you boot the Paradrop router, you can optionally connect
-a serial cable to complete the Ubuntu Core setup process.  The default
-configuration is 9600 8N1. If you are using PuTTY under Windows, make
-sure that you have entered the correct COM port for your serial cable. It
-may not be "COM1". You can use the `chgport` command or open the Windows
-Device Manager tool to find the correct COM port.
-
-After the router boots, press Enter when prompted and follow the
-instructions on the console to configure Ubuntu Core.  If you
-have an Ubuntu One account, you can enter the email address here.
-For consistency with the rest of the instructions, we recommend using
-the address `info@paradrop.io`.  You will be able to manage your router
-and install chutes through paradrop.org either way, but using our email
-address ensures consistency with the instructions.
-
-Take note of the IP address displayed in the console.  You will need
-this address for the next step, activating the router.  For example,
-the message below indicates that the router has IP address 10.42.0.162. ::
-
-    Congratulations! This device is now registered to info@paradrop.io.
-
-    The next step is to log into the device via ssh:
-
-    ssh paradrop@10.42.0.162
+If you do not have network access to the Paradrop router for any reason,
+you can always connect a serial cable to the 9-pin serial port. The
+default configuration is 9600 8N1. If you are using PuTTY under Windows,
+make sure that you have entered the correct COM port for your serial
+cable. It may not be "COM1". You can use the `chgport` command or open
+the Windows Device Manager tool to find the correct COM port.
+At the login prompt, the default username is "paradrop" with no
+password.

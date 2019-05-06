@@ -26,7 +26,7 @@ Hardware and software requirements
 * An `Ubuntu Desktop 16.04.1 LTS image
   <http://releases.ubuntu.com/16.04.1/ubuntu-16.04.1-desktop-amd64.iso>`_.
 * A `ParaDrop disk image
-  <https://paradrop.org/release/latest/paradrop-amd64.img.gz>`_.
+  <https://paradrop.org/release/latest/paradrop-amd64.img.xz>`_.
 
 Preparing for installation
 --------------------------
@@ -51,7 +51,7 @@ Flash ParaDrop
    name of the second USB flash drive.  We recommend that you double-check that
    /dev/sda is the desired destination **before running dd**. ::
 
-    zcat /media/ubuntu/<disk label>/paradrop_router.img.gz | sudo dd of=/dev/sda bs=32M status=progress; sync
+    xzcat /media/ubuntu/<disk label>/paradrop_router.img.xz | sudo dd of=/dev/sda bs=32M status=progress; sync
 3. Reboot the system and remove all USB flash drives when prompted to do so.
 
 First boot
@@ -63,21 +63,16 @@ First boot
    this option will temporarily fix a graphics issue that is known to occur
    with the Intel NUC.
 3. Press F10 to continue booting.
-4. Press Enter when prompted, and follow the instructions on the screen to
-   configure Ubuntu Core.  If you have an Ubuntu One account.  By connecting
-   your Ubuntu One account, you will be able to login via SSH with the key(s)
-   attached to your account.  Otherwise, if you do not have an Ubuntu One
-   account or do not wish to use it, you may enter "info@paradrop.io" as your
-   email address.  You will still be able to manage your router and install
-   chutes through paradrop.org either way, but using our email address
-   ensures consistency with the instructions.
-5. Take note of the IP address displayed on the screen.  You will need this
-   address for the next step, activating the router.  For example, the message
-   below indicates that the router has IP address 10.42.0.162. ::
+4. Please allow three to five minutes for the initialization to complete.
+   During this time, the device will finish installing software packages
+   and prepare the device to receive updates. After the setup is complete,
+   a login prompt will appear. The default username is "paradrop" with
+   no password.
+5. Take note of the IP address displayed on the console. You may need to
+   use this address to connect to the admin panel or use pdtools commands.
+   For example, the console below indicates that the node has IP address
+   10.42.0.162. ::
 
-    Congratulations! This device is now registered to info@paradrop.io.
+    Ubuntu Core 16 on 10.42.0.162 (tty1)
 
-    The next step is to log into the device via ssh:
-
-    ssh paradrop@10.42.0.162
-    ...
+    localhost login:
