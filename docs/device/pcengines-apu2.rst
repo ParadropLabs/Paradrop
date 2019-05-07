@@ -5,12 +5,15 @@ Hardware requirements
 ---------------------
 
 * 1x system board (`apu2c4 <http://pcengines.ch/apu2c4.htm>`_)
-* 1x case (`case1d2u <http://pcengines.ch/case1d2u.htm>`_)
+* 1x case (`case1d2u <http://pcengines.ch/case1d2u.htm>`_ for two antennas or `case1d2redu6 <https://pcengines.ch/case1d2redu6.htm>`_ for up to six antennas)
 * 1-2x miniPCIe Wi-Fi modules (`wle200nx <http://pcengines.ch/wle200nx.htm>`_ for 802.11n or `wle600vx <http://pcengines.ch/wle600vx.htm>`_ for 802.11ac)
 * 2-4x pigtails (`pigsma <http://pcengines.ch/pigsma.htm>`_)
 * 2-4x antennas (`antsmadb <http://pcengines.ch/antsmadb.htm>`_)
 * 1x power supply (`ac12vus2 <http://pcengines.ch/ac12vus2.htm>`_)
 * 1x storage module (`sd4b <http://pcengines.ch/sd4b.htm>`_) or alternative (see below)
+
+All of these parts are available internationally from
+`PC Engines <https://pcengines.ch/order.htm>`_.
 
 Storage Module
 --------------
