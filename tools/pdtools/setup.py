@@ -5,7 +5,7 @@ with open("README.md", "r") as source:
 
 setup(
     name="pdtools",
-    version='0.13.1',
+    version='0.13.2',
     description="Paradrop Developer Tools",
     long_description=long_description,
     long_description_content_type="text/markdown",
