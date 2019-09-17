@@ -142,6 +142,7 @@ umount() {
 image() {
     model=${1:-amd64}
     gadget=${2:-pc}
+    kernel="pc-kernel"
     image="paradrop-$model.img"
 
     if [ -e "$image" ]; then
@@ -153,6 +154,11 @@ image() {
     echo "Select the gadget snap to use:"
     echo "Selecting $gadget will pull the official $gadget snap from the store."
     select gadget in "$gadget" gadgets/paradrop-$model/*.snap;
+    do break; done
+
+    echo "Select the kernel snap to use:"
+    echo "Selecting $kernel will pull the official $kernel snap from the store."
+    select kernel in "$kernel" *kernel*.snap;
     do break; done
 
     echo "Select the $SNAP_NAME snap to use (1 for snap store):"
@@ -178,6 +184,7 @@ image() {
     sudo ubuntu-image snap -o $image \
         --channel "$other_channel" \
         --extra-snaps "$gadget" \
+        --extra-snaps "$kernel" \
         --extra-snaps "$pdsnap" \
         --extra-snaps "$governor" \
         --image-size 4G \
