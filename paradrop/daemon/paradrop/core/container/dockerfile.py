@@ -27,6 +27,7 @@ TARGET_IMAGE_MAP = {
 
 # Map machine names to officially supported architecture names in Docker Hub.
 TARGET_MACHINE_MAP = {
+    "aarch64": "arm64v8",
     "armv7l": "arm32v7",
     "i486": "i386",
     "i586": "i386",
