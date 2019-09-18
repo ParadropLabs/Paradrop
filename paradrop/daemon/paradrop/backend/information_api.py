@@ -31,6 +31,10 @@ class InformationApi(object):
         self.wifi = []
         devices = detectSystemDevices()
         for wifiDev in devices['wifi']:
+            # Skip unusual devices that are missing the id field.
+            if 'id' not in wifiDev:
+                continue
+
             self.wifi.append({
                 'id': wifiDev['id'],
                 'macAddr': wifiDev['mac'],

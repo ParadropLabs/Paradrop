@@ -197,6 +197,10 @@ def generateHostConfig(devices):
             new_config = WIFI_DEVICE_PROFILE['default'].copy()
             wifi_caps = WIFI_DEVICE_CAPS["default"]
 
+        # Skip odd devices that are missing this field.
+        if 'id' not in wifiDev:
+            continue
+
         new_config['id'] = wifiDev['id']
 
         # This logic will assign a 5 Ghz channel to the first 5 Ghz-capable
