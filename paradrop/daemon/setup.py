@@ -1,13 +1,24 @@
 from setuptools import setup, find_packages
 
+with open("../../README.md", "r") as source:
+    long_description = source.read()
+
 setup(
     name="paradrop",
-    version='0.13.2',
-    author="ParaDrop Labs",
-    description="ParaDrop wireless virtualization",
-    license="GPL",
-    url="http://paradrop.org",
+    version='0.13.3a8',
+    description="Paradrop Edge Computing Agent",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://paradrop.org",
+
+    project_urls = {
+        "Documentation": "https://paradrop.readthedocs.io/en/latest/",
+        "Homepage": "https://paradrop.org",
+        "Source": "https://github.com/ParadropLabs/Paradrop",
+    },
+
     packages=find_packages(),
+
     install_requires=[
         'attrs==18.2.0',
         'autobahn==18.8.1',
@@ -34,10 +45,32 @@ setup(
         'six>=1.10.0',
         'smokesignal==0.7.0',
         'Twisted==16.2.0',
-        'txdbus==1.1.0',
-        'txmsgpackrpc==1.2',
         'wget==3.2'
     ],
+
+    python_requires=">=2.7",
+
+    classifiers = [
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Topic :: Software Development",
+        "Topic :: Utilities",
+    ],
+
+    maintainer="Lance Hartung",
+    maintainer_email="lance@paradrop.io",
+
+    include_package_data=True,
+    package_data={
+        "paradrop": ["static/*"]
+    },
 
     entry_points={
         'console_scripts': [
@@ -45,6 +78,4 @@ setup(
             'pdconfd = paradrop:run_pdconfd'
         ]
     },
-
-    include_package_data = True
 )
