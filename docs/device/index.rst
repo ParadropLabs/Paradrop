@@ -19,3 +19,4 @@ activate the node with the cloud controller at paradrop.org. The page
    intel-nuc
    pcengines-apu2
    raspberry-pi2
+   nvidia-jetson-tx2
