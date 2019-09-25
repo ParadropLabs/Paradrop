@@ -1,7 +1,15 @@
+import os
 from setuptools import setup, find_packages
 
-with open("../../README.md", "r") as source:
-    long_description = source.read()
+if os.path.exists("../../README.md"):
+    # This path will work when building the Python package from the current
+    # directory but may not work during the snap build process. We only need
+    # the long description for the PyPI package, since the snap has its own
+    # metadata.
+    with open("../../README.md", "r") as source:
+        long_description = source.read()
+else:
+    long_description = "Paradrop Edge Computing Agent"
 
 setup(
     name="paradrop",
