@@ -41,7 +41,7 @@ setup(
         'jsonpatch==1.15',
         'klein==16.12.0',
         'netifaces==0.10.4',
-        'psutil==5.6.2',
+        'psutil==5.6.6',
         'pulsectl==17.12.2',
         'pycurl',
         'PyJWT==1.6.4',
