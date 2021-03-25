@@ -45,7 +45,7 @@ setup(
         'pulsectl==17.12.2',
         'pycurl',
         'PyJWT==1.6.4',
-        'PyYAML==5.1',
+        'PyYAML==5.4',
         'requests==2.21.0',
         'ruamel.ordereddict==0.4.13; python_version < "3.1"',
         'ruamel.yaml==0.15.60',
