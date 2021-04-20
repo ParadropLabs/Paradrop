@@ -29,7 +29,7 @@ setup(
 
     install_requires=[
         'attrs==18.2.0',
-        'autobahn==18.8.1',
+        'autobahn==20.12.3',
         'bcrypt==3.1.4',
         'colorama==0.3.9',
         'configparser==3.7.1',
