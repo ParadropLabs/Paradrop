@@ -52,7 +52,7 @@ setup(
         'service_identity==17.0.0',
         'six>=1.10.0',
         'smokesignal==0.7.0',
-        'Twisted==16.2.0',
+        'Twisted==20.3.0',
         'wget==3.2'
     ],
 
