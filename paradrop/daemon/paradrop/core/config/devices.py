@@ -251,6 +251,7 @@ def listWiFiDevices():
 
     pci_index = 0
     usb_index = 0
+    other_index = 0
     for dev in result:
         if dev['slot'].startswith("pci"):
             dev['id'] = "pci-wifi-{}".format(pci_index)
@@ -258,6 +259,9 @@ def listWiFiDevices():
         elif dev['slot'].startswith("usb"):
             dev['id'] = "usb-wifi-{}".format(usb_index)
             usb_index += 1
+        else:
+            dev['id'] = "other-wifi-{}".format(other_index)
+            other_index += 1
 
     return result
 
