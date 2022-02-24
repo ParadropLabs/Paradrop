@@ -2,19 +2,19 @@ alabaster==0.7.12
 appdirs==1.4.3
 arrow==0.10.0
 asn1crypto==0.24.0
-attrs==18.2.0
-autobahn==0.15.0
+attrs>=19.2.0,<20
+autobahn==21.2.*
 Babel==2.6.0
 backports.ssl-match-hostname==3.5.0.1
 bcrypt==3.1.0
 certifi==2018.11.29
-cffi==1.7.0
+cffi==1.15.*
 chardet==3.0.4
 click==6.7
 colorama==0.3.7
 configparser==3.7.1
 coverage==4.1
-cryptography==2.4.2
+cryptography>=3.4.6,<4
 docker==2.5.1
 docker-pycreds==0.4.0
 docopt==0.6.2
@@ -27,7 +27,7 @@ gitdb2==2.0.5
 GitPython==2.1.5
 idna==2.8
 imagesize==1.1.0
-incremental==17.5.0
+incremental>=21.3.0,<22
 ipaddress==1.0.16
 Jinja2==2.10.1
 jsl==0.2.4
@@ -56,7 +56,7 @@ pytz==2018.7
 PyYAML==5.1
 requests==2.21.0
 ruamel.ordereddict==0.4.13; python_version < "3.1"
-ruamel.yaml==0.15.60
+ruamel.yaml==0.17.*
 service-identity==16.0.0
 six==1.10.0
 smmap2==2.0.5
@@ -65,10 +65,10 @@ snowballstemmer==1.2.1
 Sphinx==1.6.3
 sphinx-rtd-theme==0.2.4
 sphinxcontrib-websupport==1.0.1
-Twisted==16.2.0
-txaio==2.5.1
+Twisted==22.1.*
+txaio>=21.2.1,<22
 typing==3.6.6
 urllib3==1.24.2
 websocket-client==0.37.0
 Werkzeug==0.14.1
-zope.interface==4.2.0
+zope.interface==5.0.*

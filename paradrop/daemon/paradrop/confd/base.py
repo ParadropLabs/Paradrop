@@ -418,7 +418,7 @@ class ConfigObject(object):
 
 @attr.s(slots=True)
 class ConfigOption(object):
-    name = attr.ib(convert=str)
+    name = attr.ib(converter=str)
     type = attr.ib(default=str, validator=attr.validators.instance_of(type))
-    required = attr.ib(convert=bool, default=False)
+    required = attr.ib(converter=bool, default=False)
     default = attr.ib(default=None)

@@ -53,7 +53,6 @@ parts:
 
   paradrop:
     plugin: python
-    python-version: python2
     source: paradrop/daemon
     build-packages:
       - libffi-dev
