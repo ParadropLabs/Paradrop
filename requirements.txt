@@ -29,7 +29,7 @@ idna==2.8
 imagesize==1.1.0
 incremental>=21.3.0,<22
 ipaddress==1.0.16
-Jinja2==2.10.1
+Jinja2==2.11.3
 jsl==0.2.4
 jsonpatch==1.15
 jsonpointer==2.0
