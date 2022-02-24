@@ -68,7 +68,7 @@ sphinxcontrib-websupport==1.0.1
 Twisted==22.1.*
 txaio>=21.2.1,<22
 typing==3.6.6
-urllib3==1.24.2
+urllib3==1.26.5
 websocket-client==0.37.0
 Werkzeug==0.14.1
 zope.interface==5.0.*
