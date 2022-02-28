@@ -1,4 +1,5 @@
 name: paradrop-agent
+base: core18
 version: 0.13.2
 summary: Paradrop agent for managing an edge computing node
 description: |
@@ -8,8 +9,8 @@ description: |
 
   Visit https://paradrop.org to learn more.
 
-confinement: strict
 grade: stable
+confinement: strict
 
 apps:
   paradrop:
@@ -144,6 +145,6 @@ plugs:
     interface: content
     target: $SNAP/governor
   zerotier-control:
-    default-provider: zerotier-one
+    default-provider: zerotier
     interface: content
-    target: $SNAP/zerotier-one
+    target: $SNAP/zerotier
