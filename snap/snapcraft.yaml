@@ -57,6 +57,7 @@ parts:
     source: paradrop/daemon
     build-packages:
       - libffi-dev
+      - rustc # Required for python cryptography package
     stage-packages:
       - libcurl4-openssl-dev
       - libpulse0
