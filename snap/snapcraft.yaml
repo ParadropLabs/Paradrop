@@ -141,7 +141,8 @@ parts:
 
 plugs:
   governor-control:
-    default-provider: paradrop-governor
+    # Setting the default provider is making it difficult to build the snap on build.snapcraft.io.
+    #    default-provider: paradrop-governor
     interface: content
     target: $SNAP/governor
   zerotier-control:
