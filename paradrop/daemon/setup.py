@@ -28,8 +28,8 @@ setup(
     packages=find_packages(),
 
     install_requires=[
-        'attrs>=18.2.0',
-        'autobahn>=22.2.2',
+        'attrs>=21.4.0',
+        'autobahn[twisted]>=21.2.1',
         'bcrypt>=3.1.4',
         'colorama>=0.3.9',
         'configparser>=3.7.1',

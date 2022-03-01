@@ -3,7 +3,7 @@ appdirs==1.4.3
 arrow==0.10.0
 asn1crypto==0.24.0
 attrs==21.4.0
-autobahn==22.2.2
+autobahn[twisted]==22.2.2
 Automat==20.2.0
 Babel==2.9.1
 backports.ssl-match-hostname==3.5.0.1
@@ -11,6 +11,7 @@ bcrypt==3.1.0
 certifi==2018.11.29
 cffi==1.15.0
 chardet==3.0.4
+charset-normalizer==2.0.12
 click==6.7
 colorama==0.3.7
 configparser==3.7.1
@@ -56,7 +57,7 @@ pyOpenSSL==22.0.0
 python-dateutil==2.7.5
 pytz==2018.7
 PyYAML==6.0
-requests==2.21.0
+requests==2.27.1
 ruamel.yaml==0.17.21
 ruamel.yaml.clib==0.2.6
 service-identity==16.0.0
@@ -74,4 +75,4 @@ typing_extensions==4.1.1
 urllib3==1.26.8
 websocket-client==0.37.0
 Werkzeug==2.0.3
-zope.interface==5.0.2
+zope.interface==5.4.0
