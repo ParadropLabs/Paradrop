@@ -69,7 +69,7 @@ sphinx-rtd-theme==0.3.0
 sphinxcontrib-httpdomain==1.6.1
 sphinxcontrib-jsonschema==0.9.3
 sphinxcontrib-websupport==1.0.1
-Twisted==16.2.0
+Twisted==22.1.0
 txaio==2.5.1
 txdbus==1.0.13
 txmsgpackrpc==1.1
