@@ -29,7 +29,7 @@ setup(
 
     install_requires=[
         'attrs>=18.2.0',
-        'autobahn>=18.8.1',
+        'autobahn>=22.2.2',
         'bcrypt>=3.1.4',
         'colorama>=0.3.9',
         'configparser>=3.7.1',
@@ -45,14 +45,15 @@ setup(
         'pulsectl>=17.12.2',
         'pycurl',
         'PyJWT>=1.6.4',
-        'PyYAML>=5.1',
+        'pyOpenSSL>=22.0.0',
+        'PyYAML>=6.0',
         'requests>=2.21.0',
         'ruamel.ordereddict>=0.4.13; python_version < "3.1"',
         'ruamel.yaml>=0.17.21',
         'service_identity>=17.0.0',
         'six>=1.10.0',
         'smokesignal>=0.7.0',
-        'Twisted>=16.2.0',
+        'Twisted>=22.1.0',
         'wget>=3.2'
     ],
 
