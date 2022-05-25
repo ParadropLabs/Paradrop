@@ -52,7 +52,7 @@ pycparser==2.16
 pycurl==7.43.0
 pyflakes==1.6.0
 Pygments==2.11.2
-PyJWT==1.5.3
+PyJWT==2.4.0
 pyOpenSSL==22.0.0
 python-dateutil==2.7.5
 pytz==2018.7
