@@ -68,7 +68,7 @@ snowballstemmer==1.2.1
 Sphinx==1.6.3
 sphinx-rtd-theme==0.2.4
 sphinxcontrib-websupport==1.0.1
-Twisted==22.1.0
+Twisted==22.10.0
 txaio==22.2.1
 typing==3.6.6
 typing_extensions==4.1.1
