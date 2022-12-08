@@ -8,7 +8,7 @@ Automat==20.2.0
 Babel==2.9.1
 backports.ssl-match-hostname==3.5.0.1
 bcrypt==3.1.0
-certifi==2018.11.29
+certifi==2022.12.7
 cffi==1.15.0
 chardet==3.0.4
 charset-normalizer==2.0.12
