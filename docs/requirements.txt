@@ -74,7 +74,7 @@ txaio==2.5.1
 txdbus==1.0.13
 txmsgpackrpc==1.1
 typing==3.6.2
-urllib3==1.24.2
+urllib3==1.26.5
 websocket-client==0.37.0
 Werkzeug==0.12.2
 wget==3.2
